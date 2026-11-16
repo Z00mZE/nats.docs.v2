@@ -1,21 +1,21 @@
-# accounts
+# accounts {#accounts}
 
 <Reloadable state="reloadable" />
-Static config-defined accounts.
+Статические аккаунты, заданные конфигурацией.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`users`](./users/index.md) | A list of users under this account. | `object` | - | Yes |
-| [`exports`](./exports/index.md) | A list of exports for this account. | `object` | - | Yes\* |
-| [`imports`](./imports/index.md) | A list of imports for this account. | `object` | - | Yes\* |
-| [`nkey`](./nkey.md) | Public NKey that identifies this account (an `A`-prefixed public account key). The server rejects the config if the value is not a valid public account NKey. | `string` | - | Yes\* |
-| [`jetstream`](./jetstream/index.md) |  | `(multiple)` | - | Yes\* |
-| [`default_permissions`](./default_permissions/index.md) | The default permissions applied to users within this account, if permissions are not explicitly defined for them. | `object` | - | Yes\* |
-| [`msg_trace`](./msg_trace/index.md) | Where this account's message traces are delivered, and how often they are sampled. | `object` | - | Yes |
-| [`mappings`](./mappings/index.md) |  | `(multiple)` | - | Yes\* |
-| [`limits`](./limits/index.md) |  | `object` | - | Yes\* |
+| [`users`](./users/index.md) | Список пользователей этого аккаунта. | `object` | - | Да |
+| [`exports`](./exports/index.md) | Список экспортов этого аккаунта. | `object` | - | Да\* |
+| [`imports`](./imports/index.md) | Список импортов этого аккаунта. | `object` | - | Да\* |
+| [`nkey`](./nkey.md) | Открытый NKey этого аккаунта (открытый ключ аккаунта с префиксом `A`). Сервер отклоняет конфигурацию, если значение не является допустимым открытым NKey аккаунта. | `string` | - | Да\* |
+| [`jetstream`](./jetstream/index.md) |  | `(multiple)` | - | Да\* |
+| [`default_permissions`](./default_permissions/index.md) | Разрешения по умолчанию для пользователей этого аккаунта, если для них явно не заданы разрешения. | `object` | - | Да\* |
+| [`msg_trace`](./msg_trace/index.md) | Место доставки трассировок сообщений этого аккаунта и частота их выборки. | `object` | - | Да |
+| [`mappings`](./mappings/index.md) |  | `(multiple)` | - | Да\* |
+| [`limits`](./limits/index.md) |  | `object` | - | Да\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

@@ -1,54 +1,54 @@
-# Protocols
+# Протоколы {#protocols}
 
-NATS uses text-based protocols for all communication between clients, servers, and clusters. These protocols are designed to be simple, efficient, and easy to implement.
+NATS использует текстовые протоколы для взаимодействия клиентов, серверов и кластеров. Они спроектированы так, чтобы быть простыми, эффективными и лёгкими в реализации.
 
-## Protocol Types
+## Типы протоколов {#protocol-types}
 
-### [Client Protocol](./client.md)
-The fundamental protocol for client-server communication. This text-based protocol defines how clients connect, authenticate, publish messages, create subscriptions, and handle responses. Features include:
-- Simple text-based commands (PUB, SUB, UNSUB)
-- Optional TLS encryption
-- Built-in heartbeat mechanism (PING/PONG)
-- Support for request-reply patterns
-- Header support for metadata
+### [Клиентский протокол](./client.md) {#client-protocol}
+Основной протокол взаимодействия клиента и сервера. Он определяет подключение и аутентификацию клиентов, публикацию сообщений, создание подписок и обработку ответов. Возможности:
+- Простые текстовые команды (PUB, SUB, UNSUB)
+- Необязательное шифрование TLS
+- Встроенный heartbeat (PING/PONG)
+- Поддержка запроса и ответа
+- Заголовки для метаданных
 
-### [Route Protocol](./route.md)
-Used for intra-cluster communication between NATS servers. Routes create a full mesh topology where every server connects to every other server in the cluster. Key characteristics:
-- Automatic message routing between servers
-- Interest propagation for efficient message delivery
-- Cluster-wide state synchronization
-- Fault tolerance and automatic failover
+### [Протокол маршрутов](./route.md) {#route-protocol}
+Используется для обмена между серверами NATS внутри кластера. Маршруты образуют полносвязную топологию: каждый сервер соединяется со всеми остальными. Основные свойства:
+- Автоматическая маршрутизация сообщений между серверами
+- Распространение интереса для эффективной доставки
+- Синхронизация состояния по всему кластеру
+- Отказоустойчивость и автоматическое переключение
 
-### [Leafnode Protocol](./leafnode.md)
-Enables lightweight, unidirectional connections from edge servers to a central cluster. Ideal for:
-- IoT and edge deployments
-- Hub-and-spoke architectures
-- Reducing bandwidth usage
-- Selective message propagation
-- Account isolation
+### [Протокол листовых узлов](./leafnode.md) {#leafnode-protocol}
+Обеспечивает лёгкие соединения, инициируемые периферийными серверами к центральному кластеру. Подходит для:
+- IoT и периферийных развёртываний
+- Архитектур «центр — лучи»
+- Снижения расхода пропускной способности
+- Избирательной передачи сообщений
+- Изоляции учётных записей
 
-### [Gateway Protocol](./gateway.md)
-Connects multiple NATS clusters into a super-cluster while maintaining cluster autonomy. Benefits include:
-- Cross-cluster communication
-- Geographic distribution
-- Interest-only message exchange
-- Account mapping and isolation
-- Optimized for WAN connections
+### [Протокол шлюзов](./gateway.md) {#gateway-protocol}
+Соединяет несколько кластеров NATS в суперкластер, сохраняя самостоятельность каждого. Преимущества:
+- Межкластерное взаимодействие
+- Географическое распределение
+- Передача сообщений только при наличии интереса
+- Сопоставление и изоляция учётных записей
+- Оптимизация для глобальных сетей WAN
 
-## Protocol Selection
+## Выбор протокола {#protocol-selection}
 
-| Use Case | Recommended Protocol |
+| Вариант использования | Рекомендуемый протокол |
 |----------|---------------------|
-| Client applications | Client Protocol |
-| High availability cluster | Route Protocol |
-| Edge/IoT deployments | Leafnode Protocol |
-| Multi-region/Multi-cloud | Gateway Protocol |
+| Клиентские приложения | Клиентский протокол |
+| Кластер высокой доступности | Протокол маршрутов |
+| Периферийные развёртывания и IoT | Протокол листовых узлов |
+| Несколько регионов или облаков | Протокол шлюзов |
 
-## Common Protocol Features
+## Общие свойства протоколов {#common-protocol-features}
 
-All NATS protocols share these characteristics:
-- Text-based - Human-readable for easy debugging
-- Lightweight - Minimal overhead for high performance
-- Secure - TLS support across all protocols
-- Resilient - Automatic reconnection and failover
-- Efficient - Interest-based message routing
+Все протоколы NATS обладают следующими свойствами:
+- Текстовый формат — удобен для чтения и отладки
+- Легковесность — минимум накладных расходов для высокой производительности
+- Безопасность — поддержка TLS во всех протоколах
+- Устойчивость — автоматическое переподключение и переключение при отказе
+- Эффективность — маршрутизация сообщений по интересу

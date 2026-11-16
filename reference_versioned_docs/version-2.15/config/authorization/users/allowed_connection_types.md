@@ -1,21 +1,16 @@
-# allowed_connection_types
+# allowed_connection_types {#allowed_connection_types}
 
 <Reloadable state="reloadable" />
-If specified, the user is constrained to the specified connection
-types.
+Если задано, пользователь ограничен указанными типами соединений.
 
-- `STANDARD` indicates a standard client TCP connection using the
-  NATS protocol.
-- `WEBSOCKET` indicates a WebSocket-based connection to NATS if the
-  `websockets` configuration is enabled.
-- `LEAFNODE` indicates a connection established by configured leafnode
-  `remote` on a server.
-- `MQTT` indicates a connection established by an MQTT client to NATS
-  if the `mqtt` configuration is enabled.
+- `STANDARD` — обычное клиентское TCP-соединение по протоколу NATS.
+- `WEBSOCKET` — соединение WebSocket с NATS при включённой конфигурации `websockets`.
+- `LEAFNODE` — соединение, установленное настроенным на сервере листовым узлом `remote`.
+- `MQTT` — соединение клиента MQTT с NATS при включённой конфигурации `mqtt`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | `STANDARD`, `WEBSOCKET`, `LEAFNODE`, `MQTT` |

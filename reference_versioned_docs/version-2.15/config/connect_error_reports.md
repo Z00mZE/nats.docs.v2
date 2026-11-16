@@ -1,13 +1,11 @@
-# connect_error_reports
+# connect_error_reports {#connect_error_reports}
 
 <Reloadable state="reloadable" note="The reload handler only logs, but the new value is read on every connection attempt, so it takes effect immediately." />
-Number of attempts at which a repeated failed route, gateway
-or leaf node connection is reported. Connect attempts are made
-once every second.
+Число попыток, через которое сообщается о повторяющейся ошибке подключения маршрута, шлюза или листового узла. Попытки подключения выполняются раз в секунду.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

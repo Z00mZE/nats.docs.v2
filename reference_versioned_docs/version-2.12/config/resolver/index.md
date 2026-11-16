@@ -1,35 +1,31 @@
-# resolver
+# resolver {#resolver}
 
 <Aliases aliases="account_resolver, account_resolvers" />
 <Reloadable state="reloadable" note="Resolver settings are rebuilt and swapped in on reload, but moving to or from an account resolver — enabling or disabling it — fails the reload." />
-Takes precedence over the value obtained from
-the `operator` if defined.
+Имеет приоритет перед значением из `operator`, если задано.
 
-If a string value is used, it must be `MEMORY` or `URL(<url>)`
-where where `url` is an HTTP endpoint pointing to the [NATS account
-resolver](https://docs.nats.io/legacy/nas).
+Строковое значение должно быть `MEMORY` или `URL(<url>)`, где `url` — HTTP-адрес [резолвера аккаунтов NATS](https://docs.nats.io/legacy/nas).
 
-Note: the NATS account resolver is deprecated and the built-in
-NATS-based resolver should be used.
+Примечание: резолвер аккаунтов NATS устарел; следует использовать встроенный резолвер на базе NATS.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` |  | - |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`type`](./type.md) | Defines whether the resolver type. A `full` resolver stores all account JWTs unless they are explicitly deleted.  A `cache` resolver stores only a subset based on a least-recently-used (LRU) TTL. | `string` | - | Yes\* |
-| [`dir`](./dir.md) | The path to storing account JWT files when pushed to the server. | `string` | - | Yes\* |
-| [`limit`](./limit.md) | If set, limit the number of stored JWTs. In `full` mode, new JWTs will be rejected where as in `cache` mode, old JWTs will be evicted for new JWTs. | `integer` | - | Yes\* |
-| [`ttl`](./ttl.md) | If `cache` mode, defines how long an account JWT will be cached for before being considered for auto-eviction. | `duration` | - | Yes\* |
-| [`interval`](./interval.md) | Defines the interval the resolver will randomly contact another server to reconcile JWTs, such as receiving new ones and deleting old ones.  Applies to `full` mode only. | `duration` | - | Yes\* |
-| [`timeout`](./timeout.md) | Defines the request timeout for resolvers interacting with with other resolvers. | `duration` | - | Yes\* |
-| [`allow_delete`](./allow_delete.md) | If true, allows JWTs to be deleted. Note, in `full` mode, this will result in the JWT file being renamed to with a `.delete` suffix, unless `hard_delete` is true. | `boolean` | `false` | Yes\* |
-| [`hard_delete`](./hard_delete.md) | If true, and the resolver is in `full` mode, deleted account JWTs will be removed from disk rather than having the `.delete` suffix appended. | `boolean` | `false` | Yes\* |
+| [`type`](./type.md) | Задаёт тип резолвера. Резолвер `full` хранит все JWT аккаунтов до их явного удаления. Резолвер `cache` хранит лишь часть JWT, используя TTL и вытеснение давно не использовавшихся записей (LRU). | `string` | - | Да\* |
+| [`dir`](./dir.md) | Путь хранения файлов JWT аккаунтов, переданных серверу. | `string` | - | Да\* |
+| [`limit`](./limit.md) | Если задано, ограничивает число хранимых JWT. В режиме `full` новые JWT отклоняются, а в режиме `cache` старые JWT вытесняются новыми. | `integer` | - | Да\* |
+| [`ttl`](./ttl.md) | В режиме `cache` задаёт время хранения JWT аккаунта в кэше до возможности автоматического вытеснения. | `duration` | - | Да\* |
+| [`interval`](./interval.md) | Задаёт интервал, с которым резолвер обращается к случайному другому серверу для сверки JWT: получения новых и удаления старых. Применяется только в режиме `full`. | `duration` | - | Да\* |
+| [`timeout`](./timeout.md) | Задаёт тайм-аут запросов при взаимодействии резолверов. | `duration` | - | Да\* |
+| [`allow_delete`](./allow_delete.md) | Если true, разрешает удаление JWT. В режиме `full` файл JWT переименовывается с добавлением суффикса `.delete`, если не включён `hard_delete`. | `boolean` | `false` | Да\* |
+| [`hard_delete`](./hard_delete.md) | Если true и резолвер работает в режиме `full`, удаляемые JWT аккаунтов удаляются с диска, а не переименовываются с добавлением суффикса `.delete`. | `boolean` | `false` | Да\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

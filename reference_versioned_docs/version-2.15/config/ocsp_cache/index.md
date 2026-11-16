@@ -1,20 +1,19 @@
-# ocsp_cache
+# ocsp_cache {#ocsp_cache}
 
 <Reloadable state="reloadable" />
-Cache OCSP responses the server staples, so it does not query the
-responder on every handshake.
+Кэшировать прикрепляемые сервером ответы OCSP, чтобы не обращаться к ответчику при каждом рукопожатии.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` |  | `true`, `false` |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`type`](./type.md) | Where stapled responses are cached. `local` writes them under the server's store directory. | `string` | `none` | Yes |
-| [`local_store`](./local_store.md) | Directory for the local cache. | `string` | - | Yes |
-| [`preserve_revoked`](./preserve_revoked.md) | Keep revoked responses in the cache rather than evicting them. | `boolean` | `false` | Yes |
+| [`type`](./type.md) | Место кэширования прикрепляемых ответов. `local` сохраняет их в каталоге хранения сервера. | `string` | `none` | Да |
+| [`local_store`](./local_store.md) | Каталог локального кэша. | `string` | - | Да |
+| [`preserve_revoked`](./preserve_revoked.md) | Сохранять ответы об отзыве сертификата в кэше вместо их вытеснения. | `boolean` | `false` | Да |

@@ -1,15 +1,12 @@
-# weight
+# weight {#weight}
 
 <Reloadable state="reloadable" />
-A number between 0 and 100 (inclusive). The string form allows for
-a trailing `%` sign. Note, if the `cluster` field is used, weights
-across the destinations must add up to 100% on a per-cluster basis
-unless artifical message loss is desired for testing.
+Число от 0 до 100 включительно. В строковой форме допускается завершающий знак `%`. Если используется поле `cluster`, сумма весов назначений для каждого кластера должна составлять 100%, кроме случаев намеренной потери сообщений при тестировании.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` |  | - |
 | `integer` |  | - |

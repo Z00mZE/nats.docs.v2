@@ -1,12 +1,11 @@
-# reconnect_error_reports
+# reconnect_error_reports {#reconnect_error_reports}
 
 <Reloadable state="reloadable" />
-Number of failed attempt to reconnect a route, gateway or
-leaf node connection. Default is to report every attempt.
+Число неудачных попыток переподключения маршрута, шлюза или листового узла между сообщениями об ошибке. По умолчанию сообщается о каждой попытке.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

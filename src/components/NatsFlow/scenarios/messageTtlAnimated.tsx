@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // messageTtlAnimated
@@ -68,8 +69,7 @@ function MessageTtlInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 10, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                A <strong>per-message TTL</strong> expires one message on its own deadline — the earlier of the TTL and the
-                stream's MaxAge wins, and <strong>never</strong> outlives both.
+                A <strong>TTL сообщения</strong> удаляет одно сообщение по его сроку: действует более ранний из TTL и MaxAge потока, а <strong>никогда</strong> хранится дольше обоих сроков.
             </div>
 
             <div style={{ position: "relative", width: 640, height: 200, margin: "0 auto" }}>
@@ -100,7 +100,7 @@ function MessageTtlInner() {
                 </span>
 
                 {/* message rows */}
-                {MSGS.map((m, i) => {
+                {localizeDiagramContent(MSGS.map((m, i) => {
                     const y = ROW_Y[i];
                     const midY = y + ROW_H / 2;
                     const isNever = m.reason === "";
@@ -124,7 +124,7 @@ function MessageTtlInner() {
                                 }}
                             >
                                 <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "monospace", color: expired ? GREY : NAVY }}>
-                                    {m.subj}
+                                    {localizeDiagramContent(m.subj)}
                                 </span>
                                 <span
                                     style={{
@@ -140,7 +140,7 @@ function MessageTtlInner() {
                                         background: `${m.color}12`,
                                     }}
                                 >
-                                    {m.tag}
+                                    {localizeDiagramContent(m.tag)}
                                 </span>
                             </div>
 
@@ -173,11 +173,11 @@ function MessageTtlInner() {
                             />
 
                             {/* never: arrow continuing past the timeline */}
-                            {isNever && (
+                            {localizeDiagramContent(isNever && (
                                 <span style={{ position: "absolute", left: X1 + 2, top: midY - 9, fontSize: 14, fontWeight: 700, color: GREEN }}>
                                     →
                                 </span>
-                            )}
+                            ))}
 
                             {/* the stored message block at t0 */}
                             <div
@@ -196,7 +196,7 @@ function MessageTtlInner() {
                             />
 
                             {/* expiry marker at the deadline */}
-                            {expired && (
+                            {localizeDiagramContent(expired && (
                                 <span
                                     style={{
                                         position: "absolute",
@@ -210,12 +210,12 @@ function MessageTtlInner() {
                                         padding: "0 3px",
                                     }}
                                 >
-                                    ✕ {m.reason}
+                                    ✕ {localizeDiagramContent(m.reason)}
                                 </span>
-                            )}
+                            ))}
                         </div>
                     );
-                })}
+                }))}
 
                 {/* the sweeping "now" marker */}
                 <div style={{ position: "absolute", left: nowX, top: 22, width: 0, height: 168, borderLeft: `2px solid ${NAVY}` }} />
@@ -231,7 +231,7 @@ function MessageTtlInner() {
                         color: NAVY,
                     }}
                 >
-                    now
+                    сейчас
                 </span>
             </div>
 
@@ -240,9 +240,9 @@ function MessageTtlInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

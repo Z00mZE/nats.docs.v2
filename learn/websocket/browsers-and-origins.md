@@ -1,32 +1,23 @@
 ---
 id: browsers-and-origins
-title: "Browsers and origins"
+title: Браузеры и источники
 sidebar_position: 3
-description: Restrict which web pages may connect, and give a browser credentials when it has no credentials file
+description: Ограничение подключающихся страниц и передача учётных данных браузеру без файла credentials
 ---
 
-# Browsers and origins
+# Браузеры и источники {#browsers-and-origins}
 
-The dashboard from the previous page works, but the listener it connects to
-will accept a connection from any web page on any site — including one
-you didn't write. It also has no way to tell who the connecting user is,
-because a browser has no credentials file to present.
+Панель работает, но слушатель принимает подключения любых страниц с любых сайтов, в том числе чужих. Он также не определяет пользователя: браузеру нечего предъявить в виде файла учётных данных.
 
-Those are the two things a browser changes: which pages may open a
-connection, and how a connection proves its identity. Everything else
-about the connection is unchanged.
+Браузер меняет две задачи: какие страницы могут подключаться и как соединение подтверждает личность. Остальная модель соединения прежняя.
 
-## Restrict which pages may connect
+## Ограничение подключающихся страниц {#restrict-which-pages-may-connect}
 
-A browser attaches an `Origin` header to the WebSocket handshake, naming
-the site the page was served from. The server can require that header to
-match.
+Браузер добавляет к рукопожатию WebSocket заголовок `Origin` с адресом сайта страницы. Сервер может потребовать совпадения этого значения.
 
-In production Acme serves the dashboard from `https://ops.acme.example`
-and lists that. You can watch the mechanism work on your own machine
-without any DNS, because `localhost` counts as an origin like any other.
+В эксплуатации Acme размещает панель на `https://ops.acme.example` и разрешает этот адрес. Проверить механизм можно локально без DNS: `localhost` тоже является источником страницы.
 
-Point the listener at a local origin:
+Разрешите локальный источник на слушателе:
 
 ```conf
 websocket {
@@ -39,22 +30,17 @@ websocket {
 }
 ```
 
-Serve `dashboard.html` from the previous page on that origin:
+Опубликуйте `dashboard.html` с прошлой страницы по этому адресу:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000/dashboard.html` and it connects. Now open
-the same file as `http://127.0.0.1:8000/dashboard.html`. Same file, same
-machine, same port — and the connection is refused, because
-`127.0.0.1` isn't the string `localhost`.
+Откройте `http://localhost:8000/dashboard.html`: соединение устанавливается. Тот же файл по `http://127.0.0.1:8000/dashboard.html` получает отказ. Машина и порт те же, но строка `127.0.0.1` не равна `localhost`.
 
-That's the rule in one experiment: the match is exact on scheme, host
-and port, and it's a string comparison, not a name resolution. Against
-`allowed_origins ["http://localhost:8000"]` the server answers:
+Правило: схема, хост и порт должны совпадать точно как строки, разрешение имён не выполняется. При `allowed_origins ["http://localhost:8000"]` ответы такие:
 
-| `Origin` the browser sends | Handshake |
+| Отправленный браузером `Origin` | Рукопожатие |
 |---|---|
 | `http://localhost:8000` | `101 Switching Protocols` |
 | `http://127.0.0.1:8000` | `403 Forbidden` |
@@ -62,71 +48,41 @@ and port, and it's a string comparison, not a name resolution. Against
 | `http://localhost:8001` | `403 Forbidden` |
 | `http://localhost` | `403 Forbidden` |
 
-`allowed_origins` can also be written `origins`, `origin`,
-`allowed_origin`, `allow_origins` or `allow_origin`; they're aliases for
-the same option.
+Параметр `allowed_origins` имеет псевдонимы `origins`, `origin`, `allowed_origin`, `allow_origins` и `allow_origin`.
 
-The last row is the one that catches people. A URL with no port means
-port 80 for `http://` and 443 for `https://`, so `https://ops.acme.example`
-and `https://ops.acme.example:8443` are different origins. Serving the
-same dashboard over both means listing both.
+Особенно легко ошибиться с последней строкой. Без порта подразумевается 80 для `http://` и 443 для `https://`, поэтому `https://ops.acme.example` и `https://ops.acme.example:8443` — разные источники. Для публикации панели по обоим адресам разрешите оба.
 
-`same_origin: true` is the other form of the check: instead of a list,
-it requires the `Origin` header to match the host the request arrived
-on. It suits a setup where the page and the NATS endpoint are served
-from one hostname, and gets in the way as soon as they aren't.
+Другой вариант — `same_origin: true`: вместо списка он требует совпадения `Origin` с хостом входящего запроса. Это удобно при одном имени хоста страницы и NATS, но мешает при разных.
 
-Set both and a request has to pass both checks. Leave both unset — the
-default — and any origin is accepted.
+Если заданы оба параметра, нужны обе проверки. Если ни один не задан, как по умолчанию, разрешён любой источник.
 
-### The check is skipped when there's no Origin header
+### Без Origin проверка пропускается {#the-check-is-skipped-when-theres-no-origin-header}
 
-Leave the config exactly as above and connect with the CLI:
+Оставьте конфигурацию прежней и подключитесь через CLI:
 
 ```bash
 nats -s ws://127.0.0.1:8080 sub "orders.>"
 ```
 
-It connects. `http://localhost:8000` is the only origin allowed, and the
-CLI is not that origin — but it sends no `Origin` header at all, and the
-server only runs the check when the header is present.
+CLI подключается, хотя разрешён только `http://localhost:8000`, а CLI не относится к этому источнику. Он вообще не отправляет `Origin`, и сервер выполняет проверку только при наличии заголовка.
 
-That is not a bug, and it isn't something you can configure away. The
-`Origin` header is set by the browser, not by the person using it, which
-is exactly what makes it useful: a page on `evil.example` cannot lie
-about being `https://ops.acme.example`. Anything that isn't a browser
-sets its own headers, so an attacker writing a client simply omits it.
+Это предусмотренное поведение, отключить его настройкой нельзя. `Origin` устанавливает браузер, а не пользователь: страница evil.example не может выдать себя за `https://ops.acme.example`. Небраузерный клиент управляет своими заголовками и может просто опустить его.
 
-So `allowed_origins` answers one question: *may this web page open a
-connection using a visitor's browser?* It does not answer *may this
-connection reach my subjects?* — permissions do that, and they apply to
-browser and non-browser connections alike. Configure both. A dashboard
-user restricted to `subscribe: orders.>` is safe whether the request
-carried an `Origin` header or not.
+Поэтому `allowed_origins` отвечает лишь на вопрос, может ли страница открыть соединение через браузер посетителя. Доступ к темам определяют разрешения, одинаково действующие для браузеров и остальных клиентов. Настройте оба механизма. Пользователь панели с ограничением `subscribe: orders.>` имеет эти границы независимо от наличия `Origin`.
 
-## Give the browser credentials
+## Учётные данные браузера {#give-the-browser-credentials}
 
-A browser has no filesystem. The credentials file that a service uses
-isn't available, and putting an account seed in front-end code hands it
-to anyone who opens the developer tools. Two approaches work.
+Браузеру недоступен файл credentials, используемый сервисами, а seed учётной записи в коде интерфейса станет доступен любому через инструменты разработчика. Есть два подхода.
 
-### A bearer JWT in the connection
+### Bearer JWT в соединении {#a-bearer-jwt-in-the-connection}
 
-In operator mode, the browser presents a JWT it was issued, and the user
-is marked as a bearer user so no nonce signature is required. The page
-never holds a signing key — only a token that expires.
+В режиме оператора браузер предъявляет выданный JWT, а пользователь отмечается как bearer: подпись nonce не требуется. У страницы нет ключа подписи, только токен со сроком действия.
 
-Issuing those tokens is the job of whatever already authenticates your
-users. The [decentralized auth](/learn/security/decentralized-auth) page
-covers the user and account setup.
+Токены выдаёт существующая система аутентификации пользователей. Настройка пользователя и учётной записи описана в разделе [Децентрализованная аутентификация](/learn/security/decentralized-auth).
 
-### Credentials in a cookie
+### Учётные данные в cookie {#credentials-in-a-cookie}
 
-The other approach keeps the token out of JavaScript entirely. The HTTP
-server that authenticated the user sets a cookie with `HttpOnly`, so
-scripts on the page can't read it, and the browser attaches it to the
-WebSocket handshake. The NATS server reads the cookie and uses it as the
-credential:
+Второй подход полностью скрывает токен от JavaScript. Аутентифицировавший пользователя HTTP-сервер устанавливает cookie с `HttpOnly`; скрипты страницы не читают его, а браузер добавляет к рукопожатию WebSocket. NATS читает cookie как учётные данные:
 
 ```conf
 websocket {
@@ -143,46 +99,33 @@ websocket {
 }
 ```
 
-`jwt_cookie` only works in operator mode. The server needs something to
-validate the JWT against, so it refuses to start when the cookie is set
-and no trusted operator or key is configured:
+`jwt_cookie` работает только в режиме оператора. Серверу нужна основа проверки JWT, поэтому он не запускается при заданном cookie без доверенного оператора или ключа:
 
 ```
 trusted operators or trusted keys configuration is required for JWT
 authentication via cookie "acme_nats_jwt"
 ```
 
-Four cookie names can be configured, matching the four things a client
-can present:
+Можно настроить четыре имени cookie для четырёх видов учётных данных:
 
-| Setting | Cookie holds |
+| Параметр | Содержимое cookie |
 |---|---|
-| [`jwt_cookie`](/reference/config/websocket/jwt_cookie/) | a NATS user JWT |
-| [`user_cookie`](/reference/config/websocket/user_cookie/) | the user name |
-| [`pass_cookie`](/reference/config/websocket/pass_cookie/) | the password |
-| [`token_cookie`](/reference/config/websocket/token_cookie/) | the auth token |
+| [`jwt_cookie`](/reference/config/websocket/jwt_cookie/) | JWT пользователя NATS |
+| [`user_cookie`](/reference/config/websocket/user_cookie/) | Имя пользователя |
+| [`pass_cookie`](/reference/config/websocket/pass_cookie/) | Пароль |
+| [`token_cookie`](/reference/config/websocket/token_cookie/) | Токен аутентификации |
 
-`jwt_cookie` has always been available. The other three arrived in
-`nats-server` 2.11, so check the version you run before relying on them.
+`jwt_cookie` доступен изначально; остальные три появились в `nats-server` 2.11. Проверьте используемую версию перед их применением.
 
-Each one is only consulted when the client didn't supply that field
-itself. A JWT in the `CONNECT` protocol wins over `jwt_cookie`; a user
-name in `CONNECT` wins over `user_cookie`.
+Cookie используется, только если клиент сам не передал соответствующее поле. JWT в `CONNECT` имеет приоритет перед `jwt_cookie`, имя в `CONNECT` — перед `user_cookie`.
 
-This is the pattern to reach for when your web application already has a
-login. The session cookie your login sets is a credential the browser
-transmits automatically and JavaScript can't exfiltrate.
+Этот подход удобен, когда у веб-приложения уже есть вход. Cookie сеанса автоматически передаётся браузером, а JavaScript не может прочитать его и извлечь токен.
 
-For a dashboard that's genuinely public and read-only, `no_auth_user`
-names a user that unauthenticated WebSocket connections bind to. Give it
-subscribe permission on exactly the subjects the page shows and nothing
-else. It doesn't work in operator mode.
+Для общедоступной панели только для чтения `no_auth_user` указывает пользователя неаутентифицированных WebSocket-соединений. Разрешите ему подписку только на отображаемые темы. В режиме оператора это не работает.
 
-## Restrict a user to WebSocket
+## Ограничение пользователя транспортом WebSocket {#restrict-a-user-to-websocket}
 
-A credential that reaches the dashboard shouldn't also work from a shell
-on port 4222. `allowed_connection_types` binds a user to the transports
-it may use:
+Учётные данные панели не должны также работать из оболочки через 4222. `allowed_connection_types` ограничивает допустимые транспорты пользователя:
 
 ```conf
 authorization {
@@ -192,76 +135,43 @@ authorization {
 }
 ```
 
-The full value set, and the `_WS` variants for the other protocols, are
-covered in [MQTT → Auth and
-clustering](/learn/mqtt/auth-and-clustering#restrict-a-user-to-mqtt).
-For a leaf node that dials in over WebSocket the value is `LEAFNODE_WS`,
-which the [last page](/learn/websocket/leaf-nodes-over-websocket) uses.
+Полный набор значений и варианты `_WS` других протоколов описаны в [MQTT → Аутентификация и кластеризация](/learn/mqtt/auth-and-clustering#restrict-a-user-to-mqtt). Для листового узла через WebSocket используется `LEAFNODE_WS`, как на [последней странице](/learn/websocket/leaf-nodes-over-websocket).
 
-## Compression
+## Сжатие {#compression}
 
-`compress: true` offers the `permessage-deflate` WebSocket extension.
-It's negotiated per connection: a client that doesn't ask for it gets an
-uncompressed connection, and the setting costs nothing on those.
+`compress: true` предлагает расширение WebSocket `permessage-deflate`. Оно согласуется для каждого соединения: не запросивший его клиент работает без сжатия и без дополнительных затрат от настройки.
 
-`compress` can also be written `compression`; they're the same option.
+`compression` — псевдоним `compress`.
 
-Where it's enabled, it trades CPU on both ends for bytes on the wire.
-Which way that comes out depends on how compressible your payloads are
-and how constrained the link is, so it's a measurement rather than a
-default — compare CPU and throughput on your own traffic before turning
-it on broadly.
+При сжатии расход CPU на обеих сторонах обменивается на меньший сетевой объём. Результат зависит от сжимаемости полезной нагрузки и ограничений канала. Перед массовым включением сравните CPU и пропускную способность на собственном трафике.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-**Treating `allowed_origins` as access control.** It's evaluated only
-when an `Origin` header is present, so it constrains browsers and
-nothing else. A client that connects directly never sees the check.
-Permissions still do the real work.
+**Использование `allowed_origins` как контроля доступа.** Проверка действует только при наличии `Origin` и ограничивает браузеры. Прямой клиент обходит её отсутствием заголовка. Реальный доступ задаётся разрешениями.
 
-**Setting `same_origin: true` when the page and the endpoint differ.**
-It requires the `Origin` header to match the host the request arrived on,
-so it fails as soon as the dashboard and the NATS endpoint sit on
-different hostnames — which is the normal case behind an ingress.
+**`same_origin: true` при разных адресах страницы и NATS.** Заголовок должен совпадать с хостом запроса; при разных именах соединение отклоняется. За ingress это обычная конфигурация.
 
-**Serving the page from a host you didn't list.** Scheme, host and port
-all have to match as strings — `localhost` and `127.0.0.1` are different
-origins even on one machine. Moving the dashboard to a different
-hostname, or adding a port, breaks the handshake for every user with a
-`403` until the list is updated.
+**Размещение страницы на неразрешённом хосте.** Схема, хост и порт сравниваются как строки: `localhost` и `127.0.0.1` различаются даже на одной машине. Изменение имени или порта даёт всем пользователям `403`, пока список не обновлён.
 
-**Putting a seed or credentials file in front-end code.** Anything the
-page can read, a visitor can read. Use a bearer JWT or a cookie the page
-can't see.
+**Seed или файл credentials в коде интерфейса.** Всё, что читает страница, может прочитать посетитель. Используйте bearer JWT или скрытый от страницы cookie.
 
-**Giving the dashboard user publish permission.** A page that only
-displays orders needs subscribe on `orders.>`. Publish rights on a
-credential that ships to browsers is a much larger surface than the
-feature needs.
+**Разрешение публикации пользователю панели.** Для показа заказов нужна подписка на `orders.>`. Права публикации у передаваемых браузеру учётных данных существенно шире потребностей панели.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-The dashboard is now a controlled client:
+Панель теперь управляемый клиент:
 
-- only pages from `https://ops.acme.example` may open a connection
-- the browser presents a JWT from an `HttpOnly` cookie rather than
-  holding a key
-- its user is restricted to `WEBSOCKET` connections
-- you know the origin check constrains browsers and not the port
+- Подключаются только страницы с `https://ops.acme.example`.
+- Браузер предъявляет JWT из cookie `HttpOnly`, не храня ключ.
+- Пользователь ограничен соединениями `WEBSOCKET`.
+- Вы понимаете, что Origin ограничивает браузеры, а не доступ ко всему порту.
 
-## What's next
+## Что дальше {#whats-next}
 
-Everything so far has run with `no_tls: true` on localhost, which means
-the cookie holding a user's JWT crosses the network in the clear. [TLS
-and proxies](/learn/websocket/tls-and-proxies) fixes that, both with a
-certificate on the listener and with TLS terminated at the ingress that
-already fronts Acme's web estate.
+Пока всё работало с `no_tls: true` на localhost: cookie с JWT передавался открыто. Раздел [TLS и прокси](/learn/websocket/tls-and-proxies) включает защиту как сертификатом слушателя, так и завершением TLS на ingress инфраструктуры Acme.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → websocket](/reference/config/websocket/) — `allowed_origins`,
-  `same_origin`, the cookie settings, and `compress`
-- [Security → Authorization](/learn/security/authorization) — the
-  permission model behind a restricted dashboard user
-- [Security → Decentralized auth](/learn/security/decentralized-auth) —
-  bearer users and issuing JWTs
+- [Справочник → websocket](/reference/config/websocket/) — `allowed_origins`, `same_origin`, cookie и `compress`.
+- [Безопасность → Авторизация](/learn/security/authorization) — разрешения ограниченного пользователя панели.
+- [Безопасность → Децентрализованная аутентификация](/learn/security/decentralized-auth) — bearer-пользователи и выдача JWT.

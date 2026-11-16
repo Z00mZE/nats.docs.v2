@@ -1,21 +1,17 @@
-# verify_cert_and_check_known_urls
+# verify_cert_and_check_known_urls {#verify_cert_and_check_known_urls}
 
 <Reloadable state="reloadable" note="Evaluated when a route authorizes, i.e. for connections established after the reload." />
-Only used in a non-client context where `verify` is true, such as cluster and gateway configurations.
-The incoming connection's certificate x509v3 Subject Alternative Name DNS entries will be matched against
-all URLs. If a match is found, the connection is accepted and rejected otherwise.
+Используется только вне клиентского контекста при включённом `verify`, например в конфигурациях кластеров и шлюзов. DNS-записи x509v3 Subject Alternative Name сертификата входящего соединения сопоставляются со всеми URL. При совпадении соединение принимается, иначе отклоняется.
 
-For gateways, the server will match all names in the certificate against the gateway URLs.
+Для шлюзов сервер сопоставляет все имена в сертификате с URL шлюзов.
 
-For clusters, the server will match all names in the certificate against the route URLs.
+Для кластеров сервер сопоставляет все имена в сертификате с URL маршрутов.
 
-A consequence of this, is that dynamic cluster growth may require config changes in other clusters where this
-option is true. DNS name checking is performed according to RFC6125. Only the full wildcard is supported for the
-the left most domain.
+Поэтому динамическое расширение кластера может потребовать изменения конфигурации других кластеров, где этот параметр включён. Проверка DNS-имён выполняется по RFC6125. Поддерживается только полная подстановка для самого левого компонента доменного имени.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

@@ -1,15 +1,13 @@
-# type
+# type {#type}
 
 <Reloadable state="reloadable" note="Handled as part of the whole `resolver` block. The replacement resolver is never started, so its refresh machinery does not run until the server restarts." />
-Defines whether the resolver type. A `full` resolver stores all
-account JWTs unless they are explicitly deleted.
+Задаёт тип резолвера. Резолвер `full` хранит все JWT аккаунтов до их явного удаления.
 
-A `cache` resolver stores only a subset based on a least-recently-used
-(LRU) TTL.
+Резолвер `cache` хранит лишь часть JWT, используя TTL и вытеснение давно не использовавшихся записей (LRU).
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `full`, `cache` |

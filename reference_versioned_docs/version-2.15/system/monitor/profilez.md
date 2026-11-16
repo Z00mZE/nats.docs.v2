@@ -1,13 +1,13 @@
-# Profilez
+# Profilez {#profilez}
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import profilezRequest from '@site/src/schemas/vendor/v2.15/server/monitor/v1/profilez_request.json';
 import profilezResponse from '@site/src/schemas/vendor/v2.15/server/monitor/v1/profilez_response.json';
 
-## Request Schema
+## Схема запроса {#request-schema}
 
 <JSONSchema schema={profilezRequest} />
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={profilezResponse} />

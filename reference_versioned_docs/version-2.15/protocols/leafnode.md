@@ -1,135 +1,135 @@
 ---
-description: The NATS leafnode protocol is used to create lightweight, unidirectional connections from edge servers to a central cluster.
+description: "Протокол листовых узлов NATS создаёт лёгкие соединения, инициируемые периферийными серверами к центральному кластеру."
 mdx:
   format: md
 ---
 
-# Leafnode
+# Листовые узлы {#leafnode}
 
-Leafnode connections extend NATS clusters by creating lightweight, unidirectional connections from edge servers to a central cluster. The leafnode protocol is optimized for hub-and-spoke topologies, enabling edge deployments while maintaining low overhead. Unlike cluster routes, leafnodes create asymmetric connections where the edge initiates and maintains the connection to the hub.
+Соединения листовых узлов расширяют кластеры NATS лёгкими соединениями, инициируемыми периферийными серверами к центральному кластеру. Протокол оптимизирован для топологии «центр — лучи» с небольшими накладными расходами. В отличие от маршрутов кластера, эти соединения асимметричны: периферийный узел инициирует и поддерживает соединение с центром.
 
-## Overview
+## Обзор {#overview}
 
-The following table lists the leafnode protocol messages. Leafnode protocol operations are case insensitive, thus `LS+ foo\r\n` and `ls+ foo\r\n` are equivalent.
+Таблица перечисляет сообщения протокола листовых узлов. Имена операций не чувствительны к регистру: `LS+ foo\r\n` и `ls+ foo\r\n` эквивалентны.
 
-| Message               | Sent By          | Description                                                                     |
+| Сообщение | Отправитель | Описание |
 | --------------------- | ---------------- | ------------------------------------------------------------------------------- |
-| [`INFO`](#info)       | All Servers      | Sent after initial connection with leafnode-specific extensions                |
-| [`CONNECT`](#connect) | Leafnode         | Sent to establish and authenticate a leafnode connection                       |
-| [`LS+`](#ls)          | All Servers      | Subscribes to a subject, optionally with queue group and weight                |
-| [`LS-`](#ls-1)        | All Servers      | Unsubscribes from a subject, optionally with queue group                       |
-| [`LMSG`](#lmsg)       | All Servers      | Delivers a message with subject, optional reply, and queue groups              |
-| [`LDS`](#lds)         | Hub Server       | Loop detection subjects to prevent routing loops                               |
-| [`PING`](#ping-pong)  | All Servers      | PING keep-alive message                                                        |
-| [`PONG`](#ping-pong)  | All Servers      | PONG keep-alive response                                                       |
-| [`-ERR`](#err)        | All Servers      | Indicates a protocol error. May cause the leafnode to disconnect.              |
+| [`INFO`](#info) | Все серверы | Отправляется после подключения с расширениями листовых узлов |
+| [`CONNECT`](#connect) | Листовой узел | Устанавливает и аутентифицирует соединение |
+| [`LS+`](#ls) | Все серверы | Подписывает на тему, при необходимости с группой очереди и весом |
+| [`LS-`](#ls-1) | Все серверы | Отменяет подписку на тему, при необходимости для группы очереди |
+| [`LMSG`](#lmsg) | Все серверы | Доставляет сообщение с темой, необязательным ответом и группами очередей |
+| [`LDS`](#lds) | Центральный сервер | Темы обнаружения циклов маршрутизации |
+| [`PING`](#ping-pong) | Все серверы | Проверка активности PING |
+| [`PONG`](#ping-pong) | Все серверы | Ответ проверки активности PONG |
+| [`-ERR`](#err) | Все серверы | Ошибка протокола, которая может вызвать отключение листового узла |
 
-## INFO
+## INFO {#info}
 
-The `INFO` message for leafnodes includes server capabilities and configuration needed for connection establishment. Both the hub and leafnode exchange INFO messages upon connection.
+`INFO` листового узла содержит возможности сервера и настройки для подключения. Центральный и листовой серверы обмениваются INFO при установлении соединения.
 
-### Syntax
+### Синтаксис {#syntax}
 
 ```
 INFO {<key>:<value>,...}
 ```
 
-Leafnode-specific fields include:
+Поля, относящиеся к листовым узлам:
 
-- `server_id`: The unique identifier of the NATS server
-- `version`: The version of the NATS server
-- `proto`: Protocol version (1 for current leafnode protocol)
-- `go`: The version of golang the NATS server was built with
-- `host`: The host specified in the leafnode configuration
-- `port`: The port number for leafnode connections
-- `headers`: Whether headers are supported (true/false)
-- `jetstream`: Whether JetStream is enabled
-- `compression`: Compression mode (`off`, `accept`, `s2_auto`, `s2_fast`, `s2_better`, `s2_uncompressed`)
-- `cluster`: Name of the cluster (if part of a cluster)
-- `domain`: JetStream domain name
-- `xkey`: Server's public xkey for encryption
-- `auth_required`: If set, authentication is required
-- `tls_required`: If set, TLS is required
-- `tls_verify`: If set, TLS certificate verification is required
-- `max_payload`: Maximum payload size accepted
-- `client_id`: Client ID for compression negotiation
-- `nonce`: Nonce for security operations
-- `connect_urls`: Alternative servers to connect to
+- `server_id`: уникальный идентификатор сервера NATS
+- `version`: версия сервера NATS
+- `proto`: версия протокола (1 для текущего протокола листовых узлов)
+- `go`: версия Go, которой собран сервер
+- `host`: хост из конфигурации листового узла
+- `port`: порт соединений листовых узлов
+- `headers`: поддержка заголовков (true/false)
+- `jetstream`: включён ли JetStream
+- `compression`: режим сжатия (`off`, `accept`, `s2_auto`, `s2_fast`, `s2_better`, `s2_uncompressed`)
+- `cluster`: имя кластера, если сервер входит в кластер
+- `domain`: имя домена JetStream
+- `xkey`: открытый xkey сервера для шифрования
+- `auth_required`: обязательность аутентификации
+- `tls_required`: обязательность TLS
+- `tls_verify`: обязательность проверки сертификата TLS
+- `max_payload`: максимальный принимаемый размер нагрузки
+- `client_id`: идентификатор клиента для согласования сжатия
+- `nonce`: одноразовое значение для операций безопасности
+- `connect_urls`: альтернативные серверы подключения
 
-### Example
+### Пример {#example}
 
 ```
 INFO {"server_id":"NCXU7YJOG5XAU","version":"2.10.0","proto":1,"go":"go1.21","host":"localhost","port":7422,"headers":true,"max_payload":1048576,"jetstream":true,"compression":"s2_auto","cluster":"hub-cluster","domain":"hub","connect_urls":["localhost:7422"]}
 ```
 
-## CONNECT
+## CONNECT {#connect}
 
-The `CONNECT` message is sent by the leafnode to authenticate and establish the connection parameters. It includes leafnode-specific configuration and capabilities.
+`CONNECT` отправляется листовым узлом для аутентификации и задания параметров соединения. Включает конфигурацию и возможности листового узла.
 
-### Syntax
+### Синтаксис {#syntax-1}
 
 ```
 CONNECT {<key>:<value>,...}
 ```
 
-Valid options include:
+Допустимые параметры:
 
-- `version`: The version of the leafnode server
-- `server_id`: The unique identifier of the leafnode
-- `name`: Server name of the leafnode
-- `domain`: JetStream domain of the leafnode
-- `cluster`: Cluster name of the leafnode (if clustered)
-- `hub`: Whether this is a hub connection (true/false)
-- `headers`: Whether headers are supported
-- `jetstream`: Whether JetStream is enabled on the leafnode
-- `compression`: Requested compression mode
-- `remote_account`: Account to bind the leafnode connection to
-- `proto`: Protocol version
-- `nkey`: Public NKey for authentication
-- `jwt`: JWT for authentication
-- `sig`: Signature for nkey authentication
-- `user`: Username for basic authentication
-- `pass`: Password for basic authentication
-- `auth_token`: Token for token authentication
-- `tls_required`: Whether TLS is required
+- `version`: версия сервера листового узла
+- `server_id`: уникальный идентификатор листового узла
+- `name`: имя его сервера
+- `domain`: домен JetStream листового узла
+- `cluster`: имя кластера листового узла, если используется кластеризация
+- `hub`: является ли соединение центральным (true/false)
+- `headers`: поддерживаются ли заголовки
+- `jetstream`: включён ли JetStream на листовом узле
+- `compression`: запрашиваемый режим сжатия
+- `remote_account`: учётная запись привязки соединения
+- `proto`: версия протокола
+- `nkey`: открытый NKey для аутентификации
+- `jwt`: JWT для аутентификации
+- `sig`: подпись для аутентификации nkey
+- `user`: имя пользователя базовой аутентификации
+- `pass`: пароль базовой аутентификации
+- `auth_token`: токен аутентификации
+- `tls_required`: требуется ли TLS
 
-### Example
+### Пример {#example-1}
 
 ```
 CONNECT {"version":"2.10.0","server_id":"NATS123","name":"edge-1","cluster":"edge","hub":false,"headers":true,"jetstream":false,"compression":"s2_auto","remote_account":"EDGE_ACCOUNT","proto":1}\r\n
 ```
 
-## LS+
+## LS+ {#ls}
 
-`LS+` registers interest in a subject on the leafnode connection, optionally with a queue group and weight for distributed queues.
+`LS+` регистрирует интерес к теме в соединении листового узла, при необходимости с группой очереди и весом для распределённых очередей.
 
-### Syntax
+### Синтаксис {#syntax-2}
 
-**Simple Subscription**
+**Обычная подписка**
 
 ```
 LS+ <subject>\r\n
 ```
 
-**Queue Subscription**
+**Подписка группы очереди**
 
 ```
 LS+ <subject> <queue_group>\r\n
 ```
 
-**Weighted Queue Subscription**
+**Подписка группы очереди с весом**
 
 ```
 LS+ <subject> <queue_group> <weight>\r\n
 ```
 
-where:
+где:
 
-- `subject`: The subject to subscribe to (supports wildcards)
-- `queue_group`: Optional queue group name
-- `weight`: Optional weight for queue distribution (default 1)
+- `subject`: тема подписки с поддержкой подстановочных символов
+- `queue_group`: необязательное имя группы очереди
+- `weight`: необязательный вес распределения очереди, по умолчанию 1
 
-### Examples
+### Примеры {#examples}
 
 ```
 LS+ orders.new\r\n
@@ -137,9 +137,9 @@ LS+ orders.> fulfillment\r\n
 LS+ orders.> fulfillment 4\r\n
 ```
 
-### Origin Cluster Support
+### Поддержка исходного кластера {#origin-cluster-support}
 
-With LNOCU (Leaf Node Origin Cluster Unsub) support, LS+ can include origin cluster information to prevent loops:
+При поддержке LNOCU (Leaf Node Origin Cluster Unsub) LS+ может включать сведения об исходном кластере для предотвращения циклов:
 
 ```
 LS+ <subject> <queue_group> <weight> <origin_cluster>\r\n
@@ -147,92 +147,92 @@ LS+ <subject> <queue_group> <weight> <origin_cluster>\r\n
 
 ## LS- {#ls-1}
 
-`LS-` removes interest in a subject on the leafnode connection, optionally for a specific queue group.
+`LS-` удаляет интерес к теме в соединении листового узла, при необходимости для определённой группы очереди.
 
-### Syntax
+### Синтаксис {#syntax-3}
 
-**Simple Unsubscription**
+**Обычная отписка**
 
 ```
 LS- <subject>\r\n
 ```
 
-**Queue Unsubscription**
+**Отписка группы очереди**
 
 ```
 LS- <subject> <queue_group>\r\n
 ```
 
-where:
+где:
 
-- `subject`: The subject to unsubscribe from
-- `queue_group`: Optional queue group name
+- `subject`: тема отменяемой подписки
+- `queue_group`: необязательное имя группы очереди
 
-### Examples
+### Примеры {#examples-1}
 
 ```
 LS- orders.old\r\n
 LS- orders.cancelled fulfillment\r\n
 ```
 
-### Origin Cluster Support
+### Поддержка исходного кластера {#origin-cluster-support-1}
 
-With LNOCU support, LS- can include origin cluster information:
+При поддержке LNOCU LS- может включать информацию об исходном кластере:
 
 ```
 LS- <subject> <queue_group> <origin_cluster>\r\n
 ```
 
-## LMSG
+## LMSG {#lmsg}
 
-The `LMSG` protocol message delivers a message through the leafnode connection. It supports reply subjects, queue group targeting, and headers.
+Сообщение протокола `LMSG` доставляет данные через соединение листового узла. Поддерживаются темы ответа, выбор групп очередей и заголовки.
 
-### Syntax
+### Синтаксис {#syntax-4}
 
-**Simple Message**
+**Обычное сообщение**
 
 ```
 LMSG <subject> <size>\r\n[payload]\r\n
 ```
 
-**Message with Reply**
+**Сообщение с темой ответа**
 
 ```
 LMSG <subject> + <reply> <size>\r\n[payload]\r\n
 ```
 
-**Message with Queue Groups**
+**Сообщение с группами очередей**
 
 ```
 LMSG <subject> | <queue_group1> [queue_group2...] <size>\r\n[payload]\r\n
 ```
 
-**Message with Reply and Queue Groups**
+**Сообщение с темой ответа и группами очередей**
 
 ```
 LMSG <subject> + <reply> <queue_group1> [queue_group2...] <size>\r\n[payload]\r\n
 ```
 
-**Message with Headers**
+**Сообщение с заголовками**
 
 ```
 LMSG <subject> [+ reply] [| queue_groups...] <header_size> <total_size>\r\n[headers]\r\n[payload]\r\n
 ```
 
-where:
+где:
 
-- `subject`: The subject to deliver the message to
-- `+`: Indicator that a reply subject follows
-- `reply`: Optional reply subject
-- `|`: Indicator that queue groups follow
-- `queue_group`: Target queue groups for delivery
-- `header_size`: Size of headers in bytes (for messages with headers)
-- `total_size`: Total size of headers plus payload
-- `size`: Size of the payload in bytes (for messages without headers)
-- `headers`: NATS headers in standard format
-- `payload`: The message payload
+- `subject`: тема доставки сообщения
+- `+`: признак следующей темы ответа
+- `reply`: необязательная тема ответа
+- `|`: признак следующих групп очередей
+- `queue_group`: целевые группы очередей
+- `header_size`: размер заголовков в байтах для сообщений с заголовками
+- `total_size`: общий размер заголовков и нагрузки
+- `size`: размер нагрузки в байтах для сообщений без заголовков
+- `headers`: заголовки NATS в стандартном формате
+- `payload`: полезная нагрузка сообщения
 
-### Examples
+### Примеры {#examples-2}
 
 ```
 LMSG orders.new 11\r\nHello World\r\n
@@ -254,118 +254,118 @@ LMSG orders.new + _INBOX.123 fulfillment shipping 11\r\nHello World\r\n
 LMSG orders.new 22 33\r\nNATS/1.0\r\nFoo: Bar\r\n\r\nHello World\r\n
 ```
 
-## LDS
+## LDS {#lds}
 
-Loop Detection Subjects (LDS) are special subjects used to detect and prevent routing loops in complex leafnode topologies.
+Темы обнаружения циклов (Loop Detection Subjects, LDS) — специальные темы для выявления и предотвращения циклов маршрутизации в сложных топологиях листовых узлов.
 
-### Format
+### Формат {#format}
 
 ```
 $LDS.<unique_id>
 ```
 
-where:
+где:
 
-- `$LDS.`: Fixed prefix for loop detection subjects
-- `unique_id`: Unique identifier generated per account
+- `$LDS.`: фиксированный префикс тем обнаружения циклов
+- `unique_id`: уникальный идентификатор, создаваемый для учётной записи
 
-### Purpose
+### Назначение {#purpose}
 
-When a server receives its own LDS subject through a leafnode connection, it detects a routing loop and takes corrective action:
+Получив собственную тему LDS через соединение листового узла, сервер обнаруживает цикл и принимает меры:
 
-1. Logs the loop detection
-2. Closes the connection
-3. Implements a 30-second reconnection delay
-4. Prevents message loops that could cause infinite routing
+1. Записывает обнаружение цикла в журнал
+2. Закрывает соединение
+3. Задерживает переподключение на 30 секунд
+4. Предотвращает бесконечное хождение сообщений по циклу
 
-### Example
+### Пример {#example-2}
 
 ```
 $LDS.5XZq8bFpWH1234567890abcdef
 ```
 
-## Compression
+## Сжатие {#compression}
 
-Leafnodes support S2 compression to reduce bandwidth usage, especially valuable for WAN connections.
+Листовые узлы поддерживают сжатие S2 для сокращения трафика, особенно полезное для WAN.
 
-### Compression Modes
+### Режимы сжатия {#compression-modes}
 
-- `off`: No compression
-- `accept`: Accept compressed connections but don't initiate
-- `s2_auto`: Automatically select compression based on RTT
-- `s2_fast`: S2 fast compression (lower CPU, less compression)
-- `s2_better`: S2 better compression (higher CPU, more compression)
-- `s2_uncompressed`: S2 framing without compression
+- `off`: без сжатия
+- `accept`: принимать сжатые соединения, но не инициировать
+- `s2_auto`: автоматически выбирать сжатие по RTT
+- `s2_fast`: быстрое S2 с меньшей нагрузкой на процессор и меньшей степенью сжатия
+- `s2_better`: более эффективное S2 с большей нагрузкой на процессор
+- `s2_uncompressed`: кадры S2 без сжатия
 
-### Negotiation
+### Согласование {#negotiation}
 
-Compression is negotiated through the INFO protocol exchange:
+Сжатие согласуется при обмене INFO:
 
-1. Both sides advertise compression capabilities in INFO
-2. Leafnode proposes compression mode in CONNECT
-3. Hub accepts or modifies the compression mode
-4. S2 compression begins after successful negotiation
+1. Обе стороны объявляют возможности сжатия в INFO
+2. Листовой узел предлагает режим в CONNECT
+3. Центральный сервер принимает или изменяет режим
+4. После успешного согласования начинается сжатие S2
 
-### Auto Mode
+### Автоматический режим {#auto-mode}
 
-In `s2_auto` mode, compression is enabled based on RTT measurements:
-- Enabled if RTT > threshold (typically for WAN connections)
-- Disabled for low-latency LAN connections
-- Dynamically adjusts based on connection characteristics
+В режиме `s2_auto` решение зависит от RTT:
+- Сжатие включается при RTT выше порога, обычно в WAN
+- Отключается в LAN с низкой задержкой
+- Динамически подстраивается под соединение
 
-## WebSocket Support
+## Поддержка WebSocket {#websocket-support}
 
-Leafnodes can connect over WebSocket for firewall traversal and browser compatibility.
+Листовые узлы могут подключаться через WebSocket для прохождения межсетевых экранов и совместимости с браузерным транспортом.
 
-### WebSocket Path
+### Путь WebSocket {#websocket-path}
 
 ```
 ws://server:port/leafnode
 ```
 
-### Features
+### Возможности {#features}
 
-- Standard leafnode protocol over WebSocket frames
-- Optional per-message-deflate compression
-- Frame masking (can be disabled for performance)
-- Same authentication and protocol messages
+- Стандартный протокол листовых узлов поверх кадров WebSocket
+- Необязательное сжатие per-message-deflate
+- Маскирование кадров, отключаемое для производительности
+- Те же методы аутентификации и сообщения протокола
 
-### Example Connection URL
+### Пример URL подключения {#example-connection-url}
 
 ```
 ws://hub.example.com:443/leafnode
 ```
 
-## Permission and Security
+## Разрешения и безопасность {#permission-and-security}
 
-### Account Binding
+### Привязка учётной записи {#account-binding}
 
-Leafnodes can be bound to specific accounts using `remote_account` in CONNECT:
-- Messages are scoped to the bound account
-- Prevents cross-account message leakage
-- Enables multi-tenant edge deployments
+Листовой узел можно привязать к учётной записи через `remote_account` в CONNECT:
+- Сообщения ограничиваются этой учётной записью
+- Исключается утечка сообщений между учётными записями
+- Поддерживается изолированное размещение арендаторов на периферии
 
-### Permission Violations
+### Нарушения разрешений {#permission-violations}
 
-When permissions are violated:
-- Connection is closed with `-ERR 'Permissions Violation'`
-- 30-second reconnection delay is enforced
-- Violations are logged for security auditing
+При нарушении разрешений:
+- Соединение закрывается с `-ERR 'Permissions Violation'`
+- Переподключение задерживается на 30 секунд
+- Нарушение записывается для аудита безопасности
 
-### Authentication Methods
+### Способы аутентификации {#authentication-methods}
 
-Leafnodes support multiple authentication methods:
-- NKey with signature
-- JWT with NKey
-- Username/Password
-- Auth Token
-- TLS client certificates
+Листовые узлы поддерживают:
+- NKey с подписью
+- JWT с NKey
+- Имя пользователя и пароль
+- Токен аутентификации
+- Клиентские сертификаты TLS
 
 ## PING/PONG {#ping-pong}
 
-`PING` and `PONG` implement keep-alive between leafnode and hub. Servers send `PING` messages at configurable intervals. Failure to respond with `PONG` results in connection termination.
+`PING` и `PONG` проверяют доступность между листовым и центральным узлами. Серверы отправляют `PING` с настраиваемым интервалом. Отсутствие ответа `PONG` приводит к закрытию соединения.
 
-### Syntax
+### Синтаксис {#syntax-5}
 
 ```
 PING\r\n
@@ -377,19 +377,19 @@ PONG\r\n
 
 ## -ERR {#err}
 
-The `-ERR` message indicates a protocol, authorization, or runtime error. Most errors result in the leafnode connection being closed.
+`-ERR` сообщает об ошибке протокола, авторизации или выполнения. Большинство ошибок закрывает соединение листового узла.
 
-### Syntax
+### Синтаксис {#syntax-6}
 
 ```
 -ERR <error message>
 ```
 
-### Common Leafnode Errors
+### Распространённые ошибки листовых узлов {#common-leafnode-errors}
 
-- `-ERR 'Permissions Violation'`: Subject/publish permission denied
-- `-ERR 'Loop Detected'`: Routing loop detected via LDS
-- `-ERR 'Authorization Violation'`: Authentication/authorization failure
-- `-ERR 'Maximum Payload Exceeded'`: Message exceeds max_payload
-- `-ERR 'Invalid Subject'`: Malformed subject in protocol message
-- `-ERR 'Leafnode Not Allowed'`: Server not configured for leafnodes
+- `-ERR 'Permissions Violation'`: запрещена тема или публикация
+- `-ERR 'Loop Detected'`: LDS обнаружил цикл маршрутизации
+- `-ERR 'Authorization Violation'`: ошибка аутентификации или авторизации
+- `-ERR 'Maximum Payload Exceeded'`: сообщение превышает max_payload
+- `-ERR 'Invalid Subject'`: некорректная тема в сообщении протокола
+- `-ERR 'Leafnode Not Allowed'`: сервер не настроен для листовых узлов

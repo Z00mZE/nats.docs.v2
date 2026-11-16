@@ -1,76 +1,49 @@
 ---
 id: shaping-the-stream
-title: "Shaping the stream"
+title: "Настройка потока"
 sidebar_position: 13
-description: Control stream size and age with limits, and decide what happens when a limit is reached
+description: "Ограничения размера и возраста потока и поведение при достижении предела"
 ---
 
-# Shaping the stream
+# Настройка потока {#shaping-the-stream}
 
-The `ORDERS` stream you created back on the
-[Your first stream](/learn/jetstream/your-first-stream) page has no
-limits. It keeps
-every message forever, on however much disk the server has. That was
-fine for learning, but not for production.
+Созданный на странице [Ваш первый поток](/learn/jetstream/your-first-stream) ORDERS не ограничен и сохраняет всё. Для обучения это допустимо, для эксплуатации — нет.
 
-Without a limit, the stream keeps growing until it fills the disk and
-takes the server down with it.
+Без ограничений он заполнит диск и может остановить сервер.
 
-This page covers two settings. The **limit** is the cap that decides
-when the stream is full. The **Discard policy** decides which message
-the server discards when the stream hits that limit: the new one or the
-oldest stored one.
+**Предел** определяет заполнение, **политика Discard** — что выбросить: новую запись или старейшую.
 
-## The limit
+## Ограничения {#the-limit}
 
-A stream under the default **Limits** retention policy keeps messages
-until a limit forces it to discard them. You saw that policy in the config
-printout on the [Your first stream](/learn/jetstream/your-first-stream)
-page. A limit is a ceiling on the stream. You set it with
-one of three options, depending on how you want to measure the stream:
+Стандартная политика **Limits** сохраняет до достижения одного из пределов:
 
-- **MaxAge** caps how old a message may get. Set it to seven days and a
-  message is discarded roughly seven days after it was stored. It fits when
-  only recent events matter — a live order stream rarely needs one from last
-  quarter.
-- **MaxBytes** caps how much disk the stream may use. Set it to one
-  gigabyte and the stream never grows past a gigabyte, no matter how
-  old or new the messages are. This option protects the server itself.
-- **MaxMsgs** caps how many messages the stream may hold. Set it to one
-  million and the millionth-and-first message forces a discard. Use this
-  when message count, rather than size or age, is what you reason about.
+- **MaxAge** — максимальный возраст. Семь дней удаляют сообщение примерно через неделю; удобно для недавних событий.
+- **MaxBytes** — объём хранения. Один гигабайт ограничивает размер независимо от возраста и защищает сервер.
+- **MaxMsgs** — число сообщений. При миллионе следующая запись требует вытеснения; удобно, если важен счётчик.
 
-The three options work separately, and all of them are active at once.
-Whichever one is reached first triggers a discard. You don't have to set
-all three. Set the ones that match how you think about the stream, and
-leave the rest unlimited.
+Все действуют независимо и одновременно: срабатывает первый достигнутый. Задайте нужные, остальные оставьте неограниченными.
 
-MaxAge evicts by the clock; MaxMsgs evicts by the count. Same discard,
-two different triggers:
+MaxAge удаляет по часам, MaxMsgs — по количеству:
 
 <div class="nats-flow" data-scenario="maxAgeAnimated" data-width="620" data-height="200"></div>
 
 <div class="nats-flow" data-scenario="maxMsgsAnimated" data-width="520" data-height="200"></div>
 
-## Cap the ORDERS stream
+## Ограничьте ORDERS {#cap-the-orders-stream}
 
-Give `ORDERS` a seven-day age limit and a one-gigabyte ceiling. The
-`nats stream edit` command changes an existing stream in place, so the
-messages already stored stay where they are.
+Задайте семь дней и гигабайт через `nats stream edit`. Поток меняется на месте с сохранением данных, укладывающихся в пределы.
 
 <div class="nats-example"
      data-type="learn-jetstream-shaping-the-stream-setLimits"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-`nats stream edit` shows the change and asks for confirmation before
-applying it. Confirm, then read the stream back:
+Команда показывает изменения и запрашивает подтверждение. Затем проверьте:
 
 ```bash
 nats stream info ORDERS
 ```
 
-The configuration block now reports the two limits instead of
-`unlimited`:
+Вместо unlimited появятся пределы:
 
 ```text
 Options:
@@ -90,132 +63,70 @@ Limits:
             Maximum Consumers: unlimited
 ```
 
-`Maximum Messages` is still `unlimited`, because you set only age and
-bytes. (`Maximum Message Size`, also in the block, is a different limit —
-a cap on a single message rather than the whole stream — and stays
-unlimited here.) The stream now has clear bounds: it can't grow past a
-gigabyte, and it can't hold anything older than a week.
+`Maximum Messages` остаётся `unlimited`. `Maximum Message Size` ограничивает отдельное сообщение, не весь поток, и тоже не задан. Теперь поток не превышает гигабайт и не хранит старше недели.
 
-## The Discard policy
+## Политика Discard {#the-discard-policy}
 
-The Discard policy controls what happens at the moment a new message
-would push the stream past a limit: the server discards the new message
-or the oldest stored one. It has two settings.
+При новой записи за пределами выбирается одно из двух поведений.
 
-**Discard Old** is the default, and it's what you have right now. When a
-limit is hit, the server discards the *oldest* messages to make room for
-the new one. The publish always succeeds: the newest message is stored,
-the oldest is discarded.
+**Discard Old**, стандартное, удаляет старейшие сообщения ради новых. Публикация успешна, самая новая запись сохраняется.
 
 <div class="nats-flow" data-scenario="discardOldAnimated" data-width="540" data-height="250"></div>
 
-**Discard New** is the opposite. When a size or count limit is hit — `MaxMsgs`,
-`MaxBytes`, or a per-subject cap — the server discards the *new* message: it
-rejects the publish, which fails with an error, and nothing already stored is
-dropped to make room. `MaxAge` isn't a Discard-policy choice: it expires stored
-messages on its own timer under either policy. The rule from the top of the page
-still holds — **the first limit to hit applies.**
+**Discard New** отклоняет новую публикацию при MaxMsgs, MaxBytes или соответствующем ограничении темы, сохраняя прежние данные. MaxAge независимо удаляет по времени при любой политике. **Первый достигнутый предел действует.**
 
 <div class="nats-flow" data-scenario="discardNewAnimated" data-width="540" data-height="250"></div>
 
-For `ORDERS`, Discard Old is the right choice. A live order stream wants
-the most recent week of events. If disk pressure forces a trade-off, the
-order from eight days ago is the one to discard, not today's. Leave the
-default in place.
+Для живого ORDERS нужна недавняя неделя, поэтому оставим Discard Old: при нехватке места важнее сегодняшний заказ.
 
-Use Discard New when discarding an old message would lose data you're
-required to keep, and you'd rather slow the publisher down than lose
-history. The publisher then has to handle the rejected publish, which is
-why it's the less common choice.
+Discard New подходит, если старые данные нельзя терять и лучше замедлить издателя. Он обязан обрабатывать отказы.
 
-## Limits apply to the stream, not the consumer
+## Ограничения относятся к потоку {#limits-apply-to-the-stream-not-the-consumer}
 
-A limit discards a message for everyone. When MaxAge discards a message,
-it's gone from the stream, and every consumer reading that stream loses
-access to it at once.
+Удалённое пределом сообщение исчезает для всех потребителей.
 
-Limits and consumers are separate decisions. The `shipping` consumer's
-position and the `analytics` consumer's filter don't protect a message
-from the stream's limits. If a consumer is too slow and a message ages
-out before that consumer reads it, the message is gone. The next page
-returns to that risk, where the retention policy itself changes.
+Позиция shipping и фильтр analytics не защищают от удаления. Если читатель отстал до истечения возраста, данные потеряны. Далее рассмотрим влияние политики хранения.
 
-## Per-subject limits
+## Ограничения отдельных тем {#per-subject-limits}
 
-A stream can also limit messages *per subject* rather than across the
-whole stream, which is useful when `orders.>` should keep, say, the last
-hundred messages for each individual subject. That's the
-`MaxMsgsPerSubject` option.
+`MaxMsgsPerSubject` может хранить, например, последние сто сообщений каждой темы под orders.>, независимо от общего количества.
 
-The full set of stream limit options is documented in
-[Reference → Stream Configuration](/reference/jetstream/api/stream/create).
-We use only MaxAge, MaxBytes, and Discard here.
+Все ограничения — в [Конфигурации потока](/reference/jetstream/api/stream/create). Здесь используются MaxAge, MaxBytes и Discard.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Limits are easy to set and easy to misread. Two traps account for most
-of the surprises.
+Две основные ловушки:
 
-**Discard Old discards the oldest message silently.** Discard Old never fails a
-publish. When a size or count limit is hit, the server drops the oldest message
-and the publish succeeds — right for a rolling window, but the publisher gets no
-warning and the oldest order is gone. To keep history and push back on the
-publisher, switch to Discard New, which rejects the publish (`maximum bytes
-exceeded` or `maximum messages exceeded`) instead of dropping a stored message.
-Discard New still leaves `MaxAge` in force — **the first limit to hit applies** —
-so if you must keep history, remove or raise the age limit too:
+**Discard Old удаляет без предупреждения издателя.** Успешная запись может вытеснить старый заказ. Для сохранения истории выбирайте Discard New с ошибками `maximum bytes
+exceeded` или `maximum messages exceeded`. Но MaxAge продолжает действовать: поднимите или уберите и его.
 
 <div class="nats-example"
      data-type="learn-jetstream-shaping-the-stream-discardNew"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The same quiet discard applies to MaxAge and MaxBytes together. The two
-limits work separately, so whichever is reached first triggers the
-discard. A seven-day MaxAge does not guarantee seven days of history. If
-traffic spikes, MaxBytes can be reached first and discard messages that
-are only hours old. Set MaxBytes for your busiest traffic, not your average, if
-the age window matters to you.
+Семидневный MaxAge не гарантирует неделю истории: при всплеске MaxBytes может удалить данные нескольких часов. Рассчитывайте объём по пиковой, не средней нагрузке.
 
-**Whole-stream limits don't balance across subjects.** MaxMsgs,
-MaxBytes, and MaxAge measure `ORDERS` as a whole, across every subject
-under `orders.>`. A high volume of `orders.created` counts toward the
-same ceiling as `orders.shipped`, so Discard Old can discard a shipped
-order to make room for a created one. When each subject needs its own limit,
-add a per-subject ceiling with `MaxMsgsPerSubject`:
+**Общие пределы не балансируют темы.** Поток orders.created может вытеснить orders.shipped. Для отдельной квоты задайте MaxMsgsPerSubject:
 
 <div class="nats-example"
      data-type="learn-jetstream-shaping-the-stream-perSubjectLimit"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Under Discard Old, a per-subject ceiling discards the oldest message *for
-that subject* once it fills. Discard New doesn't change that on its own:
-by default the per-subject limit still rolls, discarding the subject's
-oldest message rather than rejecting the publish. Making a full subject
-reject takes a second setting, `DiscardNewPerSubject` (the
-`discard_new_per_subject` config field), on top of Discard New. With both,
-a publish past the per-subject ceiling fails with `maximum messages per
-subject exceeded`, a third rejection string alongside the whole-stream
-`maximum bytes exceeded` and `maximum messages exceeded`. The field is in
-[Reference → Stream Configuration](/reference/jetstream/api/stream/create).
+При Discard Old удаляется старейшее своей темы. Сам Discard New это не меняет: для отказа по заполненной теме дополнительно нужен `DiscardNewPerSubject`, поле `discard_new_per_subject`. Тогда возвращается `maximum messages per
+subject exceeded` наряду с общими ошибками. См. [Конфигурацию потока](/reference/jetstream/api/stream/create).
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You now have:
+Теперь есть:
 
-- an `ORDERS` stream capped at a seven-day MaxAge and a 1 GiB MaxBytes
-  ceiling
-- the messages from earlier still stored (editing limits doesn't
-  discard messages that already sit within them)
-- Discard Old in place, so a future limit discards the oldest order, never
-  the newest
+- ORDERS с MaxAge семь дней и MaxBytes 1 ГиБ.
+- Прежние сообщения, укладывающиеся в пределы.
+- Discard Old для вытеснения старейших, а не новых.
 
-## What's next
+## Что дальше {#whats-next}
 
-You set *limits* under the default Limits retention policy. The next page
-covers the policy choice itself: the three retention policies, Limits
-versus Interest versus WorkQueue, and which one to use when.
+Пределы настроены для Limits. Теперь выберем саму политику хранения: Limits, Interest или WorkQueue.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Stream Configuration](/reference/jetstream/api/stream/create)
-  — every limit option, its type, range, and default.
+- [Конфигурация потока](/reference/jetstream/api/stream/create) — типы, диапазоны и значения ограничений.

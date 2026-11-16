@@ -1,18 +1,18 @@
-# Stats Response
+# Ответ Stats {#stats-response}
 
-Service statistics and metrics response.
+Ответ со статистикой и метриками сервиса.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import statsResponse from '@site/src/schemas/vendor/v2.14/jsm/micro/v1/stats_response.json';
 
-## Request Subject
+## Тема запроса {#request-subject}
 
 `$SRV.STATS`
 
-Services respond to stats requests on their specific subjects:
-- `$SRV.STATS.{service}` - Statistics for all instances of a service
-- `$SRV.STATS.{service}.{id}` - Statistics for a specific service instance
+Сервисы отвечают на запросы статистики в следующих темах:
+- `$SRV.STATS.{service}` — статистика всех экземпляров сервиса
+- `$SRV.STATS.{service}.{id}` — статистика определённого экземпляра сервиса
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={statsResponse} />

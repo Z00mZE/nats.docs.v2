@@ -1,12 +1,11 @@
-# subject
+# subject {#subject}
 
 <Reloadable state="reloadable" />
-The subject under which the stream or service is made
-accessible to the importing account.
+Субъект, под которым поток или сервис становится доступен импортирующему аккаунту.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,12 +1,11 @@
-# token
+# token {#token}
 
 <Reloadable state="not-reloadable" />
-Specifies a global token that clients can use to authenticate with
-the server (exclusive of `user` and `password`).
+Задаёт глобальный токен для аутентификации клиентов на сервере (не используется одновременно с `user` и `password`).
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

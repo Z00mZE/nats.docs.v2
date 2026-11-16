@@ -1,158 +1,158 @@
 ---
-description: The NATS route protocol is used to form a cluster of NATS servers.
+description: "Протокол маршрутов NATS используется для объединения серверов NATS в кластер."
 mdx:
   format: md
 ---
 
-# Route 
+# Маршруты {#route}
 
-Route connections are used to form a cluster of NATS servers. The route protocol is very similar to the [client protocol](./client.md). In the context of a cluster, it can be helpful to visualize a server being a proxy operating on behalf of its connected clients, subscribing, unsubscribing, sending and receiving messages.
+Маршрутные соединения формируют кластер серверов NATS. Протокол очень похож на [клиентский](./client.md). В кластере сервер удобно представлять прокси своих клиентов: он подписывается, отписывается, отправляет и получает сообщения от их имени.
 
-## Overview
+## Обзор {#overview}
 
-The following table lists the route protocol messages. As with the client protocol, the NATS protocol operation names are case insensitive, thus `SUB foo 1\r\n` and `sub foo 1\r\n` are equivalent.
+Таблица перечисляет сообщения протокола маршрутов. Как и в клиентском протоколе, имена операций не чувствительны к регистру: `SUB foo 1\r\n` и `sub foo 1\r\n` эквивалентны.
 
-| Message               | Sent By       | Description                                                                  |
+| Сообщение | Отправитель | Описание |
 | --------------------- | ------------- | ---------------------------------------------------------------------------- |
-| [`INFO`](#info)       | All Servers   | Sent after initial TCP/IP connection and to update cluster knowledge         |
-| [`CONNECT`](#connect) | All Servers   | Sent to establish a route                                                    |
-| [`RS+`](#rs)          | All Servers   | Subscribes to a subject for a given account on behalf of interested clients. |
-| [`RS-`](#rs)          | All Servers   | Unsubscribe (or auto-unsubscribe) from subject for a given account.          |
-| [`RMSG`](#rmsg)       | Origin Server | Delivers a message for a given subject and account to another server.        |
-| [`PING`](#ping-pong)  | All Servers   | PING keep-alive message                                                      |
-| [`PONG`](#ping-pong)  | All Servers   | PONG keep-alive response                                                     |
-| [`-ERR`](#err)        | All Servers   | Indicates a protocol error. May cause the remote server to disconnect.       |
+| [`INFO`](#info) | Все серверы | После подключения TCP/IP и для обновления сведений о кластере |
+| [`CONNECT`](#connect) | Все серверы | Устанавливает маршрут |
+| [`RS+`](#rs) | Все серверы | Подписывает на тему учётной записи от имени заинтересованных клиентов |
+| [`RS-`](#rs) | Все серверы | Отменяет подписку, включая автоматическую, на тему учётной записи |
+| [`RMSG`](#rmsg) | Исходный сервер | Передаёт сообщение темы и учётной записи другому серверу |
+| [`PING`](#ping-pong) | Все серверы | Проверка активности PING |
+| [`PONG`](#ping-pong) | Все серверы | Ответ проверки активности PONG |
+| [`-ERR`](#err) | Все серверы | Ошибка протокола, которая может вызвать отключение удалённого сервера |
 
-## INFO
+## INFO {#info}
 
-As soon as the server accepts a connection from another server, it will send information about itself and the configuration and security requirements that are necessary for the other server to successfully authenticate with the server and exchange messages.
+Приняв соединение другого сервера, сервер сразу отправляет сведения о себе, конфигурации и требованиях безопасности, необходимых для аутентификации и обмена сообщениями.
 
-The connecting server also sends an `INFO` message. The accepting server will add an `ip` field containing the address and port of the connecting server, and forward the new server's `INFO` message to all servers it is routed to.
+Подключающийся сервер тоже отправляет `INFO`. Принимающий добавляет поле `ip` с адресом и портом нового сервера и пересылает его `INFO` всем серверам, с которыми связан маршрутами.
 
-Any servers in a cluster receiving an `INFO` message with an `ip` field will attempt to connect to the server at that address, unless already connected. This propagation of `INFO` messages on behalf of a connecting server provides automatic discovery of new servers joining a cluster.
+Получив `INFO` с полем `ip`, серверы кластера пытаются подключиться по этому адресу, если соединения ещё нет. Такое распространение `INFO` обеспечивает автоматическое обнаружение новых серверов кластера.
 
-### Syntax
+### Синтаксис {#syntax}
 
 ```
 INFO {<key>:<value>,...}
 ```
 
-The valid options are as follows:
+Допустимые параметры:
 
-- `server_id`: The unique identifier of the NATS server
-- `version`: The version of the NATS server
-- `go`: The version of golang the NATS server was built with
-- `host`: The host specified in the cluster parameter/options
-- `port`: The port number specified in the cluster parameter/options
-- `auth_required`: If this is set, then the server should try to authenticate upon connect.
-- `tls_required`: If this is set, then the server must authenticate using TLS.
-- `max_payload`: Maximum payload size that the server will accept.
-- `connect_urls` : A list of server urls that a client can connect to.
-- `ip`: Optional route connection address of a server, `nats-route://<hostname>:<port>`
+- `server_id`: уникальный идентификатор сервера NATS
+- `version`: версия сервера NATS
+- `go`: версия Go, которой собран сервер
+- `host`: хост из параметров кластера
+- `port`: порт из параметров кластера
+- `auth_required`: если задано, сервер должен аутентифицироваться при подключении
+- `tls_required`: если задано, сервер должен аутентифицироваться через TLS
+- `max_payload`: максимальный принимаемый размер нагрузки
+- `connect_urls` : список URL серверов для подключения клиента
+- `ip`: необязательный адрес маршрутного соединения сервера, `nats-route://<hostname>:<port>`
 
-### Example
+### Пример {#example}
 
-Below is an example of an `INFO` string received by a NATS server, with the `ip` field.
+Пример строки `INFO`, полученной сервером NATS и содержащей `ip`:
 
 ```
 INFO {"server_id":"KP19vTlB417XElnv8kKaC5","version":"2.0.0","go":"","host":"localhost","port":5222,"auth_required":false,"tls_required":false,"tls_verify":false,"max_payload":1048576,"ip":"nats-route://127.0.0.1:5222/","connect_urls":["localhost:4222"]}
 ```
 
-## CONNECT
+## CONNECT {#connect}
 
-The `CONNECT` message is analogous to the `INFO` message. Once the NATS server has established a TCP/IP socket connection with another server, and an `INFO` message has been received, the server will send a `CONNECT` message to provide more information about the current connection as well as security information.
+`CONNECT` аналогичен `INFO`. Установив TCP/IP-соединение с другим сервером и получив `INFO`, сервер NATS отправляет `CONNECT` с дополнительными сведениями о соединении и безопасности.
 
-### Syntax
+### Синтаксис {#syntax-1}
 
 ```
 CONNECT {<key>:<value>,...}
 ```
 
-The valid options are as follows:
+Допустимые параметры:
 
-- `tls_required`: Indicates whether the server requires an SSL connection.
-- `auth_token`: Authorization token
-- `user`: Connection username (if `auth_required` is set)
-- `pass`: Connection password (if `auth_required` is set)
-- `name`: Generated Server Name
-- `lang`: The implementation language of the server (go).
-- `version`: The version of the server.
+- `tls_required`: требуется ли серверу соединение SSL
+- `auth_token`: токен авторизации
+- `user`: имя пользователя при заданном `auth_required`
+- `pass`: пароль при заданном `auth_required`
+- `name`: созданное имя сервера
+- `lang`: язык реализации сервера (go)
+- `version`: версия сервера
 
-### Example
+### Пример {#example-1}
 
-Here is an example from the default string from a server.
+Пример стандартной строки сервера:
 
 ```
 CONNECT {"tls_required":false,"name":"wt0vffeQyoDGMVBC2aKX0b"}\r\n
 ```
 
-## RS+
+## RS+ {#rs}
 
-`RS+` initiates a subscription to a subject on on a given account, optionally with a distributed queue group name and weighting factor. Note that queue subscriptions will use RS+ for increases and descreases to queue weight except when the weighting factor is 0.
+`RS+` создаёт подписку на тему учётной записи, при необходимости с именем распределённой группы очереди и весом. Подписки групп очередей используют RS+ для увеличения и уменьшения веса, кроме случая нулевого веса.
 
-### Syntax
+### Синтаксис {#syntax-2}
 
-**Subscription**
+**Подписка**
 
 ```
 RS+ <account> <subject>\r\n
 ```
 
-**Queue Subscription**
+**Подписка группы очереди**
 
 ```
 RS+ <account> <subject> <queue> <weight>\r\n
 ```
 
-where:
+где:
 
-- `account`: The account associated with the subject interest
-- `subject`: The subject
-- `queue`: Optional queue group name
-- `weight`: Optional queue group weight representing how much interest/subscribers
+- `account`: учётная запись интереса
+- `subject`: тема
+- `queue`: необязательное имя группы очереди
+- `weight`: необязательный вес группы, представляющий объём интереса или число подписчиков
 
-## RS-
+## RS- {#rs-}
 
-`RS-` unsubcribes from the specified subject on the given account. It is sent by a server when it no longer has interest in a given subject.
+`RS-` отменяет подписку на тему учётной записи. Сервер отправляет её, когда больше не заинтересован в теме.
 
-### Syntax
+### Синтаксис {#syntax-3}
 
-**Subscription**
+**Подписка**
 
 ```
 RS- <account> <subject>\r\n
 ```
 
-where:
+где:
 
-- `account`: The account associated with the subject interest
-- `subject`: The subject
+- `account`: учётная запись интереса
+- `subject`: тема
 
-## RMSG
+## RMSG {#rmsg}
 
-The `RMSG` protocol message delivers a message to another server.
+Сообщение протокола `RMSG` доставляет сообщение другому серверу.
 
-### Syntax
+### Синтаксис {#syntax-4}
 
 ```
 RMSG <account> <subject> [reply-to] <bytes>\r\n[payload]\r\n
 ```
 
-where:
+где:
 
-- `account`: The account associated with the subject interest
-- `subject`: Subject name this message was received on
-- `reply-to`: The optional reply subject
-- `bytes`: Size of the payload in bytes
-- `payload`: The message payload data
+- `account`: учётная запись интереса
+- `subject`: тема получения сообщения
+- `reply-to`: необязательная тема ответа
+- `bytes`: размер нагрузки в байтах
+- `payload`: полезная нагрузка сообщения
 
 ## PING/PONG {#ping-pong}
 
-`PING` and `PONG` implement a simple keep-alive mechanism between servers. Once two servers establish a connection with each other, the NATS server will continuously send `PING` messages to other servers at a configurable interval. If another server fails to respond with a `PONG` message within the configured response interval, the server will terminate its connection. If your connection stays idle for too long, it is cut off.
+`PING` и `PONG` реализуют простую проверку активности между серверами. После установления соединения сервер NATS регулярно отправляет `PING` с настраиваемым интервалом. Если другой сервер не отвечает `PONG` за заданное время, соединение закрывается. Слишком долгое бездействие соединения приводит к отключению.
 
-If the another server sends a ping request, a server will reply with a pong message to notify the other server that it is still present.
+На ping другого сервера отправляется pong, подтверждающий присутствие.
 
-### Syntax
+### Синтаксис {#syntax-5}
 
 ```
 PING\r\n
@@ -164,11 +164,11 @@ PONG\r\n
 
 ## -ERR {#err}
 
-The `-ERR` message is used by the server indicate a protocol, authorization, or other runtime connection error to the client. Most of these errors result in the server closing the connection.
+`-ERR` используется сервером для сообщения клиенту об ошибке протокола, авторизации или другой ошибке соединения. Большинство таких ошибок закрывает соединение.
 
-Handling of these errors usually has to be done asynchronously.
+Обычно эти ошибки нужно обрабатывать асинхронно.
 
-### Syntax
+### Синтаксис {#syntax-6}
 
 ```
 -ERR <error message>

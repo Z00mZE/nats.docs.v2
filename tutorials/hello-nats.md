@@ -1,30 +1,26 @@
 ---
 id: hello-nats
-title: "1. Hello NATS"
+title: "1. Привет, NATS"
 sidebar_position: 2
-description: Install NATS, then publish and subscribe your first message
+description: "Установите NATS, затем опубликуйте и получите первое сообщение"
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 1. Hello NATS
+# 1. Привет, NATS {#1-hello-nats}
 
-In this tutorial you install NATS, start a server, and send your first
-message. You'll subscribe to a **subject** in one terminal, publish a
-message to it from another, and watch it arrive. By the end you'll
-have a working NATS server on your machine, and you'll have moved a
-message through it from both the CLI and a client.
+В этом руководстве вы установите NATS, запустите сервер и отправите первое сообщение. В одном терминале подпишетесь на **тему**, из другого опубликуете в неё сообщение и увидите его получение. В результате на вашем компьютере будет работающий сервер NATS, через который вы передадите сообщение как из CLI, так и с помощью клиента.
 
-## What you'll need
+## Что понадобится {#what-youll-need}
 
-- a terminal you can open two or three tabs in
-- permission to install software (Homebrew, a download, or Docker)
-- about ten minutes
+- Терминал с возможностью открыть две или три вкладки
+- Разрешение на установку программ (Homebrew, скачивание или Docker)
+- Около десяти минут
 
-## Step 1: Install the NATS server and CLI
+## Шаг 1: установите сервер NATS и CLI {#step-1-install-the-nats-server-and-cli}
 
-Install `nats-server` (the server) and `nats` (the command-line client).
+Установите `nats-server` (сервер) и `nats` (клиент командной строки).
 
 <Tabs groupId="install-os">
 <TabItem value="macos" label="macOS (Homebrew)" default>
@@ -38,10 +34,10 @@ brew install nats-io/nats-tools/nats
 <TabItem value="linux" label="Linux">
 
 ```bash
-# Server (installs nats-server into /usr/local/bin, prompting for sudo)
+# Сервер: устанавливает nats-server в /usr/local/bin и запрашивает sudo
 curl -sf https://binaries.nats.dev/nats-io/nats-server/v2@latest | PREFIX=/usr/local/bin sh
 
-# CLI (installs nats into /usr/local/bin)
+# CLI: устанавливает nats в /usr/local/bin
 curl -sf https://binaries.nats.dev/nats-io/natscli/nats@latest | PREFIX=/usr/local/bin sh
 ```
 
@@ -49,114 +45,96 @@ curl -sf https://binaries.nats.dev/nats-io/natscli/nats@latest | PREFIX=/usr/loc
 <TabItem value="docker" label="Docker">
 
 ```bash
-# Run the server in Docker instead of installing it. This runs in the
-# foreground and ends with "[INF] Server is ready" — leave it running.
-# You already have a server this way, so skip Step 2 below.
+# Вместо установки запустите сервер в Docker. Он работает на переднем
+# плане и выводит "[INF] Server is ready"; оставьте его работать.
+# Сервер уже запущен, поэтому пропустите шаг 2 ниже.
 docker run -p 4222:4222 nats:latest
 
-# In another terminal, install just the CLI on your host (macOS shown)
+# В другом терминале установите CLI на свою машину: пример для macOS
 brew install nats-io/nats-tools/nats
 ```
 
 </TabItem>
 </Tabs>
 
-Check that the CLI is installed:
+Проверьте установку CLI:
 
 ```bash
 nats --version
 ```
 
-You should see a version number, for example `nats version 0.4.0`. If you
-installed the server directly (Homebrew or the Linux script, not Docker),
-check it too — you should see something like `nats-server: v2.11.0`:
+Вы должны увидеть номер версии, например `nats version 0.4.0`. Если сервер установлен напрямую (через Homebrew или скрипт Linux, а не Docker), проверьте и его — ожидается строка вида `nats-server: v2.11.0`:
 
 ```bash
 nats-server --version
 ```
 
-## Step 2: Start the server
+## Шаг 2: запустите сервер {#step-2-start-the-server}
 
-If you started the server with Docker in Step 1, it's already running — leave
-that terminal alone and skip to Step 3.
+Если на первом шаге вы запустили сервер через Docker, он уже работает. Оставьте тот терминал открытым и переходите к шагу 3.
 
-Otherwise, in your first terminal, start the server:
+В остальных случаях запустите сервер в первом терминале:
 
 ```bash
 nats-server
 ```
 
-You should see startup lines ending with:
+Вы должны увидеть журнал запуска, заканчивающийся строками:
 
 ```
 [INF] Server is ready
 ```
 
-The server now listens on `localhost:4222`. Leave this terminal
-running for the rest of the tutorial.
+Теперь сервер принимает соединения на `localhost:4222`. Оставьте его работающим до конца руководства.
 
-## Step 3: Subscribe to a subject
+## Шаг 3: подпишитесь на тему {#step-3-subscribe-to-a-subject}
 
-Open a **second terminal**. A subscriber registers interest in a
-subject and receives a copy of every matching message. Subscribe to
-the `greet` subject:
+Откройте **второй терминал**. Подписчик регистрирует интерес к теме и получает копию каждого подходящего сообщения. Подпишитесь на тему `greet`:
 
 <div class="nats-example" data-type="tutorials-hello-nats-subscribe" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see the subscriber start and wait:
+Подписчик должен запуститься и перейти в ожидание:
 
 ```
 17:42:01 Subscribing on greet
 ```
 
-Leave this terminal running and listening.
+Оставьте этот терминал работающим и ожидающим сообщения.
 
-## Step 4: Publish a message
+## Шаг 4: опубликуйте сообщение {#step-4-publish-a-message}
 
-Open a **third terminal**. A publisher sends a message to a subject.
-Publish `Hello NATS!` to `greet`:
+Откройте **третий терминал**. Издатель отправляет сообщение в тему. Опубликуйте `Hello NATS!` в `greet`:
 
 <div class="nats-example" data-type="tutorials-hello-nats-publish" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-In this third terminal you should see the publish confirmed:
+В третьем терминале должно появиться подтверждение публикации:
 
 ```
 17:42:09 Published 11 bytes to "greet"
 ```
 
-Now switch back to your **second terminal**. The subscriber received
-the message and printed it:
+Теперь вернитесь ко **второму терминалу**. Подписчик получил сообщение и вывел его:
 
 ```
 [#1] Received on "greet"
 Hello NATS!
 ```
 
-That's one message making the round trip: published to a subject,
-matched against the subscriber's interest, and delivered.
+Сообщение прошло весь путь: публикация в тему, сопоставление с интересом подписчика и доставка.
 
-## Step 5: See the flow
+## Шаг 5: посмотрите на передачу сообщений {#step-5-see-the-flow}
 
-Here's an animation of the publish-to-subscriber path you just ran:
+Анимация показывает только что выполненный путь от публикации до подписчика:
 
 <div class="nats-flow" data-scenario="publishSubscribeAnimated" data-width="600" data-height="350"></div>
 
-Publish a few more times from the third terminal and watch the counter
-in the second terminal climb: `[#2]`, `[#3]`, and so on. Each publish
-delivers a fresh copy to every active subscriber on the subject.
+Опубликуйте ещё несколько сообщений из третьего терминала и посмотрите на счётчик во втором: `[#2]`, `[#3]` и так далее. Каждая публикация доставляет новую копию всем активным подписчикам темы.
 
-## What you built
+## Что вы создали {#what-you-built}
 
-You have a running NATS server, and you've sent your first message
-through it: one terminal subscribed to the `greet` subject, another
-published to it, and the message arrived. The same pub/sub works from
-any NATS client, which is what the code tabs above show.
+У вас работает сервер NATS, и вы отправили через него первое сообщение: один терминал подписался на тему `greet`, другой опубликовал в неё сообщение, и оно было доставлено. Такой же pub/sub работает из любого клиента NATS, как показано во вкладках с кодом выше.
 
-## Next
+## Дальше {#next}
 
-- Build a responder you can call and get an answer back:
-  [Request-Reply](/tutorials/request-reply).
-- Understand how publish-subscribe really works (the interest graph,
-  delivery guarantees, and wildcards): the
-  [Core NATS deep dive](/learn/core-nats), or the shorter
-  [publish-subscribe primer](/concepts/pub-sub-basics).
+- Создайте отвечающий сервис, к которому можно обратиться и получить ответ: [Запрос-ответ](/tutorials/request-reply).
+- Разберитесь, как устроены публикация и подписка (граф интереса, гарантии доставки и подстановочные символы): [углублённый курс Core NATS](/learn/core-nats) или более краткое [введение в публикацию и подписку](/concepts/pub-sub-basics).

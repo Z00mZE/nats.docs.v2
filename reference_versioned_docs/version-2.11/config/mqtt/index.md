@@ -1,28 +1,28 @@
-# mqtt
+# mqtt {#mqtt}
 
 <Reloadable state="reloadable" note="Only `ack_wait`, `max_ack_pending`, the consumer settings and the TLS certificate material reload. Changing the MQTT `host`, `port`, `authorization`, `no_auth_user` or `js_domain` fails the reload." />
-Configuration for enabling the MQTT interface.
+Конфигурация включения интерфейса MQTT.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`host`](./host.md) |  | `string` | `0.0.0.0` | No |
-| [`port`](./port.md) |  | `integer` | `1883` | No\* |
-| [`listen`](./listen.md) |  | `string` | - | No |
-| [`tls`](./tls/index.md) |  | `object` | - | Yes\* |
-| [`authorization`](./authorization/index.md) |  | `object` | - | No |
-| [`no_auth_user`](./no_auth_user.md) | If no user name is provided when an MQTT client connects, will default this user name in the authentication phase. If specified, this will override, for MQTT clients, any `no_auth_user` value defined in the main configuration file. *Note: that this is not compatible with running the server in operator mode.* | `string` | - | No |
-| [`ack_wait`](./ack_wait.md) | This is the amount of time after which a QoS 1 message sent to a client is redelivered as a `DUPLICATE` if the server has not received the `PUBACK` packet on the original Packet Identifier. will cause the server to use the default value (30 seconds).  Note that changes to this option is applied only to new MQTT subscriptions. | `duration` | `30s` | Yes\* |
-| [`max_ack_pending`](./max_ack_pending.md) | This is the amount of QoS 1 messages the server can send to a subscription without receiving any `PUBACK` for those messages. The valid range is [0..65535].  The total of subscriptions' max_ack_pending on a given session cannot exceed 65535. Attempting to create a subscription that would bring the total above the limit would result in the server returning `0x80` in the `SUBACK` for this subscription.  Due to how the NATS Server handles the MQTT `#` wildcard, each subscription ending with `#` will use 2 times the `max_ack_pending` value. Note that changes to this option is applied only to new subscriptions. | `integer` | `100` | Yes\* |
-| [`js_domain`](./js_domain.md) | If specified, sets an explicit JetStream domain to be used by MQTT. | `string` | - | No |
-| [`consumer_memory_storage`](./consumer_memory_storage.md) | Hold MQTT consumer state in memory rather than on disk. | `boolean` | `false` | Yes\* |
-| [`consumer_replicas`](./consumer_replicas.md) | Deprecated. The server logs a warning and ignores the value; consumer replication follows the stream. | `integer` | - | Ignored\* |
-| [`js_api_timeout`](./js_api_timeout.md) | How long MQTT waits for a JetStream API call before giving up. | `duration` | `5s` | No |
-| [`reject_qos2_publish`](./reject_qos2_publish.md) | Reject QoS 2 publishes instead of accepting them, for clients that must not silently get weaker delivery guarantees. | `boolean` | `false` | No |
-| [`downgrade_qos2_subscribe`](./downgrade_qos2_subscribe.md) | Accept a QoS 2 subscription but serve it at QoS 1. | `boolean` | `false` | No |
-| [`stream_replicas`](./stream_replicas.md) | If specified, sets an explicit number of stream replicas to be used for MQTT-backed streams. | `integer` | - | Yes\* |
-| [`consumer_inactive_threshold`](./consumer_inactive_threshold.md) | Set an explicit default inactive threshold for consumers used by MQTT. | `duration` | - | Yes\* |
+| [`host`](./host.md) |  | `string` | `0.0.0.0` | Нет |
+| [`port`](./port.md) |  | `integer` | `1883` | Нет\* |
+| [`listen`](./listen.md) |  | `string` | - | Нет |
+| [`tls`](./tls/index.md) |  | `object` | - | Да\* |
+| [`authorization`](./authorization/index.md) |  | `object` | - | Нет |
+| [`no_auth_user`](./no_auth_user.md) | Если клиент MQTT не передаёт имя пользователя при подключении, это имя используется по умолчанию на этапе аутентификации. Для клиентов MQTT оно переопределяет любое значение `no_auth_user` из основного файла конфигурации. *Примечание: этот вариант несовместим с запуском сервера в режиме оператора.* | `string` | - | Нет |
+| [`ack_wait`](./ack_wait.md) | Время, по истечении которого отправленное клиенту сообщение QoS 1 доставляется повторно как `DUPLICATE`, если сервер не получил пакет `PUBACK` с исходным идентификатором пакета. Сервер использует значение по умолчанию (30 секунд). Изменения этого параметра применяются только к новым подпискам MQTT. | `duration` | `30s` | Да\* |
+| [`max_ack_pending`](./max_ack_pending.md) | Число сообщений QoS 1, которое сервер может отправить подписке, не получив для них ни одного `PUBACK`. Допустимый диапазон: [0..65535]. Сумма max_ack_pending подписок одного сеанса не может превышать 65535. При попытке создать подписку, превышающую общий лимит, сервер возвращает для неё `0x80` в `SUBACK`. Из-за особенностей обработки подстановки MQTT `#` сервером NATS каждая подписка, оканчивающаяся на `#`, использует удвоенное значение `max_ack_pending`. Изменения этого параметра применяются только к новым подпискам. | `integer` | `100` | Да\* |
+| [`js_domain`](./js_domain.md) | Если задано, явно указывает домен JetStream для MQTT. | `string` | - | Нет |
+| [`consumer_memory_storage`](./consumer_memory_storage.md) | Хранить состояние потребителей MQTT в памяти, а не на диске. | `boolean` | `false` | Да\* |
+| [`consumer_replicas`](./consumer_replicas.md) | Устарело. Сервер записывает предупреждение и игнорирует значение; репликация потребителя определяется потоком. | `integer` | - | Игнорируется\* |
+| [`js_api_timeout`](./js_api_timeout.md) | Время ожидания вызова JetStream API в MQTT до отказа. | `duration` | `5s` | Нет |
+| [`reject_qos2_publish`](./reject_qos2_publish.md) | Отклонять публикации QoS 2 вместо их принятия для клиентов, которым нельзя незаметно ослаблять гарантии доставки. | `boolean` | `false` | Нет |
+| [`downgrade_qos2_subscribe`](./downgrade_qos2_subscribe.md) | Принимать подписку QoS 2, но обслуживать её с QoS 1. | `boolean` | `false` | Нет |
+| [`stream_replicas`](./stream_replicas.md) | Если задано, явно указывает число реплик потоков, используемых для MQTT. | `integer` | - | Да\* |
+| [`consumer_inactive_threshold`](./consumer_inactive_threshold.md) | Явно задать порог неактивности по умолчанию для потребителей MQTT. | `duration` | - | Да\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

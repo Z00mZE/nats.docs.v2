@@ -1,9 +1,9 @@
-# hub
+# hub {#hub}
 
 <Reloadable state="not-reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

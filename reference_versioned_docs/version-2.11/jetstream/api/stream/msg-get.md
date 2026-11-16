@@ -1,21 +1,21 @@
-# Get Message
+# Получение сообщения {#get-message}
 
-Retrieves a specific message from a stream.
+Получение определённого сообщения из потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamMsgGetRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_msg_get_request.json';
 import streamMsgGetResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_msg_get_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.MSG.GET.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamMsgGetRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamMsgGetResponse} />

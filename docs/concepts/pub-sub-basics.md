@@ -1,86 +1,86 @@
 ---
 id: pub-sub-basics
-title: Publish-Subscribe
+title: "Публикация и подписка"
 sidebar_position: 2
-description: The foundational messaging pattern in NATS — everything else builds on this
+description: "Базовый шаблон обмена сообщениями в NATS, на котором строятся все остальные возможности"
 ---
 
-# Publish-Subscribe
+# Публикация и подписка {#publish-subscribe}
 
-Everything in NATS starts with publish-subscribe. A publisher sends a message to a subject, and every subscriber listening on that subject gets a copy. This is the foundation everything else builds on.
+В NATS всё начинается с публикации и подписки (publish-subscribe). Издатель отправляет сообщение в тему, и каждый подписчик этой темы получает копию. На этом механизме строится всё остальное.
 
-For a runnable, step-by-step treatment, see the [Core NATS deep dive](/learn/core-nats).
+Пошаговое практическое руководство см. в разделе [углублённого изучения Core NATS](/learn/core-nats).
 
 <div class="nats-flow" data-scenario="publishSubscribeAnimated" data-width="600" data-height="350"></div>
 
-Watch how messages flow as subscribers join. With no subscribers, messages reach the server but aren't delivered. As subscribers connect, each one receives a copy of every message.
+Посмотрите, как меняется передача сообщений при подключении подписчиков. Без подписчиков сообщения доходят до сервера, но никому не доставляются. Когда подписчики подключаются, каждый из них получает копию каждого сообщения.
 
-## How It Works
+## Как это работает {#how-it-works}
 
-1. **Publishers** send messages to a [subject](./subjects.md) — a simple string like `orders.created`
-2. **Subscribers** express interest in subjects they care about
-3. **NATS delivers** a copy of each message to every matching subscriber
-4. **No coupling** — publishers don't know about subscribers, and subscribers don't know about publishers
+1. **Издатели** отправляют сообщения в [тему](./subjects.md) — простую строку, например `orders.created`
+2. **Подписчики** объявляют об интересе к нужным темам
+3. **NATS доставляет** копию каждого сообщения всем подходящим подписчикам
+4. **Компоненты независимы** — издатели не знают о подписчиках, а подписчики — об издателях
 
-This decoupling gives you tremendous flexibility. Services can be added, removed, or restarted without coordinating with anyone else.
+Такая независимость даёт большую гибкость. Сервисы можно добавлять, удалять и перезапускать без согласования с остальными участниками.
 
-## Publishing Messages
+## Публикация сообщений {#publishing-messages}
 
-You publish a message by sending it to a subject:
+Чтобы опубликовать сообщение, отправьте его в тему:
 
 <div class="nats-example" data-type="basics-publish" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Key points:
-- Publishers don't wait for acknowledgments (fire-and-forget)
-- Messages are delivered to all active subscribers
-- If no subscribers exist, the message is simply discarded
+Основные особенности:
+- Издатели не ждут подтверждений (fire-and-forget)
+- Сообщения доставляются всем активным подписчикам
+- Если подписчиков нет, сообщение просто отбрасывается
 
-## Subscribing to Subjects
+## Подписка на темы {#subscribing-to-subjects}
 
-Subscribers express interest in subjects to receive messages:
+Чтобы получать сообщения, подписчики объявляют об интересе к темам:
 
 <div class="nats-example" data-type="basics-subscribe" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## When to Use Pub/Sub
+## Когда использовать публикацию и подписку {#when-to-use-pubsub}
 
-Publish-subscribe is ideal when multiple services need to react to the same event:
+Этот шаблон хорошо подходит, когда нескольким сервисам нужно отреагировать на одно событие:
 
-- **Event broadcasting** — notify services about user signups, order placements, deployments
-- **Data distribution** — send updates to multiple dashboards or monitoring services
-- **Fan-out notifications** — alert all interested parties about state changes
-- **Audit logging** — multiple services independently log the same events
+- **Рассылка событий** — уведомление сервисов о регистрации пользователей, создании заказов и развёртываниях
+- **Распространение данных** — отправка обновлений на несколько панелей или в сервисы мониторинга
+- **Веерная рассылка уведомлений** — оповещение всех заинтересованных участников об изменениях состояния
+- **Журнал аудита** — независимая запись одних и тех же событий несколькими сервисами
 
-### Real-world example
+### Пример из практики {#real-world-example}
 
-Imagine an e-commerce system where an order is placed. You publish a single event:
+Представьте интернет-магазин, в котором оформлен заказ. Вы публикуете одно событие:
 
 ```bash
 nats pub orders.created '{"orderId": "123", "total": 99.99}'
 ```
 
-Multiple services subscribe and each reacts differently:
-- **Inventory Service** updates stock levels
-- **Email Service** sends a confirmation email
-- **Analytics Service** records metrics
-- **Shipping Service** prepares the shipment
+На него подписываются несколько сервисов, и каждый реагирует по-своему:
+- **Сервис учёта запасов** обновляет остатки
+- **Почтовый сервис** отправляет письмо с подтверждением
+- **Сервис аналитики** записывает метрики
+- **Сервис доставки** готовит отправление
 
-One publish, four independent reactions — no coordination needed.
+Одна публикация, четыре независимые реакции — согласование не требуется.
 
-## Pub/Sub Patterns
+## Шаблоны публикации и подписки {#pubsub-patterns}
 
-### Fan-Out
-One publisher, multiple subscribers — perfect for event notification:
+### Веерная рассылка (Fan-Out) {#fan-out}
+Один издатель, несколько подписчиков — удобно для уведомлений о событиях:
 
 <div class="nats-flow" data-scenario="fanOut" data-width="600" data-height="450"></div>
 
-### Fan-In
-Multiple publishers, one subscriber — ideal for aggregation:
+### Сбор сообщений (Fan-In) {#fan-in}
+Несколько издателей, один подписчик — удобно для агрегации:
 
 <div class="nats-flow" data-scenario="fanIn" data-width="600" data-height="450"></div>
 
-## Subject Hierarchies
+## Иерархии тем {#subject-hierarchies}
 
-NATS subjects support hierarchical naming using dots (`.`) as delimiters:
+Темы NATS поддерживают иерархические имена с точками (`.`) в качестве разделителей:
 
 ```text
 orders.us.created
@@ -88,38 +88,38 @@ orders.eu.created
 orders.us.canceled
 ```
 
-This creates logical namespaces for organizing your messages. You can use wildcards to subscribe across hierarchies — `orders.*.created` catches orders from any region.
+Так создаются логические пространства имён для организации сообщений. Подстановочные символы позволяют подписываться сразу на несколько ветвей иерархии: `orders.*.created` охватывает заказы из любого региона.
 
-For a deep dive into subjects, hierarchies, wildcards, and naming conventions, see [Subjects](./subjects.md).
+Подробности о темах, иерархиях, подстановочных символах и правилах именования см. в разделе [Темы](./subjects.md).
 
-## How Delivery Works
+## Как устроена доставка {#how-delivery-works}
 
-- **At-most-once delivery**: Core NATS delivers messages without persistence. If you need guaranteed delivery, that's what [JetStream](./jetstream.md) is for.
-- **Active subscribers only**: Only subscribers connected when the message is published will receive it. Messages aren't stored for later.
-- **Every subscriber gets a copy**: Subscribing doesn't consume or remove messages — each subscriber independently receives its own copy.
-- **Message size**: NATS has a default max message size of 1MB (configurable). For large data, consider using object stores or passing references.
-- **Subscription efficiency**: NATS handles millions of subscriptions efficiently. Use wildcards to reduce subscription overhead when possible.
+- **Доставка не более одного раза**: Core NATS доставляет сообщения без долговременного хранения. Если нужны гарантии доставки, используйте [JetStream](./jetstream.md).
+- **Только активные подписчики**: сообщение получают лишь подписчики, подключённые в момент публикации. Для последующей доставки сообщения не сохраняются.
+- **Каждый подписчик получает копию**: подписка не расходует и не удаляет сообщения — каждый подписчик независимо получает собственную копию.
+- **Размер сообщения**: максимальный размер сообщения в NATS по умолчанию — 1 МБ (настраивается). Для больших объёмов данных рассмотрите объектное хранилище или передачу ссылок.
+- **Эффективность подписок**: NATS эффективно обрабатывает миллионы подписок. По возможности используйте подстановочные символы, чтобы уменьшить накладные расходы.
 
-## Try It Yourself
+## Попробуйте сами {#try-it-yourself}
 
-Open two terminals and see pub/sub in action:
+Откройте два терминала и посмотрите на публикацию и подписку в действии:
 
 ```bash
-# Terminal 1 — subscribe to all demo messages
+# Терминал 1: подпишитесь на все демонстрационные сообщения
 nats sub 'demo.>'
 
-# Terminal 2 — publish some messages
+# Терминал 2: опубликуйте несколько сообщений
 nats pub demo.hello "Hello NATS!"
 nats pub demo.greeting "Welcome to pub/sub"
 nats pub demo.test.nested "Hierarchical subjects work!"
 ```
 
-You'll see each message arrive in Terminal 1 the instant it's published. Try opening a third terminal with another `nats sub 'demo.>'` — both subscribers will receive every message.
+В первом терминале каждое сообщение появляется сразу после публикации. Попробуйте открыть третий терминал и запустить ещё один `nats sub 'demo.>'`: оба подписчика будут получать каждое сообщение.
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Core NATS deep dive](/learn/core-nats) — the full runnable walkthrough
-- [Publish-subscribe, step by step](/learn/core-nats/publish-subscribe) — build pub/sub up from scratch
-- [Subjects](./subjects.md) — the addressing system that makes pub/sub flexible
-- [Queue Groups](./queue-groups.md) — same pub/sub, but with built-in load balancing
-- [Request-Reply](./request-reply.md) — pub/sub with a reply subject for synchronous patterns
+- [Углублённое изучение Core NATS](/learn/core-nats) — полное практическое руководство
+- [Публикация и подписка пошагово](/learn/core-nats/publish-subscribe) — создание pub/sub с нуля
+- [Темы](./subjects.md) — система адресации, обеспечивающая гибкость pub/sub
+- [Группы очередей](./queue-groups.md) — pub/sub со встроенной балансировкой нагрузки
+- [Запрос-ответ](./request-reply.md) — pub/sub с темой ответа для синхронного взаимодействия

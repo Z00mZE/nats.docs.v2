@@ -1,13 +1,12 @@
-# connect_backoff
+# connect_backoff {#connect_backoff}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" />
-Back off between route reconnect attempts instead of retrying at a
-fixed interval.
+Увеличивать интервалы между попытками переподключения маршрутов вместо повторов с фиксированным интервалом.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

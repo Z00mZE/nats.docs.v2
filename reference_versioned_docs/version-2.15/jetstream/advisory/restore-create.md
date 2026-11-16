@@ -1,16 +1,16 @@
-# Restore Started
+# Восстановление начато {#restore-started}
 
-Stream restore initiated.
+Инициировано восстановление потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import restoreCreate from '@site/src/schemas/vendor/v2.15/jsm/jetstream/advisory/v1/restore_create.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.STREAM.RESTORE_CREATE.{stream}`
 
-Where `{stream}` is the stream name.
+Где `{stream}` — имя потока.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={restoreCreate} />

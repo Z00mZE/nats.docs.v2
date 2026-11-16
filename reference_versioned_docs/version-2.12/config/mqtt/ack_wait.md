@@ -1,18 +1,14 @@
-# ack_wait
+# ack_wait {#ack_wait}
 
 <Aliases aliases="ackwait" />
 <Reloadable state="reloadable" note="The reload handler only logs; the value takes effect because the options are swapped. Existing subscriptions keep the old value." />
-This is the amount of time after which a QoS 1 message sent to
-a client is redelivered as a `DUPLICATE` if the server has not
-received the `PUBACK` packet on the original Packet Identifier.
-will cause the server to use the default value (30 seconds).
+Время, по истечении которого отправленное клиенту сообщение QoS 1 доставляется повторно как `DUPLICATE`, если сервер не получил пакет `PUBACK` с исходным идентификатором пакета. Сервер использует значение по умолчанию (30 секунд).
 
-Note that changes to this option is applied only to new MQTT
-subscriptions.
+Изменения этого параметра применяются только к новым подпискам MQTT.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

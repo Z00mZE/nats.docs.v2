@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import type { JSX } from "react";
 import { enumDescriptions } from "@site/src/schemas/enum-descriptions";
+import { localizeSchemaText } from "@site/src/i18n/reference";
 import styles from "./styles.module.css";
 
 interface JSONSchemaProperty {
@@ -79,7 +80,7 @@ function getEnumValueDescription(
   property: JSONSchemaProperty
 ): string | undefined {
   const key = String(value);
-  return (
+  return localizeSchemaText(
     property["x-enum-descriptions"]?.[key] ??
     enumDescriptions[propertyName]?.[key]
   );
@@ -120,7 +121,7 @@ function PropertyRenderer({
           <button
             className={styles.expandToggle}
             onClick={() => onToggle(propertyId)}
-            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? "Свернуть" : "Развернуть"}
             aria-expanded={isExpanded}
           >
             ▶
@@ -128,26 +129,26 @@ function PropertyRenderer({
         )}
         <span className={styles.propertyName}>{name}</span>
         <span className={styles.propertyType}>{typeDisplay}</span>
-        {isRequired && <span className={styles.required}>required</span>}
+        {isRequired && <span className={styles.required}>обязательно</span>}
       </div>
 
       {property.description && (
-        <div className={styles.description}>{property.description}</div>
+        <div className={styles.description}>{localizeSchemaText(property.description)}</div>
       )}
 
       {property.$comment && (
-        <div className={styles.comment}>{property.$comment}</div>
+        <div className={styles.comment}>{localizeSchemaText(property.$comment)}</div>
       )}
 
       {property.deprecationMessage && (
         <div className={styles.deprecated}>
-          Deprecated: {property.deprecationMessage}
+          Устарело: {localizeSchemaText(property.deprecationMessage)}
         </div>
       )}
 
       {property.example !== undefined && (
         <div className={styles.example}>
-          <span className={styles.exampleLabel}>Example:</span>
+          <span className={styles.exampleLabel}>Пример:</span>
           <code className={styles.exampleValue}>
             {typeof property.example === "object"
               ? JSON.stringify(property.example)
@@ -161,7 +162,7 @@ function PropertyRenderer({
           getEnumValueDescription(name, value, property)
         ) ? (
           <div className={styles.enum}>
-            <span className={styles.enumLabel}>Allowed values:</span>
+            <span className={styles.enumLabel}>Допустимые значения:</span>
             <div className={styles.enumGrid}>
               {property.enum.map((value, i) => (
                 <React.Fragment key={i}>
@@ -177,7 +178,7 @@ function PropertyRenderer({
           </div>
         ) : (
           <div className={styles.enum}>
-            <span className={styles.enumLabel}>Allowed values:</span>
+            <span className={styles.enumLabel}>Допустимые значения:</span>
             {property.enum.map((value, i) => (
               <code key={i} className={styles.enumValue}>
                 {String(value) === "" ? '""' : String(value)}
@@ -188,42 +189,42 @@ function PropertyRenderer({
 
       {property.pattern && (
         <div className={styles.pattern}>
-          <span className={styles.patternLabel}>Pattern:</span>
+          <span className={styles.patternLabel}>Шаблон:</span>
           <code className={styles.patternValue}>{property.pattern}</code>
         </div>
       )}
 
       {property.minimum !== undefined && (
         <div className={styles.constraint}>
-          <span className={styles.constraintLabel}>Minimum:</span>
+          <span className={styles.constraintLabel}>Минимум:</span>
           <code className={styles.constraintValue}>{property.minimum}</code>
         </div>
       )}
 
       {property.maximum !== undefined && (
         <div className={styles.constraint}>
-          <span className={styles.constraintLabel}>Maximum:</span>
+          <span className={styles.constraintLabel}>Максимум:</span>
           <code className={styles.constraintValue}>{property.maximum}</code>
         </div>
       )}
 
       {property.minLength !== undefined && (
         <div className={styles.constraint}>
-          <span className={styles.constraintLabel}>Min length:</span>
+          <span className={styles.constraintLabel}>Минимальная длина:</span>
           <code className={styles.constraintValue}>{property.minLength}</code>
         </div>
       )}
 
       {property.maxLength !== undefined && (
         <div className={styles.constraint}>
-          <span className={styles.constraintLabel}>Max length:</span>
+          <span className={styles.constraintLabel}>Максимальная длина:</span>
           <code className={styles.constraintValue}>{property.maxLength}</code>
         </div>
       )}
 
       {property.default !== undefined && (
         <div className={styles.default}>
-          <span className={styles.defaultLabel}>Default:</span>
+          <span className={styles.defaultLabel}>По умолчанию:</span>
           <code className={styles.defaultValue}>
             {typeof property.default === "object"
               ? JSON.stringify(property.default)
@@ -236,10 +237,10 @@ function PropertyRenderer({
         <>
           {property.oneOf && (
             <div className={styles.oneOf}>
-              <div className={styles.schemaVariantLabel}>One of:</div>
+              <div className={styles.schemaVariantLabel}>Один из вариантов:</div>
               {property.oneOf.map((schema, i) => (
                 <div key={i} className={styles.schemaVariant}>
-                  <div className={styles.variantHeader}>Option {i + 1}</div>
+                  <div className={styles.variantHeader}>Вариант {i + 1}</div>
                   <RenderSchemaProperties 
                     schema={schema} 
                     depth={depth + 1}
@@ -253,10 +254,10 @@ function PropertyRenderer({
 
           {property.anyOf && (
             <div className={styles.anyOf}>
-              <div className={styles.schemaVariantLabel}>Any of:</div>
+              <div className={styles.schemaVariantLabel}>Любой из вариантов:</div>
               {property.anyOf.map((schema, i) => (
                 <div key={i} className={styles.schemaVariant}>
-                  <div className={styles.variantHeader}>Option {i + 1}</div>
+                  <div className={styles.variantHeader}>Вариант {i + 1}</div>
                   <RenderSchemaProperties 
                     schema={schema} 
                     depth={depth + 1}
@@ -270,7 +271,7 @@ function PropertyRenderer({
 
           {property.allOf && (
             <div className={styles.allOf}>
-              <div className={styles.schemaVariantLabel}>All of:</div>
+              <div className={styles.schemaVariantLabel}>Все варианты:</div>
               {property.allOf.map((schema, i) => (
                 <div key={i} className={styles.schemaVariant}>
                   <RenderSchemaProperties 
@@ -297,7 +298,7 @@ function PropertyRenderer({
 
           {property.type === "array" && property.items?.properties && (
             <div className={styles.nestedProperties}>
-              <div className={styles.arrayItemsLabel}>Array items:</div>
+              <div className={styles.arrayItemsLabel}>Элементы массива:</div>
               <RenderSchemaProperties
                 schema={property.items}
                 depth={depth + 1}
@@ -446,7 +447,7 @@ export default function JSONSchema({ schema }: JSONSchemaProps): JSX.Element {
   return (
     <div className={styles.schemaContainer}>
       {schema.description && (
-        <p className={styles.schemaDescription}>{schema.description}</p>
+        <p className={styles.schemaDescription}>{localizeSchemaText(schema.description)}</p>
       )}
 
       {allExpandableIds.length > 0 && (
@@ -454,9 +455,9 @@ export default function JSONSchema({ schema }: JSONSchemaProps): JSX.Element {
           <button
             className={styles.expandAllButton}
             onClick={handleExpandAll}
-            aria-label={allExpanded ? "Collapse all properties" : "Expand all properties"}
+            aria-label={allExpanded ? "Свернуть все свойства" : "Развернуть все свойства"}
           >
-            {allExpanded ? "Collapse All" : "Expand All"}
+            {allExpanded ? "Свернуть всё" : "Развернуть всё"}
           </button>
         </div>
       )}
@@ -466,12 +467,12 @@ export default function JSONSchema({ schema }: JSONSchemaProps): JSX.Element {
         {schema.oneOf && (
           <div className={styles.rootOneOf}>
             <div className={styles.schemaVariantLabel}>
-              One of the following:
+              Один из следующих вариантов:
             </div>
             {schema.oneOf.map((variant, i) => (
               <div key={i} className={styles.schemaVariant}>
                 <div className={styles.variantHeader}>
-                  Option {i + 1}
+                  Вариант {i + 1}
                   {variant.type && (
                     <span className={styles.variantType}>
                       {" "}
@@ -481,7 +482,7 @@ export default function JSONSchema({ schema }: JSONSchemaProps): JSX.Element {
                 </div>
                 {variant.description && (
                   <div className={styles.description}>
-                    {variant.description}
+                    {localizeSchemaText(variant.description)}
                   </div>
                 )}
                 <RenderSchemaProperties 
@@ -499,12 +500,12 @@ export default function JSONSchema({ schema }: JSONSchemaProps): JSX.Element {
         {schema.anyOf && (
           <div className={styles.rootAnyOf}>
             <div className={styles.schemaVariantLabel}>
-              Any of the following:
+              Любой из следующих вариантов:
             </div>
             {schema.anyOf.map((variant, i) => (
               <div key={i} className={styles.schemaVariant}>
                 <div className={styles.variantHeader}>
-                  Option {i + 1}
+                  Вариант {i + 1}
                   {variant.type && (
                     <span className={styles.variantType}>
                       {" "}
@@ -514,7 +515,7 @@ export default function JSONSchema({ schema }: JSONSchemaProps): JSX.Element {
                 </div>
                 {variant.description && (
                   <div className={styles.description}>
-                    {variant.description}
+                    {localizeSchemaText(variant.description)}
                   </div>
                 )}
                 <RenderSchemaProperties 
@@ -532,13 +533,13 @@ export default function JSONSchema({ schema }: JSONSchemaProps): JSX.Element {
         {schema.allOf && (
           <div className={styles.rootAllOf}>
             <div className={styles.schemaVariantLabel}>
-              All of the following:
+              Все следующие варианты:
             </div>
             {schema.allOf.map((variant, i) => (
               <div key={i} className={styles.schemaVariant}>
                 {variant.description && (
                   <div className={styles.description}>
-                    {variant.description}
+                    {localizeSchemaText(variant.description)}
                   </div>
                 )}
                 <RenderSchemaProperties 

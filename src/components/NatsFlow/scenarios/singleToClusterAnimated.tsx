@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useState } from "react";
 import {
     Background,
@@ -192,19 +193,19 @@ function SingleToClusterAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Topology:
+                    Топология:
                 </span>
                 <button
                     onClick={() => handleModeChange("single")}
                     style={buttonStyle(mode === "single")}
                 >
-                    Single
+                    Один сервер
                 </button>
                 <button
                     onClick={() => handleModeChange("cluster")}
                     style={buttonStyle(mode === "cluster")}
                 >
-                    Cluster
+                    Кластер
                 </button>
             </div>
 
@@ -219,7 +220,7 @@ function SingleToClusterAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -240,7 +241,7 @@ function SingleToClusterAnimatedInner({
                 </ReactFlow>
 
                 {/* Cluster badge */}
-                {isCluster && (
+                {localizeDiagramContent(isCluster && (
                     <div
                         style={{
                             position: "absolute",
@@ -256,9 +257,9 @@ function SingleToClusterAnimatedInner({
                             whiteSpace: "nowrap",
                         }}
                     >
-                        cluster: east
+                        кластер: east
                     </div>
-                )}
+                ))}
             </div>
 
             {/* Status */}
@@ -269,7 +270,7 @@ function SingleToClusterAnimatedInner({
                     color: "#6b7280",
                 }}
             >
-                {description}
+                {localizeDiagramContent(description)}
             </div>
         </div>
     );

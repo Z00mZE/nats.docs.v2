@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -286,17 +287,17 @@ function MetricsScrapeAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Stage:
+                    Этап:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {s}
+                        {localizeDiagramContent(s)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -310,7 +311,7 @@ function MetricsScrapeAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -354,9 +355,9 @@ function MetricsScrapeAnimatedInner({
                             justifyContent: "space-between",
                         }}
                     >
-                        <span>consumer lag</span>
+                        <span>отставание потребителя</span>
                         <span style={{ color: lineColor }}>
-                            {lastVal}{isAlert ? " CRIT" : ""}
+                            {localizeDiagramContent(lastVal)}{localizeDiagramContent(isAlert ? " CRIT" : "")}
                         </span>
                     </div>
                     <svg
@@ -385,7 +386,7 @@ function MetricsScrapeAnimatedInner({
                             strokeLinecap="round"
                         />
                         {/* latest sample dot */}
-                        {samples.length > 0 && (
+                        {localizeDiagramContent(samples.length > 0 && (
                             <circle
                                 cx={padX +
                                     (samples.length === 1
@@ -397,7 +398,7 @@ function MetricsScrapeAnimatedInner({
                                 r={3}
                                 fill={lineColor}
                             />
-                        )}
+                        ))}
                     </svg>
                 </div>
             </div>
@@ -412,9 +413,9 @@ function MetricsScrapeAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

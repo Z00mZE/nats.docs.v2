@@ -1,47 +1,33 @@
 ---
 id: your-first-mqtt-client
-title: "Your first MQTT client"
+title: "Первый клиент MQTT"
 sidebar_position: 2
-description: Enable the mqtt block on a local server, publish from an MQTT sensor, and receive the reading on the NATS side
+description: "Включение mqtt на локальном сервере, публикация датчика и получение показания в NATS"
 ---
 
-# Your first MQTT client
+# Первый клиент MQTT {#your-first-mqtt-client}
 
-Acme's cold-chain sensors speak MQTT and can't be changed. The ORDERS
-platform speaks NATS. This page puts both on one server: a sensor
-publishes a temperature reading over MQTT, and a `nats sub` on the other
-side receives it as an ordinary NATS message.
+Датчики холодовой цепи Acme используют неизменяемый MQTT, платформа ORDERS — NATS. Объединим их на сервере: датчик публикует температуру, а `nats sub` получает обычное сообщение NATS.
 
-You need two things to get there: JetStream, which MQTT stores its state
-in, and an `mqtt {}` block, which opens the port devices connect to.
+Нужны JetStream для состояния MQTT и блок `mqtt {}`, открывающий порт устройств.
 
-## MQTT stores its state in JetStream
+## MQTT хранит состояние в JetStream {#mqtt-stores-its-state-in-jetstream}
 
-MQTT needs state that outlives a connection: a session's
-subscriptions, unacknowledged QoS 1 and 2 messages, and retained
-messages. The server keeps all of it in JetStream streams, so JetStream
-has to be reachable.
+Подписки сеанса, неподтверждённые сообщения QoS 1 и 2 и retained-сообщения должны переживать соединение. Сервер сохраняет их в потоках JetStream, поэтому JetStream должен быть доступен.
 
-On a standalone server, reachable means enabled locally. Configure
-`mqtt {}` without JetStream and the server refuses to start:
+На отдельном сервере он должен быть включён локально. Блок `mqtt {}` без JetStream препятствует запуску:
 
 ```
 mqtt requires JetStream to be enabled if running in standalone mode
 ```
 
-The error names the scope: "in standalone mode". A server with a
-`cluster`, `gateway`, or `leafnode` configuration can reach JetStream
-elsewhere in the system, so the check doesn't apply there. This chapter
-runs JetStream locally throughout.
+Ошибка относится к автономному режиму. С конфигурацией `cluster`, `gateway` или `leafnode` сервер может обращаться к JetStream в другой части системы, поэтому эта проверка не применяется. В главе JetStream всегда локальный.
 
-Turn JetStream on and the server creates the streams it needs on its
-own. You never manage them; they're covered in
-[QoS, sessions, and retained messages](/learn/mqtt/qos-sessions-and-retained).
+После включения сервер сам создаёт необходимые потоки. Управлять ими не нужно; они рассматриваются в разделе [QoS, сеансы и retained-сообщения](/learn/mqtt/qos-sessions-and-retained).
 
-## Enable MQTT
+## Включение MQTT {#enable-mqtt}
 
-You need two blocks: `jetstream` for the state and `mqtt` for the
-listener.
+Нужны два блока: `jetstream` для состояния и `mqtt` для слушателя.
 
 ```conf
 # mqtt-server.conf — one server serving both NATS clients and MQTT devices
@@ -56,44 +42,33 @@ mqtt {
 }
 ```
 
-MQTT gets its own listener on port 1883, the conventional MQTT port.
-The server doesn't choose it for you: an `mqtt {}` block with no
-`listen` or `port` disables MQTT silently, with no error and no log
-line, so always set one. It's a separate listener from the client port
-on 4222, the way the cluster and leafnode ports are separate — one port
-per kind of connection. NATS clients keep connecting to 4222 and know
-nothing about MQTT.
+MQTT использует отдельный стандартный порт 1883, но сервер не выбирает его автоматически. Без `listen` или `port` блок `mqtt {}` молча отключает MQTT, без ошибки и строки журнала. Всегда задавайте порт. Клиентский 4222, кластерные и листовые порты остаются отдельными; NATS-клиентам ничего знать о MQTT не нужно.
 
-Start it:
+Запустите сервер:
 
 ```bash
 nats-server -c mqtt-server.conf
 ```
 
-The log confirms the listener is up:
+Журнал подтверждает работу слушателя:
 
 ```
 [INF] Listening for MQTT clients on mqtt://127.0.0.1:1883
 ```
 
-There's no `authorization` block yet, so devices connect without
-credentials. That's fine on a laptop and wrong in production;
-[Auth and clustering](/learn/mqtt/auth-and-clustering) locks it down.
+Пока нет `authorization`, устройства подключаются без учётных данных. Это подходит локальному примеру, но не эксплуатации. Раздел [Аутентификация и кластеризация](/learn/mqtt/auth-and-clustering) добавляет защиту.
 
-The full field list for the block — TLS, timeouts, replica counts —
-is in [Reference → mqtt](/reference/config/mqtt/). The three pages after
-this one introduce the fields that change behavior you can observe.
+TLS, тайм-ауты, число реплик и остальные поля находятся в [Справочник → mqtt](/reference/config/mqtt/). Следующие страницы показывают наблюдаемое влияние основных настроек.
 
-## Publish from a sensor, receive on NATS
+## Публикация датчика и получение в NATS {#publish-from-a-sensor-receive-on-nats}
 
-Subscribe on the NATS side first, so the interest is registered before
-the reading arrives. In one terminal:
+Сначала подпишитесь в NATS, чтобы зарегистрировать интерес до показания. В одном терминале:
 
 ```bash
 nats sub "sensors.>"
 ```
 
-In a second terminal, publish as the cold-chain sensor would, over MQTT:
+В другом опубликуйте через MQTT, как датчик:
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 \
@@ -101,7 +76,7 @@ mosquitto_pub -h 127.0.0.1 -p 1883 \
   -m "4.2"
 ```
 
-The NATS subscriber receives it:
+Подписчик NATS получает:
 
 ```
 [#1] Received on "sensors.warehouse.cold-1.temp"
@@ -110,76 +85,50 @@ Nmqtt-Pub: 0
 4.2
 ```
 
-The device published `sensors/warehouse/cold-1/temp` and the subscriber
-matched `sensors.warehouse.cold-1.temp`. The server converted the topic
-to a subject on the way through, turning each `/` into a `.`. The
-payload crossed untouched — MQTT payloads are bytes, and so are NATS
-payloads. The `Nmqtt-Pub` header is the server marking the message as
-MQTT-originated, with the QoS it was published at; NATS subscribers can
-read it or ignore it.
+Устройство отправило в `sensors/warehouse/cold-1/temp`, подписчик получил `sensors.warehouse.cold-1.temp`. Сервер заменил каждый `/` на `.`, не изменяя полезную нагрузку: в обоих протоколах это байты. Заголовок `Nmqtt-Pub` обозначает источник MQTT и QoS публикации; подписчик может прочитать или игнорировать его.
 
-Nothing on the NATS side is MQTT-aware. `nats sub` used a normal
-wildcard subscription and got a normal message. Any NATS subscriber, a
-JetStream stream, or a service can consume device traffic the same way.
+Сторона NATS не знает о MQTT: `nats sub` использовал обычную подстановку и получил обычное сообщение. Подписчик, поток JetStream или сервис обрабатывают такой трафик одинаково.
 
 <div class="nats-flow" data-scenario="mqttBridgeAnimated" data-width="640" data-height="460"></div>
 
-## Publish from NATS, receive on the device
+## Публикация NATS и получение устройством {#publish-from-nats-receive-on-the-device}
 
-The bridge runs both ways. Acme's dispatch system sends instructions to
-trucks over the same server.
+Мост двусторонний. Диспетчерская Acme отправляет команды грузовикам через тот же сервер.
 
-Subscribe as the truck's telemetry unit, over MQTT:
+Подпишитесь через MQTT как бортовой блок:
 
 ```bash
 mosquitto_sub -h 127.0.0.1 -p 1883 \
   -t "fleet/truck-17/telemetry" -v
 ```
 
-Publish from the NATS side:
+Опубликуйте из NATS:
 
 ```bash
 nats pub fleet.truck-17.telemetry "reroute to depot 4"
 ```
 
-The device receives it:
+Устройство получает:
 
 ```
 fleet/truck-17/telemetry reroute to depot 4
 ```
 
-The conversion runs in reverse for delivery: the subject
-`fleet.truck-17.telemetry` matches the device's subscription on
-`fleet/truck-17/telemetry`.
+Преобразование доставки обратное: тема `fleet.truck-17.telemetry` соответствует подписке устройства `fleet/truck-17/telemetry`.
 
-One detail matters later: a message published by a NATS client always
-arrives at an MQTT subscriber as QoS 0, whatever QoS the subscription
-asked for. A NATS publish carries no QoS, so there's nothing to promote
-it with. [QoS, sessions, and retained
-messages](/learn/mqtt/qos-sessions-and-retained) covers what that costs you.
+Сообщение NATS всегда приходит MQTT-подписчику с QoS 0, независимо от запрошенного QoS подписки. Публикация NATS не несёт QoS для повышения уровня. Последствия описаны в разделе [QoS, сеансы и retained-сообщения](/learn/mqtt/qos-sessions-and-retained).
 
-## What the server does with a subscription
+## Как сервер обрабатывает подписку {#what-the-server-does-with-a-subscription}
 
-When the MQTT client subscribed to `fleet/truck-17/telemetry`, the
-server created a matching NATS subscription on
-`fleet.truck-17.telemetry`. The bridge is a real subscription, not a
-special case in the publish path.
+Подписка устройства на `fleet/truck-17/telemetry` создаёт настоящую подписку NATS на `fleet.truck-17.telemetry`. Мост реализован подпиской, а не отдельным случаем публикации.
 
-Because the interest is a real NATS subscription, it propagates the way
-any other subscription does. A publisher connected to a different server
-in the cluster reaches this device, and the publisher needs to know
-nothing about MQTT. The same holds in the other direction: an MQTT
-publish becomes a NATS publish on the converted subject, and every
-matching NATS subscriber receives it.
+Поэтому интерес распространяется как любой другой. Издатель на другом сервере кластера достигает устройства, не зная о MQTT. Обратное также верно: MQTT-публикация становится NATS-публикацией в преобразованной теме и поступает всем подходящим подписчикам.
 
-## Where the readings go
+## Куда поступают показания {#where-the-readings-go}
 
-The readings are now ordinary NATS traffic, so everything Acme already
-runs on NATS can treat them the same way it treats anything else,
-including keeping them.
+Это обычный трафик NATS, поэтому существующие приложения Acme обрабатывают и сохраняют его привычным образом.
 
-JetStream is already enabled, so capturing both device subject trees
-takes one command:
+JetStream уже включён: для захвата обоих деревьев тем достаточно команды:
 
 ```bash
 nats stream add DEVICES \
@@ -190,66 +139,38 @@ nats stream add DEVICES \
   --defaults
 ```
 
-Everything on those two subject trees is now stored for 30 days — sensor
-readings, truck telemetry, and the dispatch instructions published from
-the NATS side. The ORDERS platform consumes `DEVICES` like any other
-stream: a cold-chain excursion flags the order for the shipment it
-belongs to, and truck telemetry updates a delivery's position.
-Consumers, filtering, and replay work exactly as the
-[JetStream deep dive](/learn/jetstream) describes, because this is a
-normal stream.
+Теперь показания, телеметрия и команды NATS сохраняются 30 дней. ORDERS использует `DEVICES` как обычный поток: температурное отклонение отмечает заказ соответствующей отправки, телеметрия обновляет положение. Потребители, фильтры и воспроизведение работают по модели [JetStream](/learn/jetstream).
 
-The devices don't change at all; they keep publishing plain MQTT and
-the server does the rest. A QoS 0 reading is gone once it is delivered, and QoS 1
-only reaches subscribers that exist at the time. Stored in `DEVICES`, a
-reading is still readable by a consumer written next month.
+Устройства не меняются и продолжают MQTT. Показание QoS 0 исчезает после доставки, QoS 1 доступно лишь существующим тогда подписчикам. Сохранённое в `DEVICES` показание прочитает и потребитель, написанный в следующем месяце.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two problems account for most failed first attempts.
+Большинство первых неудач связано с двумя причинами.
 
-**Starting without JetStream.** A server with an `mqtt {}` block and no
-`jetstream` block exits at startup with `mqtt requires JetStream to be
-enabled if running in standalone mode`. The requirement applies per
-account too: an MQTT user whose account has no JetStream is refused at
-connect time. Enable JetStream on the server, and on the account your
-MQTT users bind to.
+**Запуск без JetStream.** Сервер с `mqtt {}` без `jetstream` завершает запуск с `mqtt requires JetStream to be
+enabled if running in standalone mode`. Требование действует и для учётной записи: MQTT-пользователю без JetStream отказывают при подключении. Включите JetStream на сервере и в учётной записи пользователей MQTT.
 
-**Pointing an MQTT-over-WebSocket client at 1883.** MQTT clients that
-speak WebSocket must connect to the WebSocket port configured in the
-`websocket {}` block, not the MQTT port. Send a WebSocket handshake to
-1883 and the server rejects it with `MQTT clients over websocket must
-connect to the Websocket port, not the MQTT port`. Plain MQTT goes to
-1883; MQTT over WebSocket goes to the WebSocket listener.
+**MQTT поверх WebSocket направлен на 1883.** Ему нужен порт `websocket {}`, а не MQTT. Рукопожатие на 1883 отклоняется сообщением `MQTT clients over websocket must
+connect to the Websocket port, not the MQTT port`. Обычный MQTT идёт на 1883, MQTT через WebSocket — на слушатель WebSocket.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You have one `nats-server` doing two jobs:
+Один `nats-server` выполняет две задачи:
 
-- NATS clients on 4222, MQTT devices on 1883
-- JetStream enabled, holding the MQTT state the server manages for itself
-- a sensor publishing `sensors/warehouse/cold-1/temp` that a
-  `nats sub "sensors.>"` receives as `sensors.warehouse.cold-1.temp`
-- a truck subscribed to `fleet/truck-17/telemetry` receiving what a NATS
-  client publishes on `fleet.truck-17.telemetry`
-- a `DEVICES` stream capturing `sensors.>` and `fleet.>`, which is how
-  device data reaches the ORDERS platform
+- NATS-клиенты подключены к 4222, устройства MQTT — к 1883.
+- JetStream хранит состояние MQTT под управлением сервера.
+- Показание `sensors/warehouse/cold-1/temp` приходит через `nats sub "sensors.>"` как `sensors.warehouse.cold-1.temp`.
+- Грузовик на `fleet/truck-17/telemetry` получает публикации NATS в `fleet.truck-17.telemetry`.
+- `DEVICES` сохраняет `sensors.>` и `fleet.>`, передавая данные платформе ORDERS.
 
-Keep the server and the stream; the next pages build on both.
+Оставьте сервер и поток: следующие страницы продолжают работу с ними.
 
-## What's next
+## Что дальше {#whats-next}
 
-The conversion worked cleanly here because the topics were simple. Real
-device fleets use leading slashes, empty levels, and wildcards, and some
-characters have no valid subject to convert to.
-[Topics and subjects](/learn/mqtt/topics-and-subjects) covers the full set of
-rules.
+Здесь темы были простыми. Реальные устройства используют начальные косые черты, пустые уровни и подстановки, а некоторые символы нельзя преобразовать. Полные правила приведены в разделе [Темы MQTT и NATS](/learn/mqtt/topics-and-subjects).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → mqtt](/reference/config/mqtt/) — every field of the
-  `mqtt {}` block
-- [Core NATS → Publish-subscribe](/learn/core-nats/publish-subscribe) —
-  the NATS side of what you just did
-- [JetStream deep dive](/learn/jetstream) — the persistence layer MQTT
-  stores its state in
+- [Справочник → mqtt](/reference/config/mqtt/) — все поля `mqtt {}`.
+- [Core NATS → Публикация и подписка](/learn/core-nats/publish-subscribe) — сторона NATS этого примера.
+- [Углублённый курс JetStream](/learn/jetstream) — хранение состояния MQTT.

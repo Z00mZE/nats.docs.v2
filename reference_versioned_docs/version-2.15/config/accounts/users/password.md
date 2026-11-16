@@ -1,14 +1,12 @@
-# password
+# password {#password}
 
 <Aliases aliases="pass" />
 <Reloadable state="reloadable" />
-Password of the user. This can be a free-text value
-(not recommended) or a bcrypted value using the
-`nats server passwd` CLI command.
+Пароль пользователя. Может быть обычным текстом (не рекомендуется) или хешем bcrypt, полученным командой CLI `nats server passwd`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,13 +1,13 @@
-# Create a stream that captures any subject under `orders.`
+# Создать поток для всех тем с префиксом `orders.`
 nats stream add ORDERS --subjects "orders.>" --storage file --retention limits --defaults
 
-# Publish a few orders
+# Опубликовать несколько заказов
 nats pub orders.new "Order #1001"
 nats pub orders.new "Order #1002"
 nats pub orders.shipped "Order #1001 shipped"
 
-# Create a durable pull consumer that delivers from the beginning of the stream
+# Создать долговечный pull-потребитель с доставкой с начала потока
 nats consumer add ORDERS order-processor --pull --deliver all --ack explicit --defaults
 
-# Fetch and acknowledge the next batch of messages
+# Получить и подтвердить следующую порцию сообщений
 nats consumer next ORDERS order-processor --count 3 --ack

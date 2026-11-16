@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -233,17 +234,17 @@ function SlowConsumerAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Stage:
+                    Этап:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {s}
+                        {localizeDiagramContent(s)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -257,7 +258,7 @@ function SlowConsumerAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -278,7 +279,7 @@ function SlowConsumerAnimatedInner({
                 </ReactFlow>
 
                 {/* The async error callback firing, on the client itself */}
-                {erroring && (
+                {localizeDiagramContent(erroring && (
                     <div
                         style={{
                             position: "absolute",
@@ -297,9 +298,9 @@ function SlowConsumerAnimatedInner({
                             whiteSpace: "nowrap",
                         }}
                     >
-                        ⚠ async error callback — SlowConsumer
+                        ⚠ асинхронный обработчик ошибки — SlowConsumer
                     </div>
-                )}
+                ))}
 
                 {/* Pending-buffer overlay, anchored under the warehouse node */}
                 <div
@@ -324,10 +325,10 @@ function SlowConsumerAnimatedInner({
                             marginBottom: "5px",
                         }}
                     >
-                        warehouse pending buffer
+                        буфер ожидания warehouse
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
-                        {Array.from(
+                        {localizeDiagramContent(Array.from(
                             { length: PENDING_LIMIT + 1 },
                             (_, i) => i,
                         ).map((i) => {
@@ -352,7 +353,7 @@ function SlowConsumerAnimatedInner({
                                     }}
                                 />
                             );
-                        })}
+                        }))}
                     </div>
                     <div
                         style={{
@@ -362,9 +363,9 @@ function SlowConsumerAnimatedInner({
                             fontWeight: 500,
                         }}
                     >
-                        {overflowing
+                        {localizeDiagramContent(overflowing
                             ? "limit exceeded — dropping"
-                            : `${filled} / ${PENDING_LIMIT} pending`}
+                            : `${filled} / ${PENDING_LIMIT} pending`)}
                     </div>
                 </div>
             </div>
@@ -379,9 +380,9 @@ function SlowConsumerAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

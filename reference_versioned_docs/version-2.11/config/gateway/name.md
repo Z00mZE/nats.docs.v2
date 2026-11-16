@@ -1,12 +1,11 @@
-# name
+# name {#name}
 
 <Reloadable state="not-reloadable" />
-Name of this cluster. All gateway connections belonging to the
-same cluster must specify the same name.
+Имя этого кластера. Все соединения шлюзов одного кластера должны указывать одинаковое имя.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,9 +1,9 @@
-# listen
+# listen {#listen}
 
 <Reloadable state="not-reloadable" note="Only a listen string whose host is unchanged AND whose port is `-1` survives reload." />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `string` | This is an alternate to setting the `host` and `port` separately. | - |
+| `string` | Альтернатива раздельному заданию `host` и `port`. | - |

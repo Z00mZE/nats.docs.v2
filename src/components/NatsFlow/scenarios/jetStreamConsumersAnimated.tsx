@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 const STREAM_SIZE = 8;
@@ -80,9 +81,9 @@ function JetStreamConsumersAnimatedInner() {
                     fontStyle: "italic",
                 }}
             >
-                Three consumers — each a server-side cursor over the{" "}
-                <strong>ORDERS</strong>{" "}
-                stream — advance at their own pace as their clients ack messages.
+                Три потребителя — каждый представляет серверный курсор по{localizeDiagramContent(" ")}
+                <strong>ORDERS</strong>{localizeDiagramContent(" ")}
+                поток — продвигаются каждый в своём темпе, когда клиенты подтверждают сообщения.
             </div>
 
             <div
@@ -105,12 +106,12 @@ function JetStreamConsumersAnimatedInner() {
                         fontWeight: 600,
                     }}
                 >
-                    ORDERS stream
+                    поток ORDERS
                 </div>
 
                 {/* Slot row */}
                 <div style={{ display: "flex", gap: SLOT_GAP }}>
-                    {Array.from({ length: STREAM_SIZE }, (_, i) => i + 1).map(
+                    {localizeDiagramContent(Array.from({ length: STREAM_SIZE }, (_, i) => i + 1).map(
                         (seq) => (
                             <div
                                 key={seq}
@@ -129,10 +130,10 @@ function JetStreamConsumersAnimatedInner() {
                                     fontFamily: "monospace",
                                 }}
                             >
-                                #{seq}
+                                #{localizeDiagramContent(seq)}
                             </div>
                         ),
-                    )}
+                    ))}
                 </div>
 
                 {/* Cursor area */}
@@ -143,7 +144,7 @@ function JetStreamConsumersAnimatedInner() {
                         width: SLOTS_TOTAL_WIDTH,
                     }}
                 >
-                    {CONSUMER_CONFIG.map((config, idx) => {
+                    {localizeDiagramContent(CONSUMER_CONFIG.map((config, idx) => {
                         const advances = Math.min(
                             Math.floor(cycleElapsedMs / config.speedMs),
                             STREAM_SIZE - config.startPosition,
@@ -215,21 +216,21 @@ function JetStreamConsumersAnimatedInner() {
                                         whiteSpace: "nowrap",
                                     }}
                                 >
-                                    {config.name}{" "}
+                                    {localizeDiagramContent(config.name)}{localizeDiagramContent(" ")}
                                     <span
                                         style={{
                                             fontWeight: 400,
                                             color: "#6b7280",
                                         }}
                                     >
-                                        {isCaughtUp
+                                        {localizeDiagramContent(isCaughtUp
                                             ? "(caught up)"
-                                            : `at #${position}`}
+                                            : `at #${position}`)}
                                     </span>
                                 </div>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
             </div>
         </div>

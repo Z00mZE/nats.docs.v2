@@ -1,13 +1,12 @@
-# msg_trace
+# msg_trace {#msg_trace}
 
 <Reloadable state="reloadable" />
-Where this account's message traces are delivered, and how often
-they are sampled.
+Место доставки трассировок сообщений этого аккаунта и частота их выборки.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`dest`](./dest.md) | Subject the trace events are published to. | `string` | - | Yes |
-| [`sampling`](./sampling.md) | Percentage of traced messages to report, 1 to 100. | `integer` | `100` | Yes |
+| [`dest`](./dest.md) | Субъект публикации событий трассировки. | `string` | - | Да |
+| [`sampling`](./sampling.md) | Доля трассируемых сообщений для отчёта в процентах, от 1 до 100. | `integer` | `100` | Да |

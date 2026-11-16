@@ -1,18 +1,18 @@
-# Consumer Acknowledgement Metric
+# Метрика подтверждения потребителя {#consumer-acknowledgement-metric}
 
-Consumer acknowledgement metrics.
+Метрики подтверждения потребителя.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerAck from '@site/src/schemas/vendor/v2.14/jsm/jetstream/metric/v1/consumer_ack.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.METRIC.CONSUMER.ACK.{stream}.{consumer}`
 
-Where:
-- `{stream}` is the stream name
-- `{consumer}` is the consumer name
+Где:
+- `{stream}` — имя потока
+- `{consumer}` — имя потребителя
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={consumerAck} />

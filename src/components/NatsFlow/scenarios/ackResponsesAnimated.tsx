@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // ackResponsesAnimated
@@ -82,7 +83,7 @@ function MsgBox({
             }}
         >
             <div style={{ fontSize: 9.5, color: "#6b7280", fontFamily: "monospace" }}>
-                stream
+                поток
             </div>
             <div
                 style={{
@@ -94,7 +95,7 @@ function MsgBox({
                     textDecoration: termed ? "line-through" : "none",
                 }}
             >
-                #{seq}
+                #{localizeDiagramContent(seq)}
             </div>
         </div>
     );
@@ -125,7 +126,7 @@ function Chip({ resp }: { resp: Resp }) {
                 border: `1.5px ${s.dashed ? "dashed" : "solid"} ${s.border}`,
             }}
         >
-            {s.text}
+            {localizeDiagramContent(s.text)}
         </div>
     );
 }
@@ -179,7 +180,7 @@ function Wheel({ progress }: { progress: number }) {
                 />
             </svg>
             <div style={{ fontSize: 8.5, color: BLUE, fontWeight: 700, marginTop: 1 }}>
-                in-progress
+                обработка продолжается
             </div>
         </div>
     );
@@ -236,12 +237,9 @@ function AckResponsesAnimatedInner() {
                     maxWidth: 660,
                 }}
             >
-                One consumer, one client, answered four ways. <strong>ack</strong>{" "}
-                advances to the next message; <strong>nak</strong> brings the same
-                one straight back; <strong>term</strong> drops it (it turns red)
-                and the next is delivered at once; <strong>in-progress</strong>{" "}
-                isn't an answer — it fills the Ack Wait window again to keep a slow
-                message in flight.
+                Один потребитель, один клиент, четыре варианта ответа. <strong>подтверждение</strong>{localizeDiagramContent(" ")}
+                переходит к следующему сообщению; <strong>nak</strong> сразу возвращает то же сообщение; <strong>срок</strong> отбрасывает сообщение (оно краснеет), и сразу доставляется следующее; <strong>обработка продолжается</strong>{localizeDiagramContent(" ")}
+                не является ответом: оно снова заполняет окно Ack Wait, оставляя медленное сообщение в обработке.
             </div>
 
             <div
@@ -262,14 +260,14 @@ function AckResponsesAnimatedInner() {
                         marginBottom: 8,
                     }}
                 >
-                    Delivered, in the order received →
+                    Доставлено в порядке получения →
                 </div>
 
                 <div
                     key={cycleIndex}
                     style={{ display: "flex", gap: 10, alignItems: "flex-start", minHeight: 165 }}
                 >
-                    {shown.map((c, i) => {
+                    {localizeDiagramContent(shown.map((c, i) => {
                         const isInprogress = c.resp === "inprogress";
                         const wheelActive =
                             isInprogress && t >= c.respondAt && t < (c.wheelEnd ?? 0);
@@ -292,7 +290,7 @@ function AckResponsesAnimatedInner() {
                                     gap: 4,
                                 }}
                             >
-                                {c.tag ? (
+                                {localizeDiagramContent(c.tag ? (
                                     <div
                                         style={{
                                             fontSize: 8.5,
@@ -301,11 +299,11 @@ function AckResponsesAnimatedInner() {
                                             height: 11,
                                         }}
                                     >
-                                        {redelivered ? "↺ redelivered" : "next →"}
+                                        {localizeDiagramContent(redelivered ? "↺ redelivered" : "next →")}
                                     </div>
                                 ) : (
                                     <div style={{ height: 11 }} />
-                                )}
+                                ))}
 
                                 <MsgBox
                                     seq={c.seq}
@@ -324,7 +322,7 @@ function AckResponsesAnimatedInner() {
                                     ↓
                                 </div>
 
-                                {!answered ? (
+                                {localizeDiagramContent(!answered ? (
                                     <Processing />
                                 ) : isInprogress && wheelActive ? (
                                     <Wheel progress={wheelProgress} />
@@ -332,10 +330,10 @@ function AckResponsesAnimatedInner() {
                                     <Chip resp="ack" />
                                 ) : (
                                     <Chip resp={c.resp} />
-                                )}
+                                ))}
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
 
                 <div
@@ -348,7 +346,7 @@ function AckResponsesAnimatedInner() {
                         minHeight: 16,
                     }}
                 >
-                    {cap.text}
+                    {localizeDiagramContent(cap.text)}
                 </div>
             </div>
         </div>

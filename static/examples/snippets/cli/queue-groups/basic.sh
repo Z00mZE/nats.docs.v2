@@ -1,16 +1,16 @@
-# Terminal 1: First worker in queue group
+# Терминал 1: первый обработчик в группе очереди
 nats sub orders.new --queue workers
 
-# Terminal 2: Second worker in same queue group
+# Терминал 2: второй обработчик в той же группе очереди
 nats sub orders.new --queue workers
 
-# Terminal 3: Third worker in same queue group
+# Терминал 3: третий обработчик в той же группе очереди
 nats sub orders.new --queue workers
 
-# Terminal 4: Publish messages (distributed across workers)
+# Терминал 4: публикация сообщений с распределением между обработчиками
 nats pub orders.new "Order 1"
 nats pub orders.new "Order 2"
 nats pub orders.new "Order 3"
 nats pub orders.new "Order 4"
 
-# Each message goes to exactly one worker
+# Каждое сообщение получает ровно один обработчик

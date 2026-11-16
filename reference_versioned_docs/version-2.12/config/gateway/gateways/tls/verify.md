@@ -1,11 +1,11 @@
-# verify
+# verify {#verify}
 
 <Reloadable state="noop" note="No runtime effect at all for a remote gateway entry." />
-If true, require and verify client certificates. Does not apply to monitoring.
+Если true, требует и проверяет сертификаты клиентов. К мониторингу не применяется.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

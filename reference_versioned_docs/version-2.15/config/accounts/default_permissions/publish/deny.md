@@ -1,11 +1,11 @@
-# deny
+# deny {#deny}
 
 <Reloadable state="reloadable" note="Folded into each user's permissions while the config is parsed, so it only affects users with no explicit `permissions`; from there it follows the users path and is re-applied to live client connections. Not re-applied to existing leafnode connections." />
-List of subjects that are denied to the client.
+Список субъектов, запрещённых клиенту.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |

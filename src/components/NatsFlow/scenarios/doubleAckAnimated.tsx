@@ -1,3 +1,4 @@
+import { localizeDiagramContent, localizeDiagramText } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // doubleAckAnimated
@@ -56,7 +57,7 @@ function Token(
                 fontFamily: "monospace",
             }}
         >
-            {label}
+            {localizeDiagramContent(label)}
         </div>
     );
 }
@@ -82,7 +83,7 @@ function Node({ label, color }: { label: string; color: string }) {
                 flexShrink: 0,
             }}
         >
-            {label}
+            {localizeDiagramContent(label)}
         </div>
     );
 }
@@ -118,9 +119,9 @@ function Panel(
         <div style={{ marginBottom: 14 }}>
             <div style={{ marginBottom: 4 }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>
-                    {title}
-                </span>{" "}
-                <span style={{ fontSize: 12, color: "#6b7280" }}>— {sub}</span>
+                    {localizeDiagramContent(title)}
+                </span>{localizeDiagramContent(" ")}
+                <span style={{ fontSize: 12, color: "#6b7280" }}>— {localizeDiagramContent(sub)}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Node label={"Server\n(consumer)"} color={BLUE} />
@@ -134,22 +135,22 @@ function Panel(
                     }}
                 >
                     {/* deliver: server -> client */}
-                    {msg >= 0 && msg < 2 && (
+                    {localizeDiagramContent(msg >= 0 && msg < 2 && (
                         <Token progress={msg} dir="right" label="message" color={BLUE} />
-                    )}
+                    ))}
                     {/* ack: client -> server */}
-                    {ack >= 0 && ack < 2 && (
+                    {localizeDiagramContent(ack >= 0 && ack < 2 && (
                         <Token
                             progress={ack}
                             dir="left"
                             label={double ? "ack (request)" : "ack"}
                             color={GREEN}
                         />
-                    )}
+                    ))}
                     {/* confirm: server -> client (double ack only) */}
-                    {double && confirm >= 0 && confirm < 2 && (
+                    {localizeDiagramContent(double && confirm >= 0 && confirm < 2 && (
                         <Token progress={confirm} dir="right" label="confirmed ✓" color={NAVY} />
-                    )}
+                    ))}
                 </div>
                 <Node label={"Client"} color={GREEN} />
             </div>
@@ -162,7 +163,7 @@ function Panel(
                     fontFamily: "monospace",
                 }}
             >
-                client: {status}
+                клиент: {localizeDiagramContent(status)}
             </div>
         </div>
     );
@@ -186,10 +187,9 @@ function DoubleAckAnimatedInner() {
                     fontStyle: "italic",
                 }}
             >
-                Both deliver a message and get an ack back. A{" "}
-                <strong>plain ack</strong> is fire-and-forget; a{" "}
-                <strong>double ack</strong> waits for the server to confirm the
-                ack landed.
+                Оба доставляют сообщение и получают подтверждение. При{localizeDiagramContent(" ")}
+                <strong>обычное подтверждение</strong> отправляется без ожидания;{localizeDiagramContent(" ")}
+                <strong>двойное подтверждение</strong> ждёт, пока сервер подтвердит получение ack.
             </div>
             <div
                 style={{
@@ -201,13 +201,13 @@ function DoubleAckAnimatedInner() {
             >
                 <Panel
                     t={t}
-                    title="Plain ack"
+                    title={localizeDiagramText("Plain ack")}
                     sub="client moves on the moment it sends the ack"
                     double={false}
                 />
                 <Panel
                     t={t}
-                    title="Double ack"
+                    title={localizeDiagramText("Double ack")}
                     sub="client waits for the server's confirmation"
                     double
                 />

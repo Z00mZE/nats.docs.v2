@@ -1,21 +1,21 @@
-# Snapshot Stream
+# Снимок потока {#snapshot-stream}
 
-Creates a snapshot of a stream.
+Создание снимка потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamSnapshotRequest from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/stream_snapshot_request.json';
 import streamSnapshotResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/stream_snapshot_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.SNAPSHOT.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamSnapshotRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamSnapshotResponse} />

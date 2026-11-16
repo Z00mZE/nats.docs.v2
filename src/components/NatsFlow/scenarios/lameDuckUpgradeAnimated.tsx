@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -328,17 +329,17 @@ function LameDuckUpgradeAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Stage:
+                    Этап:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {s}
+                        {localizeDiagramContent(s)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -352,7 +353,7 @@ function LameDuckUpgradeAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -383,9 +384,9 @@ function LameDuckUpgradeAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

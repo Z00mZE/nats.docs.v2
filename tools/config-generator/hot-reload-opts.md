@@ -1,8 +1,10 @@
-# NOT Reloadable
+<a id="not-reloadable"></a>
+
+# Не поддерживают перезагрузку без перезапуска
 
 - host
 - port
-  - changing other than to `0` for random
+  - изменение на значение, отличное от `0` для случайного порта
 - listen
 - client_advertise
 - allow_non_tls
@@ -32,22 +34,22 @@
 - cluster
   - host
   - port
-  - pinned accounts (routes) if the account doesn't exist
+  - закреплённые учётные записи (маршруты), если учётная запись не существует
 - resolver
-  - enabling or disabling
+  - включение или отключение
 - resolver_tls
 - resolver_preload
 - resolver_pinned_accounts
 - gateways
-  - non-TLS changes
+  - изменения, не связанные с TLS
 - leafnodes
   - remotes
   - users
 - jetstream
-  - store dir (if already enabled)
-  - max file or memory (if already enabled)
+  - каталог хранения, если уже включён
+  - предел файлового или оперативного хранилища, если уже включён
 - websocket
-  - non-TLS changes
+  - изменения, не связанные с TLS
 - mqtt
   - host
   - port
@@ -57,6 +59,6 @@
   - js_domain
 - no_auth_user
 - system_account
-  - going from `$SYS` to something else
-  - going from something to disabled
+  - смена `$SYS` на другое значение
+  - переход от заданного значения к отключённому состоянию
 - no_system_account

@@ -1,17 +1,16 @@
-# server_tags
+# server_tags {#server_tags}
 
 <Reloadable state="reloadable" note="The reload handler only logs; the new tags reach `/varz` and the next statsz update because the options are swapped." />
-One or more tags associated with the server. This is currently
-used for placement of JetStream streams and consumers.
+Один или несколько тегов сервера. Сейчас используются для размещения потоков и потребителей JetStream.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` |  | - |
 | `[ string ]` |  | - |
-## Examples
+## Examples {#examples}
 
 ```
 cloud:aws

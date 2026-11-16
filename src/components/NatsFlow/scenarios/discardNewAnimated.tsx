@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // discardNewAnimated
@@ -51,23 +52,23 @@ function DiscardNewAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Discard New.</strong> The stream is full. The new order is
-                <strong> rejected</strong> and the publish fails; stored messages are never discarded.
+                <strong>Отбрасывать новые.</strong> Поток заполнен. Новый заказ
+                <strong> отклонено</strong> и публикация завершается ошибкой; сохранённые сообщения не отбрасываются.
             </div>
 
             <div style={{ position: "relative", width: W, height: H, border: "1px solid #e5e7eb", borderRadius: 10, background: "#fafafa" }}>
                 {/* publisher */}
                 <div style={{ position: "absolute", left: 10, top: MID_Y - 22, width: 80, height: 44, borderRadius: 8, border: `2px solid ${rejected ? RED : WORKER_NAVY}`, background: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: rejected ? RED : WORKER_NAVY, transition: "border-color 0.2s, color 0.2s" }}>
-                    publisher
+                    издатель
                 </div>
                 {/* error pill */}
                 <div style={{ position: "absolute", left: 0, top: MID_Y + 30, width: 100, textAlign: "center", fontSize: 9, fontWeight: 700, fontFamily: "monospace", color: RED, opacity: rejected ? 1 : 0, lineHeight: 1.2 }}>
-                    publish ✗<br />max msgs
+                    публикация ✗<br />макс. сообщений
                 </div>
 
                 {/* traveling order (green inbound, red bouncing back) */}
                 <div style={{ position: "absolute", left: msgX, top: MID_Y - 15, width: 28, height: 30, borderRadius: 6, border: `2px solid ${rejected ? RED : STREAM_BLUE}`, background: rejected ? `${RED}14` : "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: rejected ? RED : STREAM_BLUE }}>
-                    #{n}
+                    #{localizeDiagramContent(n)}
                 </div>
 
                 {/* wall flash when rejected */}
@@ -77,18 +78,18 @@ function DiscardNewAnimatedInner() {
                 <div style={{ position: "absolute", left: STREAM_X, top: MID_Y - 34, width: STREAM_W, height: 68, borderRadius: 8, border: `2px solid ${STREAM_BLUE}`, background: "white" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px 0", fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace", color: STREAM_BLUE }}>5/5 full</span>
+                        <span style={{ fontFamily: "monospace", color: STREAM_BLUE }}>5/5 заполнено</span>
                     </div>
                 </div>
                 {/* stream cells — frozen */}
-                {cells.map((id, i) => (
+                {localizeDiagramContent(cells.map((id, i) => (
                     <div key={id} style={{ position: "absolute", left: cellLeft(i), top: MID_Y - 8, width: CELL_W, height: 28, borderRadius: 5, border: `2px solid ${STREAM_BLUE}`, background: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: STREAM_BLUE }}>
-                        {id}
+                        {localizeDiagramContent(id)}
                     </div>
-                ))}
+                )))}
             </div>
 
-            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

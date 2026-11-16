@@ -1,19 +1,19 @@
-# authorization
+# authorization {#authorization}
 
 <Reloadable state="reloadable" />
-Static single or multi-user declaration.
+Статическое объявление одного или нескольких пользователей.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`username`](./username.md) | Specifies a global user name that clients can use to authenticate the server (requires `password`, exclusive of `token`). | `string` | - | Yes\* |
-| [`password`](./password.md) | Specifies a global password that clients can use to authenticate the server (requires `user`, exclusive of `token`). | `string` | - | Yes\* |
-| [`token`](./token.md) | Specifies a global token that clients can use to authenticate with the server (exclusive of `user` and `password`). | `string` | - | Yes\* |
-| [`users`](./users/index.md) | A list of multiple users with different credentials. | `object` | - | Yes |
-| [`default_permissions`](./default_permissions/index.md) | The default permissions applied to users, if permissions are not explicitly defined for them. | `object` | - | Yes\* |
-| [`timeout`](./timeout.md) | Maximum number of seconds to wait for a client to authenticate. | `float` | `1` | Yes\* |
-| [`auth_callout`](./auth_callout/index.md) | Enables the auth callout functionality. All client connections requiring authentication will have their credentials pass-through to a dedicated auth service. | `object` | - | No\* |
+| [`username`](./username.md) | Задаёт глобальное имя пользователя для аутентификации клиентов на сервере (требует `password`, не используется одновременно с `token`). | `string` | - | Да\* |
+| [`password`](./password.md) | Задаёт глобальный пароль для аутентификации клиентов на сервере (требует `user`, не используется одновременно с `token`). | `string` | - | Да\* |
+| [`token`](./token.md) | Задаёт глобальный токен для аутентификации клиентов на сервере (не используется одновременно с `user` и `password`). | `string` | - | Да\* |
+| [`users`](./users/index.md) | Список пользователей с разными учётными данными. | `object` | - | Да |
+| [`default_permissions`](./default_permissions/index.md) | Разрешения по умолчанию для пользователей, если для них явно не заданы разрешения. | `object` | - | Да\* |
+| [`timeout`](./timeout.md) | Максимальное время ожидания аутентификации клиента в секундах. | `float` | `1` | Да\* |
+| [`auth_callout`](./auth_callout/index.md) | Включает auth callout. Учётные данные всех клиентских соединений, требующих аутентификации, передаются выделенному сервису аутентификации. | `object` | - | Нет\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

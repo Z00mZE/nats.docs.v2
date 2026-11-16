@@ -1,18 +1,18 @@
-# Consumer Group Pinned
+# Группа потребителей закреплена {#consumer-group-pinned}
 
-Consumer group pinned to a client.
+Группа потребителей закреплена за клиентом.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerGroupPinned from '@site/src/schemas/vendor/v2.11/jsm/jetstream/advisory/v1/consumer_group_pinned.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.CONSUMER.PINNED.{stream}.{consumer}`
 
-Where:
-- `{stream}` is the stream name
-- `{consumer}` is the consumer name
+Где:
+- `{stream}` — имя потока
+- `{consumer}` — имя потребителя
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={consumerGroupPinned} />

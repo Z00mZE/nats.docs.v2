@@ -1,18 +1,18 @@
-# Ping Response
+# Ответ Ping {#ping-response}
 
-Service health check response.
+Ответ проверки работоспособности сервиса.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import pingResponse from '@site/src/schemas/vendor/v2.11/jsm/micro/v1/ping_response.json';
 
-## Request Subject
+## Тема запроса {#request-subject}
 
 `$SRV.PING`
 
-Services respond to ping requests on their specific subjects:
-- `$SRV.PING.{service}` - Ping all instances of a service
-- `$SRV.PING.{service}.{id}` - Ping a specific service instance
+Сервисы отвечают на запросы ping в следующих темах:
+- `$SRV.PING.{service}` — проверка всех экземпляров сервиса
+- `$SRV.PING.{service}.{id}` — проверка определённого экземпляра сервиса
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={pingResponse} />

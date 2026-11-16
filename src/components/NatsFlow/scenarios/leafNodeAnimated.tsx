@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React from "react";
 import {
     Background,
@@ -47,7 +48,7 @@ function RegionNode({ data }: NodeProps) {
                     color: d.labelColor,
                 }}
             >
-                {d.label}
+                {localizeDiagramContent(d.label)}
             </div>
         </div>
     );
@@ -122,7 +123,7 @@ function LeafNodeAnimatedInner({ width = 640, height = 500 }: { width?: number; 
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -143,10 +144,8 @@ function LeafNodeAnimatedInner({ width = 640, height = 500 }: { width?: number; 
                 </ReactFlow>
             </div>
             <div style={{ marginTop: "8px", fontSize: "13px", color: "#6b7280" }}>
-                <code>factory-1</code> dials one outbound connection up to the{" "}
-                <strong>east</strong> hub. An order published on the hub rides that
-                single link down to a subscriber on the factory floor — no inbound
-                connection to the factory needed.
+                <code>factory-1</code> устанавливает одно исходящее соединение с{localizeDiagramContent(" ")}
+                <strong>east</strong> центральному узлу. Опубликованный в центре заказ проходит по этой единственной связи к подписчику на заводе: входящее соединение с заводом не требуется.
             </div>
         </div>
     );

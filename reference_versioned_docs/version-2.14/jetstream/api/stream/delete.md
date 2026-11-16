@@ -1,16 +1,16 @@
-# Delete Stream
+# Удаление потока {#delete-stream}
 
-Deletes an existing stream.
+Удаление существующего потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamDeleteResponse from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/stream_delete_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.DELETE.{stream}`
 
-Where `{stream}` is the name of the stream to delete.
+Где `{stream}` — имя удаляемого потока.
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamDeleteResponse} />

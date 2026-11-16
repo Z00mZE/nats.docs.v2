@@ -1,18 +1,18 @@
-# mappings
+# mappings {#mappings}
 
 <Aliases aliases="maps" />
 <Reloadable state="reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`destination`](./destination.md) | The subject mapping destination for the source subject. | `string` | - | Yes |
-| [`weight`](./weight.md) | A number between 0 and 100 (inclusive). The string form allows for a trailing `%` sign. Note, if the `cluster` field is used, weights across the destinations must add up to 100% on a per-cluster basis unless artifical message loss is desired for testing. | `(multiple)` | - | Yes |
-| [`cluster`](./cluster.md) | If specified, the destination is cluster-scoped. Messages received by servers within the named cluster will only consider mappings with the same cluster name. Otherwise, it will fallback to non-cluster scoped mappings. | `string` | - | Yes |
+| [`destination`](./destination.md) | Назначение отображения для исходного субъекта. | `string` | - | Да |
+| [`weight`](./weight.md) | Число от 0 до 100 включительно. В строковой форме допускается завершающий знак `%`. Если используется поле `cluster`, сумма весов назначений для каждого кластера должна составлять 100%, кроме случаев намеренной потери сообщений при тестировании. | `(multiple)` | - | Да |
+| [`cluster`](./cluster.md) | Если задано, назначение ограничивается кластером. Серверы указанного кластера учитывают для полученных сообщений только отображения с таким же именем кластера. В противном случае используются отображения без привязки к кластеру. | `string` | - | Да |

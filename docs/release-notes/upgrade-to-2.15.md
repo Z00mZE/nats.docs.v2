@@ -1,59 +1,59 @@
 ---
-title: Upgrade to NATS 2.15
-sidebar_label: Upgrade to 2.15
-description: What changes when you move a NATS deployment from 2.14.x to 2.15 — new features, upgrade considerations, and downgrade steps.
+title: "Обновление до NATS 2.15"
+sidebar_label: "Обновление до 2.15"
+description: "Что меняется при переходе развёртывания NATS с 2.14.x на 2.15: новые возможности, особенности обновления и возврата к предыдущей версии."
 ---
 
-# Upgrade to NATS 2.15
+# Обновление до NATS 2.15 {#upgrade-to-nats-215}
 
-This guide is tailored for existing NATS users upgrading from NATS version v2.14.x to v2.15.x. This will read as a summary with links to specific documentation pages to learn more about the feature or improvement.
+Это руководство предназначено для пользователей NATS, переходящих с v2.14.x на v2.15.x. Оно кратко описывает изменения и содержит ссылки на подробную документацию по отдельным возможностям и улучшениям.
 
-**Important:** Due to the desired state changes in the metalayer, we highly recommend upgrading from at least v2.14.7 to v2.15.x for the smoothest upgrade experience (see upgrade considerations below).
+**Важно:** из-за перехода слоя метаданных на модель желаемого состояния настоятельно рекомендуется перед обновлением до v2.15.x использовать как минимум v2.14.7. Это обеспечит наиболее плавный переход (см. особенности обновления ниже).
 
-For the complete changelog, see the [v2.15.0 release notes on GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.15.0). For the story behind the release, see the [announcement post](https://nats.io/blog/nats-server-2.15-release/).
+Полный журнал изменений см. в [примечаниях к выпуску v2.15.0 на GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.15.0). О причинах появления новых возможностей рассказывает [анонс выпуска](https://nats.io/blog/nats-server-2.15-release/).
 
-## Features
+## Новые возможности {#features}
 
-### Operations
+### Эксплуатация {#operations}
 
-* **Desired state metalayer:** The metalayer has been reworked to use desired state reconciliation for all stream and consumer scaling, moving, adding peers, removing peers etc. making it safer and more reliable. More information is available in [ADR-62](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-62.md). See also the upgrade considerations below.
-* **Evacuate endpoints:** Stream and consumer assets can now be more easily migrated off a specific server in bulk, for example, before decommissioning a node. There are separate endpoints to allow: all assets to be evacuated off a server, a single stream and its consumers to be evacuated, and a single consumer to be evacuated, ensuring highest flexibility during operations. When evacuating, assets keep their existing replica count and new replica nodes will be assigned automatically. More information is available in [ADR-62](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-62.md).
-* **Metalayer rescue for disaster recovery:** The server now has a supported way of temporarily lowering the quorum needed for the metalayer to allow peer-removing dead nodes during a disaster recovery scenario. However, this kind of reconfiguration is unsafe and should only be used as a last resort; it is not to be used as a substitute for managing the cluster’s peers properly. More information is available in [ADR-61](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-61.md).
-* **Domain-prefixed JS API in system account:** Systems that bridge the system account onto connected leafnodes on different domains can now manage them while directly connected to the hub by specifying the JetStream domain to act on.
-* **Streams now have a default limit of 1000 consumers:** To prevent unbounded consumer creation on a stream, a default limit of 1000 consumers per stream is applied. An explicit value for `max_consumers` can be specified in the stream config or account limits to allow for more consumers on a single stream, or by increasing the default, see below.
+* **Слой метаданных с желаемым состоянием:** слой метаданных переработан и теперь использует согласование с желаемым состоянием при масштабировании и перемещении потоков и потребителей, добавлении и удалении участников и других операциях. Это делает их безопаснее и надёжнее. Подробности — в [ADR-62](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-62.md). См. также особенности обновления ниже.
+* **API эвакуации ресурсов:** потоки и потребителей теперь проще массово переносить с определённого сервера, например перед выводом узла из эксплуатации. Отдельные методы позволяют эвакуировать все ресурсы сервера, один поток со всеми его потребителями или одного потребителя. При эвакуации сохраняется число реплик, а новые узлы для них назначаются автоматически. Подробности — в [ADR-62](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-62.md).
+* **Аварийное восстановление слоя метаданных:** появился поддерживаемый способ временно уменьшить кворум слоя метаданных, чтобы удалить погибшие узлы из состава участников при аварийном восстановлении. Такая перенастройка небезопасна и должна использоваться только в крайнем случае; она не заменяет правильное управление составом кластера. Подробности — в [ADR-61](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-61.md).
+* **API JetStream с префиксом домена в системной учётной записи:** если системная учётная запись связана с листовыми узлами в других доменах, ими теперь можно управлять напрямую из центральной системы, указав нужный домен JetStream.
+* **Лимит в 1000 потребителей на поток по умолчанию:** чтобы предотвратить неограниченное создание потребителей, введён лимит 1000 на поток. Для большего числа потребителей задайте `max_consumers` в конфигурации потока или лимитах учётной записи либо увеличьте значение по умолчанию, как описано ниже.
 
-### Streams
+### Потоки {#streams}
 
-* **Stream backup and restore v2:** New stream backup format that stores the messages in a format that can be parsed and manipulated using the NATS CLI, rather than the on-disk format. This now also allows backing up and restoring memory-based streams. More information is available in [ADR-63](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-63.md).
-* **Cancel stream move endpoint:** A stream that is midway through moving from cluster A to B can now be reliably canceled through the cancel move endpoints. More information is available in [ADR-62](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-62.md).
-* **Detect source stream recreation:** Recreating a stream that is being sourced by another stream would previously stop the sourcing until it had reached the previously sourced highest sequence. The server can now detect that a sourced stream was recreated, automatically restarting sourcing of the new messages from the correct sequence number.
-* **Stream source indexing:** Stream sources now keep a separate index that persists the highest sourced sequence for a particular source. Apart from exposing this in the stream info, it’s also used to prevent expensive backward scans (for example during leader changes) to find out this highest sourced sequence.
-* **Shorter wait for durable source/mirror consumer resets:** When using a durable consumer for sourcing/mirroring the heartbeat of this consumer can now short-circuit the exponential recreation backoff, allowing the sourcing/mirroring to pick back up more quickly.
+* **Резервное копирование и восстановление потоков v2:** новый формат резервных копий хранит сообщения в виде, который можно разбирать и изменять с помощью NATS CLI, вместо внутреннего дискового формата. Это также позволяет копировать и восстанавливать потоки в памяти. Подробности — в [ADR-63](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-63.md).
+* **API отмены перемещения потока:** перемещение потока между кластерами A и B теперь можно надёжно отменить во время выполнения через соответствующие методы API. Подробности — в [ADR-62](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-62.md).
+* **Обнаружение повторного создания потока-источника:** ранее пересоздание потока, из которого другой поток получал сообщения, останавливало передачу до достижения прежнего максимального порядкового номера. Теперь сервер распознаёт повторное создание источника и автоматически возобновляет передачу новых сообщений с правильного номера.
+* **Индексация источников потока:** для каждого источника теперь ведётся отдельный индекс с наибольшим полученным порядковым номером. Помимо отображения в информации о потоке, он позволяет избежать дорогого обратного сканирования для поиска этого номера, например при смене лидера.
+* **Меньше ожидание сброса долговременных потребителей источников и зеркал:** heartbeat такого потребителя теперь может прервать экспоненциальную задержку повторного создания, ускоряя возобновление передачи из источника или зеркалирования.
 
-## Improvements
+## Улучшения {#improvements}
 
-* **Sync performance changes for replicated streams:** Replicated streams now batch more aggressively, greatly improving performance especially on setups using `sync:always` since it now syncs messages as a group instead of for every single message.
-* **The `js_raft_delete_range`  feature is now enabled by default:** When mirroring a stream with huge delete gaps the server now proposes a single delete range instead of individual message deletes (see upgrade considerations below).
-* **The `no_advertise` option for leafnodes no longer includes the hub’s own listener:** Previously the server would include its own listener address even when `no_advertise` was set. This is no longer the case, relying only on configured URLs.
-* **Leafnode isolation using `request_isolation`, or with hub-enforced `isolate`, now works correctly across cluster nodes:** Previously, east-west interest isolation only worked correctly when all leafnode connections were connected to a single hub node. With this change, isolation between leafnodes connecting to different cluster nodes is also correctly enforced, useful in particular for reducing protocol traffic across large fleets of leafnodes that require only north-south communication.
+* **Производительность синхронизации реплицируемых потоков:** потоки активнее объединяют сообщения в пакеты. Это значительно повышает производительность, особенно при `sync:always`, поскольку синхронизация выполняется для группы, а не каждого сообщения отдельно.
+* **`js_raft_delete_range` теперь включён по умолчанию:** при зеркалировании потока с большими промежутками удалённых сообщений сервер предлагает одну операцию удаления диапазона вместо удаления каждого сообщения (см. особенности обновления ниже).
+* **`no_advertise` для листовых узлов больше не включает адрес слушателя самой центральной системы:** ранее сервер добавлял собственный адрес даже при `no_advertise`. Теперь используются только явно настроенные URL.
+* **Изоляция листовых узлов через `request_isolation` или принудительный `isolate` на центральном сервере корректно работает между узлами кластера:** ранее изоляция интереса между листовыми узлами работала правильно только при подключении всех соединений к одному центральному узлу. Теперь изолируются и листовые узлы, подключённые к разным серверам кластера. Это особенно полезно для сокращения протокольного трафика больших групп листовых узлов, которым нужна только связь с центральной системой.
 
-## Upgrade considerations
+## Особенности обновления {#upgrade-considerations}
 
-### Desired state metalayer
+### Слой метаданных с желаемым состоянием {#desired-state-metalayer}
 
-**Important:** Due to these changes in the metalayer, we highly recommend upgrading from at least v2.14.7 to v2.15.x for the smoothest upgrade experience.
+**Важно:** из-за этих изменений слоя метаданных настоятельно рекомендуется обновляться до v2.15.x с v2.14.7 или более новой версии.
 
-The 2.15 release completely reworks what happens when scaling or moving streams and consumers, as well as how peer additions and removals are handled, making them all significantly more reliable. The servers now implement a complete desired state reconciliation loop: peer additions and removals are handled at the correct time by the asset leader during moves, ensuring high availability throughout the migration.
+Выпуск 2.15 полностью перерабатывает масштабирование и перемещение потоков и потребителей, а также добавление и удаление участников, значительно повышая надёжность. Серверы теперь реализуют полный цикл согласования с желаемым состоянием: во время перемещений лидер ресурса добавляет и удаляет участников в нужный момент, обеспечивая высокую доступность на всём протяжении миграции.
 
-The v2.14.7 (and higher) releases contain compatibility code making them compatible with 2.15’s desired state model. Servers that still run on 2.14 will not run 2.15’s desired state to completion, but they will persist its models. If you’d perform stream/consumer scales or moves during the upgrade, expect those operations to stall until the upgrade to 2.15 completes. Take note however that replicated streams and consumers will remain available without interruption as usual, it’s purely converging to the desired/updated peer set by scaling or moving a stream that may take longer than usual.
+Выпуски v2.14.7 и новее содержат код совместимости с моделью желаемого состояния 2.15. Серверы на 2.14 не доводят операции новой модели до конца, но сохраняют её данные. Если во время обновления вы запустите масштабирование или перемещение потока либо потребителя, операция может остановиться до завершения обновления до 2.15. Реплицируемые потоки и потребители при этом остаются доступны без перерыва: дольше обычного может занимать только переход к желаемому обновлённому составу участников.
 
-Generally we recommend to not issue any stream or consumer updates that can trigger scales or moves (if it is possible to postpone them) until after the upgrade has completed across all cluster nodes. Stream and consumer creation and deletion does not need to be deferred and can continue as usual, even through mixed versions.
+По возможности отложите изменения потоков и потребителей, вызывающие масштабирование или перемещение, до обновления всех узлов кластера. Создание и удаление потоков и потребителей откладывать не нужно: эти операции продолжают работать и при смешанных версиях.
 
-### Streams now have a default limit of 1000 consumers
+### Лимит в 1000 потребителей на поток по умолчанию {#streams-now-have-a-default-limit-of-1000-consumers}
 
-The 2.15 release adds a default limit of 1000 consumers per stream to prevent situations where applications accidentally creating an unbounded number of consumers can cause wider system instability. This default can easily be raised or lowered either by specifying `max_consumers` in the stream config or within the account limits. With this change, it will be necessary to plan for a high expected number of consumers (including, for example, KV watchers) on a given stream ahead of time.
+В 2.15 введён лимит в 1000 потребителей на поток по умолчанию. Он предотвращает нестабильность системы из-за приложений, случайно создающих неограниченное число потребителей. Лимит можно увеличить или уменьшить через `max_consumers` в конфигурации потока или лимитах учётной записи. Поэтому большое ожидаемое число потребителей (в том числе наблюдателей KV) для потока теперь нужно планировать заранее.
 
-The default limit can also be adjusted by specifying the `default_max_consumers` setting in the server config. To restore pre-2.15 behaviour with no default per-stream consumer limit, it can also be set to `-1` meaning ‘unlimited’.
+Значение по умолчанию также задаётся параметром сервера `default_max_consumers`. Для возврата к поведению до 2.15 без стандартного ограничения числа потребителей на поток установите `-1`, то есть «без ограничений».
 
 ```
 jetstream {
@@ -63,27 +63,27 @@ jetstream {
 }
 ```
 
-### Feature flags
+### Флаги возможностей {#feature-flags}
 
-The only feature flag that switches its default in 2.15 is `js_raft_delete_range`. When mirroring a stream with huge delete gaps into a replicated stream, this would result in individual message deletes for every single message that was deleted. With this feature flag enabled the server instead proposes a single delete range, which is more efficient. Support for this operation has already been available throughout 2.14, so you don’t need to make any changes to your system and this flag is safely enabled when upgrading to 2.15. However, this may cause problems when upgrading to 2.15 directly from 2.12 or earlier.
+Единственный флаг, меняющий значение по умолчанию в 2.15, — `js_raft_delete_range`. При зеркалировании потока с большими промежутками удалений в реплицируемый поток ранее создавалась отдельная операция для каждого удалённого сообщения. С этим флагом сервер предлагает одну операцию удаления диапазона, что эффективнее. Поддержка операции присутствует во всей ветке 2.14, поэтому при переходе на 2.15 изменений системы не требуется и флаг можно безопасно включить. Однако прямое обновление с 2.12 или более старой версии может вызвать проблемы.
 
-The `js_ack_fc_v2` flag keeps its 2.14 default in 2.15, which is the v1 acknowledgement and flow control reply subject format. The default changes to the v2 format in 2.16. If you have account imports/exports or subject permissions containing the `$JS.ACK.<stream>.>` or `$JS.FC.<stream>.>` (or more granular) subjects, you need to update them before upgrading to 2.16. See [domain-aware acknowledgement and flow control subjects](/release-notes/upgrade-to-2.14#domain-aware-acknowledgement-and-flow-control-subjects) in the 2.14 upgrade guide for the details.
+В 2.15 флаг `js_ack_fc_v2` сохраняет значение по умолчанию из 2.14: формат v1 тем ответов для подтверждений и управления потоком. В 2.16 форматом по умолчанию станет v2. Если импорты и экспорты учётных записей или разрешения содержат темы `$JS.ACK.<stream>.>` или `$JS.FC.<stream>.>` (либо более точные шаблоны), обновите их до перехода на 2.16. Подробности — в разделе [Темы подтверждений и управления потоком с учётом домена](/release-notes/upgrade-to-2.14#domain-aware-acknowledgement-and-flow-control-subjects) руководства по обновлению до 2.14.
 
-## Downgrade considerations
+## Особенности возврата к предыдущей версии {#downgrade-considerations}
 
-### Desired state metalayer
+### Слой метаданных с желаемым состоянием {#desired-state-metalayer-1}
 
-**Important:** Due to these changes in the metalayer, we only recommend downgrading to v2.14.7 or higher.
+**Важно:** из-за изменений слоя метаданных рекомендуется возвращаться только к v2.14.7 или более новой версии.
 
-As mentioned above, a server running 2.14 does not run 2.15’s desired state to completion, i.e. a scale or move started on 2.15 will not complete at all after the downgrade to 2.14. If you do not perform any new stream/consumer updates after that, which would overwrite 2.15’s desired state, then upgrading back to 2.15 again will re-evaluate and complete these changes. If this is not your intention, you can send a “no-op” stream or consumer update with the exact same config, which will remove desired state information from the configuration and revert to running under the pre-2.15 behaviour.
+Как отмечено выше, сервер 2.14 не завершает операции желаемого состояния из 2.15: масштабирование или перемещение, начатое на 2.15, после возврата на 2.14 не завершится. Если затем не выполнять новых изменений потока или потребителя, перезаписывающих желаемое состояние 2.15, повторное обновление до 2.15 заново оценит и завершит эти операции. Если это не требуется, отправьте обновление потока или потребителя с точно той же конфигурацией (no-op). Оно удалит данные желаемого состояния из конфигурации и вернёт поведение до 2.15.
 
-### Streams now have a default limit of 1000 consumers
+### Лимит в 1000 потребителей на поток по умолчанию {#streams-now-have-a-default-limit-of-1000-consumers-1}
 
-If you had manually overwritten the `default_max_consumers` setting in the server config, you’ll need to remove it when downgrading to 2.14. However, a stream or account limit will continue to be enforced as normal.
+Если вы вручную задавали `default_max_consumers` в конфигурации сервера, удалите его при возврате на 2.14. Ограничения потока или учётной записи продолжат действовать как обычно.
 
-### Feature flags
+### Флаги возможностей {#feature-flags-1}
 
-The feature flag `js_raft_delete_range` was disabled by default but supported throughout version 2.14. There’s no need to adjust the feature flags during this downgrade, but you can decide to opt-in manually on 2.14.
+Флаг `js_raft_delete_range` поддерживался во всей ветке 2.14, но по умолчанию был отключён. При таком возврате менять флаги не требуется, однако на 2.14 вы можете включить его вручную.
 
 ```
 feature_flags {

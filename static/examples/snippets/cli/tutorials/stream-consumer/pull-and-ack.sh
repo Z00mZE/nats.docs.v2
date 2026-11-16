@@ -1,4 +1,4 @@
 #!/bin/bash
-# Pull the next message from the `worker` consumer and acknowledge it.
-# Acknowledging advances the durable consumer so this message is never resent.
+# Получите следующее сообщение потребителя `worker` и подтвердите его.
+# Подтверждение продвигает позицию долговечного потребителя и прекращает повторные доставки этого сообщения.
 nats consumer next EVENTS worker --ack

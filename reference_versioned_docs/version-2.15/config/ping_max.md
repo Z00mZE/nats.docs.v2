@@ -1,12 +1,11 @@
-# ping_max
+# ping_max {#ping_max}
 
 <Reloadable state="reloadable" />
-After how many unanswered pings the server will allow before closing
-the connection.
+Число оставшихся без ответа ping, после которого сервер закрывает соединение.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

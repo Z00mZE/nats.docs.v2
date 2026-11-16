@@ -1,11 +1,11 @@
-# insecure
+# insecure {#insecure}
 
 <Reloadable state="reloadable" note="Meaningless for the inbound WebSocket listener." />
-Skip certificate verification. This only applies to outgoing connections, NOT incoming client connections. **not recommended.**
+Пропустить проверку сертификата. Применяется только к исходящим соединениям, НЕ к входящим клиентским. **Не рекомендуется.**
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

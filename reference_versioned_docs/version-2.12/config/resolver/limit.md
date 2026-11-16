@@ -1,13 +1,11 @@
-# limit
+# limit {#limit}
 
 <Reloadable state="reloadable" note="Handled only as part of the whole `resolver` block; replacement resolver is never Start()ed." />
-If set, limit the number of stored JWTs. In `full` mode, new JWTs
-will be rejected where as in `cache` mode, old JWTs will be evicted
-for new JWTs.
+Если задано, ограничивает число хранимых JWT. В режиме `full` новые JWT отклоняются, а в режиме `cache` старые JWT вытесняются новыми.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

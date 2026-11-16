@@ -1,44 +1,44 @@
 ---
-description: NATS Protocol and API reference documentation.
+description: "Справочная документация по протоколам и API NATS."
 ---
 
-# Reference
+# Справочник {#reference}
 
-Complete technical reference documentation for NATS protocols, APIs, and server components.
+Полный технический справочник по протоколам, API и серверным компонентам NATS.
 
-## [Configuration](./config/index.md)
+## [Конфигурация](./config/index.md) {#configuration}
 
-NATS Server configuration reference:
-- Server configuration options and settings
-- Security and authentication setup
-- Clustering and routing configuration
+Справочник по конфигурации сервера NATS:
+- Параметры и настройки сервера
+- Настройка безопасности и аутентификации
+- Конфигурация кластеризации и маршрутизации
 
-## [JetStream](./jetstream/index.md)
+## [JetStream](./jetstream/index.md) {#jetstream}
 
-JetStream persistence layer reference:
-- [API](./jetstream/api/index.md) - Management and data operations
-- [Advisory](./jetstream/advisory/index.md) - System events and notifications
-- [Metrics](./jetstream/metric/index.md) - Performance and usage metrics
-- [Errors](./jetstream/errors.md) - Error codes and troubleshooting
+Справочник по слою долговременного хранения JetStream:
+- [API](./jetstream/api/index.md) — управление и операции с данными
+- [Уведомления](./jetstream/advisory/index.md) — системные события и уведомления
+- [Метрики](./jetstream/metric/index.md) — показатели производительности и использования
+- [Ошибки](./jetstream/errors.md) — коды ошибок и устранение неполадок
 
-## [System](./system/index.md)
+## [Система](./system/index.md) {#system}
 
-NATS system advisories and monitoring:
-- [Advisory](./system/advisory/index.md) - Connection and system events
-- [Monitoring](./system/monitor/index.md) - Health check and statistics endpoints
-- [Metrics](./system/metric/index.md) - Server telemetry data
+Системные уведомления и мониторинг NATS:
+- [Уведомления](./system/advisory/index.md) — события соединений и системы
+- [Мониторинг](./system/monitor/index.md) — точки проверки работоспособности и статистики
+- [Метрики](./system/metric/index.md) — телеметрия сервера
 
-## [Services](./services/index.md)
+## [Сервисы](./services/index.md) {#services}
 
-NATS Services API for building microservices:
-- [Info Response](./services/info-response.md) - Service information
-- [Ping Response](./services/ping-response.md) - Health check responses
-- [Stats Response](./services/stats-response.md) - Service statistics
+API сервисов NATS для создания микросервисов:
+- [Ответ Info](./services/info-response.md) — информация о сервисе
+- [Ответ Ping](./services/ping-response.md) — результаты проверки работоспособности
+- [Ответ Stats](./services/stats-response.md) — статистика сервиса
 
-## [Protocols](./protocols/index.md)
+## [Протоколы](./protocols/index.md) {#protocols}
 
-Low-level protocol specifications for NATS communication:
-- [Client Protocol](./protocols/client.md) - Communication between clients and servers
-- [Route Protocol](./protocols/route.md) - Inter-server communication for clustering
-- [Leafnode Protocol](./protocols/leafnode.md) - Edge server connections
-- [Gateway Protocol](./protocols/gateway.md) - Super-cluster connectivity
+Низкоуровневые спецификации протоколов взаимодействия NATS:
+- [Клиентский протокол](./protocols/client.md) — взаимодействие клиентов и серверов
+- [Протокол маршрутов](./protocols/route.md) — обмен между серверами кластера
+- [Протокол листовых узлов](./protocols/leafnode.md) — соединения периферийных серверов
+- [Протокол шлюзов](./protocols/gateway.md) — связь внутри суперкластера

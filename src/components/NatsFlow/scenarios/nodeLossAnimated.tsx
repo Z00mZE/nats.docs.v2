@@ -1,3 +1,4 @@
+import { localizeDiagramContent, localizeDiagramText } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // nodeLossAnimated
@@ -61,15 +62,15 @@ function Server({
                     transition: "border-color 0.2s, background 0.2s",
                 }}
             >
-                <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: dead ? RED : "#374151" }}>{name}</span>
-                {hasCopy ? (
+                <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: dead ? RED : "#374151" }}>{localizeDiagramContent(name)}</span>
+                {localizeDiagramContent(hasCopy ? (
                     <span style={{ fontSize: 10, fontFamily: "monospace", color: GREEN, marginTop: 3 }}>ORDERS ✓</span>
                 ) : (
-                    <span style={{ fontSize: 10, fontFamily: "monospace", color: RED, marginTop: 3 }}>lost</span>
-                )}
-                {(dying || dead) && (
+                    <span style={{ fontSize: 10, fontFamily: "monospace", color: RED, marginTop: 3 }}>потеряно</span>
+                ))}
+                {localizeDiagramContent((dying || dead) && (
                     <span style={{ position: "absolute", top: 2, right: 5, fontSize: 13, color: RED, fontWeight: 800 }}>✕</span>
-                )}
+                ))}
             </div>
         </div>
     );
@@ -105,18 +106,18 @@ function Panel({
                 gap: 12,
             }}
         >
-            <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace", color: survives ? GREEN : "#6b7280" }}>{title}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace", color: survives ? GREEN : "#6b7280" }}>{localizeDiagramContent(title)}</div>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                {servers.map((s) => (
+                {localizeDiagramContent(servers.map((s) => (
                     <Server key={s.name} name={s.name} dies={s.dies} phase={phase} />
-                ))}
+                )))}
             </div>
             <div style={{ minHeight: 22, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {banner && (
+                {localizeDiagramContent(banner && (
                     <span style={{ fontSize: 12, fontWeight: 600, color: banner.color, background: `${banner.color}14`, border: `1px solid ${banner.color}`, borderRadius: 6, padding: "3px 10px" }}>
-                        {banner.text}
+                        {localizeDiagramContent(banner.text)}
                     </span>
-                )}
+                ))}
             </div>
         </div>
     );
@@ -141,15 +142,14 @@ function NodeLossAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Surviving a server loss.</strong> The same{" "}
-                <span style={{ color: BLUE, fontWeight: 600 }}>ORDERS</span> stream at R=1 and at
-                R=3. One server fails in each.
+                <strong>Пережить отказ сервера.</strong> Тот же{localizeDiagramContent(" ")}
+                <span style={{ color: BLUE, fontWeight: 600 }}>ORDERS</span> потока с R=1 и R=3. В каждом выходит из строя один сервер.
             </div>
 
             <div style={{ display: "flex", gap: 14, alignItems: "stretch" }}>
-                <Panel title="R=1 · one copy" servers={[{ name: "n1", dies: true }]} phase={key} survives={false} />
+                <Panel title={localizeDiagramText("R=1 · one copy")} servers={[{ name: "n1", dies: true }]} phase={key} survives={false} />
                 <Panel
-                    title="R=3 · three copies"
+                    title={localizeDiagramText("R=3 · three copies")}
                     servers={[
                         { name: "n1", dies: false },
                         { name: "n2", dies: false },
@@ -165,9 +165,9 @@ function NodeLossAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

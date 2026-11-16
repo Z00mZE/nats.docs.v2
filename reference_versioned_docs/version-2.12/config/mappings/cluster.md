@@ -1,14 +1,11 @@
-# cluster
+# cluster {#cluster}
 
 <Reloadable state="reloadable" />
-If specified, the destination is cluster-scoped. Messages received
-by servers within the named cluster will only consider mappings with
-the same cluster name. Otherwise, it will fallback to non-cluster scoped
-mappings.
+Если задано, назначение ограничивается кластером. Серверы указанного кластера учитывают для полученных сообщений только отображения с таким же именем кластера. В противном случае используются отображения без привязки к кластеру.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

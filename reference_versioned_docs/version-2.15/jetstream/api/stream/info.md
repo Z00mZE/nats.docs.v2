@@ -1,21 +1,21 @@
-# Stream Info
+# Информация о потоке {#stream-info}
 
-Retrieves information about a stream.
+Получение информации о потоке.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamInfoRequest from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/stream_info_request.json';
 import streamInfoResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/stream_info_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.INFO.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamInfoRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamInfoResponse} />

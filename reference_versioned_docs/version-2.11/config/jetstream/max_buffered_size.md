@@ -1,11 +1,11 @@
-# max_buffered_size
+# max_buffered_size {#max_buffered_size}
 
 <Reloadable state="not-reloadable" />
-Byte ceiling for that same buffer.
+Предельный размер того же буфера в байтах.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `storage` | Size in bytes or string with a metric unit such as 100K, 50M, 3G, or 1T. | - |
+| `storage` | Размер в байтах или строка с метрической единицей, например 100K, 50M, 3G или 1T. | - |

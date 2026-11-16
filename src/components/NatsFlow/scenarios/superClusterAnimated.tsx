@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React from "react";
 import {
     Background,
@@ -49,7 +50,7 @@ function RegionNode({ data }: NodeProps) {
                     color: d.labelColor,
                 }}
             >
-                {d.label}
+                {localizeDiagramContent(d.label)}
             </div>
         </div>
     );
@@ -136,7 +137,7 @@ function SuperClusterAnimatedInner({ width = 760, height = 380 }: { width?: numb
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -157,10 +158,7 @@ function SuperClusterAnimatedInner({ width = 760, height = 380 }: { width?: numb
                 </ReactFlow>
             </div>
             <div style={{ marginTop: "8px", fontSize: "13px", color: "#6b7280" }}>
-                An order published in the <strong>east</strong> cluster crosses the
-                gateway to a subscriber in <strong>west</strong>. Each region keeps
-                its own three-server route mesh; only the gateway hop leaves the
-                cluster.
+                Заказ, опубликованный в <strong>east</strong> кластере пересекает шлюз и поступает подписчику в <strong>west</strong>. Каждый регион сохраняет собственную сеть маршрутов из трёх серверов; за пределы кластера выходит лишь переход через шлюз.
             </div>
         </div>
     );

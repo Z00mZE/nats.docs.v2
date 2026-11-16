@@ -1,4 +1,4 @@
-# Request with 2 second timeout
+# Запрос с тайм-аутом 2 секунды
 nats request service "" --timeout 2s
 
-# If no response within 2 seconds, returns error
+# Если за 2 секунды ответ не получен, возвращается ошибка

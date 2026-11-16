@@ -1,11 +1,11 @@
-# max_msgs
+# max_msgs {#max_msgs}
 
 <Reloadable state="not-reloadable" />
-Messages allowed in a single batch.
+Допустимое число сообщений в одном пакете.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

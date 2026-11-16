@@ -1,132 +1,76 @@
 ---
 id: index
-title: "Connect MQTT devices to NATS"
+title: "Подключение устройств MQTT к NATS"
 sidebar_position: 1
-description: Run nats-server as the MQTT broker for your devices, so their topics land on the NATS subjects your applications already use
+description: "Сервер nats-server как MQTT-брокер устройств с доставкой в темы существующих приложений NATS"
 ---
 
-# Connect MQTT devices to NATS
+# Подключение устройств MQTT к NATS {#connect-mqtt-devices-to-nats}
 
-`nats-server` speaks MQTT. Add one configuration block and the same
-binary that serves your NATS clients also accepts MQTT connections, on
-its own listener. There's no bridge process to deploy and
-no second broker to run.
+`nats-server` поддерживает MQTT. Один блок конфигурации добавляет отдельный слушатель MQTT в тот же процесс, который обслуживает клиентов NATS. Отдельный мост или второй брокер не нужны.
 
-An MQTT device keeps its own client library, its topics, and its QoS
-settings. It connects to `nats-server` the way it would connect to any
-MQTT broker. The server converts each topic to a NATS subject, so a
-temperature reading published on the MQTT topic
-`sensors/warehouse/cold-1/temp` reaches a NATS subscriber on
-`sensors.warehouse.cold-1.temp`.
+Устройство сохраняет свою библиотеку, темы и QoS, подключаясь к `nats-server` как к обычному MQTT-брокеру. Сервер преобразует темы: показание из `sensors/warehouse/cold-1/temp` получает подписчик NATS на `sensors.warehouse.cold-1.temp`.
 
-NATS implements [MQTT
-v3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html)
-and supports QoS 0, 1, and 2. A device that requests MQTT v5 is
-rejected at connect: it receives a CONNACK with return code 1,
-"unacceptable protocol version".
+NATS реализует [MQTT v3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) с QoS 0, 1 и 2. Запрос MQTT v5 отклоняется при подключении: CONNACK возвращает код 1, означающий недопустимую версию протокола.
 
-## When to use it
+## Когда использовать {#when-to-use-it}
 
-MQTT support exists so you can keep an investment you already have.
-Updating software on devices in the field is slow and risky, especially
-when the application is embedded. If your endpoints already speak MQTT,
-or can only ever speak MQTT, pointing them at `nats-server` gets them
-onto a NATS backbone without touching the device code.
+Поддержка MQTT позволяет сохранить существующие устройства. Обновлять развёрнутое, особенно встроенное ПО медленно и рискованно. Если устройства уже используют MQTT или умеют только его, подключение к `nats-server` объединяет их с NATS без изменения кода.
 
-For a greenfield deployment, prefer NATS end to end where you can. One
-technology from device to cloud gives you a single security model and
-one set of observability tools. The NATS clients are efficient enough
-for constrained hardware.
+В новой системе по возможности используйте NATS на всём пути от устройства до облака: одна модель безопасности и инструменты наблюдения. Клиенты NATS достаточно эффективны для ограниченного оборудования.
 
-## What you gain over a standalone broker
+## Преимущества перед отдельным брокером {#what-you-gain-over-a-standalone-broker}
 
-A standalone MQTT broker scales by making one node bigger. `nats-server`
-scales by adding servers: clusters, superclusters, and leaf nodes carry
-MQTT traffic the same way they carry everything else, so capacity for
-connections and messages grows with the deployment rather than being
-bounded by one broker process. Delivery is subject-based fan-out, so one
-sensor reading reaches any number of consumers without a per-subscriber
-queue on the broker. And where a broker's persistence stops at a
-last-value cache per topic, device traffic on NATS lands in JetStream
-streams, with retention limits, replay, and consumers written long after
-the message arrived.
+Отдельный MQTT-брокер наращивает ресурсы одного узла, `nats-server` — число серверов. Кластеры, суперкластеры и листовые узлы переносят MQTT как остальной трафик, увеличивая ёмкость системы по соединениям и сообщениям. Рассылка по темам доставляет показание любому числу потребителей без отдельной очереди каждого подписчика на брокере. JetStream также сохраняет сообщения устройств с лимитами, воспроизведением и возможностью создать потребителя значительно позднее поступления данных, а не только кэшем последнего значения темы.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You have MQTT devices and a NATS system, and you want them on one
-backbone: sensors, gateways, or vehicles that speak MQTT, publishing
-into the same subjects your NATS applications already consume.
+У вас есть устройства MQTT и система NATS, которые нужно объединить: датчики, шлюзы или автомобили публикуют в темы, уже используемые приложениями.
 
-That covers:
+В том числе:
 
-- replacing a standalone MQTT broker with `nats-server`
-- putting an existing fleet onto NATS without reflashing firmware
-- routing device traffic into JetStream so it survives a restart
+- Замена отдельного MQTT-брокера на `nats-server`.
+- Подключение существующего парка без перепрошивки.
+- Сохранение трафика устройств в JetStream для переживания перезапуска.
 
-## The running scenario
+## Сквозной сценарий {#the-running-scenario}
 
-The examples follow one fictional company. Acme runs its ORDERS
-platform on NATS. Two groups of devices don't:
-cold-chain temperature sensors in the warehouse and telemetry units in
-the delivery fleet, both bought with MQTT firmware that Acme can't
-change.
+Примеры продолжают Acme и платформу ORDERS на NATS. Две группы устройств используют купленную и неизменяемую прошивку MQTT: складские датчики температуры холодовой цепи и телеметрия транспорта доставки.
 
-This chapter puts those devices on the same backbone. They publish MQTT
-topics like `sensors/warehouse/cold-1/temp` and `fleet/truck-17/telemetry`;
-the NATS side subscribes to `sensors.>` and `fleet.>` and treats the
-readings like any other NATS message.
+Подключим их к общей системе. Они публикуют `sensors/warehouse/cold-1/temp` и `fleet/truck-17/telemetry`, а NATS подписывается на `sensors.>` и `fleet.>`, получая обычные сообщения.
 
-Once the readings are NATS
-messages, they go into a stream like anything else, and the ORDERS
-platform consumes them: a cold-chain excursion flags the order for that
-shipment, and truck telemetry updates a delivery's position. The devices
-keep speaking plain MQTT throughout.
+Сообщения сохраняются в поток и обрабатываются ORDERS: нарушение температурного режима отмечает соответствующий заказ, телеметрия обновляет положение доставки. Устройства всё время используют обычный MQTT.
 
-## By the end you'll have
+## Что получится к концу главы {#by-the-end-youll-have}
 
-- an MQTT sensor publishing to `nats-server`, and a NATS subscriber
-  receiving its readings
-- a `DEVICES` stream capturing that traffic for the ORDERS platform to
-  consume
-- a working model of how a topic becomes a subject, wildcards included
-- QoS 1 delivery you can reason about, and the two settings that shape it
-- an MQTT user restricted to MQTT connections, running on the `east`
-  cluster
+- Датчик MQTT публикует в `nats-server`, подписчик NATS получает показания.
+- Поток `DEVICES` сохраняет трафик для ORDERS.
+- Понятны преобразование тем и подстановок.
+- Понятны доставка QoS 1 и две её основные настройки.
+- Пользователь ограничен соединениями MQTT и работает в кластере `east`.
 
-## Map
+## Содержание {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Your first MQTT client](/learn/mqtt/your-first-mqtt-client) | Enable MQTT, connect a device, and watch its message reach a NATS subscriber |
-| [Topics and subjects](/learn/mqtt/topics-and-subjects) | The conversion rules, wildcards, and which characters are rejected |
-| [QoS, sessions, and retained messages](/learn/mqtt/qos-sessions-and-retained) | Delivery guarantees, redelivery, sessions, will messages, and retained messages |
-| [Auth and clustering](/learn/mqtt/auth-and-clustering) | Restrict a user to MQTT, write fleet permissions, and run MQTT on a cluster |
-| [Where to go next](/learn/mqtt/where-next) | A map of what's beyond this chapter |
+| [Первый клиент MQTT](/learn/mqtt/your-first-mqtt-client) | Включение MQTT, подключение устройства и доставка подписчику NATS |
+| [Темы MQTT и NATS](/learn/mqtt/topics-and-subjects) | Преобразования, подстановки и недопустимые символы |
+| [QoS, сеансы и retained-сообщения](/learn/mqtt/qos-sessions-and-retained) | Гарантии, повторы, сеансы, will и retained |
+| [Аутентификация и кластеризация](/learn/mqtt/auth-and-clustering) | Ограничения пользователя, разрешения парка и кластер |
+| [Куда двигаться дальше](/learn/mqtt/where-next) | Возможности за пределами главы |
 
-## Prerequisites
+## Предварительные требования {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- **`nats-server` 2.10 or later**, with JetStream enabled. MQTT support
-  landed in 2.2, but this chapter uses the `.`-in-topic conversion and
-  covers QoS 2, both of which arrived in 2.10. A single local server is
-  enough until
-  [Auth and clustering](/learn/mqtt/auth-and-clustering), which uses the
-  `east` cluster.
-- **An MQTT client.** The examples use
-  [`mosquitto_pub` and `mosquitto_sub`](https://mosquitto.org/download/),
-  which are small and available everywhere. Any MQTT v3.1.1 client works.
-- **The `nats` CLI**, pointed at the same server, for the NATS side of
-  every example.
+- **`nats-server` 2.10 или новее** с JetStream. MQTT появился в 2.2, но преобразование `.` в теме и QoS 2, используемые здесь, добавлены в 2.10. До страницы [Аутентификация и кластеризация](/learn/mqtt/auth-and-clustering) достаточно одного локального сервера, затем используется `east`.
+- **Клиент MQTT**. В примерах — небольшие распространённые [`mosquitto_pub` и `mosquitto_sub`](https://mosquitto.org/download/), но подходит любой MQTT v3.1.1.
+- **CLI `nats`**, подключённый к тому же серверу, для стороны NATS.
 
-Open a terminal and turn to
-[Your first MQTT client](/learn/mqtt/your-first-mqtt-client).
+Откройте терминал и переходите к странице [Первый клиент MQTT](/learn/mqtt/your-first-mqtt-client).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → mqtt](/reference/config/mqtt/) — every field of the
-  `mqtt {}` block, versioned and exhaustive
-- [Core NATS → Subjects and wildcards](/learn/core-nats/subjects-and-wildcards)
-  — the subject rules that MQTT topics are converted into
-- [JetStream deep dive](/learn/jetstream) — the persistence layer MQTT
-  sessions and retained messages are stored in
+- [Справочник → mqtt](/reference/config/mqtt/) — все поля `mqtt {}` по версиям.
+- [Core NATS → Темы и подстановки](/learn/core-nats/subjects-and-wildcards) — правила тем, в которые преобразуется MQTT.
+- [Углублённый курс JetStream](/learn/jetstream) — хранение сеансов и retained-сообщений.

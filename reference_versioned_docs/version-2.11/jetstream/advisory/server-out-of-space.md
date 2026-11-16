@@ -1,14 +1,14 @@
-# Server Out of Space
+# На сервере нет места {#server-out-of-space}
 
-Server storage exhausted.
+Хранилище сервера исчерпано.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import serverOutOfSpace from '@site/src/schemas/vendor/v2.11/jsm/jetstream/advisory/v1/server_out_of_space.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.SERVER.OUT_OF_STORAGE`
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={serverOutOfSpace} />

@@ -1,86 +1,59 @@
 ---
-title: JetStream
-description: NATS's built-in persistence and streaming layer
+title: "JetStream"
+description: "Встроенный в NATS слой долговременного хранения и потоковой передачи"
 ---
 
-# JetStream
+# JetStream {#jetstream}
 
-Core NATS delivers messages only to subscribers connected at the moment of
-publication - at most once, never replayed. JetStream adds a persistence layer
-on top, giving you at-least-once delivery - messages survive restarts and can
-be replayed.
+Core NATS доставляет сообщения только подписчикам, подключённым в момент публикации: не более одного раза и без повторного воспроизведения. JetStream добавляет слой долговременного хранения и доставку как минимум один раз: сообщения переживают перезапуски и могут быть прочитаны повторно.
 
-Core NATS already decouples publisher and subscriber from each other, where a
-publisher does not need to know about the subscriber. JetStream extends that
-decoupling to time - the two no longer need to be online at the same moment.
+Core NATS уже устраняет прямую зависимость между издателем и подписчиком: издателю не нужно знать о подписчике. JetStream распространяет эту независимость и на время: теперь им не обязательно быть в сети одновременно.
 
-For a runnable, step-by-step treatment, see the [JetStream deep dive](/learn/jetstream).
+Пошаговое практическое руководство см. в разделе [углублённого изучения JetStream](/learn/jetstream).
 
 <div class="nats-flow" data-scenario="jetStreamContrastAnimated" data-width="600" data-height="380"></div>
 
-## How It Works
+## Как это работает {#how-it-works}
 
-JetStream introduces three pieces working together:
+JetStream вводит три взаимосвязанных компонента:
 
-- A **stream** is a server-side store of messages, bound to one or more
-  subjects.
-- A **consumer** is a server-side, stateful view of a stream - the server
-  tracks how far a client has progressed, so applications don't have to.
-- A **client** is an application that connects to a consumer to receive
-  messages and acknowledge them. A consumer can be shared by multiple clients
-  to divide the work; each acknowledgment advances the consumer's position in
-  the stream.
+- **Поток (stream)** — серверное хранилище сообщений, привязанное к одной или нескольким темам.
+- **Потребитель (consumer)** — представление потока на сервере с собственным состоянием. Сервер отслеживает, до какого сообщения дошёл клиент, освобождая от этого приложение.
+- **Клиент** — приложение, которое подключается к потребителю, получает сообщения и подтверждает их обработку. Несколько клиентов могут совместно использовать одного потребителя, распределяя работу; каждое подтверждение продвигает позицию потребителя в потоке.
 
-## Streams
+## Потоки {#streams}
 
-A stream is bound to one or more subject patterns. When a publisher sends a
-message to a matching subject, the server appends it to the stream and
-assigns it a sequence number. Streams are configurable for storage (memory
-or disk), retention (whether limits or consumer acks remove messages),
-replication, and more.
+Поток привязан к одному или нескольким шаблонам тем. Когда издатель отправляет сообщение в подходящую тему, сервер добавляет его в поток и присваивает порядковый номер. Для потока можно настроить хранилище (память или диск), правила хранения (удаление сообщений по лимитам или подтверждениям потребителей), репликацию и другие параметры.
 
-## Consumers
+## Потребители {#consumers}
 
-A consumer is a server-side, stateful view of a stream that tracks how far a
-client has progressed. Multiple consumers can read the same stream
-independently, each with its own position. The server maintains that
-position so applications don't have to coordinate or remember it themselves.
+Потребитель — серверное представление потока с собственным состоянием, которое отслеживает продвижение клиента. Несколько потребителей могут независимо читать один поток, каждый со своей позиции. Сервер хранит эту позицию, поэтому приложениям не приходится самостоятельно согласовывать или запоминать её.
 
 <div class="nats-flow" data-scenario="jetStreamConsumersAnimated" data-width="600" data-height="350"></div>
 
-The application that connects to a consumer - the **client** - receives
-messages and acknowledges each one. An acknowledgment advances the
-consumer's cursor - if a message isn't acknowledged in time, the server
-redelivers it, which is what gives you at-least-once delivery.
+Приложение, подключённое к потребителю, — **клиент** — получает сообщения и подтверждает каждое из них. Подтверждение продвигает курсор потребителя. Если сообщение не подтверждено вовремя, сервер доставляет его повторно: так обеспечивается доставка как минимум один раз.
 
-A consumer can be configured to start reading from the beginning of the
-stream, from the latest message, from a specific sequence number, or from a
-specific time.
+Потребителя можно настроить на чтение с начала потока, с последнего сообщения, с заданного порядкового номера или с определённого момента времени.
 
-## Putting It Together
+## Собираем всё вместе {#putting-it-together}
 
 <div class="nats-example" data-type="jetstream-basic" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Beyond Streams and Consumers
+## Возможности поверх потоков и потребителей {#beyond-streams-and-consumers}
 
-JetStream also provides higher-level abstractions built on top of streams and
-consumers:
+JetStream также предоставляет высокоуровневые абстракции на основе потоков и потребителей:
 
-- **Key Value Store**: A simple key-value store with built-in replication and
-  durability.
-- **Object Store**: Store objects larger than a single message, split into
-  chunks, with per-object metadata.
+- **Хранилище ключей и значений (Key Value Store)** — простое хранилище пар «ключ — значение» со встроенной репликацией и долговременным хранением.
+- **Объектное хранилище (Object Store)** — хранение объектов, размер которых превышает размер одного сообщения, с разбиением на фрагменты и метаданными для каждого объекта.
 
-## Related Concepts
+## Связанные понятия {#related-concepts}
 
-- [Publish-Subscribe](./pub-sub-basics.md) - The fire-and-forget messaging model
-  JetStream builds on
-- [Subjects](./subjects.md) - How streams capture messages by subject patterns
-- [Queue Groups](./queue-groups.md) - Load balancing across consumers, also
-  available with JetStream consumers
+- [Публикация и подписка](./pub-sub-basics.md) — модель отправки сообщений без ожидания подтверждения, на которой построен JetStream
+- [Темы](./subjects.md) — как потоки сохраняют сообщения по шаблонам тем
+- [Группы очередей](./queue-groups.md) — балансировка нагрузки между обработчиками, доступная и при работе с потребителями JetStream
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [JetStream deep dive](/learn/jetstream) — build a stream and consumer hands-on
-- [Key-Value deep dive](/learn/key-value) — durable key-value store on JetStream
-- [Object Store deep dive](/learn/object-store) — chunked object storage on JetStream
+- [Углублённое изучение JetStream](/learn/jetstream) — создайте поток и потребителя на практике
+- [Углублённое изучение Key-Value](/learn/key-value) — долговременное хранилище ключей и значений на JetStream
+- [Углублённое изучение Object Store](/learn/object-store) — хранение объектов по фрагментам на JetStream

@@ -1,13 +1,12 @@
-# write_timeout
+# write_timeout {#write_timeout}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-What to do when a leaf node connection misses its
-`write_deadline`.
+Действие при превышении `write_deadline` соединения листового узла.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `default`, `close`, `retry` |

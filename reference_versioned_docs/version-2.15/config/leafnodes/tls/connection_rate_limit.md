@@ -1,9 +1,9 @@
-# connection_rate_limit
+# connection_rate_limit {#connection_rate_limit}
 
 <Reloadable state="noop" note="Silently ignored for leafnodes entirely, not just across reload." />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // maxAgeAnimated
@@ -61,8 +62,7 @@ function MaxAgeAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>MaxAge.</strong> The publisher stores 1-2 orders a day. Each drifts
-                left as it ages; at <strong>7d</strong> it crosses the line and is discarded.
+                <strong>MaxAge.</strong> Издатель сохраняет 1–2 заказа в день. С возрастом каждый сдвигается влево; при достижении <strong>7d</strong> сообщение пересекает границу и удаляется.
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -95,12 +95,12 @@ function MaxAgeAnimatedInner() {
                         }}
                     />
                     {/* discard zone label */}
-                    <div style={{ position: "absolute", left: 8, top: 8, fontSize: 10, color: RED, fontWeight: 600 }}>discarded</div>
+                    <div style={{ position: "absolute", left: 8, top: 8, fontSize: 10, color: RED, fontWeight: 600 }}>отброшено</div>
                     {/* MaxAge marker label */}
                     <div style={{ position: "absolute", left: LINE_X - 2, top: TRACK_H + 12, fontSize: 10, color: RED, fontFamily: "monospace", fontWeight: 600 }}>7d</div>
 
                     {/* messages */}
-                    {msgs.map((m) => {
+                    {localizeDiagramContent(msgs.map((m) => {
                         const color = m.discarding ? RED : STREAM_BLUE;
                         const fade = m.discarding ? Math.max(0, 1 - (m.age - MAX_AGE) / 1.1) : 1;
                         const justBorn = m.age < 0.22;
@@ -124,11 +124,11 @@ function MaxAgeAnimatedInner() {
                                 }}
                             >
                                 <div style={{ fontSize: 10, fontWeight: 700, fontFamily: "monospace", color: justBorn ? CONSUMER_GREEN : color }}>
-                                    {Math.min(MAX_AGE, Math.floor(m.age))}d
+                                    {localizeDiagramContent(Math.min(MAX_AGE, Math.floor(m.age)))}d
                                 </div>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
 
                 {/* emit arrow (points left, into the track) */}
@@ -156,11 +156,11 @@ function MaxAgeAnimatedInner() {
                         transition: "border-color 0.2s, background 0.2s, box-shadow 0.2s",
                     }}
                 >
-                    publisher
+                    издатель
                 </div>
             </div>
 
-            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

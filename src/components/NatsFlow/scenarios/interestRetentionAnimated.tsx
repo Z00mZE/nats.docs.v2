@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // interestRetentionAnimated
@@ -103,10 +104,10 @@ function InterestRetentionAnimatedInner() {
         return (
             <div style={{ position: "absolute", left: CONS_L, top, width: CONS_W, height: 48, borderRadius: 9, border: `2px solid ${border}`, background: bg, padding: "0 11px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", transition: "border-color 0.3s, background 0.3s, box-shadow 0.3s", boxShadow: acked ? `0 0 0 4px ${CONSUMER_GREEN}22` : "none" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: caseA ? "#374151" : "#9ca3af" }}>{name}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "monospace", color: tagColor, whiteSpace: "nowrap", transition: "color 0.3s" }}>{tag}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: caseA ? "#374151" : "#9ca3af" }}>{localizeDiagramContent(name)}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "monospace", color: tagColor, whiteSpace: "nowrap", transition: "color 0.3s" }}>{localizeDiagramContent(tag)}</span>
                 </div>
-                <span style={{ fontSize: 9, color: "#9ca3af", fontFamily: "monospace" }}>wants orders.shipped</span>
+                <span style={{ fontSize: 9, color: "#9ca3af", fontFamily: "monospace" }}>ждёт orders.shipped</span>
             </div>
         );
     };
@@ -114,14 +115,13 @@ function InterestRetentionAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 14, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Interest.</strong> A message is kept only while a consumer wants it — removed once
-                every consumer acks, or dropped at once if no consumer subscribes to its subject.
+                <strong>По интересу.</strong> Сообщение хранится, только пока нужно потребителю: удаляется после подтверждения всеми потребителями или сразу отбрасывается, если никто не подписан на его тему.
             </div>
 
             <div style={{ position: "relative", width: W, height: H, border: "1px solid #e5e7eb", borderRadius: 10, background: "#fafafa" }}>
                 {/* case label */}
                 <div style={{ position: "absolute", left: 14, top: 12, fontSize: 11, fontWeight: 700, fontFamily: "monospace", color: caseA ? STREAM_BLUE : RED, transition: "color 0.3s" }}>
-                    {caseLabel}
+                    {localizeDiagramContent(caseLabel)}
                 </div>
 
                 {/* connectors to consumers */}
@@ -132,35 +132,35 @@ function InterestRetentionAnimatedInner() {
 
                 {/* publisher */}
                 <div style={{ position: "absolute", left: PUB_L, top: MIDY - 25, width: PUB_W, height: 50, borderRadius: 9, border: `2px solid ${WORKER_NAVY}`, background: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: WORKER_NAVY }}>
-                    publisher
+                    издатель
                 </div>
 
                 {/* stream */}
                 <div style={{ position: "absolute", left: STREAM_L, top: STREAM_T, width: STREAM_W, height: STREAM_H, borderRadius: 10, border: `2px solid ${STREAM_BLUE}`, background: "white", boxShadow: `0 1px 3px ${STREAM_BLUE}22` }}>
                     <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 9px 0", fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace", color: storedPresent ? STREAM_BLUE : "#9ca3af", transition: "color 0.3s" }}>{storedPresent ? 1 : 0} msg</span>
+                        <span style={{ fontFamily: "monospace", color: storedPresent ? STREAM_BLUE : "#9ca3af", transition: "color 0.3s" }}>{localizeDiagramContent(storedPresent ? 1 : 0)} msg</span>
                     </div>
                 </div>
 
                 {/* stored cell (case A) */}
-                {storedPresent && (
+                {localizeDiagramContent(storedPresent && (
                     <div style={{ position: "absolute", left: STREAM_CX - 16, top: STREAM_T + 28, width: 32, height: 22, borderRadius: 5, border: `2px solid ${STREAM_BLUE}`, background: "#eff9fe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: STREAM_BLUE }}>
-                        #{n}
+                        #{localizeDiagramContent(n)}
                     </div>
-                )}
+                ))}
                 {/* removal ghost (case A) */}
-                {removed && removeGhost < 1 && (
+                {localizeDiagramContent(removed && removeGhost < 1 && (
                     <div style={{ position: "absolute", left: STREAM_CX - 16, top: STREAM_T + 28 + 24 * removeGhost, width: 32, height: 22, borderRadius: 5, border: `2px solid ${RED}`, background: `${RED}14`, opacity: 1 - removeGhost, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: RED }}>
-                        gone
+                        удалено
                     </div>
-                )}
+                ))}
                 {/* drop ghost (case B) */}
-                {dropped && dropGhost < 1 && (
+                {localizeDiagramContent(dropped && dropGhost < 1 && (
                     <div style={{ position: "absolute", left: STREAM_CX - 18, top: MIDY - 11 + 22 * dropGhost, width: 36, height: 22, borderRadius: 5, border: `2px solid ${RED}`, background: `${RED}14`, opacity: 1 - dropGhost, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: RED }}>
-                        dropped
+                        потеряно
                     </div>
-                )}
+                ))}
 
                 {/* the moving order pill */}
                 <div
@@ -184,14 +184,14 @@ function InterestRetentionAnimatedInner() {
                         boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
                     }}
                 >
-                    #{n} ·{subject.replace("orders.", "")}
+                    #{localizeDiagramContent(n)} ·{localizeDiagramContent(subject.replace("orders.", ""))}
                 </div>
 
-                {consumer("A")}
-                {consumer("B")}
+                {localizeDiagramContent(consumer("A"))}
+                {localizeDiagramContent(consumer("B"))}
             </div>
 
-            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

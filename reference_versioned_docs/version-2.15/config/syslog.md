@@ -1,11 +1,11 @@
-# syslog
+# syslog {#syslog}
 
 <Reloadable state="reloadable" note="Ignored if `-s` or `-syslog` was passed at startup — command-line boolean flags are re-applied over the config on every reload." />
-Log to syslog.
+Записывать журнал в syslog.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

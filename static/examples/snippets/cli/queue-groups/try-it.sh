@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Terminal 1: Start first worker
+# Терминал 1: запустите первый обработчик
 nats sub tasks.process --queue workers
 
-# Terminal 2: Start second worker
+# Терминал 2: запустите второй обработчик
 nats sub tasks.process --queue workers
 
-# Terminal 3: Send tasks
+# Терминал 3: отправьте задания
 for i in {1..10}; do
   nats pub tasks.process "Task $i"
   sleep 0.5
 done
 
-# Watch tasks distributed between workers
+# Наблюдайте распределение заданий между обработчиками

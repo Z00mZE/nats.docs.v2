@@ -1,23 +1,22 @@
-# gateway
+# gateway {#gateway}
 
 <Reloadable state="reloadable" note="Only TLS certificate material reloads, for this gateway and its remotes, and only for connections established afterwards. Every other gateway setting fails the reload — `host`, `port`, `name`, `authorization`, the remote list, and the TLS `timeout`, `verify_and_map`, `verify_cert_and_check_known_urls` and `pinned_certs`." />
-Configuration for setting up gateway connections
-between clusters.
+Конфигурация соединений шлюзов между кластерами.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`name`](./name.md) | Name of this cluster. All gateway connections belonging to the same cluster must specify the same name. | `string` | - | No |
-| [`reject_unknown_cluster`](./reject_unknown_cluster.md) | If true, gateway will reject connections from cluster that are not configured in gateways. It does so by checking if the cluster name, provided by the incomming connection, exists as named gateway. This effectively disables gossiping of new cluster. It does not restrict a configured gateway, thus cluster, from dynamically growing. | `boolean` | `false` | No |
-| [`host`](./host.md) | Interface where the gateway will listen for incoming gateway connections. | `string` | `0.0.0.0` | No |
-| [`port`](./port.md) | Port where the gateway will listen for incoming gateway connections. | `integer` | `7222` | No |
-| [`listen`](./listen.md) | `<host>:<port>` format. Alternative to `host`/`port`. | `string` | - | No |
-| [`tls`](./tls/index.md) | A `tls` configuration map for securing gateway connections. `verify` is always enabled. Unless otherwise, `cert_file` will be the default client certificate. | `object` | - | Yes\* |
-| [`advertise`](./advertise.md) | `<host>:<port>` to advertise how this server can be contacted by other gateway members. This is useful in setups with NAT. | `string` | - | No |
-| [`connect_retries`](./connect_retries.md) | After how many failed connect attempts to give up establishing a connection to a discovered gateway. Default is 0, do not retry. When enabled, attempts will be made once a second. This, does not apply to explicitly configured gateways. | `integer` | `0` | No |
-| [`authorization`](./authorization/index.md) | Authorization map for gateways. When a single username/password is used, it defines the authentication mechanism this server expects, and how this server will authenticate itself when establishing a connection to a discovered gateway. This will not be used for gateways explicitly listed in gateways and therefore have to be provided as part of the URL. With this authentication mode, either use the same credentials throughout the system or list every gateway explicitly on every server. If the tls configuration map specifies verify_and_map only provide the expected username. Here different certificates can be used, but they do have to map to the same username. The authorization map also allows for timeout which is honored but users and token configuration are not supported and will prevent the server from starting. The permissions block is ignored. | `object` | - | No\* |
-| [`gateways`](./gateways/index.md) | List of gateway entries. | `object` | - | No\* |
+| [`name`](./name.md) | Имя этого кластера. Все соединения шлюзов одного кластера должны указывать одинаковое имя. | `string` | - | Нет |
+| [`reject_unknown_cluster`](./reject_unknown_cluster.md) | Если true, шлюз отклоняет соединения кластеров, не заданных в gateways: имя кластера из входящего соединения должно соответствовать имени настроенного шлюза. Это фактически отключает распространение сведений о новых кластерах. Динамическое расширение настроенного шлюза и его кластера не ограничивается. | `boolean` | `false` | Нет |
+| [`host`](./host.md) | Интерфейс, на котором шлюз принимает входящие соединения шлюзов. | `string` | `0.0.0.0` | Нет |
+| [`port`](./port.md) | Порт, на котором шлюз принимает входящие соединения шлюзов. | `integer` | `7222` | Нет |
+| [`listen`](./listen.md) | Формат `<host>:<port>`. Альтернатива `host`/`port`. | `string` | - | Нет |
+| [`tls`](./tls/index.md) | Объект конфигурации `tls` для защиты соединений шлюза. `verify` всегда включён. Если не указано иное, `cert_file` служит сертификатом клиента по умолчанию. | `object` | - | Да\* |
+| [`advertise`](./advertise.md) | Объявляемый адрес `<host>:<port>`, по которому другие участники шлюза могут подключиться к этому серверу. Полезно при использовании NAT. | `string` | - | Нет |
+| [`connect_retries`](./connect_retries.md) | Число неудачных попыток подключения, после которого сервер прекращает подключаться к обнаруженному шлюзу. По умолчанию 0: повторных попыток нет. Если параметр включён, попытки выполняются раз в секунду. К явно заданным шлюзам это не относится. | `integer` | `0` | Нет |
+| [`authorization`](./authorization/index.md) | Объект авторизации для шлюзов. При использовании одной пары имени пользователя и пароля он задаёт ожидаемый сервером механизм аутентификации и способ аутентификации самого сервера при подключении к обнаруженному шлюзу. Для шлюзов, явно перечисленных в gateways, эти данные не используются: их нужно включить в URL. В этом режиме используйте одинаковые учётные данные во всей системе либо явно перечислите каждый шлюз на каждом сервере. Если в объекте tls указан только verify_and_map, задайте ожидаемое имя пользователя. Сертификаты могут различаться, но должны отображаться на одно имя пользователя. Объект авторизации также поддерживает timeout; настройки users и token не поддерживаются и препятствуют запуску сервера. Блок permissions игнорируется. | `object` | - | Нет\* |
+| [`gateways`](./gateways/index.md) | Список записей о шлюзах. | `object` | - | Нет\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

@@ -1,9 +1,9 @@
-# connection_rate_limit
+# connection_rate_limit {#connection_rate_limit}
 
 <Reloadable state="noop" note="Parsed and accepted, then discarded — a permanent no-op, not just a reload no-op." />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

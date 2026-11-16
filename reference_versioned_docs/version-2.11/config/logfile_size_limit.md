@@ -1,12 +1,12 @@
-# logfile_size_limit
+# logfile_size_limit {#logfile_size_limit}
 
 <Aliases aliases="log_size_limit" />
 <Reloadable state="not-reloadable" />
-Size in bytes after the log file rolls over to a new one.
+Размер в байтах, после которого журнал переключается на новый файл.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

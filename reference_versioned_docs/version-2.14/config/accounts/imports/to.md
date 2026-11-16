@@ -1,12 +1,11 @@
-# to
+# to {#to}
 
 <Reloadable state="reloadable" />
-A local subject mapping for the imported service.
-Applicable to `service`.
+Локальное отображение субъекта импортируемого сервиса. Применяется к `service`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

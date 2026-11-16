@@ -1,19 +1,15 @@
-# rtt_thresholds
+# rtt_thresholds {#rtt_thresholds}
 
 <Reloadable state="reloadable" />
-Applies only when the `s2_auto` mode is used and defines the round-trip time (RTT)
-thresholds for compression level changes.
+Применяется только в режиме `s2_auto` и задаёт пороги времени кругового обхода (RTT) для изменения уровня сжатия.
 
-By default, no compression is used unless the RTT hits the first threshold
-(e.g. 10ms), then `s2_fast`. The next threshold would switch to `s2_better`,
-and then finally `s2_best` is the last threshold is reached.
+По умолчанию сжатие не используется до достижения первого порога RTT (например, 10 мс), затем включается `s2_fast`. Следующий порог включает `s2_better`, а последний — `s2_best`.
 
-Note, the compression level is dynamic so if the RTT decreases, the compression
-level will decrease accordingly.
+Уровень сжатия меняется динамически: при уменьшении RTT он также снижается.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `[ duration ]` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `[ duration ]` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

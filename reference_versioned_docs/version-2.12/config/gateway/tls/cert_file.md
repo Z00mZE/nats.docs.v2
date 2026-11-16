@@ -1,11 +1,11 @@
-# cert_file
+# cert_file {#cert_file}
 
 <Reloadable state="reloadable" note="Applies to gateway connections established after the reload; existing gateway connections are not renegotiated." />
-TLS certificate file.
+Файл сертификата TLS.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

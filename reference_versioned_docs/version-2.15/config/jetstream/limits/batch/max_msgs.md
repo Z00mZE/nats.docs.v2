@@ -1,11 +1,11 @@
-# max_msgs
+# max_msgs {#max_msgs}
 
 <Reloadable state="reloadable" note="Enforced when a batch publish starts, so a batch already in progress is unaffected." />
-Messages allowed in a single batch.
+Допустимое число сообщений в одном пакете.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

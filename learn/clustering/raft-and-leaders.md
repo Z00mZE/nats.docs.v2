@@ -1,74 +1,43 @@
 ---
 id: raft-and-leaders
-title: "Raft and leaders"
+title: "RAFT и лидеры"
 sidebar_position: 3
-description: How a NATS cluster reaches agreement — RAFT groups, leaders and followers, and the election that picks a leader on a quorum of votes
+description: "Согласование в кластере NATS: группы RAFT, лидеры, ведомые и выборы большинством голосов"
 ---
 
-# Raft and leaders
+# RAFT и лидеры {#raft-and-leaders}
 
-The [previous page](/learn/clustering/forming-a-cluster) left you with a live
-three-server cluster `east` (`n1-east`, `n2-east`, and `n3-east`) that
-discovered itself from one seed route. The servers know about each other and
-forward messages. But knowing about each other isn't the same as *agreeing*
-with each other.
+После [предыдущей страницы](/learn/clustering/forming-a-cluster) работает `east` из `n1-east`, `n2-east`, `n3-east`, обнаруживших друг друга через один маршрут. Серверы знают соседей и пересылают сообщения. Но знать друг друга — ещё не значит *приходить к согласию*.
 
-Plain `orders.created` traffic needs no agreement: a publish lands on one
-server, gets forwarded, and is gone. Stored data is different. When the
-`ORDERS` stream keeps three copies of every order, the three servers holding
-those copies must agree on which orders exist and in what order, even while
-one of them is restarting or unreachable.
+Обычному трафику `orders.created` согласование не нужно: публикация поступает, пересылается и исчезает. Хранимые данные требуют другого. Три сервера с копиями `ORDERS` должны договориться, какие заказы существуют и в каком порядке, даже при перезапуске или недоступности одного из них.
 
-This page is about that agreement. It introduces two ideas: a **RAFT group**
-is a set of servers that keep an identical log by consensus, and a **leader
-election** is how a group picks the one server that drives the log. Everything
-the next page does with replication rests on these two.
+Здесь вводятся два понятия: **группа RAFT** — серверы, поддерживающие одинаковый журнал через согласование, и **выборы лидера** — способ выбрать единственный сервер, управляющий журналом. На них основана репликация следующей страницы.
 
-## RAFT groups
+## Группы RAFT {#raft-groups}
 
-NATS reaches agreement with **RAFT**, a consensus algorithm. A **RAFT group**
-is a fixed set of servers (its **peers**) that maintain a single shared log
-that all of them agree on. One peer is the **leader**; the rest are
-**followers**. The leader is the only peer that accepts new entries; it copies
-each entry to the followers, and the group advances together.
+NATS использует алгоритм согласования **RAFT**. **Группа RAFT** — определённый набор серверов, её **участников**, поддерживающих общий согласованный журнал. Один — **лидер**, остальные — **ведомые**. Только лидер принимает новые записи, копирует их ведомым и продвигает группу вместе.
 
-A cluster runs many RAFT groups at once, layered.
+В кластере одновременно работают несколько групп RAFT разных уровней.
 
-The first is the **meta group**: one cluster-wide RAFT group whose peers are
-the servers themselves. Its log holds the cluster's *assignments* rather than your
-data: which streams exist, how many replicas each has, and which
-servers hold them. Its leader is the **meta leader**, the server that decides
-where new streams and consumers are placed. Every server in `east` is a peer of
-the meta group.
+Первая — **группа метаданных**, общая для кластера. В её журнале не ваши сообщения, а *назначения*: какие потоки существуют, сколько имеют реплик и где те размещены. **Лидер метаданных** определяет размещение новых потоков и потребителей. Каждый сервер `east` входит в эту группу.
 
-The rest are **per-asset groups**: every replicated stream gets its own RAFT
-group, and so does every replicated consumer. The `ORDERS` stream running with
-three copies is one RAFT group whose three peers are the three servers holding
-those copies. Its leader, the **stream leader**, is the server that accepts
-writes to `ORDERS` and replicates them.
+Остальные — **группы ресурсов**: собственная группа у каждого реплицируемого потока и потребителя. Три копии `ORDERS` образуют группу из трёх серверов. Её **лидер потока** принимает записи в `ORDERS` и реплицирует их.
 
-So `east` holding one replicated `ORDERS` stream runs at least two RAFT groups
-at once: the meta group across all three servers, and the `ORDERS` stream group
-across its three peers. They're independent. The meta leader and the `ORDERS`
-stream leader may be the same server or different servers, and a change to one
-doesn't move the other.
+Таким образом, `east` с одним реплицируемым `ORDERS` имеет как минимум две группы: метаданные и поток. Они независимы. Их лидеры могут совпадать или находиться на разных серверах; смена одного не перемещает другого.
 
-You can see both. The JetStream report names the meta group's leader:
+Можно увидеть обоих. Отчёт JetStream показывает лидера метаданных:
 
 ```bash
 nats server report jetstream
 ```
 
-Its `RAFT Meta Group Information` table lists every server and marks the one
-that holds meta leadership. To see a stream's group, ask the stream (you
-stand `ORDERS` up in the exercise below):
+Таблица `RAFT Meta Group Information` перечисляет серверы и помечает лидера. Для группы потока запросите сам поток; `ORDERS` создаётся в упражнении ниже:
 
 ```bash
 nats stream info ORDERS
 ```
 
-The `Cluster Information` block names the stream's RAFT group, listing its
-`Leader` and each `Replica` peer:
+Блок `Cluster Information` содержит `Leader` и каждого участника `Replica`:
 
 ```
 Cluster Information:
@@ -79,134 +48,82 @@ Cluster Information:
         Replica: n3-east, current, seen 0.07s ago
 ```
 
-`Leader` is the stream leader. Each `Replica` line shows a follower peer,
-whether it's `current` (caught up), and how recently the leader heard from it.
-This is the `ORDERS` RAFT group, viewed from the outside.
+`Leader` — лидер потока. Строки `Replica` показывают ведомых, отметку синхронизации `current` и время последнего контакта. Это внешнее представление группы RAFT `ORDERS`.
 
-For a live view of a group's RAFT state (current term, who the leader is, each
-peer's status), check the `/raftz` monitoring endpoint. The full set of RAFT
-internals it exposes is documented in
-[Reference → /raftz](/reference/system/monitor/raftz): log compaction, the
-`$NRG.*` subjects peers vote over, snapshot timing. We only need the group, the
-leader, and the followers here.
+Текущее состояние RAFT — срок, лидер, участники — доступно через `/raftz`. Все детали, включая уплотнение журнала, темы голосования `$NRG.*` и время снимков, описаны в [Справочнике → /raftz](/reference/system/monitor/raftz). Здесь нужны группа, лидер и ведомые.
 
-## Leader election
+## Выборы лидера {#leader-election}
 
-A group has one leader at a time. When the leader is healthy, the steady-state
-behavior is straightforward:
-the leader sends a periodic **heartbeat** to its followers (by default about
-once a second), and as long as that heartbeat arrives, the followers stay
-followers and do nothing but accept the leader's entries.
+В каждый момент у группы один лидер. Пока он исправен, он отправляет ведомым периодический **сигнал активности** — по умолчанию примерно раз в секунду. Получая его, ведомые остаются ведомыми и принимают записи.
 
-The interesting case is when the heartbeat stops, because the leader crashed,
-hung, or got cut off by the network. The followers can't tell *why* the
-heartbeat stopped, only that it did. So they don't wait forever. Each follower
-runs an **election timer**, and if no heartbeat arrives before it fires, that
-follower assumes the leader is gone and starts an **election** to replace it.
+Если лидер упал, завис или изолирован сетью, сигналы прекращаются. Ведомые видят отсутствие, но не причину. Каждый ведёт **таймер выборов**: по его истечении без сигнала ведомый считает лидера потерянным и начинает **выборы**.
 
-An election needs one more idea: the **term**, a number that counts elections
-and only ever goes up. Every entry and every vote is stamped with a term, so
-the group can always tell a stale message from a current one. A leader from an
-older term is automatically obsolete the moment a newer term exists.
+Нужно ещё понятие **срока** (term): возрастающего номера выборов. Каждая запись и голос имеют номер срока, позволяющий отличить устаревшие сообщения. Лидер старого срока утрачивает полномочия при появлении нового.
 
-Here's the sequence when a follower's election timer fires.
+При срабатывании таймера происходит следующее.
 
-The follower becomes a **candidate**, the third RAFT role. It increments the
-term to one higher than any it's seen, votes for itself, and asks every other
-peer to vote for it in this new term.
+Ведомый становится **кандидатом**, третьей ролью RAFT. Он увеличивает известный срок на единицу, голосует за себя и запрашивает голоса остальных в новом сроке.
 
-Each peer grants its vote if it hasn't already voted in this term and the
-candidate's log is at least as up to date as its own. A peer votes for at most
-one candidate per term, which is what stops two leaders from emerging at once.
+Участник отдаёт голос, если ещё не голосовал в этом сроке и журнал кандидата не менее актуален, чем его собственный. За один срок участник голосует максимум за одного кандидата, что не позволяет появиться двум лидерам одновременно.
 
-The candidate becomes the leader the instant it collects a **quorum** of
-votes: a majority of the group's peers, `(N+1)/2`. For the three-peer `ORDERS`
-group that's two: the candidate's own vote plus one more. With the majority in
-hand, the new leader immediately starts sending heartbeats, the other peers
-return to being followers, and the group is whole again under the new term.
+Кандидат становится лидером после получения **кворума** голосов — большинства группы, `(N+1)/2`. Для трёх участников `ORDERS` достаточно двух: своего и ещё одного. Новый лидер сразу отправляет сигналы активности, остальные становятся ведомыми, и группа продолжает работу в новом сроке.
 
 <div class="nats-flow" data-scenario="raftElectionAnimated" data-width="600" data-height="350"></div>
 
-The quorum rule is why a majority must survive for a group to elect a leader at
-all. A three-peer group keeps a leader as long as two peers are up; lose two and
-the survivor can't reach a majority, so it can't become leader and the group
-goes leaderless until a peer returns. This is the consensus math behind the
-odd-server-count advice the [Topologies chapter](/learn/topologies/your-first-cluster)
-gives as a deployment choice: an even count buys no extra majority.
+Поэтому для выборов должно сохраниться большинство. Из трёх участников достаточно двух; при потере двух оставшийся не может стать лидером до возвращения соседа. Это объясняет рекомендацию нечётного числа серверов из [топологий](/learn/topologies/your-first-cluster): чётное число не увеличивает допустимое число отказов для большинства.
 
-## Observing an election
+## Наблюдение за выборами {#observing-an-election}
 
-You can observe this directly. This exercise needs the replicated `ORDERS`
-stream; the [next page](/learn/clustering/replication-and-r3) creates it in
-full, but one command stands it up now:
+Для упражнения нужен реплицируемый `ORDERS`. [Следующая страница](/learn/clustering/replication-and-r3) создаёт его подробно, но сейчас достаточно команды:
 
 ```bash
 nats stream add ORDERS --subjects 'orders.>' --replicas=3 --defaults
 ```
 
-With `east` running and `ORDERS` replicated, find the current stream leader,
-kill it, and watch the survivors elect a new one.
+При работающем `east` и реплицируемом `ORDERS` найдите лидера потока, остановите его и наблюдайте выборы.
 
-First, find the leader:
+Сначала найдите лидера:
 
 ```bash
 nats stream info ORDERS | grep Leader
 ```
 
-Say it reports `Leader: n1-east`. Stop that server: Ctrl-C its terminal, or
-kill its process. For a moment the `ORDERS` group has no leader: its heartbeat
-has stopped and the two survivors are running their election timers.
+Допустим, это `Leader: n1-east`. Остановите сервер через Ctrl-C или завершение процесса. Ненадолго группа останется без лидера: сигналы прекратились, два других узла ждут таймеров выборов.
 
-Within a few seconds, ask one of the survivors:
+Через несколько секунд запросите оставшийся сервер:
 
 ```bash
 nats stream info ORDERS --server nats://127.0.0.1:4223
 ```
 
-The `Cluster Information` block now names a different leader, `n2-east` or
-`n3-east`, and the term has advanced. The remaining two peers held a quorum
-(two of three), so they elected a new leader and `ORDERS` is writable again,
-even with `n1-east` down.
+В `Cluster Information` появится `n2-east` или `n3-east`, а срок увеличится. Два оставшихся участника сохранили кворум, выбрали лидера, и запись в `ORDERS` снова доступна без `n1-east`.
 
-## Moving a leader manually
+## Перемещение лидера вручную {#moving-a-leader-manually}
 
-Sometimes you want to move leadership without killing anything: to drain a
-server before maintenance, or to rebalance after a restart. A **stepdown** is a
-leader voluntarily yielding its role so the group elects a new one.
+Иногда роль нужно передать без аварии — перед обслуживанием или для выравнивания нагрузки. **Отказ от лидерства** (stepdown) добровольно освобождает роль и запускает новые выборы.
 
-For a stream leader, ask the stream's group to step down:
+Для потока попросите его группу отказаться от лидерства:
 
 ```bash
 nats stream cluster step-down ORDERS
 ```
 
-The current leader yields, the group runs an election, and a different peer
-takes over. The meta group has its own stepdown, scoped to the whole cluster:
+Текущий лидер уступает роль, группа выбирает другого участника. У метаданных отдельная команда на уровне кластера:
 
 ```bash
 nats server cluster step-down
 ```
 
-That moves the *meta* leader, independently of any stream leader. Use the
-stream form to move a single stream, the server form to move cluster-wide
-assignment duty.
+Она перемещает *лидера метаданных* независимо от потоков. Первая форма нужна отдельному потоку, вторая — общекластерным назначениям.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-RAFT is robust, but its timing and its layering are common sources of
-confusion. Each pitfall below is scoped to this page's two concepts: groups and
-elections.
+RAFT устойчив, но его временные интервалы и слои часто путают. Ошибки относятся к группам и выборам.
 
-**An election takes seconds, not milliseconds.** The election timer fires
-between four and nine seconds after the last heartbeat, deliberately staggered
-so two followers don't become candidates at the exact same instant. So when you
-kill a leader, expect a short window where `nats stream info` shows no leader
-and writes are refused. That window is RAFT working as designed, not a bug.
-Don't build a client that treats a brief "no leader" as a fatal error. Have it
-retry, since a new leader arrives within seconds.
+**Выборы занимают секунды, а не миллисекунды.** Таймер срабатывает через четыре-девять секунд после последнего сигнала; интервалы разнесены, чтобы кандидаты не появлялись одновременно. После остановки лидера некоторое время нет лидера и записи отклоняются. Это штатная работа RAFT. Клиент должен повторять попытку, а не считать короткое отсутствие фатальным.
 
-The correct handling is to retry the write rather than fail it. A `nats stream
-info` during the gap confirms what's happening:
+Повторите запись. Запрос `nats stream
+info` во время паузы подтверждает причину:
 
 ```bash
 # During the election window, the leader line is briefly empty:
@@ -217,50 +134,27 @@ nats stream info ORDERS | grep Leader
 # Leader: n2-east
 ```
 
-**Stepdown moves leadership, but the election still picks the successor.**
-`nats stream cluster step-down` makes the current leader yield, and the *next*
-leader is chosen by a quorum election among the remaining peers. You can name
-a preferred successor with `nats stream cluster step-down --preferred <server>`
-(NATS Server 2.11+), but that's a request, not a guarantee — the election can
-still land elsewhere. So run stepdown to *move leadership off* the current
-server, then read `nats stream info` to learn who actually won. Stream
-placement (cluster and tags) can't name a leader at all; that's covered on
-[Placement](/learn/clustering/placement).
+**Stepdown освобождает роль, но преемника выбирают голосованием.** `nats stream cluster step-down` заставляет лидера уйти. В NATS Server 2.11+ можно назвать предпочтительного кандидата через `nats stream cluster step-down --preferred <server>`, но это пожелание, а не гарантия. После команды читайте `nats stream info`, чтобы узнать победителя. Размещение по кластеру и меткам само по себе лидера не назначает; см. [Размещение](/learn/clustering/placement).
 
-**The meta leader and a stream leader are different groups.** Losing the meta
-leader doesn't lose the `ORDERS` stream leader, and vice versa; they're
-separate RAFT groups with separate elections. A common mistake is to see "the
-leader is down," panic, and assume the stream is unavailable when only the meta
-leader moved (or the reverse). Check the right group: `nats server report
-jetstream` for the meta leader, `nats stream info ORDERS` for the stream leader.
+**Лидер метаданных и лидер потока относятся к разным группам.** Потеря одного не означает потерю другого. Проверяйте нужную группу: `nats server report
+jetstream` — метаданные, `nats stream info ORDERS` — поток. Иначе можно ошибочно считать поток недоступным из-за смены только лидера метаданных.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Your cluster now has names for its moving parts:
+Теперь у механизмов кластера есть имена:
 
-- The meta group spans all three servers and holds the cluster's
-  assignments; its meta leader decides placement.
-- The `ORDERS` stream is its own RAFT group of three peers with its own
-  stream leader, independent of the meta leader.
-- You've killed a leader and watched the survivors run a leader election
-  (a candidate, a bumped term, and a quorum of votes), and you've moved
-  a leader on purpose with stepdown.
+- Группа метаданных охватывает три сервера и хранит назначения; её лидер определяет размещение.
+- `ORDERS` — собственная группа из трёх участников с независимым лидером потока.
+- Вы остановили лидера, наблюдали кандидата, новый срок и кворум голосов, а затем намеренно передали роль через stepdown.
 
-What you haven't done yet is follow a single write through the group: how the
-leader gets an order onto all three peers and decides it's safe.
+Осталось проследить одну запись: как лидер передаёт заказ всем участникам и определяет безопасность сохранения.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page traces exactly that. It follows one `orders.created` write from
-the leader's log to a quorum of peers, shows where the write **commits**, and
-explains the consistency you get from `R=3`:
-[Replication and R=3](/learn/clustering/replication-and-r3).
+Следующая страница проводит `orders.created` от журнала лидера до кворума, показывает момент **фиксации** и объясняет согласованность `R=3`: [Репликация и R=3](/learn/clustering/replication-and-r3).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → /raftz](/reference/system/monitor/raftz) — the RAFT group
-  monitoring endpoint and its full field set.
-- [Surviving node loss](/learn/jetstream/surviving-node-loss) — the one-page
-  operator view of replicas riding through a server loss.
-- [Topologies → Your first cluster](/learn/topologies/your-first-cluster) —
-  where the odd-server-count and shape choices live.
+- [Справочник → /raftz](/reference/system/monitor/raftz) — мониторинг групп RAFT и все поля.
+- [Отказ узла](/learn/jetstream/surviving-node-loss) — краткий эксплуатационный обзор реплик.
+- [Топологии → Ваш первый кластер](/learn/topologies/your-first-cluster) — выбор формы и нечётного числа серверов.

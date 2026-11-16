@@ -1,13 +1,12 @@
-# meta_compact_sync
+# meta_compact_sync {#meta_compact_sync}
 
 <Since version="2.14" />
 <Reloadable state="reloadable" />
-Compact the metalayer Raft log synchronously rather than in the
-background.
+Выполнять уплотнение журнала Raft метаслоя синхронно, а не в фоне.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

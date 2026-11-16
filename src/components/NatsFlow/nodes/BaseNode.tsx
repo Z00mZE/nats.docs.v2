@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React from 'react';
 import { cn } from '../lib/utils';
 
@@ -53,7 +54,7 @@ export const BaseNode = React.forwardRef<HTMLDivElement, BaseNodeProps>(
         }}
         {...props}
       >
-        {children}
+        {localizeDiagramContent(children)}
       </div>
     );
   }

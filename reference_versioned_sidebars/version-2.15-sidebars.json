@@ -3,16 +3,18 @@
     {
       "type": "doc",
       "id": "index",
-      "label": "Reference"
+      "label": "Справочник",
+      "key": "index"
     },
     {
       "type": "link",
-      "label": "Release Notes",
-      "href": "/release-notes/"
+      "label": "Выпуски",
+      "href": "/release-notes/",
+      "key": "/release-notes/"
     },
     {
       "type": "category",
-      "label": "Configuration",
+      "label": "Конфигурация",
       "collapsed": true,
       "link": {
         "type": "doc",
@@ -45,7 +47,8 @@
               "items": [
                 "config/tls/certs/cert_file",
                 "config/tls/certs/key_file"
-              ]
+              ],
+              "key": "config/tls/certs/index"
             },
             "config/tls/handshake_first",
             "config/tls/min_version",
@@ -64,7 +67,8 @@
                 "config/tls/ocsp_peer/unknown_is_good",
                 "config/tls/ocsp_peer/warn_only",
                 "config/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-              ]
+              ],
+              "key": "config/tls/ocsp_peer/index"
             },
             "config/tls/cert_file",
             "config/tls/key_file",
@@ -78,7 +82,8 @@
             "config/tls/verify_cert_and_check_known_urls",
             "config/tls/connection_rate_limit",
             "config/tls/pinned_certs"
-          ]
+          ],
+          "key": "config/tls/index"
         },
         "config/proxy_protocol",
         "config/allow_non_tls",
@@ -94,7 +99,8 @@
             "config/ocsp/mode",
             "config/ocsp/url",
             "config/ocsp/urls"
-          ]
+          ],
+          "key": "config/ocsp/index"
         },
         {
           "type": "category",
@@ -108,7 +114,8 @@
             "config/ocsp_cache/type",
             "config/ocsp_cache/local_store",
             "config/ocsp_cache/preserve_revoked"
-          ]
+          ],
+          "key": "config/ocsp_cache/index"
         },
         {
           "type": "category",
@@ -144,7 +151,8 @@
                   "items": [
                     "config/mqtt/tls/certs/cert_file",
                     "config/mqtt/tls/certs/key_file"
-                  ]
+                  ],
+                  "key": "config/mqtt/tls/certs/index"
                 },
                 "config/mqtt/tls/handshake_first",
                 "config/mqtt/tls/min_version",
@@ -163,7 +171,8 @@
                     "config/mqtt/tls/ocsp_peer/unknown_is_good",
                     "config/mqtt/tls/ocsp_peer/warn_only",
                     "config/mqtt/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-                  ]
+                  ],
+                  "key": "config/mqtt/tls/ocsp_peer/index"
                 },
                 "config/mqtt/tls/cert_file",
                 "config/mqtt/tls/key_file",
@@ -177,7 +186,8 @@
                 "config/mqtt/tls/verify_cert_and_check_known_urls",
                 "config/mqtt/tls/connection_rate_limit",
                 "config/mqtt/tls/pinned_certs"
-              ]
+              ],
+              "key": "config/mqtt/tls/index"
             },
             {
               "type": "category",
@@ -192,7 +202,8 @@
                 "config/mqtt/authorization/password",
                 "config/mqtt/authorization/token",
                 "config/mqtt/authorization/timeout"
-              ]
+              ],
+              "key": "config/mqtt/authorization/index"
             },
             "config/mqtt/no_auth_user",
             "config/mqtt/ack_wait",
@@ -205,7 +216,8 @@
             "config/mqtt/downgrade_qos2_subscribe",
             "config/mqtt/stream_replicas",
             "config/mqtt/consumer_inactive_threshold"
-          ]
+          ],
+          "key": "config/mqtt/index"
         },
         {
           "type": "category",
@@ -242,7 +254,8 @@
                   "items": [
                     "config/websocket/tls/certs/cert_file",
                     "config/websocket/tls/certs/key_file"
-                  ]
+                  ],
+                  "key": "config/websocket/tls/certs/index"
                 },
                 "config/websocket/tls/handshake_first",
                 "config/websocket/tls/min_version",
@@ -261,7 +274,8 @@
                     "config/websocket/tls/ocsp_peer/unknown_is_good",
                     "config/websocket/tls/ocsp_peer/warn_only",
                     "config/websocket/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-                  ]
+                  ],
+                  "key": "config/websocket/tls/ocsp_peer/index"
                 },
                 "config/websocket/tls/cert_file",
                 "config/websocket/tls/key_file",
@@ -275,7 +289,8 @@
                 "config/websocket/tls/verify_cert_and_check_known_urls",
                 "config/websocket/tls/connection_rate_limit",
                 "config/websocket/tls/pinned_certs"
-              ]
+              ],
+              "key": "config/websocket/tls/index"
             },
             "config/websocket/no_tls",
             "config/websocket/same_origin",
@@ -295,7 +310,8 @@
                 "config/websocket/authorization/password",
                 "config/websocket/authorization/token",
                 "config/websocket/authorization/timeout"
-              ]
+              ],
+              "key": "config/websocket/authorization/index"
             },
             "config/websocket/headers",
             "config/websocket/ping_interval",
@@ -304,7 +320,8 @@
             "config/websocket/token_cookie",
             "config/websocket/jwt_cookie",
             "config/websocket/no_auth_user"
-          ]
+          ],
+          "key": "config/websocket/index"
         },
         {
           "type": "category",
@@ -350,7 +367,8 @@
                       "items": [
                         "config/authorization/users/permissions/publish/allow",
                         "config/authorization/users/permissions/publish/deny"
-                      ]
+                      ],
+                      "key": "config/authorization/users/permissions/publish/index"
                     },
                     {
                       "type": "category",
@@ -363,7 +381,8 @@
                       "items": [
                         "config/authorization/users/permissions/subscribe/allow",
                         "config/authorization/users/permissions/subscribe/deny"
-                      ]
+                      ],
+                      "key": "config/authorization/users/permissions/subscribe/index"
                     },
                     {
                       "type": "category",
@@ -376,12 +395,15 @@
                       "items": [
                         "config/authorization/users/permissions/allow_responses/max",
                         "config/authorization/users/permissions/allow_responses/expires"
-                      ]
+                      ],
+                      "key": "config/authorization/users/permissions/allow_responses/index"
                     }
-                  ]
+                  ],
+                  "key": "config/authorization/users/permissions/index"
                 },
                 "config/authorization/users/allowed_connection_types"
-              ]
+              ],
+              "key": "config/authorization/users/index"
             },
             {
               "type": "category",
@@ -403,7 +425,8 @@
                   "items": [
                     "config/authorization/default_permissions/publish/allow",
                     "config/authorization/default_permissions/publish/deny"
-                  ]
+                  ],
+                  "key": "config/authorization/default_permissions/publish/index"
                 },
                 {
                   "type": "category",
@@ -416,7 +439,8 @@
                   "items": [
                     "config/authorization/default_permissions/subscribe/allow",
                     "config/authorization/default_permissions/subscribe/deny"
-                  ]
+                  ],
+                  "key": "config/authorization/default_permissions/subscribe/index"
                 },
                 {
                   "type": "category",
@@ -429,9 +453,11 @@
                   "items": [
                     "config/authorization/default_permissions/allow_responses/max",
                     "config/authorization/default_permissions/allow_responses/expires"
-                  ]
+                  ],
+                  "key": "config/authorization/default_permissions/allow_responses/index"
                 }
-              ]
+              ],
+              "key": "config/authorization/default_permissions/index"
             },
             "config/authorization/proxy_required",
             "config/authorization/timeout",
@@ -448,9 +474,11 @@
                 "config/authorization/auth_callout/account",
                 "config/authorization/auth_callout/users",
                 "config/authorization/auth_callout/key"
-              ]
+              ],
+              "key": "config/authorization/auth_callout/index"
             }
-          ]
+          ],
+          "key": "config/authorization/index"
         },
         {
           "type": "category",
@@ -493,7 +521,8 @@
                       "items": [
                         "config/accounts/users/permissions/publish/allow",
                         "config/accounts/users/permissions/publish/deny"
-                      ]
+                      ],
+                      "key": "config/accounts/users/permissions/publish/index"
                     },
                     {
                       "type": "category",
@@ -506,7 +535,8 @@
                       "items": [
                         "config/accounts/users/permissions/subscribe/allow",
                         "config/accounts/users/permissions/subscribe/deny"
-                      ]
+                      ],
+                      "key": "config/accounts/users/permissions/subscribe/index"
                     },
                     {
                       "type": "category",
@@ -519,12 +549,15 @@
                       "items": [
                         "config/accounts/users/permissions/allow_responses/max",
                         "config/accounts/users/permissions/allow_responses/expires"
-                      ]
+                      ],
+                      "key": "config/accounts/users/permissions/allow_responses/index"
                     }
-                  ]
+                  ],
+                  "key": "config/accounts/users/permissions/index"
                 },
                 "config/accounts/users/allowed_connection_types"
-              ]
+              ],
+              "key": "config/accounts/users/index"
             },
             {
               "type": "category",
@@ -539,7 +572,8 @@
                 "config/accounts/exports/service",
                 "config/accounts/exports/accounts",
                 "config/accounts/exports/response_type"
-              ]
+              ],
+              "key": "config/accounts/exports/index"
             },
             {
               "type": "category",
@@ -561,7 +595,8 @@
                   "items": [
                     "config/accounts/imports/stream/account",
                     "config/accounts/imports/stream/subject"
-                  ]
+                  ],
+                  "key": "config/accounts/imports/stream/index"
                 },
                 {
                   "type": "category",
@@ -574,11 +609,13 @@
                   "items": [
                     "config/accounts/imports/service/account",
                     "config/accounts/imports/service/subject"
-                  ]
+                  ],
+                  "key": "config/accounts/imports/service/index"
                 },
                 "config/accounts/imports/prefix",
                 "config/accounts/imports/to"
-              ]
+              ],
+              "key": "config/accounts/imports/index"
             },
             "config/accounts/nkey",
             {
@@ -598,7 +635,8 @@
                 "config/accounts/jetstream/memory_max_stream_bytes",
                 "config/accounts/jetstream/disk_max_stream_bytes",
                 "config/accounts/jetstream/max_ack_pending"
-              ]
+              ],
+              "key": "config/accounts/jetstream/index"
             },
             {
               "type": "category",
@@ -620,7 +658,8 @@
                   "items": [
                     "config/accounts/default_permissions/publish/allow",
                     "config/accounts/default_permissions/publish/deny"
-                  ]
+                  ],
+                  "key": "config/accounts/default_permissions/publish/index"
                 },
                 {
                   "type": "category",
@@ -633,7 +672,8 @@
                   "items": [
                     "config/accounts/default_permissions/subscribe/allow",
                     "config/accounts/default_permissions/subscribe/deny"
-                  ]
+                  ],
+                  "key": "config/accounts/default_permissions/subscribe/index"
                 },
                 {
                   "type": "category",
@@ -646,9 +686,11 @@
                   "items": [
                     "config/accounts/default_permissions/allow_responses/max",
                     "config/accounts/default_permissions/allow_responses/expires"
-                  ]
+                  ],
+                  "key": "config/accounts/default_permissions/allow_responses/index"
                 }
-              ]
+              ],
+              "key": "config/accounts/default_permissions/index"
             },
             {
               "type": "category",
@@ -661,7 +703,8 @@
               "items": [
                 "config/accounts/msg_trace/dest",
                 "config/accounts/msg_trace/sampling"
-              ]
+              ],
+              "key": "config/accounts/msg_trace/index"
             },
             {
               "type": "category",
@@ -675,7 +718,8 @@
                 "config/accounts/mappings/destination",
                 "config/accounts/mappings/weight",
                 "config/accounts/mappings/cluster"
-              ]
+              ],
+              "key": "config/accounts/mappings/index"
             },
             {
               "type": "category",
@@ -690,9 +734,11 @@
                 "config/accounts/limits/max_subscriptions",
                 "config/accounts/limits/max_payload",
                 "config/accounts/limits/max_leafnodes"
-              ]
+              ],
+              "key": "config/accounts/limits/index"
             }
-          ]
+          ],
+          "key": "config/accounts/index"
         },
         "config/no_auth_user",
         "config/operator",
@@ -714,7 +760,8 @@
             "config/resolver/timeout",
             "config/resolver/allow_delete",
             "config/resolver/hard_delete"
-          ]
+          ],
+          "key": "config/resolver/index"
         },
         {
           "type": "category",
@@ -738,7 +785,8 @@
               "items": [
                 "config/resolver_tls/certs/cert_file",
                 "config/resolver_tls/certs/key_file"
-              ]
+              ],
+              "key": "config/resolver_tls/certs/index"
             },
             "config/resolver_tls/handshake_first",
             "config/resolver_tls/min_version",
@@ -757,7 +805,8 @@
                 "config/resolver_tls/ocsp_peer/unknown_is_good",
                 "config/resolver_tls/ocsp_peer/warn_only",
                 "config/resolver_tls/ocsp_peer/cache_ttl_when_next_update_unset"
-              ]
+              ],
+              "key": "config/resolver_tls/ocsp_peer/index"
             },
             "config/resolver_tls/cert_file",
             "config/resolver_tls/key_file",
@@ -771,7 +820,8 @@
             "config/resolver_tls/verify_cert_and_check_known_urls",
             "config/resolver_tls/connection_rate_limit",
             "config/resolver_tls/pinned_certs"
-          ]
+          ],
+          "key": "config/resolver_tls/index"
         },
         "config/resolver_preload",
         "config/resolver_pinned_accounts",
@@ -812,7 +862,8 @@
                   "items": [
                     "config/cluster/tls/certs/cert_file",
                     "config/cluster/tls/certs/key_file"
-                  ]
+                  ],
+                  "key": "config/cluster/tls/certs/index"
                 },
                 "config/cluster/tls/handshake_first",
                 "config/cluster/tls/min_version",
@@ -831,7 +882,8 @@
                     "config/cluster/tls/ocsp_peer/unknown_is_good",
                     "config/cluster/tls/ocsp_peer/warn_only",
                     "config/cluster/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-                  ]
+                  ],
+                  "key": "config/cluster/tls/ocsp_peer/index"
                 },
                 "config/cluster/tls/cert_file",
                 "config/cluster/tls/key_file",
@@ -845,7 +897,8 @@
                 "config/cluster/tls/verify_cert_and_check_known_urls",
                 "config/cluster/tls/connection_rate_limit",
                 "config/cluster/tls/pinned_certs"
-              ]
+              ],
+              "key": "config/cluster/tls/index"
             },
             "config/cluster/advertise",
             "config/cluster/no_advertise",
@@ -882,7 +935,8 @@
                       "items": [
                         "config/cluster/authorization/default_permissions/publish/allow",
                         "config/cluster/authorization/default_permissions/publish/deny"
-                      ]
+                      ],
+                      "key": "config/cluster/authorization/default_permissions/publish/index"
                     },
                     {
                       "type": "category",
@@ -895,7 +949,8 @@
                       "items": [
                         "config/cluster/authorization/default_permissions/subscribe/allow",
                         "config/cluster/authorization/default_permissions/subscribe/deny"
-                      ]
+                      ],
+                      "key": "config/cluster/authorization/default_permissions/subscribe/index"
                     },
                     {
                       "type": "category",
@@ -908,12 +963,15 @@
                       "items": [
                         "config/cluster/authorization/default_permissions/allow_responses/max",
                         "config/cluster/authorization/default_permissions/allow_responses/expires"
-                      ]
+                      ],
+                      "key": "config/cluster/authorization/default_permissions/allow_responses/index"
                     }
-                  ]
+                  ],
+                  "key": "config/cluster/authorization/default_permissions/index"
                 },
                 "config/cluster/authorization/timeout"
-              ]
+              ],
+              "key": "config/cluster/authorization/index"
             },
             {
               "type": "category",
@@ -935,7 +993,8 @@
                   "items": [
                     "config/cluster/permissions/publish/allow",
                     "config/cluster/permissions/publish/deny"
-                  ]
+                  ],
+                  "key": "config/cluster/permissions/publish/index"
                 },
                 {
                   "type": "category",
@@ -948,7 +1007,8 @@
                   "items": [
                     "config/cluster/permissions/subscribe/allow",
                     "config/cluster/permissions/subscribe/deny"
-                  ]
+                  ],
+                  "key": "config/cluster/permissions/subscribe/index"
                 },
                 {
                   "type": "category",
@@ -961,9 +1021,11 @@
                   "items": [
                     "config/cluster/permissions/allow_responses/max",
                     "config/cluster/permissions/allow_responses/expires"
-                  ]
+                  ],
+                  "key": "config/cluster/permissions/allow_responses/index"
                 }
-              ]
+              ],
+              "key": "config/cluster/permissions/index"
             },
             "config/cluster/ping_interval",
             "config/cluster/ping_max",
@@ -983,9 +1045,11 @@
               "items": [
                 "config/cluster/compression/mode",
                 "config/cluster/compression/rtt_thresholds"
-              ]
+              ],
+              "key": "config/cluster/compression/index"
             }
-          ]
+          ],
+          "key": "config/cluster/index"
         },
         {
           "type": "category",
@@ -1023,7 +1087,8 @@
                   "items": [
                     "config/gateway/tls/certs/cert_file",
                     "config/gateway/tls/certs/key_file"
-                  ]
+                  ],
+                  "key": "config/gateway/tls/certs/index"
                 },
                 "config/gateway/tls/handshake_first",
                 "config/gateway/tls/min_version",
@@ -1042,7 +1107,8 @@
                     "config/gateway/tls/ocsp_peer/unknown_is_good",
                     "config/gateway/tls/ocsp_peer/warn_only",
                     "config/gateway/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-                  ]
+                  ],
+                  "key": "config/gateway/tls/ocsp_peer/index"
                 },
                 "config/gateway/tls/cert_file",
                 "config/gateway/tls/key_file",
@@ -1056,7 +1122,8 @@
                 "config/gateway/tls/verify_cert_and_check_known_urls",
                 "config/gateway/tls/connection_rate_limit",
                 "config/gateway/tls/pinned_certs"
-              ]
+              ],
+              "key": "config/gateway/tls/index"
             },
             "config/gateway/advertise",
             "config/gateway/connect_retries",
@@ -1091,7 +1158,8 @@
                       "items": [
                         "config/gateway/authorization/default_permissions/publish/allow",
                         "config/gateway/authorization/default_permissions/publish/deny"
-                      ]
+                      ],
+                      "key": "config/gateway/authorization/default_permissions/publish/index"
                     },
                     {
                       "type": "category",
@@ -1104,7 +1172,8 @@
                       "items": [
                         "config/gateway/authorization/default_permissions/subscribe/allow",
                         "config/gateway/authorization/default_permissions/subscribe/deny"
-                      ]
+                      ],
+                      "key": "config/gateway/authorization/default_permissions/subscribe/index"
                     },
                     {
                       "type": "category",
@@ -1117,12 +1186,15 @@
                       "items": [
                         "config/gateway/authorization/default_permissions/allow_responses/max",
                         "config/gateway/authorization/default_permissions/allow_responses/expires"
-                      ]
+                      ],
+                      "key": "config/gateway/authorization/default_permissions/allow_responses/index"
                     }
-                  ]
+                  ],
+                  "key": "config/gateway/authorization/default_permissions/index"
                 },
                 "config/gateway/authorization/timeout"
-              ]
+              ],
+              "key": "config/gateway/authorization/index"
             },
             "config/gateway/connect_backoff",
             "config/gateway/write_deadline",
@@ -1161,7 +1233,8 @@
                       "items": [
                         "config/gateway/gateways/tls/certs/cert_file",
                         "config/gateway/gateways/tls/certs/key_file"
-                      ]
+                      ],
+                      "key": "config/gateway/gateways/tls/certs/index"
                     },
                     "config/gateway/gateways/tls/handshake_first",
                     "config/gateway/gateways/tls/min_version",
@@ -1180,7 +1253,8 @@
                         "config/gateway/gateways/tls/ocsp_peer/unknown_is_good",
                         "config/gateway/gateways/tls/ocsp_peer/warn_only",
                         "config/gateway/gateways/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-                      ]
+                      ],
+                      "key": "config/gateway/gateways/tls/ocsp_peer/index"
                     },
                     "config/gateway/gateways/tls/cert_file",
                     "config/gateway/gateways/tls/key_file",
@@ -1194,11 +1268,14 @@
                     "config/gateway/gateways/tls/verify_cert_and_check_known_urls",
                     "config/gateway/gateways/tls/connection_rate_limit",
                     "config/gateway/gateways/tls/pinned_certs"
-                  ]
+                  ],
+                  "key": "config/gateway/gateways/tls/index"
                 }
-              ]
+              ],
+              "key": "config/gateway/gateways/index"
             }
-          ]
+          ],
+          "key": "config/gateway/index"
         },
         {
           "type": "category",
@@ -1234,7 +1311,8 @@
                   "items": [
                     "config/leafnodes/tls/certs/cert_file",
                     "config/leafnodes/tls/certs/key_file"
-                  ]
+                  ],
+                  "key": "config/leafnodes/tls/certs/index"
                 },
                 "config/leafnodes/tls/handshake_first",
                 "config/leafnodes/tls/min_version",
@@ -1253,7 +1331,8 @@
                     "config/leafnodes/tls/ocsp_peer/unknown_is_good",
                     "config/leafnodes/tls/ocsp_peer/warn_only",
                     "config/leafnodes/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-                  ]
+                  ],
+                  "key": "config/leafnodes/tls/ocsp_peer/index"
                 },
                 "config/leafnodes/tls/cert_file",
                 "config/leafnodes/tls/key_file",
@@ -1266,7 +1345,8 @@
                 "config/leafnodes/tls/verify_and_map",
                 "config/leafnodes/tls/connection_rate_limit",
                 "config/leafnodes/tls/pinned_certs"
-              ]
+              ],
+              "key": "config/leafnodes/tls/index"
             },
             "config/leafnodes/advertise",
             "config/leafnodes/no_advertise",
@@ -1294,13 +1374,15 @@
                     "config/leafnodes/authorization/users/password",
                     "config/leafnodes/authorization/users/account",
                     "config/leafnodes/authorization/users/proxy_required"
-                  ]
+                  ],
+                  "key": "config/leafnodes/authorization/users/index"
                 },
                 "config/leafnodes/authorization/timeout",
                 "config/leafnodes/authorization/account",
                 "config/leafnodes/authorization/nkey",
                 "config/leafnodes/authorization/proxy_required"
-              ]
+              ],
+              "key": "config/leafnodes/authorization/index"
             },
             "config/leafnodes/isolate_leafnode_interest",
             "config/leafnodes/write_deadline",
@@ -1317,7 +1399,8 @@
               "items": [
                 "config/leafnodes/compression/mode",
                 "config/leafnodes/compression/rtt_thresholds"
-              ]
+              ],
+              "key": "config/leafnodes/compression/index"
             },
             {
               "type": "category",
@@ -1349,7 +1432,8 @@
                     "config/leafnodes/remotes/proxy/username",
                     "config/leafnodes/remotes/proxy/password",
                     "config/leafnodes/remotes/proxy/timeout"
-                  ]
+                  ],
+                  "key": "config/leafnodes/remotes/proxy/index"
                 },
                 "config/leafnodes/remotes/no_randomize",
                 "config/leafnodes/remotes/account",
@@ -1376,7 +1460,8 @@
                       "items": [
                         "config/leafnodes/remotes/tls/certs/cert_file",
                         "config/leafnodes/remotes/tls/certs/key_file"
-                      ]
+                      ],
+                      "key": "config/leafnodes/remotes/tls/certs/index"
                     },
                     "config/leafnodes/remotes/tls/handshake_first",
                     "config/leafnodes/remotes/tls/min_version",
@@ -1395,7 +1480,8 @@
                         "config/leafnodes/remotes/tls/ocsp_peer/unknown_is_good",
                         "config/leafnodes/remotes/tls/ocsp_peer/warn_only",
                         "config/leafnodes/remotes/tls/ocsp_peer/cache_ttl_when_next_update_unset"
-                      ]
+                      ],
+                      "key": "config/leafnodes/remotes/tls/ocsp_peer/index"
                     },
                     "config/leafnodes/remotes/tls/cert_file",
                     "config/leafnodes/remotes/tls/key_file",
@@ -1408,7 +1494,8 @@
                     "config/leafnodes/remotes/tls/verify_and_map",
                     "config/leafnodes/remotes/tls/connection_rate_limit",
                     "config/leafnodes/remotes/tls/pinned_certs"
-                  ]
+                  ],
+                  "key": "config/leafnodes/remotes/tls/index"
                 },
                 "config/leafnodes/remotes/hub",
                 "config/leafnodes/remotes/deny_imports",
@@ -1427,13 +1514,16 @@
                   "items": [
                     "config/leafnodes/remotes/compression/mode",
                     "config/leafnodes/remotes/compression/rtt_thresholds"
-                  ]
+                  ],
+                  "key": "config/leafnodes/remotes/compression/index"
                 }
-              ]
+              ],
+              "key": "config/leafnodes/remotes/index"
             },
             "config/leafnodes/reconnect",
             "config/leafnodes/dial_timeout"
-          ]
+          ],
+          "key": "config/leafnodes/index"
         },
         {
           "type": "category",
@@ -1475,7 +1565,8 @@
                 "config/jetstream/tpm/srk_password",
                 "config/jetstream/tpm/pcr",
                 "config/jetstream/tpm/cipher"
-              ]
+              ],
+              "key": "config/jetstream/tpm/index"
             },
             {
               "type": "category",
@@ -1499,20 +1590,23 @@
                     "config/jetstream/limits/batch/max_inflight_total",
                     "config/jetstream/limits/batch/max_inflight_per_stream",
                     "config/jetstream/limits/batch/timeout"
-                  ]
+                  ],
+                  "key": "config/jetstream/limits/batch/index"
                 },
                 "config/jetstream/limits/max_ack_pending",
                 "config/jetstream/limits/max_ha_assets",
                 "config/jetstream/limits/max_request_batch",
                 "config/jetstream/limits/duplicate_window",
                 "config/jetstream/limits/default_max_consumers"
-              ]
+              ],
+              "key": "config/jetstream/limits/index"
             },
             "config/jetstream/max_concurrent_io",
             "config/jetstream/unique_tag",
             "config/jetstream/max_outstanding_catchup",
             "config/jetstream/sync_interval"
-          ]
+          ],
+          "key": "config/jetstream/index"
         },
         "config/store_dir",
         {
@@ -1527,7 +1621,8 @@
             "config/mappings/destination",
             "config/mappings/weight",
             "config/mappings/cluster"
-          ]
+          ],
+          "key": "config/mappings/index"
         },
         "config/debug",
         "config/trace",
@@ -1574,7 +1669,8 @@
         "config/prof_block_rate",
         "config/prof_port",
         "config/default_js_domain"
-      ]
+      ],
+      "key": "config/index"
     },
     {
       "type": "category",
@@ -1596,7 +1692,7 @@
           "items": [
             {
               "type": "category",
-              "label": "Account",
+              "label": "Учётная запись",
               "collapsed": true,
               "link": {
                 "type": "doc",
@@ -1605,11 +1701,12 @@
               "items": [
                 "jetstream/api/account/info",
                 "jetstream/api/account/purge"
-              ]
+              ],
+              "key": "jetstream/api/account/index"
             },
             {
               "type": "category",
-              "label": "Stream",
+              "label": "Поток",
               "collapsed": true,
               "link": {
                 "type": "doc",
@@ -1632,11 +1729,12 @@
                 "jetstream/api/stream/restore",
                 "jetstream/api/stream/snapshot",
                 "jetstream/api/stream/pub-ack"
-              ]
+              ],
+              "key": "jetstream/api/stream/index"
             },
             {
               "type": "category",
-              "label": "Consumer",
+              "label": "Потребитель",
               "collapsed": true,
               "link": {
                 "type": "doc",
@@ -1653,11 +1751,12 @@
                 "jetstream/api/consumer/leader-stepdown",
                 "jetstream/api/consumer/evacuate-peer",
                 "jetstream/api/consumer/unpin"
-              ]
+              ],
+              "key": "jetstream/api/consumer/index"
             },
             {
               "type": "category",
-              "label": "Meta",
+              "label": "Метаданные",
               "collapsed": true,
               "link": {
                 "type": "doc",
@@ -1668,18 +1767,21 @@
                 "jetstream/api/meta/server-remove",
                 "jetstream/api/meta/server-evacuate",
                 "jetstream/api/meta/rescue"
-              ]
+              ],
+              "key": "jetstream/api/meta/index"
             },
             {
               "type": "doc",
-              "label": "Headers",
-              "id": "jetstream/api/headers"
+              "label": "Заголовки",
+              "id": "jetstream/api/headers",
+              "key": "jetstream/api/headers"
             }
-          ]
+          ],
+          "key": "jetstream/api/index"
         },
         {
           "type": "category",
-          "label": "Advisories",
+          "label": "Уведомления",
           "collapsed": true,
           "link": {
             "type": "doc",
@@ -1708,11 +1810,12 @@
             "jetstream/advisory/stream-leader-elected",
             "jetstream/advisory/stream-quorum-lost",
             "jetstream/advisory/terminated"
-          ]
+          ],
+          "key": "jetstream/advisory/index"
         },
         {
           "type": "category",
-          "label": "Metric",
+          "label": "Метрики",
           "collapsed": true,
           "link": {
             "type": "doc",
@@ -1720,23 +1823,27 @@
           },
           "items": [
             "jetstream/metric/consumer-ack"
-          ]
+          ],
+          "key": "jetstream/metric/index"
         },
         {
           "type": "doc",
-          "label": "Errors",
-          "id": "jetstream/errors"
+          "label": "Ошибки",
+          "id": "jetstream/errors",
+          "key": "jetstream/errors"
         },
         {
           "type": "doc",
-          "label": "Cross-account subjects",
-          "id": "jetstream/cross-account-subjects"
+          "label": "Темы между учётными записями",
+          "id": "jetstream/cross-account-subjects",
+          "key": "jetstream/cross-account-subjects"
         }
-      ]
+      ],
+      "key": "jetstream/index"
     },
     {
       "type": "category",
-      "label": "System",
+      "label": "Система",
       "collapsed": true,
       "link": {
         "type": "doc",
@@ -1745,7 +1852,7 @@
       "items": [
         {
           "type": "category",
-          "label": "Advisory",
+          "label": "Уведомления",
           "collapsed": true,
           "link": {
             "type": "doc",
@@ -1755,11 +1862,12 @@
             "system/advisory/account-connections",
             "system/advisory/client-connect",
             "system/advisory/client-disconnect"
-          ]
+          ],
+          "key": "system/advisory/index"
         },
         {
           "type": "category",
-          "label": "Metric",
+          "label": "Метрики",
           "collapsed": true,
           "link": {
             "type": "doc",
@@ -1767,11 +1875,12 @@
           },
           "items": [
             "system/metric/service-latency"
-          ]
+          ],
+          "key": "system/metric/index"
         },
         {
           "type": "category",
-          "label": "Monitoring",
+          "label": "Мониторинг",
           "collapsed": true,
           "link": {
             "type": "doc",
@@ -1793,18 +1902,21 @@
             "system/monitor/idz",
             "system/monitor/profilez",
             "system/monitor/raftz"
-          ]
+          ],
+          "key": "system/monitor/index"
         },
         {
           "type": "doc",
-          "label": "Errors",
-          "id": "system/errors"
+          "label": "Ошибки",
+          "id": "system/errors",
+          "key": "system/errors"
         }
-      ]
+      ],
+      "key": "system/index"
     },
     {
       "type": "category",
-      "label": "Services",
+      "label": "Сервисы",
       "collapsed": true,
       "link": {
         "type": "doc",
@@ -1814,11 +1926,12 @@
         "services/info-response",
         "services/ping-response",
         "services/stats-response"
-      ]
+      ],
+      "key": "services/index"
     },
     {
       "type": "category",
-      "label": "Protocols",
+      "label": "Протоколы",
       "collapsed": true,
       "link": {
         "type": "doc",
@@ -1829,7 +1942,8 @@
         "protocols/route",
         "protocols/leafnode",
         "protocols/gateway"
-      ]
+      ],
+      "key": "protocols/index"
     }
   ]
 }

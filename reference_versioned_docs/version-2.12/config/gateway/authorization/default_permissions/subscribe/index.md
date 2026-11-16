@@ -1,40 +1,38 @@
-# subscribe
+# subscribe {#subscribe}
 
 <Aliases aliases="sub" />
 <Reloadable state="noop" />
-A single subject, list of subjects, or a allow-deny map of
-subjects for subscribing. Note, that the subject permission can
-have an optional second value declaring a queue name.
+Один субъект, список субъектов или объект с разрешёнными и запрещёнными субъектами для подписки. Разрешение на субъект может содержать второе необязательное значение — имя группы очереди.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` |  | - |
 | `[ string ]` |  | - |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`allow`](./allow.md) | List of subjects that are allowed to the client. | `string` | - | Ignored |
-| [`deny`](./deny.md) | List of subjects that are denied to the client. | `string` | - | Ignored |
-## Examples
+| [`allow`](./allow.md) | Список субъектов, разрешённых клиенту. | `string` | - | Игнорируется |
+| [`deny`](./deny.md) | Список субъектов, запрещённых клиенту. | `string` | - | Игнорируется |
+## Examples {#examples}
 
-### Allow subscribe on `foo`
+### Разрешить подписку на `foo` {#allow-subscribe-on-foo}
 ```
 foo
 ```
-### Allow subscribe on `foo` in group matching `*.dev`
+### Разрешить подписку на `foo` в группе по шаблону `*.dev` {#allow-subscribe-on-foo-in-group-matching-dev}
 ```
 foo *.dev
 ```
-### Allow subscribe on `foo.>` and `bar` in group `v1`
+### Разрешить подписку на `foo.>` и `bar` в группе `v1` {#allow-subscribe-on-foo-and-bar-in-group-v1}
 ```
 [foo.>, "bar v1"]
 ```
-### Allow subscribe to `foo.*` except `foo.bar`
+### Разрешить подписку на `foo.*`, кроме `foo.bar` {#allow-subscribe-to-foo-except-foobar}
 ```
 {
   allow: "foo.*"

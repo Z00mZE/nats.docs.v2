@@ -1,12 +1,11 @@
-# first_info_timeout
+# first_info_timeout {#first_info_timeout}
 
 <Reloadable state="not-reloadable" />
-How long to wait for the remote's `INFO` message before giving up
-on the connection.
+Время ожидания сообщения `INFO` удалённой стороны до отказа от соединения.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

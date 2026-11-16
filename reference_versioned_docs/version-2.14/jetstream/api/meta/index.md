@@ -1,6 +1,6 @@
-# Meta
+# Метаданные {#meta}
 
-| Name                  | Subject                           | System Account |
+| Название | Тема | Системная учётная запись |
 | --------------------- | --------------------------------- | -------------- |
-| [Meta leader stepdown](./leader-stepdown.md) | `$JS.API.META.LEADER.STEPDOWN`   | Yes            |
-| [Meta server remove](./server-remove.md) | `$JS.API.SERVER.REMOVE`          | Yes            |
+| [Сложение полномочий лидера метаданных](./leader-stepdown.md) | `$JS.API.META.LEADER.STEPDOWN` | Да |
+| [Удаление сервера](./server-remove.md) | `$JS.API.SERVER.REMOVE` | Да |

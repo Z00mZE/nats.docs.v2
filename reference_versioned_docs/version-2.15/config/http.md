@@ -1,11 +1,11 @@
-# http
+# http {#http}
 
 <Reloadable state="not-reloadable" />
-Listen specification `<host>:<port>` for server monitoring.
+Адрес прослушивания `<host>:<port>` для мониторинга сервера.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `string` | This is an alternate to setting the `host` and `port` separately. | - |
+| `string` | Альтернатива раздельному заданию `host` и `port`. | - |

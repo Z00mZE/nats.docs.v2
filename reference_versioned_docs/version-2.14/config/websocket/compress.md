@@ -1,14 +1,12 @@
-# compress
+# compress {#compress}
 
 <Aliases aliases="compression" />
 <Reloadable state="not-reloadable" />
-This enables support for compressed websocket frames
-in the server. For compression to be used, both server
-and client have to support it.
+Включает поддержку сжатых кадров WebSocket на сервере. Для использования сжатия его должны поддерживать и сервер, и клиент.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

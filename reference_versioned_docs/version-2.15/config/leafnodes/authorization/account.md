@@ -1,12 +1,11 @@
-# account
+# account {#account}
 
 <Reloadable state="not-reloadable" />
-Account that leaf nodes authenticating with these
-credentials are bound to.
+Аккаунт, к которому привязываются листовые узлы, прошедшие аутентификацию с этими учётными данными.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

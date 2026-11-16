@@ -1,11 +1,11 @@
-# encryption_password
+# encryption_password {#encryption_password}
 
 <Reloadable state="not-reloadable" />
-Password protecting the sealed key.
+Пароль защиты запечатанного ключа.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

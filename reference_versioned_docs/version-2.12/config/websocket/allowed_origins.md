@@ -1,18 +1,14 @@
-# allowed_origins
+# allowed_origins {#allowed_origins}
 
 <Aliases aliases="allowed_origin, allow_origins, allow_origin, origins, origin" />
 <Reloadable state="not-reloadable" />
-The list of accepted origins. When empty, and `same_origin` is `false`,
-clients from any origin are allowed to connect.
+Список допустимых источников. Если список пуст и `same_origin` равен `false`, разрешены клиенты из любого источника.
 
-This list specifies the only accepted values for the client's request
-`Origin` header. The scheme, host, and port must match. By convention,
-the absence of TCP port in the URL will be port 80 for an
-"http://" scheme, and 443 for "https://".
+Список задаёт единственные допустимые значения заголовка `Origin` в запросе клиента. Схема, хост и порт должны совпадать. Если TCP-порт в URL не указан, для схемы "http://" подразумевается порт 80, а для "https://" — 443.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |

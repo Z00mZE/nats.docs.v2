@@ -1,16 +1,15 @@
-# stream
+# stream {#stream}
 
 <Reloadable state="reloadable" />
-A subject or subject with wildcards that the account will publish to.
-Exclusive of `service`.
+Субъект или шаблон субъекта, в который аккаунт будет публиковать сообщения. Не используется одновременно с `service`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |
-## Examples
+## Examples {#examples}
 
 ```
 foo.>

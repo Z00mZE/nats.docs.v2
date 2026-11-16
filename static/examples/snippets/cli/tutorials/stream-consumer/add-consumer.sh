@@ -1,6 +1,6 @@
 #!/bin/bash
-# Add a durable pull consumer named `worker` to the EVENTS stream.
-# --pull: the reader fetches messages on demand (a pull consumer)
-# --ack explicit: every delivered message must be individually acknowledged
-# --defaults: accept the default values for everything else
+# Добавьте долговечный pull-потребитель `worker` к потоку EVENTS.
+# --pull: читатель запрашивает сообщения по мере необходимости
+# --ack explicit: каждое доставленное сообщение нужно подтвердить отдельно
+# --defaults: принять значения по умолчанию для остальных параметров
 nats consumer add EVENTS worker --pull --ack explicit --defaults

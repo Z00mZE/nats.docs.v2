@@ -1,12 +1,12 @@
-# max_payload
+# max_payload {#max_payload}
 
 <Aliases aliases="max_pay" />
 <Reloadable state="reloadable" note="Re-applied to already-connected clients. The per-client value is reset to unlimited first, so raising the limit works as well as lowering it; the effective value is min(account limit, server max_payload)." />
-The maximum payload size allowed for messages.
+Максимальный допустимый размер полезной нагрузки сообщений.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

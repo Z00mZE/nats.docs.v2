@@ -1,41 +1,41 @@
-# System Reference
+# Системный справочник {#system-reference}
 
-System reference for monitoring, observability, and system management.
+Справочник по мониторингу, наблюдаемости и управлению системой.
 
-## Overview
+## Обзор {#overview}
 
-The NATS Server provides comprehensive interfaces for:
-- Real-time event notifications via advisories
-- Performance monitoring through metrics
-- HTTP endpoints for health checks and statistics
-- Detailed error reporting for troubleshooting
+Сервер NATS предоставляет подробные интерфейсы для:
+- Уведомлений о событиях в реальном времени
+- Мониторинга производительности через метрики
+- HTTP-проверок работоспособности и получения статистики
+- Подробного отображения ошибок для устранения неполадок
 
-## Categories
+## Категории {#categories}
 
-### [Advisory](./advisory/index.md)
-System event notifications:
-- Client connection and disconnection events
-- Account limit warnings
-- Cluster state changes
-- Authentication events
+### [Уведомления](./advisory/index.md) {#advisory}
+Системные уведомления:
+- Подключение и отключение клиентов
+- Предупреждения о лимитах учётных записей
+- Изменения состояния кластера
+- События аутентификации
 
-### [Metrics](./metric/index.md)
+### [Метрики](./metric/index.md) {#metrics}
 
-Performance and telemetry data:
-- Resource utilization metrics
-- Throughput measurements
+Показатели производительности и телеметрия:
+- Метрики использования ресурсов
+- Измерения пропускной способности
 
-### [Monitoring](./monitor/index.md)
+### [Мониторинг](./monitor/index.md) {#monitoring}
 
-HTTP monitoring endpoints:
-- Health check endpoints
-- Cluster state information
-- Connection details
+HTTP-точки мониторинга:
+- Проверки работоспособности
+- Информация о состоянии кластера
+- Сведения о соединениях
 
-### [Errors](./errors.md)
+### [Ошибки](./errors.md) {#errors}
 
-Server error responses:
-- Protocol violations
-- Authentication failures
-- Resource limits
-- Configuration errors
+Ответы сервера об ошибках:
+- Нарушения протокола
+- Ошибки аутентификации
+- Ограничения ресурсов
+- Ошибки конфигурации

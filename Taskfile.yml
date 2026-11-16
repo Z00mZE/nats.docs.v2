@@ -1,0 +1,80 @@
+version: '3'
+vars:
+  # Замените на ваш логин в GitHub (строго в нижнем регистре) и имя образа
+  GH_USER: z00mze
+  IMAGE_NAME: nats-docs.ru
+  TAG: latest
+  FULL_IMAGE: ghcr.io/{{.GH_USER}}/{{.IMAGE_NAME}}:{{.TAG}}
+tasks:
+  default:
+    desc: Запустить сайт в режиме разработки
+    cmds:
+      - task: start
+
+  install:
+    desc: Установить зависимости проекта
+    dir: '{{.TASKFILE_DIR}}'
+    cmds:
+      - npm ci
+
+  start:
+    desc: Запустить сервер разработки (http://localhost:3000)
+    aliases: [dev]
+    dir: '{{.TASKFILE_DIR}}'
+    cmds:
+      - npm run start -- {{.CLI_ARGS}}
+
+  build:
+    desc: Загрузить примеры и собрать сайт для публикации
+    dir: '{{.TASKFILE_DIR}}'
+    cmds:
+      - npm run build -- {{.CLI_ARGS}}
+
+  serve:
+    desc: Просмотреть собранный сайт локально
+    dir: '{{.TASKFILE_DIR}}'
+    cmds:
+      - npm run serve -- {{.CLI_ARGS}}
+
+  docker:up:
+    desc: Собрать и запустить сайт в Docker (http://localhost)
+    aliases: [docker]
+    dir: '{{.TASKFILE_DIR}}'
+    cmds:
+      - docker compose up --build --detach --wait {{.CLI_ARGS}}
+
+  docker:down:
+    desc: Остановить сайт в Docker и удалить контейнер
+    dir: '{{.TASKFILE_DIR}}'
+    cmds:
+      - docker compose down {{.CLI_ARGS}}
+
+  docker:login:
+    desc: Авторизация в GitHub Container Registry
+    silent: true
+    preconditions:
+      - sh: '[ -n "$GH_TOKEN" ]'
+        msg: 'Переменная окружения GH_TOKEN не задана.'
+    cmds:
+      - echo "$GH_TOKEN" | docker login ghcr.io -u {{.GH_USER}} --password-stdin
+
+
+  docker:build:
+    desc: Сборка Docker-образа с тегом для ghcr.io
+    dir: '{{.TASKFILE_DIR}}'
+    cmds:
+      - docker build -t {{.FULL_IMAGE}} .
+
+
+  docker:push:
+    desc: Отправка собранного образа в ghcr.io
+    cmds:
+      - docker push {{.FULL_IMAGE}}
+      - echo {{.FULL_IMAGE}}
+
+  docker:deploy:
+    desc: Полный цикл — авторизация, сборка и пуш
+    cmds:
+      - task: docker:login
+      - task: docker:build
+      - task: docker:push

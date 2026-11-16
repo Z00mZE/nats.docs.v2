@@ -18,6 +18,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { localizeReferenceMarkdown } = require("./localize-reference-docs.js");
 
 const ROOT = path.resolve(__dirname, "..");
 const SCHEMA_REFS = path.join(ROOT, "scripts/schema-refs.json");
@@ -75,7 +76,7 @@ function parseArgs(argv) {
  *
  *   <JSONSchema schema={var} />
  */
-function renderEntry(entry, version) {
+async function renderEntry(entry, version) {
   const importBase = `@site/src/schemas/vendor/v${version}`;
   const parts = [];
 
@@ -125,10 +126,10 @@ function renderEntry(entry, version) {
     parts.push(`<JSONSchema schema={${s.var}} />`);
   }
 
-  return parts.join("\n") + "\n";
+  return localizeReferenceMarkdown(parts.join("\n") + "\n");
 }
 
-function main() {
+async function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (!fs.existsSync(SCHEMA_REFS)) die(`${SCHEMA_REFS} not found`);
 
@@ -159,7 +160,7 @@ function main() {
 
     const out = path.join(opts.outDir, `${entry.path}.md`);
     fs.mkdirSync(path.dirname(out), { recursive: true });
-    fs.writeFileSync(out, renderEntry(entry, opts.version));
+    fs.writeFileSync(out, await renderEntry(entry, opts.version));
     count++;
   }
   process.stderr.write(
@@ -167,4 +168,4 @@ function main() {
   );
 }
 
-main();
+main().catch((error) => die(error.stack ?? error.message));

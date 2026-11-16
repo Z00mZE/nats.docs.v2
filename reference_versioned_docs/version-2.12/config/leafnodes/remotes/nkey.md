@@ -1,12 +1,12 @@
-# nkey
+# nkey {#nkey}
 
 <Aliases aliases="seed" />
 <Reloadable state="not-reloadable" />
-User nkey seed this remote authenticates with.
+Секретный seed nkey пользователя для аутентификации этого удалённого узла.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,11 +1,11 @@
-# preserve_revoked
+# preserve_revoked {#preserve_revoked}
 
 <Reloadable state="reloadable" />
-Keep revoked responses in the cache rather than evicting them.
+Сохранять ответы об отзыве сертификата в кэше вместо их вытеснения.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

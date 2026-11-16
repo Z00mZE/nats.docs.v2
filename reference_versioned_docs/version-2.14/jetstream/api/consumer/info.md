@@ -1,16 +1,16 @@
-# Consumer Info
+# Информация о потребителе {#consumer-info}
 
-Retrieves consumer information.
+Получение информации о потребителе.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerInfoResponse from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/consumer_info_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.INFO.{stream}.{consumer}`
 
-Where `{stream}` is the stream name and `{consumer}` is the consumer name.
+Где `{stream}` — имя потока, а `{consumer}` — имя потребителя.
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={consumerInfoResponse} />

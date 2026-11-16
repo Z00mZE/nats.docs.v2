@@ -1,11 +1,11 @@
-# port
+# port {#port}
 
 <Reloadable state="not-reloadable" />
-Port where the gateway will listen for incoming gateway connections.
+Порт, на котором шлюз принимает входящие соединения шлюзов.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

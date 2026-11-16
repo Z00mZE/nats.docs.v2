@@ -1,7 +1,7 @@
 #!/bin/bash
-# Subscribe to the "tasks" subject as a member of the "workers" queue group.
-# The --queue flag names the group. Every subscriber that names the same
-# group on the same subject shares the load: each message is delivered to
-# exactly one member. Run this in two terminals to watch work split between
-# them. Press Ctrl-C to stop.
+# Подпишитесь на тему "tasks" как участник группы очереди "workers".
+# Параметр --queue задаёт имя группы. Подписчики одной и той же
+# группы в одной теме разделяют нагрузку: каждое сообщение доставляется
+# ровно одному участнику. Запустите команду в двух терминалах, чтобы увидеть
+# распределение заданий. Для остановки нажмите Ctrl-C.
 nats sub tasks --queue workers

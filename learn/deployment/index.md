@@ -1,130 +1,73 @@
 ---
 id: index
-title: "Deployment & Upgrades Deep Dive"
+title: "Подробно о развёртывании и обновлениях"
 sidebar_position: 1
-description: Take the Acme ORDERS cluster to production — size it, deploy it, configure it live, upgrade it safely, and harden it
+description: "Подготовка кластера Acme ORDERS к эксплуатации: ресурсы, развёртывание, изменение конфигурации, безопасное обновление и защита"
 ---
 
-# Deployment & Upgrades Deep Dive
+# Подробно о развёртывании и обновлениях {#deployment--upgrades-deep-dive}
 
-The [Topologies deep dive](/learn/topologies) designed a shape: a
-three-node NATS cluster, `east`, carrying the `ORDERS` stream. This
-chapter takes that exact cluster and runs it in production.
+В [главе топологий](/learn/topologies) спроектирован кластер NATS `east` из трёх узлов с потоком `ORDERS`. Здесь мы запускаем именно этот кластер для реальной эксплуатации.
 
-Topologies covered the *shapes*: one server, a cluster, a super-cluster,
-leaf nodes. This chapter covers the *operations* that turn a shape into
-a running system. Those operations are the resources a node needs, the
-manifests that stand it up, the SIGHUP that reloads its config without
-dropping a connection, the lame-duck mode that upgrades it without losing
-the stream, and the systemd flags that restrict its access.
+Топологии описывали *формы*: отдельный сервер, кластер, суперкластер, листовые узлы. Здесь рассмотрены *операции*, превращающие схему в работающую систему: выделение ресурсов, манифесты запуска, SIGHUP для перечитывания конфигурации без разрыва соединений, режим плавного вывода для обновления без потери потока и ограничения доступа systemd.
 
-This is the runbook rather than the theory. Each page names the
-mechanism, gives the exact command or manifest you run, and links the
-*why* out to the chapter that covers it.
+Это практическая инструкция. Каждая страница называет механизм, даёт точную команду или манифест и отправляет за объяснением причин в соответствующую главу.
 
 <div class="nats-flow" data-scenario="lameDuckUpgradeAnimated" data-width="600" data-height="350"></div>
 
-## By the end you'll have
+## Что вы получите {#by-the-end-youll-have}
 
-A production runbook for the same Acme ORDERS cluster you've followed
-through every other Learn chapter:
+Инструкцию эксплуатации того же кластера Acme ORDERS, который проходит через остальные главы Learn:
 
-- A **sizing baseline** for the workload: the four resources a node
-  spends (CPU, memory, disk, file descriptors), and how an R3 stream
-  counts against the `ORDERS` account limits.
-- The cluster **running on Kubernetes** as a three-replica StatefulSet
-  with pods `nats-0`, `nats-1`, `nats-2` (the same `n1-east`, `n2-east`,
-  `n3-east` cluster you designed in Topologies; the Kubernetes page
-  spells out that mapping), with the `ORDERS` stream and the `shipping`
-  and `analytics` consumers declared as CRDs.
-- The ability to **change config live**: split into per-account and
-  per-region includes, reloaded with a SIGHUP, with zero downtime and no
-  client reconnect.
-- A safe **rolling upgrade** procedure that walks a new server version
-  through `nats-0..2` while the R3 ORDERS stream stays available and
-  clients stay connected.
-- A **hardened** cluster: TLS on every link, the `ACME` credentials
-  mounted, a locked-down systemd unit, and the monitor port closed to the
-  internet.
+- **Исходный расчёт ресурсов**: CPU, память, диск, файловые дескрипторы и учёт потока R3 в ограничениях учётной записи `ORDERS`.
+- **Кластер Kubernetes** как StatefulSet с тремя репликами и подами `nats-0`, `nats-1`, `nats-2`, соответствующими `n1-east`, `n2-east`, `n3-east` из топологий. Поток `ORDERS` и потребители `shipping`, `analytics` объявлены через CRD.
+- **Изменение конфигурации на ходу**: отдельные включаемые файлы учётных записей и регионов, перечитываемые через SIGHUP без простоя и переподключений.
+- Безопасное **последовательное обновление** версии на `nats-0..2` с сохранением доступности потока R3 ORDERS и соединений клиентов.
+- **Защищённый** кластер: TLS на всех связях, подключённые учётные данные `ACME`, ограниченный модуль systemd и закрытый от интернета порт мониторинга.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You're an operator standing the cluster up for real. You've read the
-[Topologies deep dive](/learn/topologies) and know the shapes, and you've
-skimmed the [JetStream](/learn/jetstream) and
-[Security](/learn/security) deep dives. This chapter reuses the `ORDERS`
-stream and the `ACME` operator rather than re-introducing them.
+Вы готовите кластер к реальной эксплуатации, прочитали [топологии](/learn/topologies) и знакомы с [JetStream](/learn/jetstream) и [безопасностью](/learn/security). Здесь повторно используются поток `ORDERS` и оператор `ACME`.
 
-This chapter is deliberately the runbook half. It divides the work with
-four sibling chapters, and each owns part of it:
+Глава намеренно посвящена процедурам. Остальной материал распределён между четырьмя связанными главами:
 
-- **Which shape to deploy** is [Topologies](/learn/topologies). This
-  chapter assumes the three-node ORDERS cluster shape is already decided.
-- **How Raft and replication work underneath** is
-  [Clustering](/learn/clustering). This chapter *triggers* a leadership
-  transfer during an upgrade; it doesn't explain how Raft elects a
-  leader.
-- **The auth model** (operators, accounts, users, JWTs) is
-  [Security](/learn/security). This chapter *mounts* the credentials and
-  *turns on* TLS; the model is taught there.
-- **What to watch once it's live** is [Monitoring](/learn/monitoring).
-  This chapter *sets up* the cluster; monitoring watches it.
+- **Выбор топологии** — [Топологии](/learn/topologies). Предполагается, что кластер ORDERS из трёх узлов уже выбран.
+- **Устройство Raft и репликации** — [Кластеризация](/learn/clustering). Здесь при обновлении *инициируется* передача лидерства, но не объясняется алгоритм выборов.
+- **Модель аутентификации** — [Безопасность](/learn/security): операторы, учётные записи, пользователи, JWT. Здесь мы *подключаем* учётные данные и *включаем* TLS.
+- **Наблюдение за системой** — [Мониторинг](/learn/monitoring). Здесь кластер *настраивается*, там — наблюдается.
 
-If a sentence here would be at home verbatim in one of those four, it
-belongs there, and this chapter links to it instead.
+Если объяснение целиком относится к одной из этих глав, здесь вместо повтора дана ссылка.
 
-## How to read it
+## Как читать главу {#how-to-read-it}
 
-Each page introduces at most two new concepts and carries the same
-cluster forward. You [size it](/learn/deployment/sizing-and-resources),
-[deploy it](/learn/deployment/kubernetes), [edit its config
-live](/learn/deployment/config-management), [upgrade
-it](/learn/deployment/rolling-upgrades), and
-[harden it](/learn/deployment/hardening). The
-node names (`n1-east`/`n2-east`/`n3-east`), the `ORDERS` stream, the
-`order-svc` publisher, and the `ACME` operator stay fixed throughout, so
-you keep a
-mental picture of one Acme system getting production-ready rather than a
-new example each time.
+Каждая страница вводит не больше двух понятий и продолжает работу с тем же кластером. Вы [рассчитываете ресурсы](/learn/deployment/sizing-and-resources), [развёртываете кластер](/learn/deployment/kubernetes), [меняете конфигурацию без остановки](/learn/deployment/config-management), [обновляете](/learn/deployment/rolling-upgrades) и [защищаете](/learn/deployment/hardening). Имена `n1-east`/`n2-east`/`n3-east`, поток `ORDERS`, издатель `order-svc` и оператор `ACME` остаются прежними: одна система Acme последовательно готовится к эксплуатации.
 
-Every page covers only the configuration keys this deployment needs. The
-full set of server configuration options lives in
-[Reference → Configuration](/reference/config); each page points there
-for the exhaustive knob list.
+Здесь разобраны только необходимые этому развёртыванию параметры. Полный список настроек сервера находится в [Справочнике → Конфигурация](/reference/config); страницы ссылаются на него за подробностями.
 
-## Map
+## Карта главы {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Deployment & Upgrades](/learn/deployment) | What this chapter operates and the order of the runbook |
-| [Sizing & resources](/learn/deployment/sizing-and-resources) | The four resources a node spends, and how an R3 stream counts against account limits |
-| [Kubernetes](/learn/deployment/kubernetes) | Stand the cluster up as a StatefulSet with the NATS Helm chart, and declare streams as CRDs |
-| [Config management](/learn/deployment/config-management) | Split config into includes and reload it live with a SIGHUP: no downtime, no reconnect |
-| [Rolling upgrades](/learn/deployment/rolling-upgrades) | Use lame-duck mode and the right upgrade order to roll a new version through the cluster |
-| [Hardening](/learn/deployment/hardening) | TLS on every link, mounted credentials, and a locked-down systemd unit |
-| [Where to go next](/learn/deployment/where-next) | The production checklist and a map of what's beyond running the cluster |
+| [Развёртывание и обновления](/learn/deployment) | Объекты эксплуатации и порядок процедур |
+| [Размер системы и ресурсы](/learn/deployment/sizing-and-resources) | Четыре ресурса узла и учёт R3 в ограничениях учётной записи |
+| [Kubernetes](/learn/deployment/kubernetes) | StatefulSet через чарт NATS Helm и объявление потоков через CRD |
+| [Управление конфигурацией](/learn/deployment/config-management) | Включаемые файлы и SIGHUP без простоя и переподключений |
+| [Последовательные обновления](/learn/deployment/rolling-upgrades) | Плавный вывод узлов и правильный порядок обновления |
+| [Защита системы](/learn/deployment/hardening) | TLS на каждой связи, подключение учётных данных и ограниченный модуль systemd |
+| [Куда двигаться дальше](/learn/deployment/where-next) | Контрольный список и дальнейшие шаги эксплуатации |
 
-## Prerequisites
+## Предварительные условия {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- A running three-node ORDERS cluster, or the willingness to stand one up
-  while you read. The [Topologies deep dive](/learn/topologies) builds it
-  step by step.
-- The `nats` CLI installed and pointed at the cluster, for the inspection
-  commands (`nats account info`, `nats server info`, `nats stream info`)
-  that anchor each page.
-- For the Kubernetes pages, a cluster you can `kubectl` against and `helm`
-  installed. The [NATS Helm chart](/learn/deployment/kubernetes) and the
-  NACK controller are the canonical path this chapter follows.
+- Работающий кластер ORDERS из трёх узлов или готовность создать его по ходу чтения. [Топологии](/learn/topologies) объясняют создание по шагам.
+- CLI `nats`, установленный и настроенный на кластер, для команд проверки `nats account info`, `nats server info`, `nats stream info`.
+- Для страниц Kubernetes — доступный через `kubectl` кластер и установленный `helm`. Здесь используется [чарт NATS Helm](/learn/deployment/kubernetes) и контроллер NACK.
 
-Open a terminal and turn to
-[Sizing & resources](/learn/deployment/sizing-and-resources).
+Откройте терминал и перейдите к [размеру системы и ресурсам](/learn/deployment/sizing-and-resources).
 
-## See also
+## См. также {#see-also}
 
-- [Topologies deep dive](/learn/topologies) — the shape this chapter runs.
-- [Clustering & Replication](/learn/clustering) — the Raft mechanics this
-  chapter triggers but doesn't teach.
-- [Security deep dive](/learn/security) — the auth model behind the
-  credentials this chapter mounts.
+- [Топологии](/learn/topologies) — устройство развёртываемой системы.
+- [Кластеризация и репликация](/learn/clustering) — механика Raft, используемая в процедурах.
+- [Безопасность](/learn/security) — модель подключаемых учётных данных.

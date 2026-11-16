@@ -1,127 +1,86 @@
 ---
 id: where-next
-title: "Where to go next"
+title: Куда двигаться дальше
 sidebar_position: 6
-description: Recap the WebSocket model and point to the chapters and Reference that take it further
+description: Повторение модели WebSocket и ссылки на дальнейшие главы и справочник
 ---
 
-# Where to go next
+# Куда двигаться дальше {#where-to-go-next}
 
-You started with a server that only accepted connections on port 4222.
-You end with a browser dashboard showing `orders.>` live behind an
-origin check and a cookie-borne JWT, TLS either on the listener or at
-the ingress in front of it, and a retail branch joined to the `east`
-cluster through that same endpoint.
+Вы начинали с сервера, принимающего подключения только на 4222. Теперь есть браузерная панель с текущими `orders.>`, проверкой источника и JWT в cookie, TLS на слушателе или ingress, а также филиал, подключённый к `east` через тот же вход.
 
-This page doesn't teach anything new. It collects the model into one
-place and points at what takes each piece further.
+Новых понятий здесь нет: соберём модель и направления дальнейшего изучения.
 
-## The core idea
+## Основная идея {#the-core-idea}
 
-Three ideas carry the chapter.
+Глава опирается на три идеи.
 
-**It's the same protocol over a different transport.** A WebSocket
-connection is a NATS connection. The same clients, subjects, queue
-groups, request-reply and JetStream work across it unchanged. The URL
-scheme is the difference, and it's most of the difference.
+**Тот же протокол поверх другого транспорта.** WebSocket-соединение остаётся соединением NATS. Клиенты, темы, группы очередей, запросы и ответы, JetStream работают без изменений. Основное отличие — схема URL.
 
-**A browser is a different security situation, not a different NATS.**
-It has no filesystem for a credentials file, and any page on the
-internet can try to open a connection in a user's browser. That's what
-origin checking and the cookie settings address. Neither is a
-replacement for authorization, which is still what protects the port.
+**Браузер меняет условия безопасности, а не NATS.** Ему недоступен файл credentials, а любая интернет-страница может попытаться открыть соединение через браузер пользователя. Проверка источника и cookie решают эти задачи, но не заменяют авторизацию, защищающую доступ к серверу.
 
-**One listener serves clients and servers alike.** Reaching for
-WebSocket is often nothing to do with browsers — where an HTTP ingress
-or load balancer is the only path into the network, the WebSocket
-listener is what gets published through it. A leaf node uses that endpoint exactly as a
-client does, which is how an edge site joins a cluster that isn't
-otherwise exposed.
+**Один слушатель обслуживает клиентов и серверы.** WebSocket нужен не только браузерам: если единственный вход — HTTP ingress или балансировщик, через него публикуется слушатель WebSocket. Листовой узел использует его как клиент, подключая периферийную площадку к иначе недоступному кластеру.
 
-## Where the reference details live
+## Где искать справочные подробности {#where-the-reference-details-live}
 
-This chapter is concept-first and unversioned. The exact fields of the
-`websocket {}` block, their types, defaults, reload behaviour, and which
-server version each appeared in, are in **[Reference →
-websocket](/reference/config/websocket/)**, which is versioned and
-exhaustive.
+Глава объясняет понятия без привязки к версии. Точные поля `websocket {}`, типы, значения по умолчанию, перезагрузка и версии появления описаны в полном разделе **[Справочник → websocket](/reference/config/websocket/)**.
 
-That's where to look for the precise semantics of `handshake_timeout`,
-the full TLS sub-block, or which of the four cookie settings exist in
-the version you run.
+Там ищите точное поведение `handshake_timeout`, весь блок TLS и доступность четырёх параметров cookie в вашей версии.
 
-## What to read next
+## Что читать дальше {#what-to-read-next}
 
-Two chapters continue directly from here.
+Две главы непосредственно продолжают эту.
 
-**[Security](/learn/security)** is the real next step. This chapter
-restricted a user to `WEBSOCKET`, handed a browser a bearer JWT through
-a cookie, and stopped there. The model underneath — accounts as subject
-isolation, how permissions are evaluated, and
-[operator mode](/learn/security/operator-mode) end to end — is what a
-dashboard exposed to real users needs.
+**[Безопасность](/learn/security)** — основной следующий шаг. Здесь пользователь был ограничен `WEBSOCKET` и получил bearer JWT через cookie. Реальной панели нужны и основы: учётные записи как изолированные пространства тем, проверка разрешений и [режим оператора](/learn/security/operator-mode) от начала до конца.
 
-**[Topologies](/learn/topologies)** covers leaf nodes properly: what
-they are for, how subject interest propagates, and what happens when the
-link drops. The last page of this chapter changed only the transport.
+**[Топологии](/learn/topologies)** объясняют назначение листовых узлов, распространение интереса к темам и потерю связи. Здесь менялся лишь транспорт.
 
-Two more are worth knowing about rather than reading now.
-[Deployment](/learn/deployment) covers the Kubernetes ingress that
-terminates TLS in front of a WebSocket listener.
-[Resilient Clients](/learn/resilient-clients) covers reconnection and
-drain, which behave the same over WebSocket as over TCP — a browser page
-that reconnects is using the same machinery.
+Ещё два направления: [Развёртывание](/learn/deployment) описывает Kubernetes ingress, завершающий TLS перед WebSocket; [Устойчивые клиенты](/learn/resilient-clients) — переподключение и drain, работающие так же, как по TCP. Переподключающаяся страница использует тот же механизм.
 
-## Production checklist
+## Проверки перед эксплуатацией {#production-checklist}
 
-Every content page closed with a Pitfalls section. This collects their
-action items into one pass to make before a WebSocket listener carries
-real traffic. Each group links back to the page that explains why.
+Ниже собраны действия из разделов с подводными камнями перед передачей реального трафика. Каждая группа ссылается на объяснение причин.
 
-### Your first WebSocket connection — see [Pitfalls](/learn/websocket/your-first-websocket-connection#pitfalls)
+### Первое соединение WebSocket — см. [Подводные камни](/learn/websocket/your-first-websocket-connection#pitfalls) {#your-first-websocket-connection--see-pitfalls}
 
-- [ ] Set `port` or `listen` in the `websocket {}` block; there is no default, and without one the server starts with no WebSocket listener and says nothing about it.
-- [ ] Confirm `Listening for websocket clients` appears in the log before debugging anything on the client side.
-- [ ] Point WebSocket clients at the WebSocket port and everything else at the client port; the listeners are separate.
-- [ ] Give every client URL an explicit port. nats.js fills in 443 for a bare host and 80 for a `ws://` URL without one.
-- [ ] If you run a FIPS-140 build, confirm it was built with Go 1.26 or later; earlier toolchains refuse the WebSocket listener outright.
+- [ ] Укажите `port` или `listen` в `websocket {}`: значения по умолчанию нет, без него сервер молча запускается без WebSocket.
+- [ ] Перед отладкой клиента найдите `Listening for websocket clients` в журнале.
+- [ ] Направляйте WebSocket-клиентов на их порт, остальных — на обычный клиентский: слушатели разные.
+- [ ] Задавайте порт в каждом URL. Nats.js подставляет 443 для имени хоста и 80 для `ws://` без порта.
+- [ ] Для FIPS-140 используйте сборку Go 1.26 или новее: более старые версии отклоняют слушатель WebSocket.
 
-### Browsers and origins — see [Pitfalls](/learn/websocket/browsers-and-origins#pitfalls)
+### Браузеры и источники — см. [Подводные камни](/learn/websocket/browsers-and-origins#pitfalls) {#browsers-and-origins--see-pitfalls}
 
-- [ ] Set `allowed_origins` to the exact scheme, host and port the page is served from — all three have to match — or set `same_origin: true` when the page and the NATS endpoint share one hostname.
-- [ ] Treat origin checking as protection against other web pages, not as access control — it's skipped entirely when no `Origin` header is present.
-- [ ] Keep seeds and credentials files out of front-end code; use a bearer JWT or an `HttpOnly` cookie the page can't read.
-- [ ] Give the browser user subscribe permission on the subjects it displays and no publish rights it doesn't need.
-- [ ] Restrict browser credentials with `allowed_connection_types: ["WEBSOCKET"]` so they don't also work on 4222.
+- [ ] Укажите точные схему, хост и порт страницы в `allowed_origins` либо задайте `same_origin: true` при одном имени хоста страницы и NATS.
+- [ ] Считайте проверку источника защитой от чужих страниц, а не контролем доступа: без `Origin` она не выполняется.
+- [ ] Не помещайте seed и файлы credentials в код интерфейса; используйте bearer JWT или cookie `HttpOnly`.
+- [ ] Разрешите браузерному пользователю подписку на отображаемые темы без ненужных прав публикации.
+- [ ] Ограничьте данные через `allowed_connection_types: ["WEBSOCKET"]`, чтобы они не работали на 4222.
 
-### TLS and proxies — see [Pitfalls](/learn/websocket/tls-and-proxies#pitfalls)
+### TLS и прокси — см. [Подводные камни](/learn/websocket/tls-and-proxies#pitfalls) {#tls-and-proxies--see-pitfalls}
 
-- [ ] Use `no_tls: true` only behind a proxy that terminates TLS on a network you trust; there's no warning that distinguishes that from exposing it.
-- [ ] Make the proxy forward `Upgrade` and `Connection`; without them the handshake fails as a generic connection error.
-- [ ] Set the proxy's idle timeout longer than the server's WebSocket ping interval, or working connections drop on a timer.
-- [ ] Set `advertise` when the server sits behind NAT or a proxy, so clients are given an address they can reach.
-- [ ] Size `handshake_timeout` against the proxy's latency under load, not against a direct connection on a laptop.
-- [ ] Configure TLS on the listener with a `tls {}` block or terminate it at the proxy; `wss://` in a client URL only says what the client will do, and a mismatch fails at the handshake.
+- [ ] Используйте `no_tls: true` лишь за завершающим TLS прокси на доверенном участке: отдельного предупреждения об открытой внешней сети нет.
+- [ ] Передавайте через прокси `Upgrade` и `Connection`, иначе клиент получит общую ошибку соединения.
+- [ ] Тайм-аут простоя прокси должен превышать интервал ping WebSocket сервера.
+- [ ] За NAT или прокси задавайте `advertise` с доступным клиентам адресом.
+- [ ] Подбирайте `handshake_timeout` под задержку прокси при нагрузке, а не локальное прямое соединение.
+- [ ] Настройте `tls {}` на слушателе либо завершайте TLS на прокси: клиентская схема `wss://` определяет только клиента, несовпадение с сервером срывает рукопожатие.
 
-### Leaf nodes over WebSocket — see [Pitfalls](/learn/websocket/leaf-nodes-over-websocket#pitfalls)
+### Листовые узлы через WebSocket — см. [Подводные камни](/learn/websocket/leaf-nodes-over-websocket#pitfalls) {#leaf-nodes-over-websocket--see-pitfalls}
 
-- [ ] Write `wss://` when the link is encrypted. Either the scheme or a `tls {}` block turns TLS on, so `ws://` beside a `tls {}` block is encrypted too — the scheme alone doesn't tell a reader which.
-- [ ] Add a `tls {}` block with `ca_file` only when the hub's certificate isn't publicly trusted.
-- [ ] Keep every URL in a remote on the same kind of scheme; a mix stops the server at startup.
-- [ ] Point the remote at the hub's WebSocket listener, not the leafnode port.
-- [ ] Keep a `leafnodes { port: … }` block on the hub even when every leaf arrives over WebSocket; without it the hub accepts the connection and closes it. That port still listens, so firewall it like any other server port.
-- [ ] Give the hub a `websocket {}` listener as well; a hub with only a leafnode port has nothing for a `wss://` remote to connect to.
-- [ ] Grant `LEAFNODE_WS`, not `LEAFNODE`, to a leaf that arrives over WebSocket.
-- [ ] Write an explicit port on every leafnode remote URL; without one the server appends `:7422` whatever the scheme, so `wss://host` dials the leafnode port.
-- [ ] If a proxy routes on path, make sure it forwards `/leafnode` — the server appends that to the remote URL's path to mark the connection as a leaf.
+- [ ] Явно указывайте `wss://` для шифрованной связи. TLS включает и схема, и `tls {}`, поэтому `ws://` рядом с этим блоком тоже зашифрован.
+- [ ] Добавляйте `tls {}` с `ca_file`, только если сертификату центра нет общего доверия.
+- [ ] Все URL удалённого соединения должны использовать однотипную схему; смесь препятствует запуску.
+- [ ] Указывайте слушатель WebSocket центра, а не порт leafnode.
+- [ ] Сохраняйте на центре `leafnodes { port: … }`, даже если все узлы используют WebSocket: без него соединения принимаются и закрываются. Порт при этом открыт и требует ограничения доступа.
+- [ ] Включите `websocket {}` на центре: одного leafnode-порта для `wss://` недостаточно.
+- [ ] Разрешайте `LEAFNODE_WS`, а не `LEAFNODE`.
+- [ ] Задавайте порт в каждом URL листового узла: без него добавляется `:7422` независимо от схемы, и `wss://host` направляется на порт leafnode.
+- [ ] При маршрутизации по пути передавайте `/leafnode`, который сервер добавляет к пути удалённого адреса.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → websocket](/reference/config/websocket/) — every field of
-  the `websocket {}` block, versioned and exhaustive
-- [Security deep dive](/learn/security) — accounts, permissions, and
-  bearer credentials for browser clients
-- [Topologies deep dive](/learn/topologies) — the leaf-node model behind
-  the branch office
-- [MQTT deep dive](/learn/mqtt) — the other protocol listener on the
-  same binary
+- [Справочник → websocket](/reference/config/websocket/) — все поля `websocket {}` по версиям.
+- [Глава о безопасности](/learn/security) — учётные записи, разрешения и bearer-данные браузеров.
+- [Глава о топологиях](/learn/topologies) — модель листового узла филиала.
+- [Глава о MQTT](/learn/mqtt) — другой протокольный слушатель того же сервера.

@@ -1,4 +1,4 @@
 #!/bin/bash
-# Publish one message to the greet subject. The publish is
-# fire-and-forget: it hands the message to the server and exits.
+# Опубликуйте одно сообщение в теме greet. Публикация выполняется
+# без ожидания ответа: команда передаёт сообщение серверу и завершается.
 nats pub greet "Hello NATS!"

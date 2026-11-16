@@ -1,98 +1,98 @@
 ---
 id: ecosystem
-title: The NATS Ecosystem
+title: "Экосистема NATS"
 ---
 
-# The NATS Ecosystem
+# Экосистема NATS {#the-nats-ecosystem}
 
-NATS is more than the `nats-server` binary. Around it sits a set of officially maintained clients, extension libraries, command-line and Kubernetes tooling, identity tools, and integrations.
+NATS — это не только исполняемый файл `nats-server`. Его дополняют официально поддерживаемые клиенты, библиотеки расширений, инструменты командной строки и Kubernetes, средства управления идентификационными данными и интеграции.
 
-This page is the map of those pieces — what each repository is, who maintains it, and where to look first.
+Эта страница — карта экосистемы: назначение каждого репозитория, кто его поддерживает и с чего начать.
 
-If you only want to pick a client and start building, jump to [Tier 1 clients](#tier-1-clients).
+Если вы хотите просто выбрать клиент и начать разработку, перейдите к [клиентам Tier 1](#tier-1-clients).
 
-## Server
+## Сервер {#server}
 
-The single binary that does all message routing. Clustering, JetStream persistence, leaf nodes, [MQTT](/learn/mqtt/), and [WebSocket](/learn/websocket/) are all enabled through configuration on the same `nats-server` — there are no separate components to install.
+Единый исполняемый файл выполняет всю маршрутизацию сообщений. Кластеризация, долговременное хранение JetStream, листовые узлы, [MQTT](/learn/mqtt/) и [WebSocket](/learn/websocket/) включаются в конфигурации того же `nats-server`: устанавливать отдельные компоненты не нужно.
 
-| Name | Description |
+| Название | Описание |
 |---|---|
-| [nats-server](https://github.com/nats-io/nats-server) | The NATS server itself |
+| [nats-server](https://github.com/nats-io/nats-server) | Сам сервер NATS |
 
-## Clients
+## Клиенты {#clients}
 
-NATS clients come in three categories: **Tier 1** (Synadia-maintained, track new server features at release), **Tier 2** (Synadia-maintained, may lag behind on new server features), and **community** (third-party).
+Клиенты NATS делятся на три категории: **Tier 1** (поддерживаются Synadia и реализуют новые возможности к выпуску сервера), **Tier 2** (поддерживаются Synadia, но могут отставать в поддержке новых возможностей) и **клиенты сообщества** (сторонние реализации).
 
-### Tier 1 clients — track server releases {#tier-1-clients}
+### Клиенты Tier 1 — следуют за выпусками сервера {#tier-1-clients}
 
-These are the ones the NATS team ships first when a new server feature lands. If a tier 1 client is available for your language, prefer it.
+Эти клиенты команда NATS обновляет в первую очередь при появлении новых возможностей сервера. Если для вашего языка есть клиент Tier 1, предпочтите его.
 
-| Language | Repo | Description |
+| Язык | Репозиторий | Описание |
 |---|---|---|
-| Go | [nats-io/nats.go](https://github.com/nats-io/nats.go) | Reference implementation |
-| JavaScript / TypeScript | [nats-io/nats.js](https://github.com/nats-io/nats.js) | Node, Deno, Bun, browser ([WebSocket](/learn/websocket/)). Supersedes the archived `nats.node`, `nats.deno`, `nats.ws`, `nats.ts` |
-| Python | [nats-io/nats.py](https://github.com/nats-io/nats.py) | asyncio-based, Python 3 only |
-| Java | [nats-io/nats.java](https://github.com/nats-io/nats.java) | JVM; usable from Kotlin and Scala |
-| Rust | [nats-io/nats.rs](https://github.com/nats-io/nats.rs) | The `async-nats` crate |
-| C# / .NET | [nats-io/nats.net](https://github.com/nats-io/nats.net) | .NET 6+. Modern async client |
-| C | [nats-io/nats.c](https://github.com/nats-io/nats.c) | Embedded systems and FFI consumers |
+| Go | [nats-io/nats.go](https://github.com/nats-io/nats.go) | Эталонная реализация |
+| JavaScript / TypeScript | [nats-io/nats.js](https://github.com/nats-io/nats.js) | Node, Deno, Bun, браузер ([WebSocket](/learn/websocket/)). Заменяет архивные `nats.node`, `nats.deno`, `nats.ws`, `nats.ts` |
+| Python | [nats-io/nats.py](https://github.com/nats-io/nats.py) | На основе asyncio, только Python 3 |
+| Java | [nats-io/nats.java](https://github.com/nats-io/nats.java) | JVM; доступен из Kotlin и Scala |
+| Rust | [nats-io/nats.rs](https://github.com/nats-io/nats.rs) | Крейт `async-nats` |
+| C# / .NET | [nats-io/nats.net](https://github.com/nats-io/nats.net) | .NET 6+. Современный асинхронный клиент |
+| C | [nats-io/nats.c](https://github.com/nats-io/nats.c) | Встраиваемые системы и приложения, использующие FFI |
 
-### Tier 2 clients — Synadia-maintained, feature-lag possible
+### Клиенты Tier 2 — поддерживаются Synadia, возможна задержка новых функций {#tier-2-clients--synadia-maintained-feature-lag-possible}
 
-Maintained by Synadia but not guaranteed to expose every new server feature on day one. Production-ready for the features they do cover; check each repo's README for current feature coverage.
+Эти клиенты поддерживаются Synadia, но появление каждой новой возможности сервера в день выпуска не гарантируется. Реализованные функции готовы к промышленной эксплуатации; актуальное покрытие возможностей смотрите в README соответствующего репозитория.
 
-| Language | Repo | Description |
+| Язык | Репозиторий | Описание |
 |---|---|---|
-| Zig | [nats-io/nats.zig](https://github.com/nats-io/nats.zig) | Newer addition |
-| Swift | [nats-io/nats.swift](https://github.com/nats-io/nats.swift) | iOS, macOS, and server-side Swift |
-| Ruby | [nats-io/nats-pure.rb](https://github.com/nats-io/nats-pure.rb) | Pure Ruby — preferred Ruby client |
-| Ruby (legacy) | [nats-io/nats.rb](https://github.com/nats-io/nats.rb) | EventMachine-based; use `nats-pure.rb` for new code |
-| Elixir | [nats-io/nats.ex](https://github.com/nats-io/nats.ex) | Replaces the archived `elixir-nats` |
+| Zig | [nats-io/nats.zig](https://github.com/nats-io/nats.zig) | Недавнее пополнение |
+| Swift | [nats-io/nats.swift](https://github.com/nats-io/nats.swift) | iOS, macOS и серверный Swift |
+| Ruby | [nats-io/nats-pure.rb](https://github.com/nats-io/nats-pure.rb) | На чистом Ruby — предпочтительный клиент для Ruby |
+| Ruby (устаревший) | [nats-io/nats.rb](https://github.com/nats-io/nats.rb) | На основе EventMachine; для нового кода используйте `nats-pure.rb` |
+| Elixir | [nats-io/nats.ex](https://github.com/nats-io/nats.ex) | Заменяет архивный `elixir-nats` |
 
-### Community clients
+### Клиенты сообщества {#community-clients}
 
-Third-party implementations exist for languages including Crystal, Dart, Kotlin, and PHP. Feature coverage and maintenance status vary — evaluate per project. These docs do not cover community clients.
+Сторонние реализации существуют, в частности, для Crystal, Dart, Kotlin и PHP. Покрытие возможностей и состояние поддержки различаются — оценивайте каждый проект отдельно. Эта документация не рассматривает клиенты сообщества.
 
-## Orbit — extensions and incubator per language
+## Orbit — расширения и экспериментальные возможности для каждого языка {#orbit--extensions-and-incubator-per-language}
 
-Orbit repositories live under the [synadia-io](https://github.com/synadia-io) org. They contain optional higher-level utilities and experimental features built on top of the matching tier 1 client. Pull in only the modules you need.
+Репозитории Orbit находятся в организации [synadia-io](https://github.com/synadia-io). Они содержат необязательные высокоуровневые утилиты и экспериментальные возможности поверх соответствующего клиента Tier 1. Подключайте только нужные модули.
 
-Typical Orbit contents include extra JetStream helpers (request-many, batch publish, scheduled messages), partitioned consumer groups, encoded KV / KV codecs, distributed counters, and retry / chaos utilities. Successful patterns may eventually graduate into the core client. Exact module set differs per language — check each Orbit repo's README.
+В Orbit обычно входят дополнительные инструменты JetStream (запрос нескольких ответов, пакетная публикация, отложенные сообщения), секционированные группы потребителей, кодирование KV и кодеки, распределённые счётчики, утилиты повторных попыток и тестирования отказов. Удачные подходы со временем могут войти в основной клиент. Набор модулей зависит от языка — сверяйтесь с README репозитория Orbit.
 
-| Language | Repo | Description |
+| Язык | Репозиторий | Описание |
 |---|---|---|
-| Go | [synadia-io/orbit.go](https://github.com/synadia-io/orbit.go) | Extensions for `nats.go` |
-| JavaScript / TypeScript | [synadia-io/orbit.js](https://github.com/synadia-io/orbit.js) | Extensions for `nats.js` |
-| Python | [synadia-io/orbit.py](https://github.com/synadia-io/orbit.py) | Extensions for `nats.py` |
-| Java | [synadia-io/orbit.java](https://github.com/synadia-io/orbit.java) | Extensions for `nats.java` |
-| Rust | [synadia-io/orbit.rs](https://github.com/synadia-io/orbit.rs) | Extensions for `async-nats` |
-| C# / .NET | [synadia-io/orbit.net](https://github.com/synadia-io/orbit.net) | Extensions for `nats.net` |
-| C | [synadia-io/orbit.c](https://github.com/synadia-io/orbit.c) | Extensions for `nats.c` |
+| Go | [synadia-io/orbit.go](https://github.com/synadia-io/orbit.go) | Расширения для `nats.go` |
+| JavaScript / TypeScript | [synadia-io/orbit.js](https://github.com/synadia-io/orbit.js) | Расширения для `nats.js` |
+| Python | [synadia-io/orbit.py](https://github.com/synadia-io/orbit.py) | Расширения для `nats.py` |
+| Java | [synadia-io/orbit.java](https://github.com/synadia-io/orbit.java) | Расширения для `nats.java` |
+| Rust | [synadia-io/orbit.rs](https://github.com/synadia-io/orbit.rs) | Расширения для `async-nats` |
+| C# / .NET | [synadia-io/orbit.net](https://github.com/synadia-io/orbit.net) | Расширения для `nats.net` |
+| C | [synadia-io/orbit.c](https://github.com/synadia-io/orbit.c) | Расширения для `nats.c` |
 
-## Command-line tooling
+## Инструменты командной строки {#command-line-tooling}
 
-| Name | Description |
+| Название | Описание |
 |---|---|
-| [natscli](https://github.com/nats-io/natscli) | The everyday `nats` CLI. Publish, subscribe, manage streams and consumers, inspect a running server, manage operators, accounts, and users with `nats auth`. Most examples in these docs use it |
-| [nats-top](https://github.com/nats-io/nats-top) | `top`-style live view of server activity |
-| [nats-box](https://github.com/nats-io/nats-box) | Container image bundling the common NATS utilities (`nats`, `nsc`, `nk`) for ad-hoc shells in Kubernetes |
+| [natscli](https://github.com/nats-io/natscli) | CLI `nats` для повседневной работы: публикация, подписка, управление потоками и потребителями, проверка работающего сервера, управление операторами, учётными записями и пользователями через `nats auth`. Используется в большинстве примеров документации |
+| [nats-top](https://github.com/nats-io/nats-top) | Просмотр активности сервера в реальном времени в стиле `top` |
+| [nats-box](https://github.com/nats-io/nats-box) | Образ контейнера с распространёнными утилитами NATS (`nats`, `nsc`, `nk`) для временных рабочих оболочек в Kubernetes |
 
-## Identity & authentication
+## Идентификационные данные и аутентификация {#identity--authentication}
 
-Tools and libraries for managing operators, accounts, users, and signing keys with NKeys + JWTs.
+Инструменты и библиотеки для управления операторами, учётными записями, пользователями и ключами подписи с помощью NKeys и JWT.
 
-| Name | Description |
+| Название | Описание |
 |---|---|
-| [nsc](https://github.com/nats-io/nsc) | Standalone CLI for managing operators, accounts, and users. An alternative to the `nats auth` commands built into the `nats` CLI; reads the same on-disk store and covers operations `nats auth` doesn't yet |
-| [synadia-io/jwt-auth-builder.go](https://github.com/synadia-io/jwt-auth-builder.go) | Programmatic builder for accounts and users (alternative to driving `nsc` from code) |
-| [synadia-io/callout.go](https://github.com/synadia-io/callout.go) | Go SDK for writing auth-callout services |
-| [synadia-io/callout.net](https://github.com/synadia-io/callout.net) | .NET SDK for writing auth-callout services |
+| [nsc](https://github.com/nats-io/nsc) | Отдельный CLI для управления операторами, учётными записями и пользователями. Альтернатива командам `nats auth`, встроенным в CLI `nats`; использует то же хранилище на диске и поддерживает операции, которых пока нет в `nats auth` |
+| [synadia-io/jwt-auth-builder.go](https://github.com/synadia-io/jwt-auth-builder.go) | Программное создание учётных записей и пользователей (альтернатива вызову `nsc` из кода) |
+| [synadia-io/callout.go](https://github.com/synadia-io/callout.go) | Go SDK для написания сервисов auth callout |
+| [synadia-io/callout.net](https://github.com/synadia-io/callout.net) | .NET SDK для написания сервисов auth callout |
 
-### NKey libraries
+### Библиотеки NKey {#nkey-libraries}
 
-Per-language implementations of the NKey signing and key-handling primitives.
+Реализации базовых операций подписи и работы с ключами NKey для разных языков.
 
-| Language | Repo |
+| Язык | Репозиторий |
 |---|---|
 | Go | [nats-io/nkeys](https://github.com/nats-io/nkeys) |
 | JavaScript / TypeScript | [nats-io/nkeys.js](https://github.com/nats-io/nkeys.js) |
@@ -103,49 +103,49 @@ Per-language implementations of the NKey signing and key-handling primitives.
 | Swift | [nats-io/nkeys.swift](https://github.com/nats-io/nkeys.swift) |
 | Elixir | [nats-io/nkeys.ex](https://github.com/nats-io/nkeys.ex) |
 
-### JWT libraries
+### Библиотеки JWT {#jwt-libraries}
 
-Per-language implementations for issuing and verifying NATS account / user JWT claims.
+Реализации выпуска и проверки утверждений JWT учётных записей и пользователей NATS для разных языков.
 
-| Language | Repo |
+| Язык | Репозиторий |
 |---|---|
 | Go | [nats-io/jwt](https://github.com/nats-io/jwt) |
 | JavaScript / TypeScript | [nats-io/jwt.js](https://github.com/nats-io/jwt.js) |
 | Java | [nats-io/jwt.java](https://github.com/nats-io/jwt.java) |
 | C# / .NET | [nats-io/jwt.net](https://github.com/nats-io/jwt.net) |
 
-## Kubernetes
+## Kubernetes {#kubernetes}
 
-| Name | Description |
+| Название | Описание |
 |---|---|
-| [k8s](https://github.com/nats-io/k8s) | Official Helm charts for deploying `nats-server` clusters, surveyor, and related components |
-| [nack](https://github.com/nats-io/nack) | Kubernetes controllers and CRDs for managing JetStream streams, consumers, and KV / Object stores declaratively |
+| [k8s](https://github.com/nats-io/k8s) | Официальные Helm-чарты для развёртывания кластеров `nats-server`, surveyor и связанных компонентов |
+| [nack](https://github.com/nats-io/nack) | Контроллеры Kubernetes и CRD для декларативного управления потоками и потребителями JetStream, хранилищами KV и Object Store |
 
-## Observability
+## Наблюдаемость {#observability}
 
-| Name | Description |
+| Название | Описание |
 |---|---|
-| [prometheus-nats-exporter](https://github.com/nats-io/prometheus-nats-exporter) | Prometheus exporter for `varz`, `connz`, `routez`, and JetStream stats |
-| [nats-surveyor](https://github.com/nats-io/nats-surveyor) | Cluster-wide monitoring; aggregates stats across servers and exposes them as Prometheus metrics. Pairs with the exporter for full-cluster observability |
+| [prometheus-nats-exporter](https://github.com/nats-io/prometheus-nats-exporter) | Экспортёр Prometheus для `varz`, `connz`, `routez` и статистики JetStream |
+| [nats-surveyor](https://github.com/nats-io/nats-surveyor) | Мониторинг всего кластера: собирает статистику с серверов и предоставляет её в виде метрик Prometheus. В сочетании с экспортёром обеспечивает наблюдаемость всего кластера |
 
-## Schemas & API definitions
+## Схемы и определения API {#schemas--api-definitions}
 
-| Name | Description |
+| Название | Описание |
 |---|---|
-| [jsm.go](https://github.com/nats-io/jsm.go) | Canonical source of JetStream API JSON schemas used by tooling and the reference docs in this site. Also contains a Go JetStream management library (alternative to `nats.go` with a different API surface) |
+| [jsm.go](https://github.com/nats-io/jsm.go) | Канонический источник JSON-схем API JetStream, используемых инструментами и справочником этого сайта. Также содержит библиотеку управления JetStream на Go (альтернативу `nats.go` с другим API) |
 
-## Bridges & integrations
+## Мосты и интеграции {#bridges--integrations}
 
-| Name | Description |
+| Название | Описание |
 |---|---|
-| [nats-kafka](https://github.com/nats-io/nats-kafka) | Kafka ↔ NATS bridge |
-| [nats-spark-connector](https://github.com/nats-io/nats-spark-connector) | Apache Spark structured-streaming source |
-| [synadia-io/flink-connector-nats](https://github.com/synadia-io/flink-connector-nats) | Apache Flink connector |
-| [nats-java-vertx-client](https://github.com/nats-io/nats-java-vertx-client) | Vert.x integration |
-| [terraform-provider-jetstream](https://github.com/nats-io/terraform-provider-jetstream) | Manage JetStream resources as IaC |
+| [nats-kafka](https://github.com/nats-io/nats-kafka) | Мост Kafka ↔ NATS |
+| [nats-spark-connector](https://github.com/nats-io/nats-spark-connector) | Источник для структурированной потоковой обработки Apache Spark |
+| [synadia-io/flink-connector-nats](https://github.com/synadia-io/flink-connector-nats) | Коннектор Apache Flink |
+| [nats-java-vertx-client](https://github.com/nats-io/nats-java-vertx-client) | Интеграция с Vert.x |
+| [terraform-provider-jetstream](https://github.com/nats-io/terraform-provider-jetstream) | Управление ресурсами JetStream как инфраструктурой в коде (IaC) |
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [The Learn deep dives](/learn) — guided, hands-on path through NATS
-- [Resilient clients](/learn/resilient-clients) — handle reconnects and failures
-- [Services](/learn/services) — build request/reply microservices
+- [Углублённые курсы раздела «Изучение»](/learn) — последовательная практическая работа с NATS
+- [Устойчивые клиенты](/learn/resilient-clients) — переподключения и обработка сбоев
+- [Сервисы](/learn/services) — микросервисы на основе запроса и ответа

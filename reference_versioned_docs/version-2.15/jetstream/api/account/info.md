@@ -1,14 +1,14 @@
-# Account Info
+# Информация об учётной записи {#account-info}
 
-Retrieves JetStream account information.
+Получение информации JetStream об учётной записи.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import accountInfoResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/account_info_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.INFO`
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={accountInfoResponse} />

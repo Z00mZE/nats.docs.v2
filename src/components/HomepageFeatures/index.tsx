@@ -23,67 +23,67 @@ type DocSection = {
 
 const DocSections: DocSection[] = [
   {
-    title: 'Getting Started',
+    title: "Начало работы",
     Icon: RocketIcon,
     accent: '#27AAE1',
     description: (
       <>
-        New to NATS? Start here to learn the basics and get your first application running in minutes.
+        Впервые работаете с NATS? Начните здесь: изучите основы и запустите первое приложение за несколько минут.
       </>
     ),
     link: '/concepts/intro',
   },
   {
-    title: 'Concepts',
+    title: "Основные понятия",
     Icon: LightbulbIcon,
     accent: '#F59E0B',
     description: (
       <>
-        Understand the core concepts and architecture behind NATS messaging patterns and JetStream.
+        Познакомьтесь с основными понятиями и архитектурой обмена сообщениями NATS и JetStream.
       </>
     ),
     link: '/concepts/what-is-nats',
   },
   {
-    title: 'Learn',
+    title: "Изучение",
     Icon: LearnIcon,
     accent: '#8B5CF6',
     description: (
       <>
-        Long-form deep dives into Core NATS, JetStream, and operating NATS in production.
+        Подробные курсы по Core NATS, JetStream и промышленной эксплуатации NATS.
       </>
     ),
     link: '/learn',
   },
   {
-    title: 'Tutorials',
+    title: "Практические руководства",
     Icon: TutorialsIcon,
     accent: '#34A574',
     description: (
       <>
-        Hands-on tutorials to help you learn by building real-world applications with NATS.
+        Пошаговые руководства для обучения на реальных приложениях с NATS.
       </>
     ),
     link: '/tutorials',
   },
   {
-    title: 'Reference',
+    title: "Справочник",
     Icon: ReferenceIcon,
     accent: '#375C93',
     description: (
       <>
-        Complete reference documentation for server configuration, protocol details, and API specifications.
+        Полный справочник по конфигурации сервера, протоколам и спецификациям API.
       </>
     ),
     link: '/reference',
   },
   {
-    title: 'Community',
+    title: "Сообщество",
     Icon: UsersIcon,
     accent: '#EC4899',
     description: (
       <>
-        Join the NATS community on Slack, contribute on GitHub, or get help from fellow developers.
+        Общайтесь с сообществом NATS в Slack, участвуйте в разработке на GitHub и получайте помощь коллег.
       </>
     ),
     link: 'https://nats.io/community/',
@@ -119,8 +119,8 @@ export default function HomepageFeatures(): ReactNode {
     <section className={styles.features}>
       <div className="container">
         <div className={styles.sectionHeader}>
-          <Heading as="h2">Explore the Documentation</Heading>
-          <p>Find everything you need to build with NATS</p>
+          <Heading as="h2">Изучайте документацию</Heading>
+          <p>Всё необходимое для разработки с NATS</p>
         </div>
         <div className="row">
           {DocSections.map((props, idx) => (

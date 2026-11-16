@@ -1,9 +1,9 @@
-# Terminal 1: First service
+# Терминал 1: первый сервис
 nats reply service "Response from service 1"
 
-# Terminal 2: Second service
+# Терминал 2: второй сервис
 nats reply service "Response from service 2"
 
-# Terminal 3: Make request (nats reply puts both in a shared queue group,
-# so one instance answers and the client gets a single reply)
+# Терминал 3: отправьте запрос; nats reply помещает оба сервиса в общую группу очереди,
+# поэтому отвечает один экземпляр и клиент получает один ответ
 nats request service ""

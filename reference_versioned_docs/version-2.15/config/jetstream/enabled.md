@@ -1,12 +1,12 @@
-# enabled
+# enabled {#enabled}
 
 <Aliases aliases="enable" />
 <Reloadable state="reloadable" note="Also covers the boolean and &quot;enabled&quot;/&quot;disabled&quot; string forms of the top-level jetstream key (opts.go:2644-2654)." />
-If true, enables the JetStream subsystem.
+Если true, включает подсистему JetStream.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

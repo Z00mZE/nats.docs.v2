@@ -1,7 +1,7 @@
 {
   "name": "nats-docs",
   "version": "0.0.0",
-  "description": "A rebuilt NATS documentation site: concepts, tutorials, deep dives, and generated per-version reference, built with Docusaurus.",
+  "description": "Документация NATS на Docusaurus: основные понятия, учебные руководства, подробные статьи и генерируемый справочник для каждой версии.",
   "license": "MIT",
   "repository": {
     "type": "git",

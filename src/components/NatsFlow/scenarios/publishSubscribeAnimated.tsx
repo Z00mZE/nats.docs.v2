@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -214,9 +215,9 @@ function PublishSubscribeAnimatedInner({
                     fontStyle: "italic",
                 }}
             >
-                {autoMode
+                {localizeDiagramContent(autoMode
                     ? "Watch how messages flow as subscribers join. With no subscribers, messages reach the server but aren't delivered."
-                    : "Manual mode: Use buttons below to control subscribers."}
+                    : "Manual mode: Use buttons below to control subscribers.")}
             </div>
 
             {/* Flow diagram */}
@@ -230,7 +231,7 @@ function PublishSubscribeAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -259,8 +260,8 @@ function PublishSubscribeAnimatedInner({
                     color: "#6b7280",
                 }}
             >
-                <strong>Active subscribers: {activeSubscribers}</strong> -{" "}
-                {getDescription()}
+                <strong>Активные подписчики: {localizeDiagramContent(activeSubscribers)}</strong> -{localizeDiagramContent(" ")}
+                {localizeDiagramContent(getDescription())}
             </div>
 
             {/* Control buttons */}
@@ -288,7 +289,7 @@ function PublishSubscribeAnimatedInner({
                         fontWeight: 500,
                     }}
                 >
-                    {subscriber1Active ? "Unsubscribe 1" : "Subscribe 1"}
+                    {localizeDiagramContent(subscriber1Active ? "Unsubscribe 1" : "Subscribe 1")}
                 </button>
                 <button
                     onClick={() => handleManualToggle(2)}
@@ -305,7 +306,7 @@ function PublishSubscribeAnimatedInner({
                         fontWeight: 500,
                     }}
                 >
-                    {subscriber2Active ? "Unsubscribe 2" : "Subscribe 2"}
+                    {localizeDiagramContent(subscriber2Active ? "Unsubscribe 2" : "Subscribe 2")}
                 </button>
                 <button
                     onClick={() => handleManualToggle(3)}
@@ -322,10 +323,10 @@ function PublishSubscribeAnimatedInner({
                         fontWeight: 500,
                     }}
                 >
-                    {subscriber3Active ? "Unsubscribe 3" : "Subscribe 3"}
+                    {localizeDiagramContent(subscriber3Active ? "Unsubscribe 3" : "Subscribe 3")}
                 </button>
 
-                {!autoMode && (
+                {localizeDiagramContent(!autoMode && (
                     <button
                         onClick={() => {
                             setAutoMode(true);
@@ -343,9 +344,9 @@ function PublishSubscribeAnimatedInner({
                             marginLeft: "8px",
                         }}
                     >
-                        Resume Auto
+                        Продолжить автоматически
                     </button>
-                )}
+                ))}
             </div>
         </div>
     );

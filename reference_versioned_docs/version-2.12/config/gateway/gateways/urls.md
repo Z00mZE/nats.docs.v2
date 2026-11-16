@@ -1,11 +1,11 @@
-# urls
+# urls {#urls}
 
 <Reloadable state="not-reloadable" />
-A list of URLs to connect to (multiple servers in a cluster).
+Список URL для подключения (несколько серверов кластера).
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |

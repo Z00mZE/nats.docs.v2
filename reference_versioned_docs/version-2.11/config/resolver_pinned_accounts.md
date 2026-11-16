@@ -1,10 +1,10 @@
-# resolver_pinned_accounts
+# resolver_pinned_accounts {#resolver_pinned_accounts}
 
 <Reloadable state="reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |
 | `[ string ]` | - | - |

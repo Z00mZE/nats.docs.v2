@@ -1,14 +1,13 @@
-# port
+# port {#port}
 
 <Reloadable state="not-reloadable" />
-Port to accept WebSocket client connections on. There is no default:
-the listener is only started once a port is set, here or via `listen`.
+Порт приёма клиентских соединений WebSocket. Значения по умолчанию нет: слушатель запускается только после задания порта здесь или через `listen`.
 
-TLS is required unless `no_tls` is `true`.
+TLS обязателен, если `no_tls` не равен `true`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

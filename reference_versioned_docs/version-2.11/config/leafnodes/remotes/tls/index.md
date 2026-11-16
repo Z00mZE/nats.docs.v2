@@ -1,29 +1,28 @@
-# tls
+# tls {#tls}
 
 <Reloadable state="reloadable" note="On 2.11/2.12 the reload reports success; the new TLS material is used only after a restart." />
-TLS configuration for connecting/authenticating with
-the remote if mutual TLS is required.
+Конфигурация TLS для подключения и аутентификации на удалённой стороне, если требуется взаимный TLS.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`cert_store`](./cert_store.md) | Load the certificate from an OS certificate store rather than a file. Windows only. | `string` | - | Yes |
-| [`certs`](./certs/index.md) | Multiple certificate/key pairs to serve, so one listener can present different certificates to different clients. Use this instead of `cert_file` and `key_file`. | `object` | - | Yes |
-| [`handshake_first`](./handshake_first.md) | Force the leafnode connection to use a TLS-first handshake prior to the remote sending the `INFO` protocol message.  Note, this option must be set to true on both the remote server accepting the leafnode connections as well as the leafnode itself. | `boolean` | `false` | Yes\* |
-| [`min_version`](./min_version.md) | Lowest TLS version the server will negotiate. | `string` | - | Yes |
-| [`ocsp_peer`](./ocsp_peer/index.md) | Verify the peer's certificate against its OCSP responder and reject revoked certificates. Set an object to tune the checks. | `(multiple)` | `false` | Yes |
-| [`cert_file`](./cert_file.md) | TLS certificate file. | `string` | - | Yes\* |
-| [`key_file`](./key_file.md) | TLS certificate key file. | `string` | - | Yes\* |
-| [`ca_file`](./ca_file.md) | TLS certificate authority file. Defaults to system trust store. | `string` | - | Yes\* |
-| [`cipher_suites`](./cipher_suites.md) | When set, only the specified TLS cipher suites will be allowed. Values must match the golang version used to build the server. | `string` | - | Yes\* |
-| [`curve_preferences`](./curve_preferences.md) | List of TLS cipher curves to use in order. | `string` | - | Yes\* |
-| [`insecure`](./insecure.md) | Skip certificate verification. This only applies to outgoing connections, NOT incoming client connections. **not recommended.** | `boolean` | - | Yes\* |
-| [`timeout`](./timeout.md) | TLS handshake timeout. | `duration` | `500ms` | No |
-| [`verify`](./verify.md) | If true, require and verify client certificates. Does not apply to monitoring. | `boolean` | `false` | Yes\* |
-| [`verify_and_map`](./verify_and_map.md) | If true, require and verify client certificates and map certificate values for authentication. Does not apply to monitoring. | `boolean` | `false` | Ignored\* |
-| [`connection_rate_limit`](./connection_rate_limit.md) |  | `integer` | - | Ignored\* |
-| [`pinned_certs`](./pinned_certs.md) | List of hex-encoded SHA256 of DER-encoded public key fingerprints. When present, during the TLS handshake, the provided certificate's fingerprint is required to be present in the list, otherwise the connection will be closed. | `string` | - | Ignored\* |
+| [`cert_store`](./cert_store.md) | Загружать сертификат из хранилища сертификатов ОС вместо файла. Только Windows. | `string` | - | Да |
+| [`certs`](./certs/index.md) | Несколько пар сертификат/ключ, позволяющих одному слушателю предъявлять разные сертификаты разным клиентам. Используйте вместо `cert_file` и `key_file`. | `object` | - | Да |
+| [`handshake_first`](./handshake_first.md) | Заставляет соединение листового узла выполнять рукопожатие TLS до отправки удалённой стороной сообщения протокола `INFO`. Параметр должен быть включён и на удалённом сервере, принимающем соединение, и на самом листовом узле. | `boolean` | `false` | Да\* |
+| [`min_version`](./min_version.md) | Минимальная версия TLS, согласуемая сервером. | `string` | - | Да |
+| [`ocsp_peer`](./ocsp_peer/index.md) | Проверять сертификат другой стороны через её ответчик OCSP и отклонять отозванные сертификаты. Для настройки проверок задайте объект. | `(multiple)` | `false` | Да |
+| [`cert_file`](./cert_file.md) | Файл сертификата TLS. | `string` | - | Да\* |
+| [`key_file`](./key_file.md) | Файл ключа сертификата TLS. | `string` | - | Да\* |
+| [`ca_file`](./ca_file.md) | Файл центра сертификации TLS. По умолчанию используется системное хранилище доверенных сертификатов. | `string` | - | Да\* |
+| [`cipher_suites`](./cipher_suites.md) | Если задано, разрешены только указанные наборы шифров TLS. Значения должны соответствовать версии Go, использованной для сборки сервера. | `string` | - | Да\* |
+| [`curve_preferences`](./curve_preferences.md) | Упорядоченный список кривых для TLS. | `string` | - | Да\* |
+| [`insecure`](./insecure.md) | Пропустить проверку сертификата. Применяется только к исходящим соединениям, НЕ к входящим клиентским. **Не рекомендуется.** | `boolean` | - | Да\* |
+| [`timeout`](./timeout.md) | Тайм-аут рукопожатия TLS. | `duration` | `500ms` | Нет |
+| [`verify`](./verify.md) | Если true, требует и проверяет сертификаты клиентов. К мониторингу не применяется. | `boolean` | `false` | Да\* |
+| [`verify_and_map`](./verify_and_map.md) | Если true, требует и проверяет сертификаты клиентов и отображает значения сертификата для аутентификации. К мониторингу не применяется. | `boolean` | `false` | Игнорируется\* |
+| [`connection_rate_limit`](./connection_rate_limit.md) |  | `integer` | - | Игнорируется\* |
+| [`pinned_certs`](./pinned_certs.md) | Список отпечатков открытых ключей: SHA256 от представления DER в шестнадцатеричной кодировке. При наличии списка отпечаток предъявленного во время TLS-рукопожатия сертификата должен входить в него, иначе соединение закрывается. | `string` | - | Игнорируется\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

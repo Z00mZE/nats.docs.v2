@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // sequenceGapAnimated
@@ -66,19 +67,17 @@ function SequenceGapAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Sequence numbers never backfill.</strong> A deleted slot stays empty. New
-                messages climb to{" "}
-                <span style={{ color: GREEN, fontWeight: 600 }}>#6, #7, #8</span> — they never
-                drop back into the gap.
+                <strong>Порядковые номера не заполняют пропуски.</strong> Удалённая позиция остаётся пустой. Новые сообщения получают номера{localizeDiagramContent(" ")}
+                <span style={{ color: GREEN, fontWeight: 600 }}>#6, #7, #8</span> — они никогда не возвращаются в освободившийся промежуток.
             </div>
 
             {/* publish pill above the stream */}
             <div style={{ height: 28, marginBottom: 8 }}>
-                {(publishing || landStage > 0) && !settled && (
+                {localizeDiagramContent((publishing || landStage > 0) && !settled && (
                     <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: 6, background: GREEN, color: "white", fontSize: 11, fontWeight: 700, fontFamily: "monospace", opacity: publishing ? 0.55 + 0.45 * p : 1 }}>
                         nats pub --jetstream orders.created …
                     </span>
-                )}
+                ))}
             </div>
 
             <div
@@ -95,10 +94,10 @@ function SequenceGapAnimatedInner() {
                 <div>
                     <div style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace", color: RED }}>seq 2 empty</span>
+                        <span style={{ fontFamily: "monospace", color: RED }}>номер 2 пуст</span>
                     </div>
                     <div style={{ display: "flex", gap: SLOT_GAP }}>
-                        {SEQS.map((seq) => {
+                        {localizeDiagramContent(SEQS.map((seq) => {
                             const isGap = seq === GAP;
                             const isNew = seq >= 6;
                             const newIndex = seq - 5; // 1,2,3 for 6,7,8
@@ -130,15 +129,15 @@ function SequenceGapAnimatedInner() {
                                         }}
                                     >
                                         <span style={{ fontSize: 13, fontFamily: "monospace", fontWeight: 700, color: isGap ? (highlightGap ? RED : "#9ca3af") : present ? color : "transparent" }}>
-                                            {isGap ? "—" : `#${seq}`}
+                                            {localizeDiagramContent(isGap ? "—" : `#${seq}`)}
                                         </span>
                                     </div>
                                     <span style={{ fontSize: 9, fontFamily: "monospace", color: isGap ? RED : "#9ca3af" }}>
-                                        {isGap ? "gap" : `seq ${seq}`}
+                                        {localizeDiagramContent(isGap ? "gap" : `seq ${seq}`)}
                                     </span>
                                 </div>
                             );
-                        })}
+                        }))}
                     </div>
                 </div>
             </div>
@@ -148,9 +147,9 @@ function SequenceGapAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${STREAM_BLUE}`, background: "white", color: STREAM_BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // crashRedeliveryAnimated
@@ -124,10 +125,9 @@ function CrashRedeliveryAnimatedInner() {
                     fontStyle: "italic",
                 }}
             >
-                A worker crashes mid-order. The server can't see the crash, only
-                the missing ack, so the order waits out{" "}
-                <span style={{ color: AMBER, fontWeight: 600 }}>AckWait</span>{" "}
-                and is redelivered to a surviving worker. It ships once.
+                Обработчик падает во время работы с заказом. Сервер видит лишь отсутствие подтверждения, поэтому заказ ждёт истечения{localizeDiagramContent(" ")}
+                <span style={{ color: AMBER, fontWeight: 600 }}>AckWait</span>{localizeDiagramContent(" ")}
+                и повторно доставляется работающему обработчику. Отправка выполняется один раз.
             </div>
 
             <div
@@ -154,7 +154,7 @@ function CrashRedeliveryAnimatedInner() {
                             marginBottom: 6,
                         }}
                     >
-                        shipping consumer
+                        потребитель shipping
                     </div>
                     <div
                         style={{
@@ -177,7 +177,7 @@ function CrashRedeliveryAnimatedInner() {
                                 color: STREAM_BLUE,
                             }}
                         >
-                            {ORDER}
+                            {localizeDiagramContent(ORDER)}
                         </div>
                         <div
                             style={{
@@ -188,7 +188,7 @@ function CrashRedeliveryAnimatedInner() {
                                 transition: "color 0.25s",
                             }}
                         >
-                            {orderState.text}
+                            {localizeDiagramContent(orderState.text)}
                         </div>
                     </div>
                 </div>
@@ -199,7 +199,7 @@ function CrashRedeliveryAnimatedInner() {
                     height={COL_H}
                     style={{ flex: "none", overflow: "visible" }}
                 >
-                    {[0, 1].map((w) => {
+                    {localizeDiagramContent([0, 1].map((w) => {
                         const active = w === activeTarget;
                         const dead = w === 0 && w1Crashed;
                         return (
@@ -223,7 +223,7 @@ function CrashRedeliveryAnimatedInner() {
                                 }}
                             />
                         );
-                    })}
+                    }))}
                 </svg>
 
                 {/* workers */}
@@ -234,7 +234,7 @@ function CrashRedeliveryAnimatedInner() {
                         gap: WBOX_GAP,
                     }}
                 >
-                    {workers.map((wk, i) => {
+                    {localizeDiagramContent(workers.map((wk, i) => {
                         const border = wk.crashed
                             ? CRASH_RED
                             : wk.shipping || wk.done
@@ -287,7 +287,7 @@ function CrashRedeliveryAnimatedInner() {
                                             : WORKER_NAVY,
                                     }}
                                 >
-                                    {wk.label}
+                                    {localizeDiagramContent(wk.label)}
                                 </div>
                                 <div
                                     style={{
@@ -298,11 +298,11 @@ function CrashRedeliveryAnimatedInner() {
                                         transition: "color 0.25s",
                                     }}
                                 >
-                                    {sub}
+                                    {localizeDiagramContent(sub)}
                                 </div>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
             </div>
 
@@ -318,13 +318,13 @@ function CrashRedeliveryAnimatedInner() {
                         fontFamily: "monospace",
                     }}
                 >
-                    <span>AckWait (30s default)</span>
+                    <span>AckWait (по умолчанию 30 с)</span>
                     <span style={{ color: timerColor }}>
-                        {timerFrac >= 1
+                        {localizeDiagramContent(timerFrac >= 1
                             ? "elapsed"
                             : timerFrac === 0
                             ? "—"
-                            : `${Math.round(timerFrac * 100)}%`}
+                            : `${Math.round(timerFrac * 100)}%`)}
                     </span>
                 </div>
                 <div
@@ -348,7 +348,7 @@ function CrashRedeliveryAnimatedInner() {
 
             {/* status line */}
             <div style={{ marginTop: 10, fontSize: 13, color: "#374151" }}>
-                {status}
+                {localizeDiagramContent(status)}
             </div>
         </div>
     );

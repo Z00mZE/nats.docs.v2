@@ -1,13 +1,12 @@
-# proxy_protocol
+# proxy_protocol {#proxy_protocol}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-Accept the PROXY protocol header on client connections, so the
-server sees the original client address behind a load balancer.
+Принимать заголовок протокола PROXY в клиентских соединениях, чтобы сервер видел исходный адрес клиента за балансировщиком нагрузки.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

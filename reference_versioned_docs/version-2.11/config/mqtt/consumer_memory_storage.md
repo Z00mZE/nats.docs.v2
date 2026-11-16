@@ -1,11 +1,11 @@
-# consumer_memory_storage
+# consumer_memory_storage {#consumer_memory_storage}
 
 <Reloadable state="reloadable" note="Existing consumers are not modified." />
-Hold MQTT consumer state in memory rather than on disk.
+Хранить состояние потребителей MQTT в памяти, а не на диске.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

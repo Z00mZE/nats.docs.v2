@@ -1,13 +1,13 @@
-# Terminal 1: Service instance 1
+# Терминал 1: экземпляр сервиса 1
 nats reply api.calculate --queue api-workers "Result from instance 1"
 
-# Terminal 2: Service instance 2
+# Терминал 2: экземпляр сервиса 2
 nats reply api.calculate --queue api-workers "Result from instance 2"
 
-# Terminal 3: Service instance 3
+# Терминал 3: экземпляр сервиса 3
 nats reply api.calculate --queue api-workers "Result from instance 3"
 
-# Terminal 4: Make requests (load balanced across instances)
+# Терминал 4: отправка запросов с балансировкой между экземплярами
 nats request api.calculate ""
 nats request api.calculate ""
 nats request api.calculate ""

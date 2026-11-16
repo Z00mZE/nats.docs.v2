@@ -1,19 +1,13 @@
-# account
+# account {#account}
 
 <Reloadable state="not-reloadable" />
-Account that leaf nodes authenticating as this user are
-bound to. Each user in the list can name a different
-account.
+Аккаунт, к которому привязываются листовые узлы, прошедшие аутентификацию как этот пользователь. Каждый пользователь в списке может указывать свой аккаунт.
 
-The account must be declared in the `accounts` block or
-the server refuses to start. Leave it unset to bind to
-the global account; the `account` on the surrounding
-`authorization` block does not apply to users listed
-here.
+Аккаунт должен быть объявлен в блоке `accounts`, иначе сервер не запустится. Не задавайте значение для привязки к глобальному аккаунту; параметр `account` во внешнем блоке `authorization` не распространяется на пользователей этого списка.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // redeliveryOrderAnimated
@@ -54,7 +55,7 @@ function MsgBox({ ev, pulse }: { ev: Ev; pulse: number }) {
             }}
         >
             <div style={{ fontSize: 9.5, color: "#6b7280", fontFamily: "monospace" }}>
-                stream
+                поток
             </div>
             <div
                 style={{
@@ -65,7 +66,7 @@ function MsgBox({ ev, pulse }: { ev: Ev; pulse: number }) {
                     lineHeight: 1.1,
                 }}
             >
-                #{ev.seq}
+                #{localizeDiagramContent(ev.seq)}
             </div>
         </div>
     );
@@ -88,7 +89,7 @@ function AckChip({ ev }: { ev: Ev }) {
                 border: acked ? `1.5px solid ${GREEN}` : `1.5px dashed ${RED}`,
             }}
         >
-            {acked ? "ack ✓" : "no ack ✗"}
+            {localizeDiagramContent(acked ? "ack ✓" : "no ack ✗")}
         </div>
     );
 }
@@ -165,11 +166,7 @@ function RedeliveryOrderAnimatedInner() {
                     fontStyle: "italic",
                 }}
             >
-                A message arrives, the client processes it for a moment, then
-                sends an ack back — except for <strong>#3</strong>. Its Ack Wait
-                timer fills, and when it completes the server redelivers #3, so
-                it returns <strong>after</strong> #4 and #5 — out of stream
-                order.
+                Сообщение приходит, клиент некоторое время обрабатывает его и отправляет подтверждение — кроме <strong>#3</strong>. Идёт таймер Ack Wait; по его завершении сервер повторно доставляет #3, поэтому оно приходит после <strong>после</strong> #4 и #5 — вне порядка потока.
             </div>
 
             <div
@@ -190,7 +187,7 @@ function RedeliveryOrderAnimatedInner() {
                         marginBottom: 8,
                     }}
                 >
-                    Delivered, in the order received →
+                    Доставлено в порядке получения →
                 </div>
 
                 <div
@@ -205,7 +202,7 @@ function RedeliveryOrderAnimatedInner() {
                         minHeight: 160,
                     }}
                 >
-                    {EVENTS.slice(0, shown).map((ev, i) => {
+                    {localizeDiagramContent(EVENTS.slice(0, shown).map((ev, i) => {
                         const ackShown = t >= DELIVER[i] + ACK_DELAY;
                         const isSkip = ev.kind === "skip";
                         return (
@@ -228,11 +225,11 @@ function RedeliveryOrderAnimatedInner() {
                                 >
                                     ↓
                                 </div>
-                                {ackShown ? <AckChip ev={ev} /> : <Processing />}
-                                {isSkip && ackShown && pending && (
+                                {localizeDiagramContent(ackShown ? <AckChip ev={ev} /> : <Processing />)}
+                                {localizeDiagramContent(isSkip && ackShown && pending && (
                                     <AckWaitTimer progress={awProgress} />
-                                )}
-                                {ev.kind === "redeliver" && ackShown && (
+                                ))}
+                                {localizeDiagramContent(ev.kind === "redeliver" && ackShown && (
                                     <div
                                         style={{
                                             fontSize: 9,
@@ -241,12 +238,12 @@ function RedeliveryOrderAnimatedInner() {
                                             marginTop: 2,
                                         }}
                                     >
-                                        out of order
+                                        не по порядку
                                     </div>
-                                )}
+                                ))}
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
 
                 <div
@@ -259,11 +256,11 @@ function RedeliveryOrderAnimatedInner() {
                         minHeight: 16,
                     }}
                 >
-                    {pending
+                    {localizeDiagramContent(pending
                         ? "⧖ #3 still unacked — Ack Wait running while #4, #5 go by"
                         : shown >= 6
                         ? "✓ all acked — but #3 only came back after #5"
-                        : " "}
+                        : " ")}
                 </div>
             </div>
         </div>

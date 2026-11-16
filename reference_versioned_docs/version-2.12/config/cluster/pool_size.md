@@ -1,12 +1,11 @@
-# pool_size
+# pool_size {#pool_size}
 
 <Reloadable state="reloadable" />
-The size of the connection pool used to distribute load across non-pinned
-accounts.
+Размер пула соединений для распределения нагрузки между незакреплёнными аккаунтами.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

@@ -1,16 +1,16 @@
-# Delete Consumer
+# Удаление потребителя {#delete-consumer}
 
-Deletes a consumer.
+Удаление потребителя.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerDeleteResponse from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/consumer_delete_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.DELETE.{stream}.{consumer}`
 
-Where `{stream}` is the stream name and `{consumer}` is the consumer name.
+Где `{stream}` — имя потока, а `{consumer}` — имя потребителя.
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={consumerDeleteResponse} />

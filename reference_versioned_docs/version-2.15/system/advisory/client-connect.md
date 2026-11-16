@@ -1,16 +1,16 @@
-# Client Connect
+# Подключение клиента {#client-connect}
 
-Client connection events.
+События подключения клиентов.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import clientConnect from '@site/src/schemas/vendor/v2.15/jsm/server/advisory/v1/client_connect.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$SYS.ACCOUNT.{account}.CONNECT`
 
-Where `{account}` is the account name.
+Где `{account}` — имя учётной записи.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={clientConnect} />

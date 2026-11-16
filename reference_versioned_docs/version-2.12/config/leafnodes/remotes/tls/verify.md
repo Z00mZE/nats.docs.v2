@@ -1,11 +1,11 @@
-# verify
+# verify {#verify}
 
 <Reloadable state="reloadable" note="On 2.11/2.12 the reload succeeds but nothing changes." />
-If true, require and verify client certificates. Does not apply to monitoring.
+Если true, требует и проверяет сертификаты клиентов. К мониторингу не применяется.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

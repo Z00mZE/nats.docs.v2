@@ -1,42 +1,37 @@
-# leafnodes
+# leafnodes {#leafnodes}
 
 <Aliases aliases="leaf" />
 <Reloadable state="reloadable" note="Changing a remote fails the reload, as do changes to the leafnode `host`, `port`, `advertise` or `authorization`." />
-Configuration for setting up leaf node connections.
+Конфигурация соединений листовых узлов.
 
 
-## Properties
+## Свойства {#properties}
 
-### Incoming Connections
+### Входящие соединения {#incoming-connections}
 
-A server that has been configured to *accept* connections
-from one or more leaf nodes. This would be the *hub* in a
-hub-and-spoke topology, for example.
+Сервер, настроенный на *приём* соединений от одного или нескольких листовых узлов. Например, в звездообразной топологии он служит *центральным узлом*.
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`host`](./host.md) | Host name the server will listen on for incoming leaf node connections. | `string` | `0.0.0.0` | No |
-| [`port`](./port.md) | Port the server will listen for incoming leaf node connections. | `integer` | `7422` | No\* |
-| [`listen`](./listen.md) |  | `string` | - | No |
-| [`tls`](./tls/index.md) | TLS configuration for securing leaf node connections. | `object` | - | Yes\* |
-| [`advertise`](./advertise.md) | Hostport to advertise how this sever be contacted by leaf nodes. This is useful for setups with a NAT. | `string` | - | No |
-| [`no_advertise`](./no_advertise.md) | If true, the server will not be advertised to leaf nodes. | `boolean` | `false` | No |
-| [`authorization`](./authorization/index.md) | Authorization scoped to accepting leaf node connections. | `object` | - | No |
-| [`isolate_leafnode_interest`](./isolate_leafnode_interest.md) | Do not propagate subscription interest learned from one leaf node to the others attached to this server. | `boolean` | `false` | No |
-| [`write_deadline`](./write_deadline.md) | How long a leaf node write may block before the connection is treated as stalled. | `duration` | `10s` | No |
-| [`write_timeout`](./write_timeout.md) | What to do when a leaf node connection misses its `write_deadline`. | `string` | `default` | No |
-| [`min_version`](./min_version.md) | The minimum server version required of the connecting leaf node. This must be at least version `2.8.0`. | `string` | - | No |
-| [`compression`](./compression/index.md) | Defines the compression mode to use for an incoming leafnode connection.  If set to `on`, it will use the `s2_auto`. | `(multiple)` | - | Yes\* |
+| [`host`](./host.md) | Имя хоста, на котором сервер принимает входящие соединения листовых узлов. | `string` | `0.0.0.0` | Нет |
+| [`port`](./port.md) | Порт, на котором сервер принимает входящие соединения листовых узлов. | `integer` | `7422` | Нет\* |
+| [`listen`](./listen.md) |  | `string` | - | Нет |
+| [`tls`](./tls/index.md) | Конфигурация TLS для защиты соединений листовых узлов. | `object` | - | Да\* |
+| [`advertise`](./advertise.md) | Объявляемые хост и порт, по которым листовые узлы могут подключиться к этому серверу. Полезно при использовании NAT. | `string` | - | Нет |
+| [`no_advertise`](./no_advertise.md) | Если true, сервер не объявляется листовым узлам. | `boolean` | `false` | Нет |
+| [`authorization`](./authorization/index.md) | Авторизация для приёма соединений листовых узлов. | `object` | - | Нет |
+| [`isolate_leafnode_interest`](./isolate_leafnode_interest.md) | Не передавать интерес подписок, полученный от одного листового узла, другим узлам, подключённым к этому серверу. | `boolean` | `false` | Нет |
+| [`write_deadline`](./write_deadline.md) | Допустимое время блокировки записи в листовой узел, после которого соединение считается зависшим. | `duration` | `10s` | Нет |
+| [`write_timeout`](./write_timeout.md) | Действие при превышении `write_deadline` соединения листового узла. | `string` | `default` | Нет |
+| [`min_version`](./min_version.md) | Минимальная требуемая версия сервера подключающегося листового узла. Должна быть не ниже `2.8.0`. | `string` | - | Нет |
+| [`compression`](./compression/index.md) | Задаёт режим сжатия для входящего соединения листового узла. При значении `on` используется `s2_auto`. | `(multiple)` | - | Да\* |
 
-\* See the property page for reload caveats.
-### Outgoing Connections
+\* Ограничения перезагрузки описаны на странице параметра.
+### Исходящие соединения {#outgoing-connections}
 
-A server that has been configured to *connect* to another
-server configured to accept leaf node connections. In a
-hub-and-spoke topology, this would be the *spoke*, typically
-in a remote location or on an edge device.
+Сервер, настроенный на *подключение* к другому серверу, принимающему соединения листовых узлов. В звездообразной топологии это *периферийный узел*, обычно в удалённом месте или на граничном устройстве.
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`remotes`](./remotes/index.md) | List of entries specifiying servers where the leaf node client connection can be made. | `object` | - | No |
-| [`reconnect`](./reconnect.md) | Interval in seconds at which reconnect attempts to a remote server are made. | `integer` | - | No |
+| [`remotes`](./remotes/index.md) | Список записей о серверах, к которым может подключаться клиент листового узла. | `object` | - | Нет |
+| [`reconnect`](./reconnect.md) | Интервал в секундах между попытками переподключения к удалённому серверу. | `integer` | - | Нет |

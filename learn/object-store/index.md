@@ -1,112 +1,59 @@
 ---
 id: index
-title: Object Store
+title: Хранилище объектов
 sidebar_position: 1
-description: Buckets, objects, chunks, metadata, and links, built on the stream you already have
+description: Бакеты, объекты, фрагменты, метаданные и ссылки на основе уже знакомого потока
 ---
 
-# Object Store
+# Хранилище объектов {#object-store}
 
-NATS gives you a place to store files, and it isn't a separate service. An
-**object** is a stored file: an invoice PDF, a shipping label, a packing
-slip, anything too large or too binary to ride on a plain message. A
-**bucket** is the named store you put those objects into. Both live inside a
-single JetStream stream named `OBJ_<bucket>`, the same persistence layer the
-[JetStream Deep Dive](/learn/jetstream) already taught you.
+NATS предоставляет место для хранения файлов без отдельного сервиса. **Объект** — сохранённый файл: PDF счёта, этикетка отправления, упаковочный лист — всё слишком крупное или двоичное для обычного сообщения. **Бакет** — именованное хранилище таких объектов. Оба находятся в одном потоке JetStream с именем `OBJ_<bucket>`, на том же слое долговременного хранения из [углублённого курса JetStream](/learn/jetstream).
 
-Keep that framing in mind from the start. When you
-`put` an object the store splits its bytes into chunks, writes each chunk as
-a message, and follows them with one metadata message describing the whole
-object. When you `get` an object the store reads that metadata, replays the
-chunks in order, and verifies them before handing you the bytes. The
-friendly API (`put`, `get`, `list`, `watch`, `link`) is what you use day
-to day, and the stream underneath is what makes it work.
+Помните об этом с самого начала. При `put` хранилище разбивает байты на фрагменты, записывает каждый сообщением, затем добавляет одно сообщение метаданных всего объекта. При `get` оно читает метаданные, воспроизводит фрагменты по порядку и проверяет их перед возвратом байтов. В повседневной работе вы используете удобное API (`put`, `get`, `list`, `watch`, `link`), а работу обеспечивает базовый поток.
 
 <div class="nats-flow" data-scenario="jetStreamContrastAnimated" data-width="600" data-height="350"></div>
 
-This chapter teaches the object abstraction first and reveals the stream
-last. The first four pages teach you the object store API on its own terms, so
-you can be productive without re-deriving JetStream internals.
-[Under the hood](./under-the-hood.md) shows you the `OBJ_INVOICES` stream that
-was present the whole time.
+Сначала глава объясняет абстракцию объекта, а в конце раскрывает поток. Первые четыре страницы знакомят с API хранилища без необходимости заново изучать внутренности JetStream. Страница [Внутреннее устройство](./under-the-hood.md) показывает поток `OBJ_INVOICES`, существовавший всё время.
 
-Place this alongside its sibling store. The
-[Key-Value Store](/learn/key-value) keeps small structured values and a full
-revision history per key, so it retains every change. The Object Store keeps
-large chunked files and only the latest metadata per object, so it retains
-the current version rather than the history. Use key-value when you want
-many small values that you read, overwrite, and audit; use the object
-store when you want whole files that you put and fetch. That contrast holds for
-the rest of the chapter, so we state it once here and move on.
+Сравните его с соседним хранилищем. [Хранилище ключей и значений](/learn/key-value) сохраняет небольшие структурированные значения и историю ревизий каждого ключа. Хранилище объектов предназначено для крупных файлов из фрагментов и сохраняет лишь последние метаданные объекта, то есть текущую версию, а не историю. KV подходит для множества небольших значений, которые нужно читать, перезаписывать и проверять по истории; объекты — для целых файлов, которые записывают и получают.
 
-## By the end you will have
+## Что получится к концу главы {#by-the-end-you-will-have}
 
-- An `INVOICES` bucket (described as "Invoice PDFs") that the `order-svc`
-  service puts invoices into after a payment is confirmed.
-- The invoice `invoice-ord_8w2k.pdf` stored and fetched back, with the store
-  computing and checking a SHA-256 **digest** so you know the bytes you get
-  are the bytes you put.
-- A 3 MB invoice, `invoice-ord_9x3m.pdf`, stored across many **chunks** and
-  reassembled on the way out, with a feel for the chunk size that bounds each
-  message.
-- An invoice that carries a **description**, a `content-type` header, and a
-  free-form metadata map, plus a `label-ord_8w2k.png` object **linked** to
-  it and traversed transparently on get.
-- An `analytics` service that **lists** the bucket as a snapshot and
-  **watches** it for new objects in real time.
-- A clear picture of the `OBJ_INVOICES` stream underneath: the chunk and
-  metadata subjects, the rollup that keeps only the latest metadata, and what
-  a soft delete really does.
+- Бакет `INVOICES` с описанием «Invoice PDFs», куда сервис `order-svc` помещает счета после подтверждения оплаты.
+- Сохранённый и прочитанный обратно счёт `invoice-ord_8w2k.pdf`, для которого хранилище вычисляет и проверяет **хеш** SHA-256, подтверждая совпадение записанных и полученных байтов.
+- Счёт размером 3 МБ, `invoice-ord_9x3m.pdf`, разбитый на множество **фрагментов** и собранный при чтении; понимание размера фрагмента, ограничивающего каждое сообщение.
+- Счёт с **описанием**, заголовком `content-type` и произвольными метаданными, а также объект `label-ord_8w2k.png`, **связанный** с ним ссылкой, прозрачно разрешаемой при get.
+- Сервис `analytics`, получающий **список** объектов как снимок и **наблюдающий** за новыми объектами в реальном времени.
+- Понимание потока `OBJ_INVOICES`: темы фрагментов и метаданных, свёртка для хранения только последних метаданных и смысл мягкого удаления.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You've read the [JetStream Deep Dive](/learn/jetstream) or the
-[Core Concepts → JetStream](/concepts/jetstream) primer, so the sentence
-"a stream stores messages" already means something to you. This chapter
-doesn't re-teach what a stream is, how a consumer tracks its position, or how
-acknowledgment works. Where you'd want those, it names the gap and links
-back to [JetStream](/learn/jetstream).
+Вы прочитали [углублённый курс JetStream](/learn/jetstream) или введение [Основные концепции → JetStream](/concepts/jetstream) и уже понимаете, что поток хранит сообщения. Здесь не объясняются заново потоки, позиции потребителей и подтверждения. При необходимости глава обозначает нужный механизм и ссылается на [JetStream](/learn/jetstream).
 
-You don't need to know anything about the object store specifically. We
-start from "what is a bucket and why would you want one" and grow from there.
+Специальные знания о хранилище объектов не требуются. Начнём с того, что такое бакет и зачем он нужен.
 
-## How to read it
+## Как читать главу {#how-to-read-it}
 
-Each page introduces at most two new concepts, and each builds on the last:
-you use the same `INVOICES` bucket throughout, and you can keep one
-terminal open through the whole chapter without resetting state. You create
-the bucket and store your first invoice in
-[Your first object](./your-first-object.md), store a large multi-chunk invoice
-in [Chunking](./chunking.md), attach metadata and a link in
-[Metadata and links](./metadata-and-links.md), list and watch the bucket in
-[Watching and listing](./watching-and-listing.md), and inspect the stream
-underneath in [Under the hood](./under-the-hood.md).
+Каждая страница вводит не более двух новых понятий и опирается на предыдущую. Один бакет `INVOICES` используется всю главу; можно держать один терминал открытым без сброса состояния. На странице [Первый объект](./your-first-object.md) вы создадите бакет и сохраните счёт, в разделе [Разбиение на фрагменты](./chunking.md) запишете крупный счёт, в разделе [Метаданные и ссылки](./metadata-and-links.md) добавите метаданные и ссылку, в разделе [Наблюдение и список объектов](./watching-and-listing.md) перечислите объекты и начнёте наблюдение, затем изучите [внутреннее устройство](./under-the-hood.md).
 
-The object store has many knobs: chunk size, replicas, compression, every
-field on the wire. Where a feature has a long list, the page covers only
-what you need to understand the concept. The full set of configuration
-options lives in [Reference](/reference/); here we only need the behavior.
+У хранилища много настроек: размер фрагментов, реплики, сжатие и все поля протокола. При длинном списке страница объясняет лишь необходимое для понимания. Полный перечень находится в [справочнике](/reference/); здесь важно поведение.
 
-## Map
+## Содержание {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Your first object](./your-first-object.md) | Create `INVOICES`, put `invoice-ord_8w2k.pdf`, and get it back with its digest verified |
-| [Chunking](./chunking.md) | Store a 3 MB invoice across many chunks and read the chunk count |
-| [Metadata and links](./metadata-and-links.md) | Attach a description, headers, and a metadata map, then link one object to another |
-| [Watching and listing](./watching-and-listing.md) | List the bucket as a snapshot, then watch it for new objects live |
-| [Under the hood](./under-the-hood.md) | See the `OBJ_INVOICES` stream, the chunk and metadata subjects, and rollup versus soft delete |
-| [Where to go next](./where-next.md) | A map of what's beyond objects, and one pre-production checklist |
+| [Первый объект](./your-first-object.md) | Создание `INVOICES`, запись `invoice-ord_8w2k.pdf` и чтение с проверкой хеша |
+| [Разбиение на фрагменты](./chunking.md) | Хранение счёта на 3 МБ во множестве фрагментов и просмотр их числа |
+| [Метаданные и ссылки](./metadata-and-links.md) | Описание, заголовки, произвольные метаданные и ссылка одного объекта на другой |
+| [Наблюдение и список объектов](./watching-and-listing.md) | Список как снимок и текущие обновления объектов |
+| [Внутреннее устройство](./under-the-hood.md) | Поток `OBJ_INVOICES`, темы фрагментов и метаданных, свёртка и мягкое удаление |
+| [Куда двигаться дальше](./where-next.md) | Возможности за пределами объектов и проверки перед эксплуатацией |
 
-## Prerequisites
+## Предварительные требования {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- A working `nats-server` with JetStream enabled. The object store is built
-  on JetStream, so JetStream must be on. The simplest way is
-  `nats-server -js`.
-- The `nats` CLI installed and pointed at your server. This chapter uses
-  the `nats` CLI for most operations; a few, like creating a link, are
-  client-library only.
+- Работающий `nats-server` с включённым JetStream, на котором построено хранилище объектов. Проще всего запустить `nats-server -js`.
+- Установленный CLI `nats`, подключённый к вашему серверу. Большинство операций выполняется через него; некоторые, например создание ссылки, доступны лишь через клиентские библиотеки.
 
-Open a terminal, run `nats-server -js`, and turn the page.
+Откройте терминал, выполните `nats-server -js` и переходите к следующей странице.

@@ -1,74 +1,74 @@
 ---
 id: index
-title: Getting Started
+title: "Начало работы"
 sidebar_position: 1
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Getting Started with NATS
+# Начало работы с NATS {#getting-started-with-nats}
 
-Get up and running with NATS in minutes. This guide will walk you through installation, basic setup, and your first NATS application.
+Начните работать с NATS за несколько минут. Это руководство поможет установить NATS, выполнить базовую настройку и создать первое приложение.
 
-## Installation
+## Установка {#installation}
 
-### Quick Start with Docker
+### Быстрый запуск с Docker {#quick-start-with-docker}
 
-The fastest way to get NATS running:
+Самый быстрый способ запустить NATS:
 
 ```
 docker run -p 4222:4222 -p 8222:8222 nats:latest
 ```
 
-This starts NATS Server with:
-- Client connections on port 4222
-- HTTP monitoring on port 8222
+Эта команда запускает сервер NATS со следующими портами:
+- 4222 для клиентских соединений
+- 8222 для HTTP-мониторинга
 
-### Install NATS Server
+### Установка сервера NATS {#install-nats-server}
 
-#### macOS
+#### macOS {#macos}
 ```
 brew install nats-server
 ```
 
-#### Linux
+#### Linux {#linux}
 ```
 curl -sf https://binaries.nats.dev/nats-io/nats-server/v2@latest | sh
 sudo mv nats-server /usr/local/bin/
 ```
 
-#### Windows
-Download the latest release from [GitHub Releases](https://github.com/nats-io/nats-server/releases).
+#### Windows {#windows}
+Скачайте последний выпуск со страницы [GitHub Releases](https://github.com/nats-io/nats-server/releases).
 
-### Verify Installation
+### Проверка установки {#verify-installation}
 
 ```
 nats-server --version
 ```
 
-## Start NATS Server
+## Запуск сервера NATS {#start-nats-server}
 
-### Basic Server
+### Обычный сервер {#basic-server}
 ```
 nats-server
 ```
 
-### With Monitoring
+### С мониторингом {#with-monitoring}
 ```
 nats-server -m 8222
 ```
 
-Visit http://localhost:8222 to see server metrics.
+Откройте http://localhost:8222, чтобы посмотреть метрики сервера.
 
-### With JetStream (Persistence)
+### С JetStream (долговременное хранение) {#with-jetstream-persistence}
 ```
 nats-server -js
 ```
 
-## Install NATS CLI
+## Установка NATS CLI {#install-nats-cli}
 
-The NATS CLI tool helps you interact with NATS:
+Инструмент командной строки NATS CLI позволяет взаимодействовать с NATS:
 
 ```
 # macOS
@@ -79,26 +79,26 @@ curl -sf https://binaries.nats.dev/nats-io/natscli/nats@latest | sh
 sudo mv nats /usr/local/bin/
 ```
 
-## Your First NATS Application
+## Первое приложение NATS {#your-first-nats-application}
 
-### Using the CLI
+### Использование CLI {#using-the-cli}
 
 ```
-# Subscribe to a subject
+# Подписаться на тему
 nats sub hello &
 
-# Publish a message
+# Опубликовать сообщение
 nats pub hello "Hello NATS!"
 ```
 
-### Install Client Libraries
+### Установка клиентских библиотек {#install-client-libraries}
 
 <Tabs groupId="lang">
 <TabItem value="cli" label="CLI" default>
 
 ```bash
-# The NATS CLI is already installed (see above)
-# You can use it directly for pub/sub operations
+# NATS CLI уже установлен: см. выше
+# Его можно сразу использовать для публикации и подписки
 ```
 
 </TabItem>
@@ -150,37 +150,37 @@ tokio = { version = "1", features = ["full"] }
 dotnet add package NATS.Net
 ```
 
-See [NATS.Net on NuGet](https://www.nuget.org/packages/NATS.Net) for the latest version.
+Последняя версия указана на странице [NATS.Net в NuGet](https://www.nuget.org/packages/NATS.Net).
 
 </TabItem>
 </Tabs>
 
-### Publisher Example
+### Пример издателя {#publisher-example}
 
 <div class="nats-example" data-type="getting-started-publish" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-### Subscriber Example
+### Пример подписчика {#subscriber-example}
 
 <div class="nats-example" data-type="getting-started-subscribe" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-### Running the Examples
+### Запуск примеров {#running-the-examples}
 
 <Tabs groupId="lang">
 <TabItem value="cli" label="CLI" default>
 
 ```bash
-# Terminal 1 - Start subscriber
+# Терминал 1: запустите подписчика
 nats sub hello
 
-# Terminal 2 - Publish messages
+# Терминал 2: опубликуйте сообщения
 nats pub hello "Hello NATS!"
 nats pub hello "Welcome to messaging"
 
-# Request-Reply pattern
-# Terminal 1 - Start replier
+# Схема запрос–ответ
+# Терминал 1: запустите отвечающий сервис
 nats reply hello "Hi there!"
 
-# Terminal 2 - Send request
+# Терминал 2: отправьте запрос
 nats request hello "Anyone there?" --timeout=2s
 ```
 
@@ -188,10 +188,10 @@ nats request hello "Anyone there?" --timeout=2s
 <TabItem value="js" label="JavaScript/TypeScript">
 
 ```bash
-# Terminal 1 - Start subscriber
+# Терминал 1: запустите подписчика
 node subscribe.js
 
-# Terminal 2 - Run publisher
+# Терминал 2: запустите издателя
 node publish.js
 ```
 
@@ -199,10 +199,10 @@ node publish.js
 <TabItem value="go" label="Go">
 
 ```bash
-# Terminal 1 - Start subscriber
+# Терминал 1: запустите подписчика
 go run subscribe.go
 
-# Terminal 2 - Run publisher
+# Терминал 2: запустите издателя
 go run publish.go
 ```
 
@@ -222,10 +222,10 @@ and navigate to src/main/java/io/nats/examples/natsIoDoc
 <TabItem value="rust" label="Rust">
 
 ```bash
-# Terminal 1 - Start subscriber
+# Терминал 1: запустите подписчика
 cargo run --bin subscribe
 
-# Terminal 2 - Run publisher
+# Терминал 2: запустите издателя
 cargo run --bin publish
 ```
 
@@ -243,24 +243,24 @@ and navigate to examples/Example.NatsIODocs
 </TabItem>
 </Tabs>
 
-## Next Steps
+## Следующие шаги {#next-steps}
 
-Congratulations! You've successfully:
-- ✅ Installed NATS Server
-- ✅ Published and subscribed to messages
-- ✅ Built your first NATS application
+Поздравляем! Вы успешно:
+- ✅ Установили сервер NATS
+- ✅ Опубликовали сообщения и подписались на их получение
+- ✅ Создали первое приложение NATS
 
-### What to explore next:
+### Что изучить дальше: {#what-to-explore-next}
 
-- [Core NATS deep dive](/learn/core-nats) — hands-on path through the fundamentals
-- [JetStream deep dive](/learn/jetstream) — persistence and streaming
-- [The full Learn section](/learn) — guided, runnable chapters
-- [Request-Reply Pattern](../request-reply.md) — synchronous communication
-- [Subjects](../subjects.md) — understanding subject-based messaging
+- [Углублённое изучение Core NATS](/learn/core-nats) — практическое знакомство с основами
+- [Углублённое изучение JetStream](/learn/jetstream) — долговременное хранение и потоковая передача
+- [Раздел «Изучение» целиком](/learn) — последовательные практические главы
+- [Шаблон запрос-ответ](../request-reply.md) — синхронное взаимодействие
+- [Темы](../subjects.md) — обмен сообщениями на основе тем
 
-### Client Libraries
+### Клиентские библиотеки {#client-libraries}
 
-NATS has official clients for:
+Официальные клиенты NATS доступны для:
 - [Go](https://github.com/nats-io/nats.go)
 - [Java](https://github.com/nats-io/nats.java)
 - [JavaScript/TypeScript](https://github.com/nats-io/nats.js)
@@ -269,7 +269,7 @@ NATS has official clients for:
 - [C](https://github.com/nats-io/nats.c)
 - [.NET](https://github.com/nats-io/nats.net)
 
-### Resources
+### Ресурсы {#resources}
 
-- [NATS by Example](https://natsbyexample.com) - Interactive examples
-- [Slack Community](https://slack.nats.io) - Get help from the community
+- [NATS by Example](https://natsbyexample.com) — интерактивные примеры
+- [Сообщество в Slack](https://slack.nats.io) — помощь участников сообщества

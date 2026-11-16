@@ -1,70 +1,40 @@
 ---
 id: rolling-upgrades
-title: "Rolling upgrades"
+title: "Последовательные обновления"
 sidebar_position: 5
-description: Roll a new server version through the ORDERS cluster with lame-duck mode and the right upgrade order, keeping the R3 stream available and clients connected
+description: "Обновление кластера ORDERS по одному узлу с плавным выводом, сохранением доступности потока R3 и переподключением клиентов"
 ---
 
-# Rolling upgrades
+# Последовательные обновления {#rolling-upgrades}
 
-The previous page changed the cluster's config without dropping a
-connection. A new server *version* is a harder problem, because the
-binary itself has to change, which means the process has to restart. If
-a restart is done carelessly, it drops every client on that node and can
-leave the `ORDERS` stream a node short of quorum.
+На предыдущей странице конфигурация менялась без разрыва соединений. Смена *версии* сервера сложнее: нужно заменить исполняемый файл и перезапустить процесс. Неосторожный перезапуск отключает всех клиентов узла и может лишить поток `ORDERS` кворума.
 
-This page rolls a new version through `nats-0`, `nats-1`, and `nats-2`
-one node at a time, with the cluster staying up the whole way. It needs
-two ideas: **lame-duck mode**, the graceful way a single node steps out,
-and **upgrade order**, the sequence across the three nodes that protects
-the stream.
+Здесь новая версия последовательно устанавливается на `nats-0`, `nats-1` и `nats-2`, пока кластер продолжает работать. Нужны два понятия: **режим плавного вывода** (lame-duck mode) для отдельного узла и **порядок обновления** трёх узлов, защищающий поток.
 
-## Lame-duck mode
+## Режим плавного вывода {#lame-duck-mode}
 
-A node restart is abrupt. The process stops, and every client connected
-to it discovers the loss only when its next write fails. Any stream
-replica that node was leading goes leaderless until the cluster elects a
-replacement.
+Обычная остановка резкая: процесс завершается, клиенты обнаруживают потерю при следующей неудачной записи, а потоки, лидером которых был узел, остаются без лидера до новых выборов.
 
-Lame-duck mode makes that stop orderly instead of abrupt. A node in
-lame-duck mode broadcasts that it is going away, hands off its work,
-and lets clients move *before* the process exits. The mechanism is
-specified in the server's ADR-5; here you only need what the operator
-triggers and what it does.
+Режим плавного вывода делает остановку упорядоченной. Узел сообщает об уходе, передаёт работу и позволяет клиентам перейти на другие серверы *до* завершения процесса. Механизм описан в ADR-5 сервера; здесь важно, как его запускает администратор и что происходит дальше.
 
-You enter lame-duck mode by sending the running process the `SIGUSR2`
-signal:
+Для входа в режим отправьте процессу сигнал `SIGUSR2`:
 
 ```bash
 # Signal nats-0 to enter lame-duck mode (run on the node, or via the pod)
 kill -SIGUSR2 $(cat /var/run/nats/nats.pid)
 ```
 
-That one signal kicks off a sequence inside the node:
+Один сигнал запускает внутри узла такую последовательность:
 
-1. It closes its client listener, so no *new* connection lands on a node
-   that's on its way out.
-2. It transfers any Raft leadership it holds to another replica, so no
-   stream is left leaderless.
-3. It shuts down its JetStream assets cleanly, flushing to disk.
-4. It broadcasts `INFO ldm:true` to its routes and its connected clients.
-   The update drops this node from each client's server pool, so the next
-   reconnect lands elsewhere; the client takes no other action on the INFO
-   itself.
-5. After a short grace period it closes the remaining client connections,
-   spread over the lame-duck duration rather than all at once. Each client
-   sees its connection close and reconnects to another node through its
-   normal reconnect logic.
+1. Закрывается клиентский слушатель, чтобы *новые* соединения не попадали на уходящий узел.
+2. Лидерство Raft передаётся другим репликам, чтобы потоки не остались без лидера.
+3. Ресурсы JetStream корректно завершают работу со сбросом на диск.
+4. Маршрутам и подключённым клиентам отправляется `INFO ldm:true`. Узел исключается из пула серверов клиента для последующих переподключений; само INFO не вызывает других действий.
+5. После короткого периода ожидания оставшиеся клиентские соединения закрываются постепенно в течение заданного интервала. Каждый клиент обычным механизмом переподключается к другому узлу.
 
-Only after that does the process exit. By then leadership has transferred
-and the clients have moved off as their connections closed, so the stream
-never lost a quorum.
+Только затем процесс завершается. К этому моменту лидерство передано, клиенты переместились по мере закрытия соединений, а поток сохранил кворум.
 
-Two settings control the timing. `lame_duck_grace_period` (default
-`10s`) is how long the node waits before it starts kicking clients.
-`lame_duck_duration` (default `2m`, minimum `30s`) is the total window
-over which it spreads those kicks. The grace period must be shorter than
-the duration.
+Время задают два параметра. `lame_duck_grace_period` (по умолчанию `10s`) — ожидание до начала отключений. `lame_duck_duration` (по умолчанию `2m`, минимум `30s`) — интервал распределения отключений. Период ожидания должен быть короче общего интервала.
 
 ```conf
 # nats-server.conf — lame-duck timing
@@ -72,15 +42,9 @@ lame_duck_grace_period: "10s"
 lame_duck_duration: "2m"
 ```
 
-Set the duration to comfortably cover how long your clients take to
-reconnect *and* how long JetStream needs to move leadership off this
-node. A duration shorter than the rebalance drops clients before the
-stream has caught up. We'll come back to that trap in
-[Pitfalls](#pitfalls).
+Длительность должна с запасом покрывать и переподключение клиентов, и передачу лидерства JetStream. Если она короче перераспределения, клиенты будут отключены до синхронизации потока. К этому вернёмся в [типичных ошибках](#pitfalls).
 
-On Kubernetes you don't send the signal by hand. The NATS Helm chart
-wires lame-duck mode into the pod's `preStop` hook, so a normal
-`kubectl rollout restart` triggers it for you:
+В Kubernetes вручную отправлять сигнал не нужно: чарт NATS Helm связывает режим с обработчиком `preStop`, поэтому обычный `kubectl rollout restart` запускает его автоматически:
 
 ```yaml
 # Pod preStop hook (set by the NATS Helm chart) — enter lame-duck before exit
@@ -92,53 +56,27 @@ lifecycle:
         - "-sl=ldm=/var/run/nats/nats.pid"
 ```
 
-The `-sl=ldm=...` form reads the pid file, signals the running server to
-enter lame-duck mode, and returns — identical to the `SIGUSR2` you sent
-above. Kubernetes then sends SIGTERM, which the server ignores while it's
-draining, so the drain is protected only by
-`terminationGracePeriodSeconds`: when that expires the kubelet sends
-SIGKILL. The chart defaults `lame_duck_duration` to `30s` and
-`terminationGracePeriodSeconds` to `60s`. If you raise the duration, raise
-the grace period above `lame_duck_duration` plus shutdown overhead too, or
-the kubelet SIGKILLs the node mid-drain.
+Форма `-sl=ldm=...` читает PID-файл, отправляет сигнал плавного вывода работающему серверу и завершается — как `SIGUSR2` выше. Затем Kubernetes посылает SIGTERM, который сервер игнорирует во время вывода. Защита ограничена `terminationGracePeriodSeconds`: после истечения kubelet отправляет SIGKILL. Чарт задаёт `lame_duck_duration` как `30s`, а `terminationGracePeriodSeconds` как `60s`. Если увеличить длительность вывода, увеличьте и период завершения сверх неё с запасом на остановку, иначе узел будет принудительно завершён посреди процедуры.
 
-## Upgrade order
+## Порядок обновления {#upgrade-order}
 
-Lame-duck mode makes *one* node leave gracefully. Rolling a new version
-across all three depends on the *order* you take them in, and that order
-follows a specific rule.
+Плавный вывод обеспечивает корректный уход *одного* узла. Безопасность обновления всех трёх зависит от последовательности.
 
-One node in the cluster is the **meta-leader**: the Raft leader for the
-cluster's own metadata, the node that coordinates where streams and
-consumers live. The other two are non-leaders. Stepping the meta-leader
-down forces a metadata election, and while that election runs, stream and
-consumer *operations* (create, update, leadership moves) pause until a new
-leader wins — typically about 5 to 10 seconds with default timeouts if the
-node was killed outright, or roughly a second if it handed leadership off
-first.
+Один узел — **лидер метаданных**: лидер Raft для размещения потоков и потребителей. Два других им не являются. Остановка лидера запускает выборы; до завершения приостанавливаются *операции* потоков и потребителей — создание, изменение, перемещение лидерства. При резком завершении это обычно 5–10 секунд со стандартными тайм-аутами; при предварительной передаче лидерства — около секунды.
 
-So the rule is: **upgrade the non-leaders first, and the meta-leader
-last.** By the time you reach the meta-leader, the other two nodes are
-already on the new version and ready to take over, so the one unavoidable
-metadata election is short and happens once.
+Правило: **сначала обновляйте узлы, не являющиеся лидером метаданных; сам лидер — последним.** Тогда к его очереди два других уже работают на новой версии и готовы принять роль. Неизбежные выборы будут короткими и однократными.
 
-Before you start, read the cluster's current shape and confirm the stream
-is at full R3:
+Перед началом прочитайте текущее состояние и убедитесь, что поток полностью работает с R3:
 
 <div class="nats-example" data-type="learn-deployment-rolling-upgrades-streamReplicas" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-That output shows the `ORDERS` stream's own Raft leader and each replica's
-status — the per-node "current" gate you'll use between steps. The
-**meta-leader** is a separate Raft group and may sit on a different node;
-find it with `nats server report jetstream`, which marks the node leading
-the cluster's metadata:
+Вывод показывает лидера Raft самого `ORDERS` и состояние реплик. Отметка «current» будет условием перехода между шагами. **Лидер метаданных** относится к отдельной группе Raft и может находиться на другом узле. Найдите его через `nats server report jetstream`:
 
 ```bash
 nats server report jetstream
 ```
 
-The walkthrough below assumes `nats-1` is the meta-leader. The procedure
-for each node is the same three steps:
+Далее предполагается, что лидер метаданных — `nats-1`. Для каждого узла выполняются те же три шага:
 
 ```bash
 # For each NON-leader node (nats-0, then nats-2):
@@ -152,20 +90,11 @@ systemctl restart nats-server                  # picks up the new binary
 #    before moving to the next node — re-run nats stream info ORDERS.
 ```
 
-Step 3 is the gate that controls when you proceed. A restarted node isn't
-done until its `ORDERS` replica has caught up, because taking the next node
-down while this one is still syncing leaves the stream one healthy replica
-short.
+Шаг 3 определяет возможность продолжения. Перезапущенный узел готов только после синхронизации реплики `ORDERS`. Если остановить следующий раньше, потоку не хватит исправной реплики.
 
-Take the meta-leader (`nats-1`) **last**, with the same three steps. When
-it enters lame-duck mode it transfers metadata leadership to one of the
-two already-upgraded nodes, the brief election runs once, and the whole
-cluster is on the new version.
+Обновите лидера `nats-1` **последним** теми же шагами. При плавном выводе он передаст роль одному из обновлённых узлов, пройдут короткие выборы, и весь кластер окажется на новой версии.
 
-There's one more guardrail on Kubernetes. A `PodDisruptionBudget` (PDB)
-caps how many pods may be down at once. With `minAvailable: 2`, Kubernetes
-won't voluntarily evict two of the three pods together, so a node drain
-can never cost the R3 stream its quorum:
+Ещё одна защита Kubernetes — `PodDisruptionBudget` (PDB), ограничивающий одновременную недоступность подов. С `minAvailable: 2` Kubernetes не допускает добровольное вытеснение двух из трёх подов одновременно, сохраняя кворум R3 при выводе узла:
 
 ```yaml
 # pod-disruption-budget.yaml — never let the cluster drop below 2 nodes
@@ -180,44 +109,25 @@ spec:
       app.kubernetes.io/name: nats
 ```
 
-The flow below shows the whole sequence for one node: the signal, the
-`INFO ldm:true` broadcast, the leadership transfer, the client reconnect,
-and the rejoin on the new version.
+Ниже показан весь цикл одного узла: сигнал, `INFO ldm:true`, передача лидерства, переподключение клиентов и возврат с новой версией.
 
 <div class="nats-flow" data-scenario="lameDuckUpgradeAnimated" data-width="600" data-height="350"></div>
 
-The two keys this page touches, `lame_duck_duration` and
-`lame_duck_grace_period`, are the only ones you must set for a safe roll.
-The full set of server configuration options is documented in
-[Reference → Configuration](/reference/config). We only cover the keys
-this deployment needs here.
+Из настроек этой страницы для безопасного обновления нужны `lame_duck_duration` и `lame_duck_grace_period`. Полный список параметров находится в [Справочнике → Конфигурация](/reference/config).
 
-## Permanently replacing a node
+## Окончательная замена узла {#permanently-replacing-a-node}
 
-A rolling upgrade takes each node down and brings the same node back, so
-its stream replicas are still assigned to it and catch up when it returns.
-That's why the three steps above never move any data.
+При последовательном обновлении тот же узел возвращается; назначенные ему реплики остаются на месте и догоняют кластер после запуска. Поэтому описанные три шага не переносят данные.
 
-Retiring a node is a different job. If `nats-2` is leaving the cluster for
-good — smaller cluster, a replacement instance, hardware going away — its
-replicas have to live somewhere else before you stop it. From NATS 2.15 one
-command moves them all:
+Окончательный вывод — другая задача. Если `nats-2` уходит навсегда из-за уменьшения кластера, замены экземпляра или оборудования, его реплики нужно разместить в другом месте до остановки. Начиная с NATS 2.15 это делает одна команда:
 
 ```bash
 nats server cluster evacuate nats-2
 ```
 
-Every stream and consumer assigned to `nats-2` keeps its replica count and
-gets a replacement peer that qualifies under its placement — where one
-exists. Replacement is best effort: the command's job is to clear the node,
-so an asset with nowhere to go moves off `nats-2` anyway and runs
-under-replicated until a qualifying server appears. On a three-node cluster
-an `R=3` stream has nowhere to put its third replica once `nats-2` leaves,
-so expect exactly that unless you add the replacement node first.
+Потоки и потребители `nats-2` сохраняют требуемое число реплик и получают замену, удовлетворяющую ограничениям размещения, если она есть. Подбор замены выполняется по возможности: задача команды — освободить узел. Если подходящего сервера нет, ресурс всё равно уходит с `nats-2` и временно работает с недостаточным числом реплик. В трёхузловом кластере третьей реплике `R=3` некуда перейти, если заранее не добавить замену.
 
-Wait for the assets to report the new peers as `current`, and check the
-streams you care about are back at their replica count. Then stop the
-node, and only once it's down remove it from the meta group:
+Дождитесь состояния `current` новых участников и убедитесь, что нужные потоки снова имеют полное число реплик. Затем остановите узел и только после этого удалите его из группы метаданных:
 
 ```bash
 # On nats-2: shut the server down first.
@@ -227,118 +137,54 @@ systemctl stop nats-server
 nats server cluster peer-remove nats-2
 ```
 
-The order matters. A running server that gets peer-removed sees the
-removal, logs `JetStream being DISABLED, our server was removed from the
-cluster`, emits a `server_removed` advisory, and turns JetStream off on
-itself. You end up having taken JetStream down on a live node instead of
-retiring a stopped one, and you still have to stop it. Stop first, and the
-removal is just bookkeeping on a node that has already gone.
+Порядок важен. Работающий сервер после удаления участника пишет `JetStream being DISABLED, our server was removed from the
+cluster`, публикует `server_removed` и отключает JetStream у себя. Вместо вывода остановленного узла вы отключите JetStream на живом сервере, который всё равно придётся остановить. Если остановить первым, удаление лишь очищает учётную запись отсутствующего участника.
 
-Both are system-account commands. Don't reach for either during an ordinary
-version roll: evacuating a node you're about to restart copies every replica
-it holds to another server for nothing, and the PDB and lame-duck sequence
-above already keep the stream safe across a restart.
-[Desired state and evacuation](/learn/clustering/desired-state) covers what
-the server records while those assets move, and how to roll it back.
+Обе команды требуют системной учётной записи. При обычной смене версии они не нужны: эвакуация перед перезапуском напрасно копирует все реплики, тогда как PDB и плавный вывод уже защищают поток. [Желаемое состояние и эвакуация](/learn/clustering/desired-state) объясняет отслеживание перемещения и откат.
 
-## Client reconnection during the upgrade
+## Переподключение клиентов при обновлении {#client-reconnection-during-the-upgrade}
 
-A node leaving in lame-duck mode requires no action from a correctly
-configured client. The `INFO ldm:true` broadcast tells the client the
-node is going away (and fires an optional lame-duck callback if the app
-registered one); the client keeps running on its existing connection, and
-because the node stops accepting new connections, no client dials it
-again.
-When the server later closes that connection during the staggered kick,
-the client's normal reconnect logic dials another node in the cluster,
-resubscribes, and resumes.
+Правильно настроенный клиент не требует вмешательства. `INFO ldm:true` сообщает об уходе узла и вызывает необязательный обработчик уведомления, если он зарегистрирован. Клиент продолжает работать в текущем соединении. Узел уже не принимает новые подключения. Когда сервер постепенно закрывает соединения, обычная логика клиента выбирает другой узел, восстанавливает подписки и продолжает работу.
 
-You can watch this happen. Subscribe `warehouse` to `orders.created` in
-one terminal, publish an order from `order-svc` in another, and roll a
-node mid-stream. The subscriber logs a reconnect and keeps printing
-messages; the published order still lands in the `ORDERS` stream, because
-the two nodes still up hold a quorum:
+Понаблюдайте: подпишите `warehouse` на `orders.created` в одном терминале, публикуйте из `order-svc` в другом и обновите узел. Подписчик сообщит о переподключении и продолжит вывод, а заказ попадёт в `ORDERS`, поскольку два работающих узла сохраняют кворум:
 
 <div class="nats-example" data-type="learn-deployment-rolling-upgrades-requestDuringUpgrade" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-This is why the order and the timing matter: get them right and a
-version upgrade has no observable effect on `warehouse`, `notifications`,
-and `analytics`.
+Правильные порядок и интервалы позволяют `warehouse`, `notifications` и `analytics` продолжать работу без заметных последствий обновления.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A few traps turn a clean rolling upgrade into an outage. All of them
-come back to this page's two ideas: lame-duck timing and upgrade order.
+Ловушки связаны с двумя идеями: временем плавного вывода и порядком узлов.
 
-**A `lame_duck_duration` shorter than the rebalance drops clients early.**
-If you set the duration to `30s` but JetStream needs `45s` to move the
-`ORDERS` leadership and resync replicas off the node, the node kicks its
-clients and exits while the stream is still catching up. Measure how long
-a real drain takes on your cluster first, then set the duration above it
-with margin, rather than defaulting to the minimum value.
+**Слишком короткий `lame_duck_duration` отключает клиентов раньше времени.** Если задано `30s`, а передача лидерства `ORDERS` и синхронизация требуют `45s`, узел завершится до готовности потока. Сначала измерьте реальное время вывода, затем задайте длительность с запасом.
 
-**Upgrading the meta-leader without draining it stalls stream ops until a
-new leader is elected.** Restart the meta-leader directly and the cluster
-has no metadata leader until the election timeout fires and a follower
-wins — about 5 to 10 seconds with default timeouts — and during that
-window every stream and consumer operation stalls. Draining it first
-transfers leadership in roughly a second instead. Always enter lame-duck
-mode so leadership transfers *before* the process stops, and always do the
-non-leaders first so the meta-leader's one election is short. Check which
-node leads before you touch anything, and re-check after each node, so
-you never take down two replicas at once:
+**Перезапуск лидера метаданных без вывода приостанавливает операции до новых выборов.** При прямом перезапуске кластер ждёт тайм-аут выборов и нового лидера — около 5–10 секунд. Предварительная передача занимает примерно секунду. Всегда включайте плавный вывод и начинайте с остальных узлов. Определяйте лидера до начала и проверяйте после каждого шага, чтобы не остановить две реплики одновременно:
 
 <div class="nats-example" data-type="learn-deployment-rolling-upgrades-streamReplicas" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**Evicting pods without a PDB can drain all three at once.** A node
-drain, a cluster autoscaler, or a careless `kubectl delete` can take two
-or three pods together if nothing stops it, and two nodes down costs the
-R3 stream its quorum. Set a `PodDisruptionBudget` with `minAvailable: 2`
-so Kubernetes refuses to voluntarily evict past one pod. Don't rely on
-doing the steps slowly by hand — make the budget enforce it.
+**Без PDB можно одновременно вывести все поды.** Вывод узла Kubernetes, автомасштабирование или неосторожное удаление могут отключить два-три пода, лишив R3 кворума. Задайте `PodDisruptionBudget` с `minAvailable: 2`, ограничивающий добровольное вытеснение одним подом. Не полагайтесь только на ручную аккуратность.
 
-**A reconnect storm comes from abrupt kills, not from lame-duck.** Clients
-take no action on the `INFO ldm:true` broadcast itself — lame-duck mode
-staggers the connection closes over the duration precisely so their
-reconnects spread out instead of arriving as one burst that could
-overwhelm the two nodes still up. The storm risk is what you get *without*
-that: killing a node outright, or setting a duration so short the spread
-collapses. Keep the duration comfortable, and roll one node at a time,
-finishing one and letting it rejoin before starting the next.
+**Массовое переподключение вызывают резкие остановки.** На само `INFO ldm:true` клиенты не переподключаются. Режим плавного вывода распределяет закрытия по времени, чтобы два оставшихся узла не получили одновременный всплеск. Риск возникает при принудительном завершении или слишком коротком интервале. Обновляйте по одному узлу и дожидайтесь его возвращения перед следующим.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The `ORDERS` cluster can now take a new server version without losing the
-stream or dropping a client:
+Кластер `ORDERS` умеет принимать новую версию сервера с сохранением потока и автоматическим восстановлением клиентских соединений:
 
-- Each node leaves through lame-duck mode: `SIGUSR2` (or the K8s
-  `preStop` hook) makes it broadcast `INFO ldm:true`, transfer leadership,
-  flush JetStream, and move clients before exiting.
-- You roll the non-leaders first and the meta-leader last, gating on
-  each node returning as a `current` replica.
-- A `PodDisruptionBudget` of `minAvailable: 2` keeps the R3 stream's
-  quorum safe even under involuntary eviction.
+- Узлы уходят через плавный вывод: `SIGUSR2` или `preStop` запускает `INFO ldm:true`, передачу лидерства, сброс JetStream и перемещение клиентов до завершения.
+- Сначала обновляются остальные узлы, затем лидер метаданных; переход разрешён только после возвращения каждой реплики в `current`.
+- `PodDisruptionBudget` с `minAvailable: 2` защищает кворум R3 при управляемом вытеснении.
 
-Clients reconnect on their own, so `warehouse`, `notifications`, and
-`analytics` continue through the upgrade without code changes.
+Клиенты переподключаются сами; `warehouse`, `notifications` и `analytics` не требуют изменений кода.
 
-## What's next
+## Что дальше {#whats-next}
 
-The cluster is sized, deployed, configurable, and upgradable. The last
-operational step is **hardening** it: TLS on every link, the `ACME`
-credentials mounted, a locked-down systemd unit, and the monitor port
-closed to the internet.
+Размеры рассчитаны, кластер развёрнут, конфигурация управляется, обновление возможно. Последний шаг — **защита**: TLS на всех связях, подключённые учётные данные `ACME`, ограниченный модуль systemd и закрытый от интернета мониторинг.
 
-Continue to [Hardening](/learn/deployment/hardening).
+Перейдите к [защите системы](/learn/deployment/hardening).
 
-## See also
+## См. также {#see-also}
 
-- [Clustering → Raft and leaders](/learn/clustering/raft-and-leaders) —
-  how leadership transfer and re-election actually work underneath.
-- [Surviving node loss](/learn/jetstream/surviving-node-loss) — why an R3
-  stream survives one node leaving, and what a quorum buys you.
-- [Core NATS → Connection lifecycle](/learn/core-nats/connection-lifecycle) —
-  the client's side of lame-duck mode: what the notice means and how the
-  client ends up on another node.
-- [Clustering → Desired state and evacuation](/learn/clustering/desired-state) —
-  moving a node's assets off it for good, and reading the move in flight.
+- [Кластеризация → RAFT и лидеры](/learn/clustering/raft-and-leaders) — механизм передачи лидерства и выборов.
+- [Отказ узла](/learn/jetstream/surviving-node-loss) — устойчивость R3 и значение кворума.
+- [Core NATS → Жизненный цикл соединения](/learn/core-nats/connection-lifecycle) — обработка уведомления и переход клиента на другой узел.
+- [Кластеризация → Желаемое состояние и эвакуация](/learn/clustering/desired-state) — окончательный перенос ресурсов узла и наблюдение за ним.

@@ -1,148 +1,89 @@
 ---
 id: where-next
-title: "Where to go next"
+title: "Куда двигаться дальше"
 sidebar_position: 7
-description: Recap the key-value mental model and point to what comes after this chapter
+description: "Повторение модели ключей и значений и направления дальнейшего изучения"
 ---
 
-# Where to go next
+# Куда двигаться дальше {#where-to-go-next}
 
-This chapter began with a JetStream stream and the claim that NATS
-gives you a key-value store on top of it. By the end you have an `INVENTORY`
-bucket: keys that are SKUs, values that are stock counts, a warehouse
-dashboard watching for changes, safe decrements through compare-and-swap,
-a key that expires on its own, and a clear view of the stream underneath.
-That covers the chapter.
+Глава началась с потока JetStream и утверждения, что NATS предоставляет поверх него хранилище ключей и значений. Теперь у вас бакет `INVENTORY`: ключи-артикулы, значения-остатки, складская панель с наблюдением, безопасное уменьшение через сравнение с заменой, автоматически истекающий ключ и понятное устройство базового потока.
 
-This page collects the model you built
-into one place and points you at the chapters and Reference that take it
-further.
+Здесь построенная модель собрана в одном месте со ссылками на главы и справочник для дальнейшего изучения.
 
-## The key-value to JetStream mapping
+## Соответствие KV и JetStream {#the-key-value-to-jetstream-mapping}
 
-Every page in this chapter came back to the same idea: a bucket is a stream
-with a key-value interface over it. The point to remember is how the
-key-value words map onto the JetStream words.
+Каждая страница возвращалась к одной идее: бакет — поток с интерфейсом ключей и значений. Важно помнить соответствие терминов KV и JetStream.
 
-A **bucket** is a stream. When you create `INVENTORY` you create a stream
-named `KV_INVENTORY` on the subjects `$KV.INVENTORY.>`. Every bucket limit
-you set (history depth, max bytes, max value size) is a stream limit.
+**Бакет** — поток. При создании `INVENTORY` появляется поток `KV_INVENTORY` с темами `$KV.INVENTORY.>`. Каждый лимит бакета — глубина истории, число байтов, размер значения — является лимитом потока.
 
-A **key** is a subject token. The key `widget-blue` is the last token of
-the subject `$KV.INVENTORY.widget-blue`. A watch's key filter is a subject
-filter, where `*` matches one whole token.
+**Ключ** — токен темы. `widget-blue` — последний токен `$KV.INVENTORY.widget-blue`. Фильтр ключей наблюдателя — фильтр тем, где `*` соответствует одному полному токену.
 
-A **put** is a message. Each value you put is one message appended to the
-stream; a **get** reads the last message for that subject.
+**Put** — сообщение. Каждое записанное значение добавляет сообщение в поток, а **get** читает последнее сообщение этой темы.
 
-A **revision** is a sequence number. Each put bumps the key's revision
-because each message lands at the next sequence in the stream. History is
-the prior messages the stream still holds for that subject.
+**Ревизия** — порядковый номер. Каждый put увеличивает ревизию ключа, поскольку сообщение получает следующий номер в потоке. История — прежние сообщения этой темы, ещё хранящиеся в потоке.
 
-A **watch** is a consumer. It's an ephemeral, ordered consumer that
-replays the current value of every matching key, then streams live
-changes.
+**Watch** — потребитель. Временный упорядоченный потребитель воспроизводит текущее значение каждого подходящего ключа, затем передаёт текущие изменения.
 
-In short: a bucket is a stream, a key is a subject, a put is a message, a
-revision is a sequence, and a watch is a consumer. Everything else in this
-chapter is a refinement of that mapping.
+Бакет соответствует потоку, ключ — теме, put — сообщению, ревизия — порядковому номеру, watch — потребителю. Остальные возможности главы уточняют это соответствие.
 
-## Where the details live now
+## Где искать подробности {#where-the-details-live-now}
 
-The chapter is unversioned and concept-first. The exact flags, defaults,
-and ranges live in **Reference**, which is versioned and exhaustive. When
-you need the precise type of a config field or the full list of bucket
-options, that's where to look.
+Глава не привязана к версии и прежде всего объясняет понятия. Точные флаги, значения по умолчанию и диапазоны приведены в полном **справочнике** с разделением по версиям. Там ищите точный тип поля или полный набор параметров бакета.
 
-Because a bucket is created as a stream, the authoritative knob list is
-the stream-create reference. The full set of bucket configuration options
-is documented in
-[Reference → Create Stream](/reference/jetstream/api/stream/create), and
-the direct read path you met under the hood lives in
-[Reference → Get Stream Message](/reference/jetstream/api/stream/msg-get).
+Поскольку бакет создаётся как поток, основной перечень настроек — справочник создания потока. Все параметры бакета описаны в разделе [Справочник → Создание потока](/reference/jetstream/api/stream/create), а путь прямого чтения — в разделе [Справочник → Получение сообщения потока](/reference/jetstream/api/stream/msg-get).
 
-## Sibling deep dives
+## Связанные подробные главы {#sibling-deep-dives}
 
-Key-value sits on the JetStream foundation, so the stream model carries
-straight into the chapters around it.
+KV построено на JetStream, поэтому модель потока напрямую связывает его с соседними главами.
 
-The [JetStream deep dive](/learn/jetstream) is the chapter underneath this
-one. Every time this chapter said "that is a stream limit" or "a watch is
-a consumer," that's where the mechanism is taught in full:
-[why a stream](/learn/jetstream/your-first-stream#why-a-stream),
-[retention policies](/learn/jetstream/retention-policies), and the
-[per-message TTL](/learn/jetstream/message-ttl) that per-key TTL rides on.
+[Углублённый курс JetStream](/learn/jetstream) описывает нижний слой. Когда здесь говорилось «это лимит потока» или «watch — потребитель», полное объяснение механизма находится там: [зачем нужен поток](/learn/jetstream/your-first-stream#why-a-stream), [политики хранения](/learn/jetstream/retention-policies) и [TTL сообщений](/learn/jetstream/message-ttl), на котором построен TTL ключей.
 
-The [Object Store deep dive](/learn/object-store) is the next step when a
-value outgrows the bucket. Key-value values are small and capped; the
-object store is built for large values, reassembled from multiple
-messages on read. If you need to keep a file, a build artifact, or
-something multi-megabyte, start with
-[your first object](/learn/object-store/your-first-object).
+[Глава о хранилище объектов](/learn/object-store) нужна, когда значение перерастает бакет. Значения KV небольшие и ограничены; хранилище объектов предназначено для крупных данных, собираемых при чтении из нескольких сообщений. Для файла, артефакта сборки или многомегабайтных данных начните с [первого объекта](/learn/object-store/your-first-object).
 
-The [Clustering & Replication deep dive](/learn/clustering) is where the
-`Replicas` field you saw named under the hood takes effect. It covers how
-a bucket survives node loss and explains the replication mechanics behind
-that field in full.
+[Глава о кластеризации и репликации](/learn/clustering) раскрывает поле `Replicas`, упомянутое при изучении устройства. Она объясняет, как бакет переживает отказ узла и какие механизмы репликации стоят за этим полем.
 
-There's one more direction worth mentioning. A bucket can be sourced from
-or mirrored into another bucket: a regional `EU_INVENTORY` bucket could
-source from `INVENTORY` so both hold the same keys, kept in sync by a
-subject transform from `$KV.SRC.>` to `$KV.DST.>`. The chapter doesn't
-build it, because the mechanism is the JetStream one; see
-[mirrors and sources](/learn/jetstream/mirrors-and-sources).
+Есть и другое направление: бакет может получать данные из другого бакета или зеркалироваться. Например, региональный `EU_INVENTORY` получает данные из `INVENTORY`; одинаковые ключи поддерживаются преобразованием тем `$KV.SRC.>` в `$KV.DST.>`. Здесь это не создаётся, поскольку механизм относится к JetStream; см. [Зеркала и источники](/learn/jetstream/mirrors-and-sources).
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-This is the end of the chapter. The whole arc is complete, and this page
-adds no new scenario state. The `INVENTORY` bucket, its watcher,
-its history, and the `flash-sale` key are still in your session exactly as
-you left them under the hood. You can keep experimenting with them, or
-tear the bucket down with `nats kv rm INVENTORY` when you're done.
+Глава завершена; нового состояния сценария здесь нет. Бакет `INVENTORY`, наблюдатель, история и ключ `flash-sale` остаются в сеансе, как на странице внутреннего устройства. Можно продолжать эксперименты или по завершении удалить бакет командой `nats kv rm INVENTORY`.
 
-You have the core model: a bucket is a stream, a key is a subject token, a
-put is a message, a revision is a sequence, and a watch is a consumer.
-That mapping is the basis for every key-value feature you'll meet.
+У вас есть основная модель: бакет — поток, ключ — токен темы, put — сообщение, ревизия — порядковый номер, watch — потребитель. На этом соответствии основаны все возможности KV.
 
-## Production checklist
+## Проверки перед эксплуатацией {#production-checklist}
 
-Every page in this chapter closed with a Pitfalls section. This collects
-the action items from all of them in one place, as a last pass before you
-use a bucket for real inventory. Each group links back to the page that
-explains the why.
+Каждая страница завершалась разделом с подводными камнями. Здесь собраны необходимые действия перед использованием бакета для настоящего складского учёта. Каждая группа ссылается на объяснение причин.
 
-### Your first bucket — see [Pitfalls](/learn/key-value/your-first-bucket#pitfalls)
+### Первый бакет — см. [Подводные камни](/learn/key-value/your-first-bucket#pitfalls) {#your-first-bucket--see-pitfalls}
 
-- [ ] Check that an entry exists before reading its value; a key-not-found isn't the same as an empty value, and reading the value of a missing entry trips up.
-- [ ] Keep bucket names to alphanumerics, dashes, and underscores; the server rejects anything else.
-- [ ] Keep keys to alphanumerics and `-/_=.` with no leading or trailing dot; an order id with a `:` or a leading dot is rejected as a key.
+- [ ] Проверяйте наличие записи до чтения значения: отсутствие ключа отличается от пустого значения, а чтение несуществующей записи приводит к ошибке.
+- [ ] Используйте в именах бакетов только буквы, цифры, дефисы и подчёркивания: сервер отклоняет остальное.
+- [ ] Используйте в ключах только буквы, цифры и `-/_=.`, без точки в начале или конце; идентификатор с `:` или начальной точкой отклоняется.
 
-### Watching — see [Pitfalls](/learn/key-value/watching#pitfalls)
+### Наблюдение — см. [Подводные камни](/learn/key-value/watching#pitfalls) {#watching--see-pitfalls}
 
-- [ ] Consume the end-of-initial-data nil entry; ignoring it or stopping the loop at the snapshot boundary misses every live update.
-- [ ] Treat a watch as live state, not a query; it's an ephemeral consumer that ends with the process, so use get or history for a point read.
+- [ ] Обрабатывайте nil завершения начальных данных: не завершайте цикл на границе снимка, иначе пропустите все текущие обновления.
+- [ ] Считайте наблюдение живым состоянием, а не запросом: временный потребитель заканчивается с процессом; для точечного чтения используйте get или history.
 
-### History and revisions — see [Pitfalls](/learn/key-value/history-and-revisions#pitfalls)
+### История и ревизии — см. [Подводные камни](/learn/key-value/history-and-revisions#pitfalls) {#history-and-revisions--see-pitfalls}
 
-- [ ] Wrap every update in a re-get-and-retry loop; an update on a stale revision is rejected, not queued, and a missing retry loses the write.
-- [ ] Reach for update (compare-and-swap), not put, for any read-modify-write like a decrement; an unconditional put clobbers a concurrent write.
+- [ ] Оборачивайте update циклом повторного чтения и попытки: обновление устаревшей ревизии отклоняется, а не ставится в очередь; без повтора запись теряется.
+- [ ] Для чтения, изменения и записи, например уменьшения остатка, используйте update со сравнением с заменой: безусловный put затирает одновременную запись.
 
-### TTL and limits — see [Pitfalls](/learn/key-value/ttl-and-limits#pitfalls)
+### TTL и лимиты — см. [Подводные камни](/learn/key-value/ttl-and-limits#pitfalls) {#ttl-and-limits--see-pitfalls}
 
-- [ ] Set a per-key TTL at create time only; passing a TTL to put or update does not change it, so delete then create to change a key's TTL.
-- [ ] Size the bucket for the working set, not the average; a bucket at its byte limit rejects the next put with an error instead of making room by dropping old values.
+- [ ] Задавайте TTL ключа только при create. Передача TTL в put или update его не меняет; для изменения удалите ключ и создайте заново.
+- [ ] Рассчитывайте бакет на рабочий набор, а не среднюю нагрузку: при достижении лимита байтов следующий put отклоняется с ошибкой, а не удаляет старые значения.
 
-### Under the hood — see [Pitfalls](/learn/key-value/under-the-hood#pitfalls)
+### Внутреннее устройство — см. [Подводные камни](/learn/key-value/under-the-hood#pitfalls) {#under-the-hood--see-pitfalls}
 
-- [ ] Reach for purge, not delete, when you must actually drop prior revisions; delete leaves a marker and keeps history.
-- [ ] Use the key-value API, never raw `nats pub` to `$KV.INVENTORY.>` or hand edits to the `KV_INVENTORY` config; the backing stream is managed and the rollup and marker headers must stay correct.
-- [ ] Keep keys to legal subject tokens, since a key becomes the last token of `$KV.INVENTORY.<key>`; a name with a `:` or two dots in a row is rejected.
+- [ ] Для реального удаления прежних ревизий используйте purge: delete оставляет маркер и сохраняет историю.
+- [ ] Используйте KV API вместо прямой публикации `nats pub` в `$KV.INVENTORY.>` или ручных правок `KV_INVENTORY`: поток управляется API, заголовки свёртки и маркеров должны оставаться корректными.
+- [ ] Соблюдайте правила токенов тем: ключ становится последней частью `$KV.INVENTORY.<key>`; имя с `:` или двумя точками подряд отклоняется.
 
-## See also
+## См. также {#see-also}
 
-- [Reference](/reference/) — every config field, flag, default, and
-  error code, versioned and exhaustive.
-- [Object Store deep dive](/learn/object-store) — the next chapter, for
-  values too large for a bucket.
-- [JetStream deep dive](/learn/jetstream) — the stream foundation every
-  key-value feature rests on.
+- [Справочник](/reference/) — все поля, флаги, значения по умолчанию и коды ошибок, полно и с разделением по версиям.
+- [Глава о хранилище объектов](/learn/object-store) — следующий шаг для значений, слишком больших для бакета.
+- [Углублённый курс JetStream](/learn/jetstream) — потоковая основа всех возможностей KV.

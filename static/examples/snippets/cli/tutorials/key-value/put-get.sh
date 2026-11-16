@@ -1,17 +1,17 @@
 #!/bin/bash
-# Put a value: the key is sue.color, the value is blue.
+# Запишите значение: ключ sue.color, значение blue.
 
 nats kv put profiles sue.color blue
 
-# You should see the value echoed back with its revision:
+# Будут выведены записанное значение и его ревизия:
 #
 #   blue
 
-# Get the value back out by its key.
+# Получите значение по ключу.
 
 nats kv get profiles sue.color
 
-# You should see the full entry, including the value:
+# Будет выведена полная запись, включая значение:
 #
 #   profiles > sue.color revision: 1 created @ ...
 #

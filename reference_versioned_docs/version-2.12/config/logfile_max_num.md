@@ -1,13 +1,12 @@
-# logfile_max_num
+# logfile_max_num {#logfile_max_num}
 
 <Aliases aliases="log_max_num" />
 <Reloadable state="not-reloadable" />
-Maximum number of rotated log files to keep. Older ones are
-deleted.
+Максимальное число сохраняемых файлов ротации журнала. Более старые файлы удаляются.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

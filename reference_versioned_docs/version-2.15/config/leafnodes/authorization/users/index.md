@@ -1,16 +1,16 @@
-# users
+# users {#users}
 
 <Reloadable state="not-reloadable" note="Reordering the users array is accepted because the comparison is keyed by username." />
-A list of multiple users with different credentials.
+Список пользователей с разными учётными данными.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`username`](./username.md) | Name of the user. | `string` | - | No |
-| [`password`](./password.md) | Password of the user. This can be a free-text value (not recommended) or a bcrypted value using the `nats server passwd` CLI command. | `string` | - | No |
-| [`account`](./account.md) | Account that leaf nodes authenticating as this user are bound to. Each user in the list can name a different account.  The account must be declared in the `accounts` block or the server refuses to start. Leave it unset to bind to the global account; the `account` on the surrounding `authorization` block does not apply to users listed here. | `string` | - | No |
-| [`proxy_required`](./proxy_required.md) | Reject this user's leaf node connections if they did not arrive through a PROXY protocol header. Setting `proxy_required` on the surrounding `authorization` block applies the requirement to every user regardless of what they set here. | `boolean` | `false` | Yes\* |
+| [`username`](./username.md) | Имя пользователя. | `string` | - | Нет |
+| [`password`](./password.md) | Пароль пользователя. Может быть обычным текстом (не рекомендуется) или хешем bcrypt, полученным командой CLI `nats server passwd`. | `string` | - | Нет |
+| [`account`](./account.md) | Аккаунт, к которому привязываются листовые узлы, прошедшие аутентификацию как этот пользователь. Каждый пользователь в списке может указывать свой аккаунт. Аккаунт должен быть объявлен в блоке `accounts`, иначе сервер не запустится. Не задавайте значение для привязки к глобальному аккаунту; параметр `account` во внешнем блоке `authorization` не распространяется на пользователей этого списка. | `string` | - | Нет |
+| [`proxy_required`](./proxy_required.md) | Отклонять соединения листовых узлов этого пользователя без заголовка протокола PROXY. Параметр `proxy_required` во внешнем блоке `authorization` распространяет требование на всех пользователей независимо от их собственных настроек. | `boolean` | `false` | Да\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

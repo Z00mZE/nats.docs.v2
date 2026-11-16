@@ -1,36 +1,36 @@
 ---
-title: Find Release Information
-sidebar_label: Overview
-description: Where NATS server release information lives — upgrade guides, the full changelog, and announcement posts — plus which versions are supported.
+title: "Информация о выпусках"
+sidebar_label: "Обзор"
+description: "Где искать сведения о выпусках сервера NATS: руководства по обновлению, полный журнал изменений, анонсы и список поддерживаемых версий."
 ---
 
-# Find release information
+# Информация о выпусках {#find-release-information}
 
-Release information for the NATS server lives in three places, each with its own job:
+Информация о выпусках сервера NATS размещена в трёх местах, у каждого из которых своё назначение:
 
-- **[GitHub releases](https://github.com/nats-io/nats-server/releases)** carry the full changelog for every release, including patches. Each entry links the pull requests and design documents (ADRs) behind a change. This is the place to check what changed in the exact build you're deploying.
-- **Upgrade guides** (this section) tell you what to do when moving between minor versions: breaking changes, new operational behavior, and downgrade steps. One guide per minor release.
-- **[The NATS blog](https://nats.io/blog/)** announces each minor release and explains the motivation behind the headline features.
+- **[Выпуски на GitHub](https://github.com/nats-io/nats-server/releases)** содержат полный журнал изменений для каждого выпуска, включая исправления. Каждая запись ссылается на запросы на включение изменений и проектные документы (ADR). Здесь можно узнать, что изменилось именно в той сборке, которую вы развёртываете.
+- **Руководства по обновлению** (этот раздел) описывают переход между минорными версиями: несовместимые изменения, новое поведение при эксплуатации и шаги возврата к прежней версии. Для каждого минорного выпуска есть отдельное руководство.
+- **[Блог NATS](https://nats.io/blog/)** анонсирует каждый минорный выпуск и объясняет причины появления основных возможностей.
 
-## Supported versions
+## Поддерживаемые версии {#supported-versions}
 
-A new minor version ships roughly every six months. Two release lines get patches in parallel: the latest minor and the one before it. When a new minor ships, the oldest line stops receiving patches.
+Новая минорная версия выходит примерно раз в шесть месяцев. Исправления параллельно получают две ветки: последняя минорная версия и предыдущая. С выходом новой минорной версии самая старая ветка перестаёт получать исправления.
 
-| Version | Released | Status | Notes |
+| Версия | Дата выпуска | Статус | Примечания |
 |---|---|---|---|
-| 2.15 | 2026-09-17 | Latest | |
-| 2.14 | 2026-04-30 | Maintained | |
-| 2.13 | — | Skipped | Never released |
-| 2.12 | 2025-09-22 | End of life | Final release [v2.12.15](https://github.com/nats-io/nats-server/releases/tag/v2.12.15), 2026-08-12 |
-| 2.11 | 2025-03-19 | End of life | Final release [v2.11.17](https://github.com/nats-io/nats-server/releases/tag/v2.11.17), 2026-04-27 |
+| 2.15 | 2026-09-17 | Последняя | |
+| 2.14 | 2026-04-30 | Поддерживается | |
+| 2.13 | — | Пропущена | Не выпускалась |
+| 2.12 | 2025-09-22 | Поддержка завершена | Последний выпуск [v2.12.15](https://github.com/nats-io/nats-server/releases/tag/v2.12.15), 2026-08-12 |
+| 2.11 | 2025-03-19 | Поддержка завершена | Последний выпуск [v2.11.17](https://github.com/nats-io/nats-server/releases/tag/v2.11.17), 2026-04-27 |
 
-## Releases
+## Выпуски {#releases}
 
-| Version | Upgrade guide | Changelog | Announcement |
+| Версия | Руководство по обновлению | Журнал изменений | Анонс |
 |---|---|---|---|
-| 2.15 | [Upgrade to 2.15](/release-notes/upgrade-to-2.15) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.15.0) | [Blog post](https://nats.io/blog/nats-server-2.15-release/) |
-| 2.14 | [Upgrade to 2.14](/release-notes/upgrade-to-2.14) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.14.0) | [Blog post](https://nats.io/blog/nats-server-2.14-release/) |
-| 2.12 | [Upgrade to 2.12](/release-notes/upgrade-to-2.12) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.12.0) | [Blog post](https://nats.io/blog/nats-server-2.12-release/) |
-| 2.11 | [Guide in the nats.docs archive](https://github.com/nats-io/nats.docs/blob/master/release_notes/whats_new_211.md) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.11.0) | [Blog post](https://nats.io/blog/nats-server-2.11-release/) |
+| 2.15 | [Обновление до 2.15](/release-notes/upgrade-to-2.15) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.15.0) | [Запись в блоге](https://nats.io/blog/nats-server-2.15-release/) |
+| 2.14 | [Обновление до 2.14](/release-notes/upgrade-to-2.14) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.14.0) | [Запись в блоге](https://nats.io/blog/nats-server-2.14-release/) |
+| 2.12 | [Обновление до 2.12](/release-notes/upgrade-to-2.12) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.12.0) | [Запись в блоге](https://nats.io/blog/nats-server-2.12-release/) |
+| 2.11 | [Руководство в архиве nats.docs](https://github.com/nats-io/nats.docs/blob/master/release_notes/whats_new_211.md) | [GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.11.0) | [Запись в блоге](https://nats.io/blog/nats-server-2.11-release/) |
 
-Patch releases don't get upgrade guides. For patch-level detail, read the [release notes on GitHub](https://github.com/nats-io/nats-server/releases).
+Для выпусков с исправлениями отдельные руководства по обновлению не создаются. Подробности таких изменений смотрите в [примечаниях к выпускам на GitHub](https://github.com/nats-io/nats-server/releases).

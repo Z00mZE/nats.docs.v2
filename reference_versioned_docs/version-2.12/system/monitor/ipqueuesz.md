@@ -1,13 +1,13 @@
-# IPQueuesz
+# IPQueuesz {#ipqueuesz}
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import ipqueueszRequest from '@site/src/schemas/vendor/v2.12/server/monitor/v1/ipqueuesz_request.json';
 import ipqueueszResponse from '@site/src/schemas/vendor/v2.12/server/monitor/v1/ipqueuesz_response.json';
 
-## Request Schema
+## Схема запроса {#request-schema}
 
 <JSONSchema schema={ipqueueszRequest} />
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={ipqueueszResponse} />

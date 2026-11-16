@@ -1,11 +1,11 @@
-# max_inflight_total
+# max_inflight_total {#max_inflight_total}
 
 <Reloadable state="not-reloadable" />
-Batches allowed in flight across the server.
+Допустимое число одновременно выполняемых пакетов на сервере.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

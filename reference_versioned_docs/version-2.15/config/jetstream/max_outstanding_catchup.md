@@ -1,13 +1,11 @@
-# max_outstanding_catchup
+# max_outstanding_catchup {#max_outstanding_catchup}
 
 <Reloadable state="not-reloadable" />
-Max in-flight bytes for stream catch-up. This was introduced to
-control how much bandwidth should be dedicated during catch-up to
-guard against saturating and degrading performance of the network.
+Максимальное число байтов в передаче при синхронизации отставшего потока. Позволяет ограничить выделяемую на синхронизацию полосу пропускания, чтобы избежать перегрузки и снижения производительности сети.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `storage` | Size in bytes or string with a metric unit such as 100K, 50M, 3G, or 1T. | - |
+| `storage` | Размер в байтах или строка с метрической единицей, например 100K, 50M, 3G или 1T. | - |

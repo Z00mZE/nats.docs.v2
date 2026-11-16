@@ -1,12 +1,12 @@
-# js_api_timeout
+# js_api_timeout {#js_api_timeout}
 
 <Aliases aliases="api_timeout" />
 <Reloadable state="not-reloadable" />
-How long MQTT waits for a JetStream API call before giving up.
+Время ожидания вызова JetStream API в MQTT до отказа.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

@@ -1,11 +1,11 @@
-# headers
+# headers {#headers}
 
 <Reloadable state="not-reloadable" />
-Extra HTTP headers returned on the WebSocket upgrade response.
+Дополнительные HTTP-заголовки в ответе на переход к WebSocket.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `{ string: string }` | - | - |

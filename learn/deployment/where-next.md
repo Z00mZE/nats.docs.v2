@@ -1,165 +1,104 @@
 ---
 id: where-next
-title: "Where to go next"
+title: "Куда двигаться дальше"
 sidebar_position: 7
-description: Recap the deployment runbook and collect every page's production checklist in one place
+description: "Итоги процедур развёртывания и единый контрольный список перед эксплуатацией"
 ---
 
-# Where to go next
+# Куда двигаться дальше {#where-to-go-next}
 
-You started this chapter with a cluster design: the three-node
-`east` cluster the Topologies chapter designed, carrying the R3 `ORDERS`
-stream. You end it with that same cluster sized, running on Kubernetes,
-reconfigurable without downtime, upgradable without losing the stream,
-and locked down with TLS on every link. Those steps take a cluster
-design and produce a running system.
+В начале был проект трёхузлового `east` с потоком R3 `ORDERS` из главы топологий. Теперь тот же кластер рассчитан по ресурсам, работает в Kubernetes, меняет конфигурацию без простоя, обновляется без потери потока и защищён TLS на всех связях. Эти шаги превращают проект в работающую систему.
 
-This page introduces no new material. It collects the runbook you built
-into one place and points you at the chapters and Reference that take it
-further.
+Нового материала здесь нет. Страница собирает процедуру целиком и указывает главы и справочник для дальнейшего изучения.
 
-## The five operational steps
+## Пять эксплуатационных шагов {#the-five-operational-steps}
 
-Every page in this chapter advanced the same cluster through one
-operational step, and the order they run in matters.
+Каждая страница продвигала тот же кластер на один шаг. Порядок важен.
 
-You **size** it first. A node uses four resources (CPU, memory, disk,
-and file descriptors), and an R3 stream counts three times against the
-`ORDERS` account limits. Sizing means reading those limits before you
-commit to a PVC, rather than estimating them after the disk fills.
+Сначала **рассчитайте ресурсы**: CPU, память, диск и файловые дескрипторы. R3 учитывается втрое в ограничениях `ORDERS` без уровней. Прочитайте их до выделения PVC, а не после заполнения диска.
 
-You **deploy** it second. The NATS Helm chart stands the cluster up as a
-StatefulSet whose three pods, `nats-0`/`nats-1`/`nats-2`, are the same
-`n1-east`/`n2-east`/`n3-east` nodes from Topologies. The NACK controller
-turns the `ORDERS` stream and its consumers into declarative CRDs.
+Затем **разверните кластер**. Чарт NATS Helm создаёт StatefulSet с подами `nats-0`/`nats-1`/`nats-2`, соответствующими `n1-east`/`n2-east`/`n3-east`. NACK делает поток `ORDERS` и потребителей декларативными CRD.
 
-You **configure** it third. An include splits the config into
-per-account and per-region files, and a SIGHUP reloads the reloadable
-keys in place without a restart or a client reconnect. The reloader
-sidecar turns a ConfigMap edit into that SIGHUP.
+Третий шаг — **управление конфигурацией**. Включаемые файлы разделяют учётные записи и регионы, SIGHUP применяет поддерживаемые настройки без перезапуска и переподключений. Вспомогательный контейнер превращает правку ConfigMap в сигнал.
 
-You **upgrade** it fourth. Lame-duck mode lets a node drain its clients
-and transfer Raft leadership before it stops, and the upgrade order
-(non-leaders first, the meta-leader last, quorum protected by a
-PodDisruptionBudget) keeps the R3 ORDERS stream available the whole way.
+Четвёртый — **обновление**. Плавный вывод переводит клиентов и передаёт лидерство Raft до остановки узла. Сначала идут остальные узлы, затем лидер метаданных; PodDisruptionBudget защищает кворум R3.
 
-You **harden** it fifth. TLS goes on every link, the `ACME` credentials
-mount as files, a locked-down systemd unit strips the process of every
-capability it doesn't need, and the monitor port closes to everything
-but localhost.
+Пятый — **защита**. TLS включается на всех связях, учётные данные `ACME` подключаются файлами, systemd убирает ненужные возможности процесса, а мониторинг ограничивается локальным доступом.
 
-The five steps are size, deploy, configure, upgrade, and harden, and
-everything else in this chapter is a detail of one of those five.
+Расчёт, развёртывание, конфигурация, обновление и защита — остальные детали главы относятся к одному из этих шагов.
 
-## Where the exhaustive details are documented
+## Где находятся исчерпывающие сведения {#where-the-exhaustive-details-are-documented}
 
-The chapter is unversioned and concept-first. The exact keys, defaults,
-and ranges live in **Reference**, which is versioned and exhaustive. When
-you need the precise type of a config field or the full list of TLS or
-JetStream limit options, that's where to look.
+Глава объясняет понятия и не привязана к версии. Точные параметры, значения по умолчанию и диапазоны находятся в версионируемом **справочнике**. Там ищите тип поля или полный набор настроек TLS и ограничений JetStream.
 
-The full set of server configuration options lives in
-[Reference → Configuration](/reference/config). The handoff phrases
-throughout this chapter ("we only cover the keys this deployment needs")
-all point into it.
+Все настройки сервера описаны в [Справочнике → Конфигурация](/reference/config). Туда ведут ссылки на параметры, оставленные за рамками этого развёртывания.
 
-## Sibling deep dives
+## Связанные главы {#sibling-deep-dives}
 
-This chapter is the runbook, and five other chapters continue from where
-it ends. Each of those chapters covers a separate job, so the cluster you
-built here carries straight into them.
+Эта глава дала практическую инструкцию. Пять других продолжают работу с тем же кластером, каждая в своей области.
 
-The [Topologies deep dive](/learn/topologies) covers the **shape**. It's
-where the three-node `east` cluster came from, and where you go to choose
-a different shape (a super-cluster across regions, or leaf nodes at the
-edge) before you size and deploy it.
+[Топологии](/learn/topologies) объясняют **форму системы**. Оттуда взят `east`; туда нужно вернуться при выборе суперкластера между регионами или листовых узлов до расчёта и развёртывания.
 
-The [Clustering & Replication deep dive](/learn/clustering) covers the
-**Raft mechanics** this chapter only triggers. When a rolling upgrade
-transfers leadership, [raft-and-leaders](/learn/clustering/raft-and-leaders)
-explains how the meta-leader is elected and how R3 stays consistent
-through the change.
+[Кластеризация и репликация](/learn/clustering) раскрывает **механику Raft**. Страница [RAFT и лидеры](/learn/clustering/raft-and-leaders) объясняет выборы лидера метаданных и согласованность R3 при передаче роли.
 
-The [Security deep dive](/learn/security) covers the **auth model** behind
-the credentials this chapter mounts. This chapter turns TLS on and points
-the server at a creds file;
-[operator-mode](/learn/security/operator-mode) is where you design the
-operator `ACME`, the accounts, and the JWTs that the creds file carries.
+[Безопасность](/learn/security) объясняет **модель аутентификации** подключаемых файлов. Здесь мы включили TLS и задали пути, а [режим оператора](/learn/security/operator-mode) учит проектировать `ACME`, учётные записи и JWT.
 
-The [Monitoring deep dive](/learn/monitoring) covers **what to watch** once
-the cluster is live. This chapter exposes `/healthz` and runs
-`nats server report` as one-off operational checks;
-[monitoring-endpoints](/learn/monitoring/monitoring-endpoints) is where
-you turn those signals into ongoing alerting.
+[Мониторинг](/learn/monitoring) показывает, **за чем наблюдать** после запуска. Здесь `/healthz` и `nats server report` использовались разово; [конечные точки мониторинга](/learn/monitoring/monitoring-endpoints) превращают их в постоянное наблюдение и оповещение.
 
-The [Backup & Recovery deep dive](/learn/backup-recovery) covers
-**disaster recovery** (snapshotting the ORDERS stream and restoring it),
-the one production concern this chapter's hardening doesn't cover.
+[Резервное копирование и восстановление](/learn/backup-recovery) рассматривает **аварийное восстановление**: снимки ORDERS и возврат данных, от чего меры защиты этой главы не спасают.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-This is the end of the chapter. The Acme ORDERS cluster is now sized,
-deployed as a StatefulSet, split into includes you can reload live,
-upgradable through lame-duck mode, and hardened with TLS and a
-locked-down systemd unit. This page introduces no new scenario state; the
-cluster is running exactly as you left it on the hardening page.
+Глава завершена. Acme ORDERS рассчитан, развёрнут как StatefulSet, разделён на перечитываемые файлы, обновляется через плавный вывод и защищён TLS с ограниченным модулем systemd. Новых изменений сценария здесь нет.
 
-You now have the whole runbook: take a topology shape, size its resources,
-stand it up declaratively, change it without downtime, roll it forward
-safely, and lock it down. That runbook is the minimum baseline for
-operating any NATS cluster in production, not only this one.
+Теперь у вас полная процедура: выбрать топологию, рассчитать ресурсы, декларативно запустить, менять без простоя, безопасно обновлять и защищать. Это минимальная основа эксплуатации любого кластера NATS.
 
-## Production checklist
+## Контрольный список перед эксплуатацией {#production-checklist}
 
-Every page in this chapter closed with a Pitfalls section. This collects
-the action items from all of them in one place as a last pass before you
-run real orders through the cluster. Each group links back to the page
-that explains the why.
+Здесь собраны действия из разделов типичных ошибок для последней проверки перед реальными заказами. Каждая группа ссылается на объяснение причин.
 
-### Sizing & resources — see [Pitfalls](/learn/deployment/sizing-and-resources#pitfalls)
+### Размер системы и ресурсы — см. [Типичные ошибки](/learn/deployment/sizing-and-resources#pitfalls) {#sizing--resources--see-pitfalls}
 
-- [ ] Set `max_file_store` to a size the disk can actually hold; an oversized limit lets JetStream error mid-publish instead of failing fast. Test small (`10GB`) and watch `df -h`.
-- [ ] Keep `max_payload` at or below `max_pending`; a `max_payload` larger than `max_pending` refuses the server start. Hold `max_pending` at `≥ 10×` your peak message size.
-- [ ] Raise the file-descriptor limit before the process starts (`ulimit -n 800000`); a big cluster spends about two FDs per stream plus routes and gossip and exhausts the default cap.
-- [ ] Keep server versions aligned as you roll operator-mode upgrades, so every node reads the same JWT limit fields; account limits change only when you edit and push the account JWT, not on a server reload.
-- [ ] Read the live limits with `nats account info` before sizing, so you plan against the limits the server actually enforces.
+- [ ] Ограничьте `max_file_store` реальной вместимостью диска: иначе JetStream выдаст ошибку посреди публикации. Начните с `10GB` и следите за `df -h`.
+- [ ] Держите `max_payload` не выше `max_pending`, иначе сервер не запустится. Для `max_pending` оставляйте `≥ 10×` пикового размера сообщения.
+- [ ] До запуска увеличьте предел FD (`ulimit -n 800000`): потоки требуют примерно два дескриптора каждый, плюс маршруты и служебный обмен.
+- [ ] Согласуйте версии серверов в режиме оператора, чтобы поля ограничений JWT читались одинаково. Для изменения ограничений редактируйте и передавайте JWT, а не перечитывайте сервер.
+- [ ] Перед расчётом читайте действующие значения через `nats account info`.
 
-### Kubernetes — see [Pitfalls](/learn/deployment/kubernetes#pitfalls)
+### Kubernetes — см. [Типичные ошибки](/learn/deployment/kubernetes#pitfalls) {#kubernetes--see-pitfalls}
 
-- [ ] Use `volumeClaimTemplates` (the Helm default) so each PVC binds before its StatefulSet replica starts; an unbound PVC leaves the pod Pending.
-- [ ] Run the config reloader sidecar; a ConfigMap edit does not reload the server on its own.
-- [ ] Raise the readiness failure threshold so the probe doesn't flap not-ready during a healthy JetStream rebalance.
-- [ ] Never mix `nats` CLI mutations with a CRD-owned stream; NACK re-creates a deleted stream on its ~30s resync, and in `--control-loop` mode it also reverts manual config edits on about a one-minute cycle.
-- [ ] Confirm the CRD-created stream is R3 with `nats stream info ORDERS` from nats-box before trusting the declarative path.
+- [ ] Используйте `volumeClaimTemplates`, как по умолчанию в Helm: непривязанный PVC оставляет под в Pending.
+- [ ] Запускайте вспомогательный контейнер перечитывания: правка ConfigMap сама не применяет настройки.
+- [ ] Настройте достаточное окно проверок, чтобы нормальная синхронизация JetStream не вызывала ложные отказы.
+- [ ] Не меняйте через CLI поток, принадлежащий CRD: NACK пересоздаёт удалённый поток примерно за 30 секунд, а с `--control-loop` также отменяет ручные правки примерно раз в минуту.
+- [ ] Проверьте R3 через `nats stream info ORDERS` из nats-box после создания CRD.
 
-### Config management — see [Pitfalls](/learn/deployment/config-management#pitfalls)
+### Управление конфигурацией — см. [Типичные ошибки](/learn/deployment/config-management#pitfalls) {#config-management--see-pitfalls}
 
-- [ ] Write include paths as absolute paths; an include resolves relative to the config file's directory, not the working directory.
-- [ ] Fit a SIGHUP inside the graceful window; a reload during a rebalance can interrupt leadership transfer.
-- [ ] Monitor TLS cert expiry as you rotate it; a rotation without monitoring leaves old connections hung on an expired cert.
-- [ ] Trim oversized streams by hand after lowering `max_file`; a reload changes the ceiling, not the contents, so new writes fail until an admin trims.
-- [ ] Dry-run every config change with `nats-server -c nats.conf -t` before you reload it.
+- [ ] При необходимости задавайте абсолютные пути include: относительные считаются от каталога конфигурации, а не рабочего каталога.
+- [ ] Не отправляйте SIGHUP во время перераспределения и передачи лидерства.
+- [ ] Следите за сроком действия TLS и заменяйте сертификаты заблаговременно.
+- [ ] После уменьшения `max_file` вручную сократите слишком большой поток: перечитывание меняет предел, но не удаляет данные.
+- [ ] Проверяйте каждую правку через `nats-server -c nats.conf -t` до применения.
 
-### Rolling upgrades — see [Pitfalls](/learn/deployment/rolling-upgrades#pitfalls)
+### Последовательные обновления — см. [Типичные ошибки](/learn/deployment/rolling-upgrades#pitfalls) {#rolling-upgrades--see-pitfalls}
 
-- [ ] Measure rebalance time before setting `lame_duck_duration`; a duration shorter than the rebalance drops clients before replicas sync.
-- [ ] Transfer leadership before killing the meta-leader; upgrading it directly stalls stream ops until a new leader is elected (about 5 to 10 seconds with default timeouts). Do non-leaders first.
-- [ ] Set a PodDisruptionBudget with `minAvailable: 2`; without it an eviction can drain all three pods and lose quorum.
-- [ ] Stagger lame-duck start across ordinals; firing it on every node at once triggers a reconnect storm.
-- [ ] Read replicas and leader with `nats stream info ORDERS` before and after the upgrade to confirm the stream stayed R3.
+- [ ] Измерьте время перераспределения перед настройкой `lame_duck_duration`: короткий интервал отключит клиентов до синхронизации.
+- [ ] Передайте лидерство до остановки лидера метаданных; резкий перезапуск приостанавливает операции примерно на 5–10 секунд. Начинайте с остальных узлов.
+- [ ] Задайте PodDisruptionBudget с `minAvailable: 2`, сохраняя кворум при управляемом вытеснении.
+- [ ] Выводите узлы по очереди: одновременный запуск на всех вызовет массовое переподключение.
+- [ ] Читайте реплики и лидера через `nats stream info ORDERS` до и после, проверяя сохранение R3.
 
-### Hardening — see [Pitfalls](/learn/deployment/hardening#pitfalls)
+### Защита системы — см. [Типичные ошибки](/learn/deployment/hardening#pitfalls) {#hardening--see-pitfalls}
 
-- [ ] Keep the JetStream `store_dir` (and the pid/ports-file dirs) inside `ReadWritePaths`; `ProtectSystem=strict` blocks writes there, not the cert reads a reload does.
-- [ ] Set `MemoryMax` above the node's real peak usage (memory store plus buffers plus GC headroom); a cap below the working set gets the process OOM-killed under load, not at startup.
-- [ ] Open cluster port 6222 between nodes; a firewall that blocks it leaves nodes unable to form quorum and showing as orphans.
-- [ ] Bind the monitor port 8222 to localhost; exposed to the internet it leaks version, client count, and memory.
-- [ ] Connect with `--creds` and `--tlsca` and publish one order to prove auth and TLS are live before you call the cluster hardened.
+- [ ] Включите `store_dir`, каталоги PID и файла портов в `ReadWritePaths`: `ProtectSystem=strict` запрещает запись вне них, но не чтение сертификатов.
+- [ ] Задайте `MemoryMax` выше реального пикового расхода с буферами и запасом GC: иначе процесс завершится по OOM под нагрузкой.
+- [ ] Разрешите кластерный порт 6222 между узлами, иначе они не сформируют кворум.
+- [ ] На отдельном хосте привяжите 8222 к localhost: внешний доступ раскрывает версию, число клиентов и память.
+- [ ] Проверьте вход и TLS публикацией заказа с `--creds` и `--tlsca`.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Configuration](/reference/config) — every config key, flag,
-  default, and limit, versioned and exhaustive.
-- [Topologies deep dive](/learn/topologies) — the shape this chapter runs.
-- [Monitoring deep dive](/learn/monitoring) — what to watch once the
-  cluster is live.
+- [Справочник → Конфигурация](/reference/config) — полный версионируемый набор параметров, флагов, значений и ограничений.
+- [Топологии](/learn/topologies) — устройство развёртываемого кластера.
+- [Мониторинг](/learn/monitoring) — наблюдение после запуска.

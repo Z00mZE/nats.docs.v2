@@ -1,12 +1,11 @@
-# consumer_replicas
+# consumer_replicas {#consumer_replicas}
 
 <Reloadable state="noop" note="Accepted with a warning and then ignored, at every version." />
-Deprecated. The server logs a warning and ignores the value;
-consumer replication follows the stream.
+Устарело. Сервер записывает предупреждение и игнорирует значение; репликация потребителя определяется потоком.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

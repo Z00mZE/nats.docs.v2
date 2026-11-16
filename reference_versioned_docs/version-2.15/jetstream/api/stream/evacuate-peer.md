@@ -1,21 +1,21 @@
-# Evacuate Peer
+# Эвакуация участника {#evacuate-peer}
 
-Moves a stream and its consumers off one peer. The stream keeps its replica count and the server picks the replacement peer. If no peer qualifies under the stream's placement, the request fails with a peer remap error rather than leaving the group under-replicated.
+Перемещение потока и его потребителей с одного участника. Число реплик потока сохраняется, а сервер выбирает замену. Если ограничения размещения потока не позволяют выбрать участника, запрос завершается ошибкой переназначения вместо работы группы с недостаточным числом реплик.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamEvacuatePeerRequest from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/stream_evacuate_peer_request.json';
 import streamEvacuatePeerResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/stream_evacuate_peer_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.PEER.EVACUATE.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamEvacuatePeerRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamEvacuatePeerResponse} />

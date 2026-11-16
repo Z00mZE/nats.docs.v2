@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // priorityPrioritizedAnimated
@@ -67,17 +68,14 @@ function PriorityPrioritizedAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Prioritized.</strong> Each region pulls at a{" "}
-                <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>priority</span> (0–9).
-                The server serves the <em>lowest number that is currently
-                pulling</em>, so work shifts the instant a nearer region goes
-                quiet or comes back.
+                <strong>По приоритету.</strong> Каждый регион выполняет pull с{localizeDiagramContent(" ")}
+                <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>приоритет</span> (0–9). Сервер обслуживает <em>наименьшим номером среди выполняющих pull</em>, поэтому работа сразу перераспределяется, когда ближний регион замолкает или возвращается.
             </div>
 
             {/* open pulls: which priorities are asking right now, served one in green */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 12 }}>
-                <span style={{ color: "#6b7280" }}>open pulls:</span>
-                {workers.map((w, i) => {
+                <span style={{ color: "#6b7280" }}>открытые pull-запросы:</span>
+                {localizeDiagramContent(workers.map((w, i) => {
                     const isPulling = pulling[i];
                     const isServed = i === served;
                     return (
@@ -94,23 +92,23 @@ function PriorityPrioritizedAnimatedInner() {
                                 transition: "all 0.3s",
                             }}
                         >
-                            p{w.pri}
-                            {isServed ? " ← served" : !isPulling ? " quiet" : ""}
+                            p{localizeDiagramContent(w.pri)}
+                            {localizeDiagramContent(isServed ? " ← served" : !isPulling ? " quiet" : "")}
                         </span>
                     );
-                })}
+                }))}
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "18px 16px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fafafa", width: "fit-content" }}>
                 {/* dispatch consumer */}
                 <div style={{ width: 128 }}>
                     <div style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-                        dispatch
+                        распределение
                     </div>
                     <div style={{ height: 50, borderRadius: 8, border: `2px solid ${STREAM_BLUE}`, background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        <div style={{ fontSize: 11, color: "#6b7280" }}>serving</div>
+                        <div style={{ fontSize: 11, color: "#6b7280" }}>обслуживает</div>
                         <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: CONSUMER_GREEN }}>
-                            priority {workers[served].pri}
+                            приоритет {localizeDiagramContent(workers[served].pri)}
                         </div>
                     </div>
                 </div>
@@ -118,7 +116,7 @@ function PriorityPrioritizedAnimatedInner() {
                 {/* fan: pulling workers have a line; the served one is green with
                     flowing message dots; quiet workers drop their connection */}
                 <svg width={FAN_W} height={COL_H} style={{ flex: "none", overflow: "visible" }}>
-                    {workers.map((_, i) => {
+                    {localizeDiagramContent(workers.map((_, i) => {
                         if (!pulling[i]) return null;
                         const active = i === served;
                         return (
@@ -134,8 +132,8 @@ function PriorityPrioritizedAnimatedInner() {
                                 style={{ transition: "stroke 0.3s, stroke-width 0.3s" }}
                             />
                         );
-                    })}
-                    {Array.from({ length: N_DOTS }, (_, d) => {
+                    }))}
+                    {localizeDiagramContent(Array.from({ length: N_DOTS }, (_, d) => {
                         const f = (((elapsed % DOT_PERIOD) / DOT_PERIOD) + d / N_DOTS) % 1;
                         const y1 = workerCenterY(served);
                         return (
@@ -147,12 +145,12 @@ function PriorityPrioritizedAnimatedInner() {
                                 fill={CONSUMER_GREEN}
                             />
                         );
-                    })}
+                    }))}
                 </svg>
 
                 {/* workers */}
                 <div style={{ display: "flex", flexDirection: "column", gap: WBOX_GAP }}>
-                    {workers.map((w, i) => {
+                    {localizeDiagramContent(workers.map((w, i) => {
                         const isServed = i === served;
                         const isQuiet = !pulling[i];
                         const border = isServed ? CONSUMER_GREEN : isQuiet ? "#e5e7eb" : "#aebfd6";
@@ -179,8 +177,8 @@ function PriorityPrioritizedAnimatedInner() {
                                 }}
                             >
                                 <div>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: isServed ? CONSUMER_GREEN : WORKER_NAVY }}>{w.label}</div>
-                                    <div style={{ fontSize: 10, fontFamily: "monospace", color: subColor, marginTop: 1 }}>{sub}</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: isServed ? CONSUMER_GREEN : WORKER_NAVY }}>{localizeDiagramContent(w.label)}</div>
+                                    <div style={{ fontSize: 10, fontFamily: "monospace", color: subColor, marginTop: 1 }}>{localizeDiagramContent(sub)}</div>
                                 </div>
                                 <div
                                     style={{
@@ -193,15 +191,15 @@ function PriorityPrioritizedAnimatedInner() {
                                         padding: "1px 6px",
                                     }}
                                 >
-                                    p{w.pri}
+                                    p{localizeDiagramContent(w.pri)}
                                 </div>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
             </div>
 
-            <div style={{ marginTop: 12, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 12, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

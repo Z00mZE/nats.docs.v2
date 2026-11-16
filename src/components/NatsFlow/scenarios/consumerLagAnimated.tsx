@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -243,17 +244,17 @@ function ConsumerLagAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Stage:
+                    Этап:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {s}
+                        {localizeDiagramContent(s)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Live metrics strip */}
@@ -268,21 +269,21 @@ function ConsumerLagAnimatedInner({
                 }}
             >
                 <span style={{ color: NAVY }}>
-                    LastSeq <strong>{lastSeq}</strong>
+                    LastSeq <strong>{localizeDiagramContent(lastSeq)}</strong>
                 </span>
                 <span style={{ color: COMMIT_COLOR }}>
-                    Delivered <strong>{delivered}</strong>
+                    Доставлено <strong>{localizeDiagramContent(delivered)}</strong>
                 </span>
                 <span style={{ color: lag > 0 ? FAIL_COLOR : COMMIT_COLOR }}>
-                    Lag <strong>{lag}</strong>
+                    Отставание <strong>{localizeDiagramContent(lag)}</strong>
                 </span>
                 <span style={{ color: inFlight ? MSG_COLOR : IDLE_COLOR }}>
-                    In-flight <strong>{inFlight ? "yes" : "0"}</strong>
+                    В обработке <strong>{localizeDiagramContent(inFlight ? "yes" : "0")}</strong>
                 </span>
                 <span
                     style={{ color: numRedelivered > 0 ? FAIL_COLOR : LIME }}
                 >
-                    NumRedelivered <strong>{numRedelivered}</strong>
+                    NumRedelivered <strong>{localizeDiagramContent(numRedelivered)}</strong>
                 </span>
             </div>
 
@@ -297,7 +298,7 @@ function ConsumerLagAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -328,9 +329,9 @@ function ConsumerLagAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

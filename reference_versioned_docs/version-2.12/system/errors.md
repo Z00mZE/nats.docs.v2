@@ -1,232 +1,231 @@
 ---
-title: System Errors
-sidebar_label: Errors
-description: NATS server non-JetStream errors for client, route, gateway, and leafnode connections
+title: "Системные ошибки"
+sidebar_label: "Ошибки"
+description: "Ошибки сервера NATS вне JetStream для соединений клиентов, маршрутов, шлюзов и листовых узлов"
 ---
 
-# System Errors
+# Системные ошибки {#system-errors}
 
-This page documents all non-JetStream errors that the NATS server can return to clients, routes, gateways, and leafnode connections.
+Все ошибки, не относящиеся к JetStream, которые сервер NATS может возвращать клиентам и соединениям маршрутов, шлюзов и листовых узлов.
 
 
-## Authentication and Authorization Errors
+## Ошибки аутентификации и авторизации {#authentication-and-authorization-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Authentication expired | `ErrAuthExpired` | An expired authorization due to timeout. |
-| Proxy is not trusted | `ErrAuthProxyNotTrusted` | An error condition on failed authentication due to a connection from a proxy not in the list of trusted proxies. |
-| Proxy connection required | `ErrAuthProxyRequired` | An error condition on failed authentication due to a connection not coming from a proxy. |
-| Authentication timeout | `ErrAuthTimeout` | An error condition on failed authorization due to timeout. |
-| Authentication error | `ErrAuthentication` | An error condition on failed authentication. |
-| Credentials have been revoked | `ErrRevocation` | Returned when a credential has been revoked. |
-| Service import not authorized | `ErrServiceImportAuthorization` | Returned when a service import is not authorized. |
-| Stream import not authorized | `ErrStreamImportAuthorization` | Returned when a stream import is not authorized. |
-| Authorization Violation | `Authorization Violation` | Client attempted an operation that violates configured permissions |
-| User Authentication Expired | `User Authentication Expired` | User JWT or credentials have expired |
-| Account Authentication Expired | `Account Authentication Expired` | Account authentication has expired |
-| User Authentication Revoked | `User Authentication Revoked` | User credentials have been revoked |
-| Permissions Violation for Publish | `Permissions Violation for Publish` | Client attempted to publish to a subject without permission |
-| Permissions Violation for Subscription | `Permissions Violation for Subscription` | Client attempted to subscribe to a subject without permission |
+| Срок аутентификации истёк | `ErrAuthExpired` | Срок авторизации истёк из-за тайм-аута. |
+| Прокси не является доверенным | `ErrAuthProxyNotTrusted` | Ошибка аутентификации: соединение поступило от прокси, не входящего в список доверенных. |
+| Требуется соединение через прокси | `ErrAuthProxyRequired` | Ошибка аутентификации: соединение поступило не через прокси. |
+| Тайм-аут аутентификации | `ErrAuthTimeout` | Ошибка авторизации из-за истечения времени ожидания. |
+| Ошибка аутентификации | `ErrAuthentication` | Ошибка аутентификации. |
+| Учётные данные отозваны | `ErrRevocation` | Возвращается при отзыве учётных данных. |
+| Импорт сервиса не авторизован | `ErrServiceImportAuthorization` | Возвращается, если импорт сервиса не авторизован. |
+| Импорт потока не авторизован | `ErrStreamImportAuthorization` | Возвращается, если импорт потока не авторизован. |
+| Нарушение авторизации | `Authorization Violation` | Клиент попытался выполнить операцию, нарушающую настроенные разрешения |
+| Срок аутентификации пользователя истёк | `User Authentication Expired` | Срок действия JWT или учётных данных пользователя истёк |
+| Срок аутентификации аккаунта истёк | `Account Authentication Expired` | Срок аутентификации аккаунта истёк |
+| Аутентификация пользователя отозвана | `User Authentication Revoked` | Учётные данные пользователя отозваны |
+| Нарушение разрешения на публикацию | `Permissions Violation for Publish` | Клиент попытался опубликовать сообщение в субъект без разрешения |
+| Нарушение разрешения на подписку | `Permissions Violation for Subscription` | Клиент попытался подписаться на субъект без разрешения |
 
 
-## Connection Limit Errors
+## Ошибки лимитов соединений {#connection-limit-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Maximum account active connections exceeded | `ErrTooManyAccountConnections` | That an account has reached its maximum number of active connections. |
-| Maximum connections exceeded | `ErrTooManyConnections` | A client that the maximum number of connections supported by the server has been reached. |
-| Maximum subscriptions exceeded | `ErrTooManySubs` | A client that the maximum number of subscriptions per connection has been reached. |
-| Connection Throttling Is Active | `Connection Throttling Is Active` | Server is actively throttling new connections |
-| Maximum Clients Exceeded | `Maximum Clients Exceeded` | Server has reached its maximum number of allowed clients |
+| Превышен лимит активных соединений аккаунта | `ErrTooManyAccountConnections` | Аккаунт достиг максимального числа активных соединений. |
+| Превышен лимит соединений | `ErrTooManyConnections` | Достигнуто максимальное число поддерживаемых сервером соединений. |
+| Превышен лимит подписок | `ErrTooManySubs` | Достигнуто максимальное число подписок на соединение. |
+| Действует ограничение частоты соединений | `Connection Throttling Is Active` | Сервер ограничивает частоту новых соединений |
+| Превышен лимит клиентов | `Maximum Clients Exceeded` | Сервер достиг максимального допустимого числа клиентов |
 
 
-## Protocol and Payload Errors
+## Ошибки протокола и полезной нагрузки {#protocol-and-payload-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Invalid client protocol | `ErrBadClientProtocol` | A client requested an invalid client protocol. |
-| Bad message header detected | `ErrBadMsgHeader` | The parser detected a bad message header |
-| Maximum control line exceeded | `ErrMaxControlLine` | An error condition when the control line is too big. |
-| Maximum payload exceeded | `ErrMaxPayload` | An error condition when the payload is too big. |
-| Message headers not supported | `ErrMsgHeadersNotSupported` | The parser detected a message header but they are not supported on this server. |
-| No responders requires headers support | `ErrNoRespondersRequiresHeaders` | That a client needs to have headers on if they want no responders behavior. |
-| Maximum Payload Violation | `Maximum Payload Violation` | Published message exceeds the configured maximum payload size |
-| Protocol Violation | `Protocol Violation` | Client violated the NATS protocol |
-| Parser Error | `Parser Error` | Server encountered an error parsing client protocol |
+| Недопустимый клиентский протокол | `ErrBadClientProtocol` | Клиент запросил недопустимый клиентский протокол. |
+| Обнаружен некорректный заголовок сообщения | `ErrBadMsgHeader` | Анализатор обнаружил некорректный заголовок сообщения |
+| Превышена длина строки управления | `ErrMaxControlLine` | Слишком длинная строка управления. |
+| Превышен размер полезной нагрузки | `ErrMaxPayload` | Слишком большая полезная нагрузка. |
+| Заголовки сообщений не поддерживаются | `ErrMsgHeadersNotSupported` | Анализатор обнаружил заголовок сообщения, но этот сервер не поддерживает заголовки. |
+| Уведомление об отсутствии обработчиков требует поддержки заголовков | `ErrNoRespondersRequiresHeaders` | Клиенту нужно включить заголовки для получения уведомлений об отсутствии обработчиков. |
+| Нарушен лимит полезной нагрузки | `Maximum Payload Violation` | Опубликованное сообщение превышает настроенный максимальный размер полезной нагрузки |
+| Нарушение протокола | `Protocol Violation` | Клиент нарушил протокол NATS |
+| Ошибка синтаксического анализатора | `Parser Error` | Сервер обнаружил ошибку разбора клиентского протокола |
 
 
-## Subject and Publishing Errors
+## Ошибки субъектов и публикации {#subject-and-publishing-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Invalid publish subject | `ErrBadPublishSubject` | An error condition for an invalid publish subject. |
-| Bad qualifier | `ErrBadQualifier` | Used to error on a bad qualifier for a transform. |
-| Invalid subject | `ErrBadSubject` | An error condition for an invalid subject. |
-| Invalid mapping destination | `ErrInvalidMappingDestination` | Used for all subject mapping destination errors |
-| Invalid transform | `ErrInvalidMappingDestinationSubject` | Used to error on a bad transform destination mapping |
-| Malformed subject | `ErrMalformedSubject` | Returned when a subscription is made with a subject that does not conform to subject rules. |
-| Wildcard index out of range | `ErrMappingDestinationIndexOutOfRange` | Returned when the mapping destination function is passed an out of range wildcard index value for one of it's arguments |
-| Function argument is invalid or in the wrong format | `ErrMappingDestinationInvalidArg` | Returned when the mapping destination function is passed and invalid argument |
-| Not enough arguments passed to the function | `ErrMappingDestinationNotEnoughArgs` | Returned when the mapping destination function is not passed enough arguments |
-| The only mapping function allowed for import transforms is `{{Wildcard()}}` | `ErrMappingDestinationNotSupportedForImport` | Returned when you try to use a mapping function other than wildcard in a transform that needs to be reversible (i.e. an import) |
-| Not using all of the token wildcard(s) | `ErrMappingDestinationNotUsingAllWildcards` | Used to error on a transform destination not using all of the token wildcards |
-| Too many arguments passed to the function | `ErrMappingDestinationTooManyArgs` | Returned when the mapping destination function is passed too many arguments |
-| No matching transforms available | `ErrNoTransforms` | No subject transforms are available to map this subject. |
-| Reserved account | `ErrReservedAccount` | A reserved account that can not be created. |
-| Reserved internal subject | `ErrReservedPublishSubject` | An error condition when sending to a reserved subject, e.g. `_SYS.>` |
-| Subject has exceeded number of tokens limit | `ErrTooManySubTokens` | A client that the subject has too many tokens. |
-| Unknown function | `ErrUnknownMappingDestinationFunction` | Returned when a subject mapping destination contains an unknown mustache-escaped mapping function. |
-| Invalid Subscription | `Invalid Subscription` | Subscription request is invalid |
+| Недопустимый субъект публикации | `ErrBadPublishSubject` | Недопустимый субъект публикации. |
+| Неверный квалификатор | `ErrBadQualifier` | Ошибка неверного квалификатора преобразования. |
+| Недопустимый субъект | `ErrBadSubject` | Недопустимый субъект. |
+| Недопустимое назначение отображения | `ErrInvalidMappingDestination` | Используется для всех ошибок назначения отображения субъектов |
+| Недопустимое преобразование | `ErrInvalidMappingDestinationSubject` | Ошибка неверного отображения назначения преобразования |
+| Некорректный субъект | `ErrMalformedSubject` | Возвращается при подписке на субъект, не соответствующий правилам субъектов. |
+| Индекс подстановки вне диапазона | `ErrMappingDestinationIndexOutOfRange` | Возвращается, если аргумент функции назначения отображения содержит индекс подстановки вне допустимого диапазона |
+| Аргумент функции недопустим или имеет неверный формат | `ErrMappingDestinationInvalidArg` | Возвращается, если функции назначения отображения передан недопустимый аргумент |
+| Функции передано недостаточно аргументов | `ErrMappingDestinationNotEnoughArgs` | Возвращается, если функции назначения отображения передано недостаточно аргументов |
+| Единственная функция отображения, разрешённая для преобразований импорта, — `{{Wildcard()}}` | `ErrMappingDestinationNotSupportedForImport` | Возвращается при попытке использовать функцию отображения, отличную от подстановки, в преобразовании, которое должно быть обратимым (например, в импорте) |
+| Используются не все подстановки токенов | `ErrMappingDestinationNotUsingAllWildcards` | Ошибка назначения преобразования, в котором используются не все подстановки токенов |
+| Функции передано слишком много аргументов | `ErrMappingDestinationTooManyArgs` | Возвращается, если функции назначения отображения передано слишком много аргументов |
+| Нет подходящих преобразований | `ErrNoTransforms` | Нет преобразований субъектов для отображения этого субъекта. |
+| Зарезервированный аккаунт | `ErrReservedAccount` | Зарезервированный аккаунт, который нельзя создать. |
+| Зарезервированный внутренний субъект | `ErrReservedPublishSubject` | Отправка в зарезервированный субъект, например `_SYS.>`. |
+| Превышен лимит числа токенов субъекта | `ErrTooManySubTokens` | В субъекте клиента слишком много токенов. |
+| Неизвестная функция | `ErrUnknownMappingDestinationFunction` | Возвращается, если назначение отображения субъекта содержит неизвестную функцию отображения в фигурных скобках. |
+| Недопустимая подписка | `Invalid Subscription` | Недопустимый запрос подписки |
 
 
-## TLS and Security Errors
+## Ошибки TLS и безопасности {#tls-and-security-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Certificate not pinned | `ErrCertNotPinned` | Returned when pinned certs are set and the certificate is not in it |
-| Secure Connection - TLS Required | `Secure Connection - TLS Required` | Server requires TLS but client attempted non-TLS connection |
-| TLS Handshake Error | `TLS Handshake Error` | TLS handshake with client failed |
+| Сертификат не закреплён | `ErrCertNotPinned` | Возвращается, если список закреплённых сертификатов задан, но сертификат в него не входит |
+| Защищённое соединение: требуется TLS | `Secure Connection - TLS Required` | Сервер требует TLS, но клиент попытался подключиться без TLS |
+| Ошибка рукопожатия TLS | `TLS Handshake Error` | Рукопожатие TLS с клиентом не удалось |
 
 
-## Account Errors
+## Ошибки аккаунтов {#account-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Account exists | `ErrAccountExists` | Returned when an account is attempted to be registered but already exists. |
-| Account expired | `ErrAccountExpired` | Returned when an account has expired. |
-| Account resolver no new claims | `ErrAccountResolverSameClaims` | Returned when same claims have been fetched. |
-| Account resolver update too soon | `ErrAccountResolverUpdateTooSoon` | Returned when we attempt an update too soon to last request. |
-| Account validation failed | `ErrAccountValidation` | Returned when an account has failed validation. |
-| Bad account | `ErrBadAccount` | A malformed or incorrect account. |
-| Bad sampling percentage, should be 1-100 | `ErrBadSampling` | Returned when the sampling for latency tracking is not 1 `>=` sample `<=` 100. |
-| Bad service response type | `ErrBadServiceType` | Returned when latency tracking is being applied to non-singleton response types. |
-| Import forms a cycle | `ErrImportFormsCycle` | Returned when an import would form a cycle. |
-| Account missing | `ErrMissingAccount` | Returned when an account does not exist. |
-| Service missing | `ErrMissingService` | Returned when an account does not have an exported service. |
-| Account resolver missing | `ErrNoAccountResolver` | Returned when we attempt an update but do not have an account resolver. |
-| System account not setup | `ErrNoSysAccount` | Returned when an attempt to publish or subscribe is made when there is no internal system account defined. |
-| Stream import prefix can not contain wildcard tokens | `ErrStreamImportBadPrefix` | Returned when a stream import prefix contains wildcards. |
-| Stream import already exists | `ErrStreamImportDuplicate` | Returned when a stream import is a duplicate of one that already exists. |
-| Failed Account Registration | `Failed Account Registration` | Failed to register client with account |
+| Аккаунт существует | `ErrAccountExists` | Возвращается при попытке регистрации уже существующего аккаунта. |
+| Срок действия аккаунта истёк | `ErrAccountExpired` | Возвращается, если срок действия аккаунта истёк. |
+| В резолвере аккаунтов нет новых утверждений | `ErrAccountResolverSameClaims` | Возвращается при получении тех же утверждений. |
+| Слишком частое обновление резолвера аккаунтов | `ErrAccountResolverUpdateTooSoon` | Возвращается при попытке обновления слишком скоро после предыдущего запроса. |
+| Проверка аккаунта не пройдена | `ErrAccountValidation` | Возвращается, если аккаунт не прошёл проверку. |
+| Неверный аккаунт | `ErrBadAccount` | Некорректный или недопустимый аккаунт. |
+| Неверный процент выборки: требуется 1–100 | `ErrBadSampling` | Возвращается, если доля выборки для отслеживания задержки не удовлетворяет условию 1 `>=` sample `<=` 100. |
+| Неверный тип ответа сервиса | `ErrBadServiceType` | Возвращается при применении отслеживания задержки к типам ответов, не являющимся одиночными. |
+| Импорт образует цикл | `ErrImportFormsCycle` | Возвращается, если импорт образовал бы цикл. |
+| Аккаунт отсутствует | `ErrMissingAccount` | Возвращается, если аккаунт не существует. |
+| Сервис отсутствует | `ErrMissingService` | Возвращается, если у аккаунта нет экспортированного сервиса. |
+| Резолвер аккаунтов отсутствует | `ErrNoAccountResolver` | Возвращается при попытке обновления без резолвера аккаунтов. |
+| Системный аккаунт не настроен | `ErrNoSysAccount` | Возвращается при попытке публикации или подписки, если внутренний системный аккаунт не задан. |
+| Префикс импорта потока не может содержать токены подстановки | `ErrStreamImportBadPrefix` | Возвращается, если префикс импорта потока содержит подстановки. |
+| Импорт потока уже существует | `ErrStreamImportDuplicate` | Возвращается, если импорт потока дублирует существующий. |
+| Ошибка регистрации аккаунта | `Failed Account Registration` | Не удалось зарегистрировать клиента в аккаунте |
 
 
-## Server Name and Cluster Errors
+## Ошибки имён серверов и кластеров {#server-name-and-cluster-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Cluster name conflicts between cluster and gateway definitions | `ErrClusterNameConfigConflict` | That the options for cluster name in cluster and gateway are in conflict. |
-| Cluster name cannot contain spaces | `ErrClusterNameHasSpaces` | That the cluster name contains spaces, which is not allowed. |
-| Cluster name from remote server conflicts | `ErrClusterNameRemoteConflict` | That a remote server has a different cluster name. |
-| Duplicate server name | `ErrDuplicateServerName` | Returned when processing a server remote connection and the server reports that this server name is already used in the cluster. |
-| Gateway name cannot contain spaces | `ErrGatewayNameHasSpaces` | That the gateway name contains spaces, which is not allowed. |
-| Remote leafnode has same cluster name | `ErrLeafNodeHasSameClusterName` | An error condition when a leafnode is a cluster and it has the same cluster name as the hub cluster. |
-| Server name cannot contain spaces | `ErrServerNameHasSpaces` | That the server name contains spaces, which is not allowed. |
+| Конфликт имён кластера в определениях cluster и gateway | `ErrClusterNameConfigConflict` | Настройки имени кластера в cluster и gateway конфликтуют. |
+| Имя кластера не может содержать пробелы | `ErrClusterNameHasSpaces` | Имя кластера содержит недопустимые пробелы. |
+| Имя кластера удалённого сервера конфликтует с локальным | `ErrClusterNameRemoteConflict` | Удалённый сервер имеет другое имя кластера. |
+| Повторяющееся имя сервера | `ErrDuplicateServerName` | Возвращается при обработке удалённого серверного соединения, если сервер сообщает, что имя этого сервера уже используется в кластере. |
+| Имя шлюза не может содержать пробелы | `ErrGatewayNameHasSpaces` | Имя шлюза содержит недопустимые пробелы. |
+| Удалённый листовой узел имеет то же имя кластера | `ErrLeafNodeHasSameClusterName` | Листовой узел является кластером и имеет то же имя кластера, что и центральный кластер. |
+| Имя сервера не может содержать пробелы | `ErrServerNameHasSpaces` | Имя сервера содержит недопустимые пробелы. |
 
 
-## Wrong Port Connection Errors
+## Ошибки подключения к неверному порту {#wrong-port-connection-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Attempted to connect to leaf node port | `ErrClientConnectedToLeafNodePort` | An error condition when a client attempted to connect to the leaf node listen port. |
-| Attempted to connect to route port | `ErrClientConnectedToRoutePort` | An error condition when a client attempted to connect to the route listen port. |
-| Attempted to connect to gateway port | `ErrClientOrRouteConnectedToGatewayPort` | An error condition when a client or route attempted to connect to the Gateway port. |
-| Attempted to connect to wrong port | `ErrConnectedToWrongPort` | An error condition when a connection is attempted to the wrong listen port (for instance a LeafNode to a client port, etc...) |
+| Попытка подключения к порту листовых узлов | `ErrClientConnectedToLeafNodePort` | Клиент попытался подключиться к порту приёма соединений листовых узлов. |
+| Попытка подключения к порту маршрутов | `ErrClientConnectedToRoutePort` | Клиент попытался подключиться к порту приёма маршрутных соединений. |
+| Попытка подключения к порту шлюза | `ErrClientOrRouteConnectedToGatewayPort` | Клиент или маршрут попытался подключиться к порту шлюза. |
+| Попытка подключения к неверному порту | `ErrConnectedToWrongPort` | Попытка подключения к неверному порту (например, листового узла к клиентскому порту). |
 
 
-## Gateway-Specific Errors
+## Ошибки шлюзов {#gateway-specific-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Wrong gateway | `ErrWrongGateway` | An error condition when a server receives a connect request from a remote Gateway with a destination name that does not match the server's Gateway's name. |
-| Connection to Gateway Rejected | `Connection to Gateway Rejected` | Gateway rejected the connection |
+| Неверный шлюз | `ErrWrongGateway` | Сервер получил запрос подключения от удалённого шлюза с именем назначения, не совпадающим с именем шлюза этого сервера. |
+| Соединение со шлюзом отклонено | `Connection to Gateway Rejected` | Шлюз отклонил соединение |
 
 
-## Leafnode-Specific Errors
+## Ошибки листовых узлов {#leafnode-specific-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Leafnodes disabled | `ErrLeafNodeDisabled` | When we disable leafnodes. |
-| Leafnode loop detected | `ErrLeafNodeLoop` | A leafnode is trying to register for a cluster we already have registered. |
+| Листовые узлы отключены | `ErrLeafNodeDisabled` | Листовые узлы отключены. |
+| Обнаружен цикл листовых узлов | `ErrLeafNodeLoop` | Листовой узел пытается зарегистрироваться для кластера, который уже зарегистрирован. |
 
 
-## Connection State Errors
+## Ошибки состояния соединений {#connection-state-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Connection closed | `ErrConnectionClosed` | An error condition on a closed connection. |
-| Server is not running | `ErrServerNotRunning` | Used to signal an error that a server is not running. |
-| Stale Connection | `Stale Connection` | Connection is stale and will be closed |
+| Соединение закрыто | `ErrConnectionClosed` | Операция с закрытым соединением. |
+| Сервер не работает | `ErrServerNotRunning` | Сообщает об ошибке: сервер не работает. |
+| Устаревшее соединение | `Stale Connection` | Соединение устарело и будет закрыто |
 
 
-## Other Errors
+## Другие ошибки {#other-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Search cycle depth exhausted | `ErrCycleSearchDepth` | Returned when we have exceeded our maximum search depth.. |
-| Minimum version required | `ErrMinimumVersionRequired` | Returned when a connection is not at the minimum version required. |
-| Subscribe permission violation | `ErrSubscribePermissionViolation` | Returned when processing of a subscription fails due to permissions. |
+| Исчерпана глубина поиска циклов | `ErrCycleSearchDepth` | Возвращается при превышении максимальной глубины поиска. |
+| Требуется минимальная версия | `ErrMinimumVersionRequired` | Возвращается, если соединение не соответствует минимальной требуемой версии. |
+| Нарушение разрешения на подписку | `ErrSubscribePermissionViolation` | Возвращается при отказе в обработке подписки из-за разрешений. |
 
 
-## Route-Specific Errors
+## Ошибки маршрутов {#route-specific-errors}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Route Authorization Violation | `Route Authorization Violation` | Route connection failed authorization |
-| Duplicate Route | `Duplicate Route` | Route connection already exists to this server |
+| Нарушение авторизации маршрута | `Route Authorization Violation` | Маршрутное соединение не прошло авторизацию |
+| Повторный маршрут | `Duplicate Route` | Маршрутное соединение с этим сервером уже существует |
 
 
-## Slow Consumer and Flow Control
+## Медленные потребители и управление потоком {#slow-consumer-and-flow-control}
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Slow Consumer Detected | `Slow Consumer Detected` | Server detected a slow consumer that is not keeping up with message delivery |
-| Consumer Is Slow | `Consumer Is Slow` | Consumer is processing messages too slowly |
-| Write Deadline Exceeded | `Write Deadline Exceeded` | Write operation to client exceeded the configured deadline |
+| Обнаружен медленный потребитель | `Slow Consumer Detected` | Сервер обнаружил медленного потребителя, не успевающего принимать сообщения |
+| Медленный потребитель | `Consumer Is Slow` | Потребитель обрабатывает сообщения слишком медленно |
+| Превышен срок записи | `Write Deadline Exceeded` | Запись клиенту превысила настроенный срок ожидания |
 
 
-## Connection Close Reasons
+## Причины закрытия соединений {#connection-close-reasons}
 
-These are the reasons a client connection may be closed by the server.
-They appear in monitoring data and disconnect events.
+Причины, по которым сервер может закрыть клиентское соединение. Они отображаются в данных мониторинга и событиях отключения.
 
-| Error | Constant | Description |
+| Ошибка | Константа | Описание |
 |-------|----------|-------------|
-| Client Closed | `ClientClosed` | Client Closed |
-| Authentication Timeout | `AuthenticationTimeout` | Authentication Timeout |
-| Authentication Failure | `AuthenticationViolation` | Authentication Failure |
-| TLS Handshake Failure | `TLSHandshakeError` | TLS Handshake Failure |
-| Slow Consumer (Pending Bytes) | `SlowConsumerPendingBytes` | Slow Consumer (Pending Bytes) |
-| Slow Consumer (Write Deadline) | `SlowConsumerWriteDeadline` | Slow Consumer (Write Deadline) |
-| Write Error | `WriteError` | Write Error |
-| Read Error | `ReadError` | Read Error |
-| Parse Error | `ParseError` | Parse Error |
-| Stale Connection | `StaleConnection` | Stale Connection |
-| Protocol Violation | `ProtocolViolation` | Protocol Violation |
-| Bad Client Protocol Version | `BadClientProtocolVersion` | Bad Client Protocol Version |
-| Incorrect Port | `WrongPort` | Incorrect Port |
-| Maximum Account Connections Exceeded | `MaxAccountConnectionsExceeded` | Maximum Account Connections Exceeded |
-| Maximum Connections Exceeded | `MaxConnectionsExceeded` | Maximum Connections Exceeded |
-| Maximum Message Payload Exceeded | `MaxPayloadExceeded` | Maximum Message Payload Exceeded |
-| Maximum Control Line Exceeded | `MaxControlLineExceeded` | Maximum Control Line Exceeded |
-| Maximum Subscriptions Exceeded | `MaxSubscriptionsExceeded` | Maximum Subscriptions Exceeded |
-| Duplicate Route | `DuplicateRoute` | Duplicate Route |
-| Route Removed | `RouteRemoved` | Route Removed |
-| Server Shutdown | `ServerShutdown` | Server Shutdown |
-| Authentication Expired | `AuthenticationExpired` | Authentication Expired |
-| Wrong Gateway | `WrongGateway` | Wrong Gateway |
-| Missing Account | `MissingAccount` | Missing Account |
-| Credentials Revoked | `Revocation` | Credentials Revoked |
-| Internal Client | `InternalClient` | Internal Client |
-| Message Header Violation | `MsgHeaderViolation` | Message Header Violation |
-| No Responders Requires Headers | `NoRespondersRequiresHeaders` | No Responders Requires Headers |
-| Cluster Name Conflict | `ClusterNameConflict` | Cluster Name Conflict |
-| Duplicate Remote LeafNode Connection | `DuplicateRemoteLeafnodeConnection` | Duplicate Remote LeafNode Connection |
-| Duplicate Client ID | `DuplicateClientID` | Duplicate Client ID |
-| Duplicate Server Name | `DuplicateServerName` | Duplicate Server Name |
-| Minimum Version Required | `MinimumVersionRequired` | Minimum Version Required |
-| Cluster Names Identical | `ClusterNamesIdentical` | Cluster Names Identical |
-| Kicked | `Kicked` | Kicked |
-| Proxy Not Trusted | `ProxyNotTrusted` | Proxy Not Trusted |
-| Proxy Required | `ProxyRequired` | Proxy Required |
+| Закрыто клиентом | `ClientClosed` | Закрыто клиентом |
+| Тайм-аут аутентификации | `AuthenticationTimeout` | Тайм-аут аутентификации |
+| Ошибка аутентификации | `AuthenticationViolation` | Ошибка аутентификации |
+| Сбой рукопожатия TLS | `TLSHandshakeError` | Сбой рукопожатия TLS |
+| Медленный потребитель (ожидающие байты) | `SlowConsumerPendingBytes` | Медленный потребитель (ожидающие байты) |
+| Медленный потребитель (срок записи) | `SlowConsumerWriteDeadline` | Медленный потребитель (срок записи) |
+| Ошибка записи | `WriteError` | Ошибка записи |
+| Ошибка чтения | `ReadError` | Ошибка чтения |
+| Ошибка разбора | `ParseError` | Ошибка разбора |
+| Устаревшее соединение | `StaleConnection` | Устаревшее соединение |
+| Нарушение протокола | `ProtocolViolation` | Нарушение протокола |
+| Неверная версия клиентского протокола | `BadClientProtocolVersion` | Неверная версия клиентского протокола |
+| Неверный порт | `WrongPort` | Неверный порт |
+| Превышен лимит соединений аккаунта | `MaxAccountConnectionsExceeded` | Превышен лимит соединений аккаунта |
+| Превышен лимит соединений | `MaxConnectionsExceeded` | Превышен лимит соединений |
+| Превышен размер полезной нагрузки сообщения | `MaxPayloadExceeded` | Превышен размер полезной нагрузки сообщения |
+| Превышена длина строки управления | `MaxControlLineExceeded` | Превышена длина строки управления |
+| Превышен лимит подписок | `MaxSubscriptionsExceeded` | Превышен лимит подписок |
+| Повторный маршрут | `DuplicateRoute` | Повторный маршрут |
+| Маршрут удалён | `RouteRemoved` | Маршрут удалён |
+| Завершение работы сервера | `ServerShutdown` | Завершение работы сервера |
+| Срок аутентификации истёк | `AuthenticationExpired` | Срок аутентификации истёк |
+| Неверный шлюз | `WrongGateway` | Неверный шлюз |
+| Аккаунт отсутствует | `MissingAccount` | Аккаунт отсутствует |
+| Учётные данные отозваны | `Revocation` | Учётные данные отозваны |
+| Внутренний клиент | `InternalClient` | Внутренний клиент |
+| Нарушение формата заголовка сообщения | `MsgHeaderViolation` | Нарушение формата заголовка сообщения |
+| Для уведомления об отсутствии обработчиков нужны заголовки | `NoRespondersRequiresHeaders` | Для уведомления об отсутствии обработчиков нужны заголовки |
+| Конфликт имён кластеров | `ClusterNameConflict` | Конфликт имён кластеров |
+| Повторное соединение удалённого листового узла | `DuplicateRemoteLeafnodeConnection` | Повторное соединение удалённого листового узла |
+| Повторяющийся идентификатор клиента | `DuplicateClientID` | Повторяющийся идентификатор клиента |
+| Повторяющееся имя сервера | `DuplicateServerName` | Повторяющееся имя сервера |
+| Требуется минимальная версия | `MinimumVersionRequired` | Требуется минимальная версия |
+| Имена кластеров совпадают | `ClusterNamesIdentical` | Имена кластеров совпадают |
+| Принудительно отключено | `Kicked` | Принудительно отключено |
+| Недоверенный прокси | `ProxyNotTrusted` | Недоверенный прокси |
+| Требуется прокси | `ProxyRequired` | Требуется прокси |
 
 

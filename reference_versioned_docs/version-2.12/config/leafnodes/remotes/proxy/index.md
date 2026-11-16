@@ -1,15 +1,15 @@
-# proxy
+# proxy {#proxy}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-Reach the remote through an HTTP proxy.
+Подключаться к удалённому узлу через HTTP-прокси.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`url`](./url.md) | Proxy URL, e.g. `http://proxy.example.com:3128`. | `string` | - | No |
-| [`username`](./username.md) | User name for proxy authentication. | `string` | - | No |
-| [`password`](./password.md) | Password for proxy authentication. | `string` | - | No |
-| [`timeout`](./timeout.md) | How long to wait for the proxy to establish the tunnel. | `duration` | - | No |
+| [`url`](./url.md) | URL прокси, например `http://proxy.example.com:3128`. | `string` | - | Нет |
+| [`username`](./username.md) | Имя пользователя для аутентификации на прокси. | `string` | - | Нет |
+| [`password`](./password.md) | Пароль для аутентификации на прокси. | `string` | - | Нет |
+| [`timeout`](./timeout.md) | Время ожидания создания туннеля прокси-сервером. | `duration` | - | Нет |

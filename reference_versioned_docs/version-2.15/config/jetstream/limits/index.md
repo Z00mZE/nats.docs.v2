@@ -1,18 +1,18 @@
-# limits
+# limits {#limits}
 
 <Reloadable state="reloadable" note="Each key is enforced when the stream or consumer it applies to is created or updated, so an already-existing asset keeps the value that applied when it was made — see the individual keys below for exceptions." />
-Default cross-account JetStream limits.
+Лимиты JetStream по умолчанию для аккаунтов.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`batch`](./batch/index.md) | Ceilings on atomic batch publishing. | `object` | - | Yes\* |
-| [`max_ack_pending`](./max_ack_pending.md) | Defines the maximum number of in-flight messages allowed to be configured on consumers. | `integer` | - | Yes\* |
-| [`max_ha_assets`](./max_ha_assets.md) | The maximum number of JetStream assets that can exist at any given time having more than one replica. | `integer` | - | No |
-| [`max_request_batch`](./max_request_batch.md) | The maximum request batch size allowed to be configured on pull consumers. | `integer` | - | Yes\* |
-| [`duplicate_window`](./duplicate_window.md) | The maximum duplication window period allowed to be configured on a stream. | `duration` | - | Yes\* |
-| [`default_max_consumers`](./default_max_consumers.md) | The default maximum number of consumers allowed on a stream that does not set its own `max_consumers`, and whose account has no consumer limit either. Set to `-1` to disable this default and allow an unlimited number of consumers, matching pre-2.15 behavior. | `integer` | `1000` | Yes\* |
+| [`batch`](./batch/index.md) | Ограничения атомарной пакетной публикации. | `object` | - | Да\* |
+| [`max_ack_pending`](./max_ack_pending.md) | Задаёт максимальное число сообщений в обработке, которое можно настроить для потребителей. | `integer` | - | Да\* |
+| [`max_ha_assets`](./max_ha_assets.md) | Максимальное число одновременно существующих ресурсов JetStream с более чем одной репликой. | `integer` | - | Нет |
+| [`max_request_batch`](./max_request_batch.md) | Максимальный размер запрашиваемого пакета, который можно настроить для pull-потребителей. | `integer` | - | Да\* |
+| [`duplicate_window`](./duplicate_window.md) | Максимальная длительность окна дедупликации, которую можно настроить для потока. | `duration` | - | Да\* |
+| [`default_max_consumers`](./default_max_consumers.md) | Максимальное число потребителей по умолчанию для потока, не задающего собственный `max_consumers`, если у его аккаунта тоже нет лимита потребителей. Значение `-1` отключает этот предел и разрешает неограниченное число потребителей, как в версиях до 2.15. | `integer` | `1000` | Да\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

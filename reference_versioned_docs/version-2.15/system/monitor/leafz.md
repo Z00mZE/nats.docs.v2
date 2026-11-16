@@ -1,13 +1,13 @@
-# Leafz
+# Leafz {#leafz}
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import leafzRequest from '@site/src/schemas/vendor/v2.15/server/monitor/v1/leafz_request.json';
 import leafzResponse from '@site/src/schemas/vendor/v2.15/server/monitor/v1/leafz_response.json';
 
-## Request Schema
+## Схема запроса {#request-schema}
 
 <JSONSchema schema={leafzRequest} />
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={leafzResponse} />

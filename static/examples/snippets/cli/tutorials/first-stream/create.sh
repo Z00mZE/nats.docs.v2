@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# Create a stream named EVENTS that captures every subject under events.>
-# --defaults fills in sensible starting values so the CLI does not prompt.
+# Создайте поток EVENTS, принимающий сообщения всех тем events.>
+# --defaults задаёт начальные значения без интерактивных запросов CLI.
 nats stream add EVENTS --subjects "events.>" --defaults

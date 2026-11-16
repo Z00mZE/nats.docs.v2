@@ -4,6 +4,7 @@ import ReloadIcon from "./Icons/ReloadIcon";
 import PowerIcon from "./Icons/PowerIcon";
 import BanIcon from "./Icons/BanIcon";
 import styles from "./PropertyMeta.module.css";
+import { localizeConfigText } from "../i18n/reference";
 
 /**
  * A property's hot-reload verdict. The vocabulary matches the generator's
@@ -28,9 +29,9 @@ type Props = {
 // the three — the reload succeeds and nothing tells the operator the change was
 // discarded — so it keeps full contrast rather than reading as a quiet aside.
 const BADGES: Record<State, { Icon: typeof ReloadIcon; label: string; muted: boolean }> = {
-  "reloadable": { Icon: ReloadIcon, label: "Hot Reloadable", muted: false },
-  "not-reloadable": { Icon: PowerIcon, label: "Requires Restart", muted: true },
-  "noop": { Icon: BanIcon, label: "Ignored Until Restart", muted: false },
+  "reloadable": { Icon: ReloadIcon, label: "Перезагрузка без перезапуска", muted: false },
+  "not-reloadable": { Icon: PowerIcon, label: "Требуется перезапуск", muted: true },
+  "noop": { Icon: BanIcon, label: "Игнорируется до перезапуска", muted: false },
 };
 
 // The note arrives as a plain string attribute, so markdown in it is not
@@ -55,7 +56,7 @@ export default function Reloadable({ state, note }: Props) {
           <span>{badge.label}</span>
         </span>
       )}
-      {note && <div className={styles.note}>{renderInlineCode(note)}</div>}
+      {note && <div className={styles.note}>{renderInlineCode(localizeConfigText(note))}</div>}
     </div>
   );
 }

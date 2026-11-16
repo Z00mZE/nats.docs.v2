@@ -1,11 +1,11 @@
-# sampling
+# sampling {#sampling}
 
 <Reloadable state="reloadable" />
-Percentage of traced messages to report, 1 to 100.
+Доля трассируемых сообщений для отчёта в процентах, от 1 до 100.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

@@ -1,13 +1,13 @@
-# Gatewayz
+# Gatewayz {#gatewayz}
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import gatewayzRequest from '@site/src/schemas/vendor/v2.15/server/monitor/v1/gatewayz_request.json';
 import gatewayzResponse from '@site/src/schemas/vendor/v2.15/server/monitor/v1/gatewayz_response.json';
 
-## Request Schema
+## Схема запроса {#request-schema}
 
 <JSONSchema schema={gatewayzRequest} />
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={gatewayzResponse} />

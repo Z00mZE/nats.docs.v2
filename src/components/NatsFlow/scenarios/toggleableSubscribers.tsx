@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useState, useEffect, useCallback } from 'react';
 import { MarkerType, ReactFlow, Background, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -116,7 +117,7 @@ function ToggleableSubscribersScenarioInner({
         }}
       >
         <span style={{ fontSize: '14px', fontWeight: 500, marginRight: '8px' }}>
-          Controls:
+          Управление:
         </span>
         <button
           onClick={() => setSubscriber1Active(!subscriber1Active)}
@@ -138,7 +139,7 @@ function ToggleableSubscribersScenarioInner({
             e.currentTarget.style.opacity = '1';
           }}
         >
-          {subscriber1Active ? 'Unsubscribe' : 'Subscribe'} Subscriber 1
+          {localizeDiagramContent(subscriber1Active ? 'Unsubscribe' : 'Subscribe')} Подписчик 1
         </button>
         <button
           onClick={() => setSubscriber2Active(!subscriber2Active)}
@@ -160,7 +161,7 @@ function ToggleableSubscribersScenarioInner({
             e.currentTarget.style.opacity = '1';
           }}
         >
-          {subscriber2Active ? 'Unsubscribe' : 'Subscribe'} Subscriber 2
+          {localizeDiagramContent(subscriber2Active ? 'Unsubscribe' : 'Subscribe')} Подписчик 2
         </button>
       </div>
 
@@ -175,7 +176,7 @@ function ToggleableSubscribersScenarioInner({
           position: 'relative',
         }}
       >
-        <ReactFlow
+        <ReactFlow ariaLabelConfig={diagramAriaLabels}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -204,12 +205,12 @@ function ToggleableSubscribersScenarioInner({
           color: '#6b7280',
         }}
       >
-        Subscribed: {[subscriber1Active, subscriber2Active].filter(Boolean).length} / 2
-        {!subscriber1Active && !subscriber2Active && (
+        Подписаны: {localizeDiagramContent([subscriber1Active, subscriber2Active].filter(Boolean).length)} / 2
+        {localizeDiagramContent(!subscriber1Active && !subscriber2Active && (
           <span style={{ marginLeft: '8px', fontStyle: 'italic' }}>
-            (Subscribe to see message flow)
+            (Подпишитесь, чтобы увидеть движение сообщений)
           </span>
-        )}
+        ))}
       </div>
     </div>
   );

@@ -38,11 +38,11 @@ const sidebars: SidebarsConfig = {
     {
       type: "doc",
       id: "index",
-      label: "Learn",
+      label: "Изучение",
     },
     {
       type: "category",
-      label: "Develop",
+      label: "Разработка",
       collapsed: false,
       items: [
         {
@@ -65,7 +65,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Services",
+          label: "Сервисы",
           link: { type: "doc", id: "services/index" },
           items: [
             "services/your-first-service",
@@ -107,7 +107,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Resilient Clients",
+          label: "Устойчивые клиенты",
           link: { type: "doc", id: "resilient-clients/index" },
           items: [
             "resilient-clients/connecting",
@@ -122,7 +122,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Key-Value Store",
+          label: "Хранилище ключей и значений",
           link: { type: "doc", id: "key-value/index" },
           items: [
             "key-value/your-first-bucket",
@@ -135,7 +135,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Object Store",
+          label: "Объектное хранилище",
           link: { type: "doc", id: "object-store/index" },
           items: [
             "object-store/your-first-object",
@@ -150,12 +150,12 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Operate",
+      label: "Эксплуатация",
       collapsed: false,
       items: [
         {
           type: "category",
-          label: "Topologies",
+          label: "Топологии",
           link: { type: "doc", id: "topologies/index" },
           items: [
             "topologies/single-server",
@@ -169,7 +169,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Security",
+          label: "Безопасность",
           link: { type: "doc", id: "security/index" },
           items: [
             "security/authentication-basics",
@@ -185,7 +185,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Clustering & Replication",
+          label: "Кластеризация и репликация",
           link: { type: "doc", id: "clustering/index" },
           items: [
             "clustering/forming-a-cluster",
@@ -199,7 +199,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Monitoring & Observability",
+          label: "Мониторинг и наблюдаемость",
           link: { type: "doc", id: "monitoring/index" },
           items: [
             "monitoring/monitoring-endpoints",
@@ -212,7 +212,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Backup & Recovery",
+          label: "Резервное копирование и восстановление",
           link: { type: "doc", id: "backup-recovery/index" },
           items: [
             "backup-recovery/stream-backup-restore",
@@ -224,7 +224,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "category",
-          label: "Deployment & Upgrades",
+          label: "Развёртывание и обновления",
           link: { type: "doc", id: "deployment/index" },
           items: [
             "deployment/sizing-and-resources",

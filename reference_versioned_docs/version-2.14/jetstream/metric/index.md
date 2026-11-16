@@ -1,38 +1,38 @@
-# JetStream Metrics
+# Метрики JetStream {#jetstream-metrics}
 
-Metrics are operational measurements published by JetStream to provide observability into message processing performance and behavior.
+Метрики — показатели работы, публикуемые JetStream для наблюдения за производительностью и поведением обработки сообщений.
 
-## Overview
+## Обзор {#overview}
 
-JetStream publishes metrics as system events on specific subjects. These metrics help operators:
-- Monitor message processing latency
-- Track consumer performance
-- Identify bottlenecks
-- Optimize system configuration
-- Set up alerting thresholds
+JetStream публикует метрики в виде системных событий в определённых темах. Они помогают операторам:
+- Отслеживать задержку обработки сообщений
+- Оценивать производительность потребителей
+- Находить узкие места
+- Оптимизировать конфигурацию системы
+- Настраивать пороги оповещений
 
-## Metric Events
+## События метрик {#metric-events}
 
-| Name | Subject | Description |
+| Название | Тема | Описание |
 | ---- | ------- | ----------- |
-| [Consumer Acknowledgement](./consumer-ack.md) | `$JS.EVENT.METRIC.CONSUMER.ACK.{stream}.{consumer}` | Message acknowledgement metrics including latency |
+| [Подтверждение потребителя](./consumer-ack.md) | `$JS.EVENT.METRIC.CONSUMER.ACK.{stream}.{consumer}` | Метрики подтверждения сообщений, включая задержку |
 
-## Usage
+## Использование {#usage}
 
-To subscribe to metrics, clients need appropriate permissions to access the `$JS.EVENT.METRIC.>` subject hierarchy. Metrics are published as JSON messages containing:
-- Timestamp information
-- Stream and consumer identifiers
-- Performance measurements
-- Delivery counts and redelivery information
+Для подписки на метрики клиентам нужны разрешения на доступ к иерархии тем `$JS.EVENT.METRIC.>`. Метрики публикуются как сообщения JSON и содержат:
+- Временные метки
+- Идентификаторы потока и потребителя
+- Показатели производительности
+- Счётчики доставок и сведения о повторной доставке
 
-## Configuration
+## Конфигурация {#configuration}
 
-Metrics can be enabled or disabled at the stream or consumer level. Some metrics may impact performance when enabled due to the additional processing required to collect and publish measurements.
+Метрики можно включать и отключать на уровне потока или потребителя. Сбор и публикация некоторых показателей требуют дополнительной обработки и могут влиять на производительность.
 
-## Best Practices
+## Рекомендации {#best-practices}
 
-- Subscribe to metrics with queue groups to distribute processing load
-- Use wildcard subscriptions to monitor multiple streams/consumers
-- Store metrics in time-series databases for historical analysis
-- Set up alerts based on latency thresholds
-- Regularly review metrics to optimize configuration
+- Подписывайтесь на метрики через группы очередей, чтобы распределить обработку
+- Используйте подстановочные символы для мониторинга нескольких потоков и потребителей
+- Сохраняйте метрики в базах временных рядов для анализа истории
+- Настройте оповещения по порогам задержки
+- Регулярно анализируйте метрики для оптимизации конфигурации

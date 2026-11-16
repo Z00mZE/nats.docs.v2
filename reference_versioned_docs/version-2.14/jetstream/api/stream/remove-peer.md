@@ -1,21 +1,21 @@
-# Remove Peer
+# Удаление участника {#remove-peer}
 
-Removes a peer from a stream cluster.
+Удаление участника из группы репликации потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamRemovePeerRequest from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/stream_remove_peer_request.json';
 import streamRemovePeerResponse from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/stream_remove_peer_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.PEER.REMOVE.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamRemovePeerRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamRemovePeerResponse} />

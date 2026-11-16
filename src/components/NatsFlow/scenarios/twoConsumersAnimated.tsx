@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // twoConsumersAnimated
@@ -77,7 +78,7 @@ function Cursor({
                     whiteSpace: "nowrap",
                 }}
             >
-                {label}
+                {localizeDiagramContent(label)}
             </div>
         </div>
     );
@@ -117,12 +118,9 @@ function TwoConsumersAnimatedInner() {
                     maxWidth: rowWidth + 40,
                 }}
             >
-                One stream, two readers. <strong>billing</strong> has no filter,
-                so it delivers every order. <strong>analytics</strong> filters to{" "}
-                <code>orders.shipped</code>, so it skips the{" "}
-                <code>orders.created</code> messages. Each keeps its own cursor —
-                reading from one never moves the other — so they end up at
-                different positions.
+                Один поток, два читателя. <strong>billing</strong> не имеет фильтра, поэтому доставляет все заказы. <strong>analytics</strong> фильтрует до{localizeDiagramContent(" ")}
+                <code>orders.shipped</code>, поэтому он пропускает сообщения{localizeDiagramContent(" ")}
+                <code>orders.created</code> . У каждого свой курсор: чтение одного не сдвигает другой, поэтому они оказываются на разных позициях.
             </div>
 
             <div
@@ -141,12 +139,12 @@ function TwoConsumersAnimatedInner() {
                         marginBottom: 8,
                     }}
                 >
-                    Stream · ORDERS
+                    Поток · ORDERS
                 </div>
 
                 {/* slot row */}
                 <div style={{ display: "flex", gap: SLOT_GAP }}>
-                    {MSGS.map((m, i) => {
+                    {localizeDiagramContent(MSGS.map((m, i) => {
                         const readByBilling = billingCount > 0 && i <= billingPos;
                         const isShipped = m.kind === "shipped";
                         const deliveredToAnalytics =
@@ -178,7 +176,7 @@ function TwoConsumersAnimatedInner() {
                                         lineHeight: 1.1,
                                     }}
                                 >
-                                    #{m.seq}
+                                    #{localizeDiagramContent(m.seq)}
                                 </div>
                                 <div
                                     style={{
@@ -189,24 +187,24 @@ function TwoConsumersAnimatedInner() {
                                         color: isShipped ? GREEN : "#94a3b8",
                                     }}
                                 >
-                                    {m.kind}
+                                    {localizeDiagramContent(m.kind)}
                                 </div>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
 
                 {/* cursor lanes */}
                 <div style={{ position: "relative", height: 56, marginTop: 4 }}>
-                    {billingCount > 0 && (
+                    {localizeDiagramContent(billingCount > 0 && (
                         <Cursor
                             left={slotCenter(billingPos)}
                             color={NAVY}
                             label={`billing → #${MSGS[billingPos].seq}`}
                             top={0}
                         />
-                    )}
-                    {analyticsPos >= 0 ? (
+                    ))}
+                    {localizeDiagramContent(analyticsPos >= 0 ? (
                         <Cursor
                             left={slotCenter(analyticsPos)}
                             color={GREEN}
@@ -224,9 +222,9 @@ function TwoConsumersAnimatedInner() {
                                 color: GREEN,
                             }}
                         >
-                            analytics → waiting for a shipped order
+                            analytics → ожидание отправленного заказа
                         </div>
-                    )}
+                    ))}
                 </div>
 
                 {/* tallies */}
@@ -257,11 +255,11 @@ function TwoConsumersAnimatedInner() {
                         minHeight: 15,
                     }}
                 >
-                    {split
+                    {localizeDiagramContent(split
                         ? `Separate positions: billing at #${
                               MSGS[billingPos].seq
                           }, analytics at #${MSGS[analyticsPos].seq}`
-                        : " "}
+                        : " ")}
                 </div>
             </div>
         </div>
@@ -299,10 +297,10 @@ function Tally({
                     fontFamily: "monospace",
                 }}
             >
-                {name}
+                {localizeDiagramContent(name)}
             </div>
             <div style={{ fontSize: 10, color: "#6b7280", marginTop: 1 }}>
-                filter: {filter}
+                фильтр: {localizeDiagramContent(filter)}
             </div>
             <div
                 style={{
@@ -312,7 +310,7 @@ function Tally({
                     marginTop: 3,
                 }}
             >
-                delivered: {delivered}/{total}
+                доставлено: {localizeDiagramContent(delivered)}/{localizeDiagramContent(total)}
             </div>
         </div>
     );

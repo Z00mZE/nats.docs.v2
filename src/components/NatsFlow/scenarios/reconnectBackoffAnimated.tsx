@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -242,13 +243,13 @@ function ReconnectBackoffAnimatedInner({
                     fontStyle: "italic",
                 }}
             >
-                Reconnect buffer:{" "}
+                Буфер переподключения:{localizeDiagramContent(" ")}
                 <strong>
-                    {stage === "flush"
+                    {localizeDiagramContent(stage === "flush"
                         ? "draining → n2"
                         : n2Live
                         ? "empty"
-                        : "holding queued publishes"}
+                        : "holding queued publishes")}
                 </strong>
             </div>
 
@@ -269,17 +270,17 @@ function ReconnectBackoffAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Stage:
+                    Этап:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {s}
+                        {localizeDiagramContent(s)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -293,7 +294,7 @@ function ReconnectBackoffAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -324,9 +325,9 @@ function ReconnectBackoffAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

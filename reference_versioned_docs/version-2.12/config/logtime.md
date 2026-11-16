@@ -1,11 +1,11 @@
-# logtime
+# logtime {#logtime}
 
 <Reloadable state="reloadable" note="Ignored if `-T` or `-logtime` was passed at startup — command-line boolean flags are re-applied over the config on every reload." />
-If false, log without timestamps.
+Если false, записи журнала не содержат временных меток.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

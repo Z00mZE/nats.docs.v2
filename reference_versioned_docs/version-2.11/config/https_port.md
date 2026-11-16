@@ -1,11 +1,11 @@
-# https_port
+# https_port {#https_port}
 
 <Reloadable state="not-reloadable" />
-HTTPS port for server monitoring.
+Порт HTTPS для мониторинга сервера.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

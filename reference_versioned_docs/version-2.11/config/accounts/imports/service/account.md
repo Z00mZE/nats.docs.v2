@@ -1,11 +1,11 @@
-# account
+# account {#account}
 
 <Reloadable state="reloadable" />
-Account name owning the export.
+Имя аккаунта, которому принадлежит экспорт.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

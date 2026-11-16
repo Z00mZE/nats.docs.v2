@@ -1,12 +1,11 @@
-# prefix
+# prefix {#prefix}
 
 <Reloadable state="reloadable" />
-A local subject prefix mapping for the imported stream.
-Applicable to `stream`.
+Локальный префикс субъектов импортируемого потока. Применяется к `stream`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

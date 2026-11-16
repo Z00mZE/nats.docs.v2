@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // directGetAnimated
@@ -102,7 +103,7 @@ function DirectGetInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 10, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Direct Get</strong> fetches one message by sequence — answered by any copy of the stream, so reads spread.
+                <strong>Direct Get</strong> читает одно сообщение по номеру: отвечает любая копия потока, поэтому чтения распределяются.
             </div>
 
             <div style={{ position: "relative", width: 640, height: 240, margin: "0 auto" }}>
@@ -123,14 +124,14 @@ function DirectGetInner() {
                         justifyContent: "center",
                     }}
                 >
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Reader</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Читатель</span>
                     <span style={{ fontSize: 10, fontFamily: "monospace", color: BLUE, minHeight: 13 }}>
-                        {cur ? `get seq ${cur.seq}` : "10 reads done"}
+                        {localizeDiagramContent(cur ? `get seq ${cur.seq}` : "10 reads done")}
                     </span>
                 </div>
 
                 {/* three stream copies, with per-server served tally */}
-                {COPY_Y.map((cy, i) => {
+                {localizeDiagramContent(COPY_Y.map((cy, i) => {
                     const isLeader = i === 0;
                     const lit = serving === i;
                     const col = SRV_COLOR[i];
@@ -168,20 +169,20 @@ function DirectGetInner() {
                                             padding: "0 4px",
                                         }}
                                     >
-                                        {SRV_LABEL[i]}
+                                        {localizeDiagramContent(SRV_LABEL[i])}
                                     </span>
                                 </div>
                                 <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>
-                                    full copy · served{" "}
-                                    <strong style={{ color: served[i] > 0 ? col : "#9ca3af" }}>{served[i]}</strong>
+                                    полная копия · обслужено{localizeDiagramContent(" ")}
+                                    <strong style={{ color: served[i] > 0 ? col : "#9ca3af" }}>{localizeDiagramContent(served[i])}</strong>
                                 </div>
                             </div>
                         </div>
                     );
-                })}
+                }))}
 
                 {/* travelling token */}
-                {token && token.kind === "req" && (
+                {localizeDiagramContent(token && token.kind === "req" && (
                     <div
                         style={{
                             position: "absolute",
@@ -194,8 +195,8 @@ function DirectGetInner() {
                             opacity: 0.9,
                         }}
                     />
-                )}
-                {token && token.kind === "msg" && cur && (
+                ))}
+                {localizeDiagramContent(token && token.kind === "msg" && cur && (
                     <div
                         style={{
                             position: "absolute",
@@ -216,12 +217,12 @@ function DirectGetInner() {
                             fontFamily: "monospace",
                         }}
                     >
-                        {cur.seq}
+                        {localizeDiagramContent(cur.seq)}
                     </div>
-                )}
+                ))}
 
                 {/* (direct) tag on the reply path */}
-                {phase === "reply" && (
+                {localizeDiagramContent(phase === "reply" && (
                     <span
                         style={{
                             position: "absolute",
@@ -233,9 +234,9 @@ function DirectGetInner() {
                             color: GREEN,
                         }}
                     >
-                        (direct)
+                        (напрямую)
                     </span>
-                )}
+                ))}
             </div>
 
             <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 14 }}>
@@ -243,9 +244,9 @@ function DirectGetInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

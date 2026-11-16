@@ -1,11 +1,11 @@
-# curve_preferences
+# curve_preferences {#curve_preferences}
 
 <Reloadable state="reloadable" note="New connections only." />
-List of TLS cipher curves to use in order.
+Упорядоченный список кривых для TLS.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

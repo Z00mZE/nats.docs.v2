@@ -1,3 +1,4 @@
+import { diagramAriaLabels } from "../../../i18n/diagrams";
 import React from 'react';
 import { MarkerType, ReactFlow, Background, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -159,7 +160,7 @@ function SubjectsWildcardAnimatedInner({
           fontStyle: 'italic',
         }}
       >
-        Subscriber listens with wildcard <code>orders.retail.*</code> where <code>*</code> matches exactly one token.
+        Подписчик слушает с подстановкой <code>orders.retail.*</code> где <code>*</code> совпадает ровно с одним токеном.
       </div>
 
       {/* Flow diagram */}
@@ -173,7 +174,7 @@ function SubjectsWildcardAnimatedInner({
           position: 'relative',
         }}
       >
-        <ReactFlow
+        <ReactFlow ariaLabelConfig={diagramAriaLabels}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -205,14 +206,14 @@ function SubjectsWildcardAnimatedInner({
           color: '#4b5563',
         }}
       >
-        <strong>Pattern: orders.retail.*</strong>
+        <strong>Шаблон: orders.retail.*</strong>
         <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-          <li style={{ color: '#059669' }}>✓ <strong>orders.retail.placed</strong> matches first two tokens</li>
-          <li style={{ color: '#2563eb' }}>✓ <strong>orders.retail.shipped</strong> matches first two token</li>
-          <li style={{ color: '#dc2626' }}>✗ <strong>orders.wholesale.placed</strong> - different second token</li>
+          <li style={{ color: '#059669' }}>✓ <strong>orders.retail.placed</strong> совпадают первые два токена</li>
+          <li style={{ color: '#2563eb' }}>✓ <strong>orders.retail.shipped</strong> совпадают первые два токена</li>
+          <li style={{ color: '#dc2626' }}>✗ <strong>orders.wholesale.placed</strong> — другой второй токен</li>
         </ul>
         <div style={{ marginTop: '8px', fontSize: '12px', color: '#6b7280' }}>
-          Green and blue messages flow to subscriber; red message stops at server.
+          Зелёные и синие сообщения доходят до подписчика; красное останавливается на сервере.
         </div>
       </div>
     </div>

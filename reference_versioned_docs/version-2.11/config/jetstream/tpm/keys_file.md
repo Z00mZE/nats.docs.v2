@@ -1,11 +1,11 @@
-# keys_file
+# keys_file {#keys_file}
 
 <Reloadable state="not-reloadable" />
-File the TPM-sealed key is stored in.
+Файл, в котором хранится ключ, запечатанный TPM.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

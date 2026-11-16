@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // atomicBatchAnimated
@@ -52,7 +53,7 @@ function Slot({ label, color, dashed, faded }: { label: string; color: string; d
                 transition: "opacity 0.2s, border-color 0.2s",
             }}
         >
-            <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color }}>{label}</span>
+            <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color }}>{localizeDiagramContent(label)}</span>
         </div>
     );
 }
@@ -119,21 +120,21 @@ function AtomicBatchAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Atomic batch: all-or-nothing.</strong> Staged messages land together on{" "}
-                <span style={{ color: GREEN, fontWeight: 600 }}>commit</span>, or the whole batch is{" "}
-                <span style={{ color: RED, fontWeight: 600 }}>discarded</span>.
+                <strong>Атомарный пакет: всё или ничего.</strong> Подготовленные сообщения вместе попадают в{localizeDiagramContent(" ")}
+                <span style={{ color: GREEN, fontWeight: 600 }}>фиксация</span>, иначе весь пакет{localizeDiagramContent(" ")}
+                <span style={{ color: RED, fontWeight: 600 }}>отброшено</span>.
             </div>
 
             {/* batch id + command pill */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, height: 26, marginBottom: 10 }}>
                 <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: batchColor, border: `1px solid ${batchColor}`, borderRadius: 4, padding: "2px 7px", background: `${batchColor}10`, transition: "color 0.2s, border-color 0.2s" }}>
-                    {batchLabel}
+                    {localizeDiagramContent(batchLabel)}
                 </span>
-                {commandPill && (
+                {localizeDiagramContent(commandPill && (
                     <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: "white", background: commandPill.color, borderRadius: 4, padding: "3px 9px" }}>
-                        {commandPill.text}
+                        {localizeDiagramContent(commandPill.text)}
                     </span>
-                )}
+                ))}
             </div>
 
             <div style={{ display: "flex", gap: 26, alignItems: "stretch" }}>
@@ -149,11 +150,11 @@ function AtomicBatchAnimatedInner() {
                     }}
                 >
                     <div style={{ fontSize: 10, color: abandoning ? RED : "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 8 }}>
-                        Staging buffer{abandoning ? " — discarded" : ""}
+                        Промежуточный буфер{localizeDiagramContent(abandoning ? " — discarded" : "")}
                     </div>
                     <div style={{ display: "flex", gap: SLOT_GAP, minHeight: 54 }}>
-                        {staged.length === 0 && <span style={{ fontSize: 12, color: "#9ca3af", alignSelf: "center" }}>empty</span>}
-                        {staged.map((m, i) => (
+                        {localizeDiagramContent(staged.length === 0 && <span style={{ fontSize: 12, color: "#9ca3af", alignSelf: "center" }}>пусто</span>)}
+                        {localizeDiagramContent(staged.map((m, i) => (
                             <Slot
                                 key={i}
                                 label={m.label}
@@ -161,13 +162,13 @@ function AtomicBatchAnimatedInner() {
                                 dashed={m.bad}
                                 faded={abandoning ? 1 - p : committing ? 1 - p : 1}
                             />
-                        ))}
+                        )))}
                     </div>
                 </div>
 
                 {/* arrow */}
                 <div style={{ display: "flex", alignItems: "center", fontSize: 22, fontWeight: 700, color: committing ? GREEN : abandoning ? RED : "#d1d5db", transition: "color 0.2s" }}>
-                    {abandoning ? "✕" : "⇒"}
+                    {localizeDiagramContent(abandoning ? "✕" : "⇒")}
                 </div>
 
                 {/* ORDERS */}
@@ -182,16 +183,16 @@ function AtomicBatchAnimatedInner() {
                 >
                     <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace" }}>{storedCount} msgs</span>
+                        <span style={{ fontFamily: "monospace" }}>{localizeDiagramContent(storedCount)} msgs</span>
                     </div>
                     <div style={{ display: "flex", gap: SLOT_GAP, minHeight: 54 }}>
-                        {storedCount === 0 && <span style={{ fontSize: 12, color: "#9ca3af", alignSelf: "center" }}>empty</span>}
-                        {storedSeqs.map((seq) => (
+                        {localizeDiagramContent(storedCount === 0 && <span style={{ fontSize: 12, color: "#9ca3af", alignSelf: "center" }}>пусто</span>)}
+                        {localizeDiagramContent(storedSeqs.map((seq) => (
                             <div key={seq} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                                 <Slot label={`#${seq}`} color={GREEN} faded={landing ? 0.2 + 0.8 * p : 1} />
-                                <span style={{ fontSize: 9, fontFamily: "monospace", color: "#9ca3af" }}>seq {seq}</span>
+                                <span style={{ fontSize: 9, fontFamily: "monospace", color: "#9ca3af" }}>номер {localizeDiagramContent(seq)}</span>
                             </div>
-                        ))}
+                        )))}
                     </div>
                 </div>
             </div>
@@ -201,9 +202,9 @@ function AtomicBatchAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

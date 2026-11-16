@@ -1,3 +1,4 @@
+import { localizeDiagramContent, localizeDiagramText, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -239,18 +240,18 @@ function AuthCalloutAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Step:
+                    Шаг:
                 </span>
-                {STEPS.map((s) => (
+                {localizeDiagramContent(STEPS.map((s) => (
                     <button
                         key={s.id}
                         onClick={() => setStep(s.id)}
                         style={stepButtonStyle(s.id === step)}
-                        aria-label={`Go to step ${s.id + 1}`}
+                        aria-label={localizeDiagramText(`Go to step ${s.id + 1}`)}
                     >
-                        {s.id + 1}
+                        {localizeDiagramContent(s.id + 1)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -264,7 +265,7 @@ function AuthCalloutAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -295,9 +296,9 @@ function AuthCalloutAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#375c93" }}>
-                    {step + 1}/{STEPS.length}
-                </strong>{" "}
-                {STEPS[step].caption}
+                    {localizeDiagramContent(step + 1)}/{localizeDiagramContent(STEPS.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(STEPS[step].caption)}
             </div>
         </div>
     );

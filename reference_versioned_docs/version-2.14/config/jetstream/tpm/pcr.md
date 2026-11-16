@@ -1,12 +1,11 @@
-# pcr
+# pcr {#pcr}
 
 <Reloadable state="not-reloadable" />
-Platform Configuration Register the key is sealed against, so it
-only unseals on an unchanged boot state.
+Регистр конфигурации платформы, к которому привязан запечатанный ключ: раскрыть его можно только при неизменном состоянии загрузки.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

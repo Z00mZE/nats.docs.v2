@@ -1,13 +1,12 @@
-# feature_flags
+# feature_flags {#feature_flags}
 
 <Since version="2.14" />
 <Reloadable state="not-reloadable" />
-Toggles for features that are not yet on by default. Names are
-server-internal and change between releases.
+Переключатели возможностей, пока не включённых по умолчанию. Имена являются внутренними для сервера и меняются между выпусками.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `{ string: boolean }` | - | `true`, `false` |

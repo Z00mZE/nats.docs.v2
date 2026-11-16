@@ -1,48 +1,29 @@
 ---
 id: hardening
-title: "Hardening"
+title: "Защита системы"
 sidebar_position: 6
-description: Lock down the ORDERS cluster — TLS on every link, mounted credentials, and a sandboxed systemd unit
+description: "Защита кластера ORDERS: TLS на каждой связи, учётные данные в файлах и изолированный модуль systemd"
 ---
 
-# Hardening
+# Защита системы {#hardening}
 
-The cluster is sized, deployed, configurable, and upgradable. Right now
-it's also unsecured. Routes between `n1-east`, `n2-east`, and `n3-east`
-run in plaintext, the monitor port responds to any request, and the
-`nats-server` process can read and write the whole filesystem.
+Кластер рассчитан, развёрнут, поддерживает изменение конфигурации и обновления. Но пока он не защищён: маршруты между `n1-east`, `n2-east`, `n3-east` передают открытый текст, порт мониторинга отвечает всем, а процесс `nats-server` может читать и изменять всю файловую систему.
 
-This page closes those gaps. It puts TLS on every link the cluster
-connects over, and it wraps the process in a hardened systemd unit that
-removes everything it doesn't need. Both are operator-side controls. The
-auth model that issues the credentials (the operator `ACME`, the
-accounts, the users) is taught in [Security](/learn/security); here you
-*mount* those credentials and *turn on* the transport security around
-them.
+Здесь мы включим TLS на всех связях и запустим процесс в защищённом модуле systemd, лишив его ненужных возможностей. Это эксплуатационные меры. Модель выпуска учётных данных — оператор `ACME`, учётные записи, пользователи — объясняется в [Безопасности](/learn/security). Здесь данные *подключаются*, а транспортная защита *включается*.
 
-## TLS on every link
+## TLS на каждой связи {#tls-on-every-link}
 
-A NATS server connects to more than one kind of peer, and each kind
-has its own TLS block. There are three:
+Сервер NATS устанавливает соединения нескольких типов; каждому нужен собственный блок TLS:
 
-- **Client TLS**: the top-level `tls {}` block, securing client
-  connections like `order-svc` publishing to `orders.created`.
-- **Cluster TLS**: a separate `cluster { tls {} }` block, securing the
-  routes between `n1-east`, `n2-east`, and `n3-east`.
-- **Gateway TLS**: a `gateway { tls {} }` block, securing supercluster
-  links.
+- **Клиентский TLS**: блок `tls {}` верхнего уровня защищает, например, публикации `order-svc` в `orders.created`.
+- **TLS кластера**: отдельный `cluster { tls {} }` защищает маршруты между `n1-east`, `n2-east`, `n3-east`.
+- **TLS шлюзов**: `gateway { tls {} }` защищает связи суперкластера.
 
-These blocks are independent. Turning on TLS for clients leaves the
-cluster routes plaintext until you configure the cluster block too.
+Блоки независимы. Включение TLS для клиентов не шифрует маршруты кластера — настройте и их.
 
-This per-link split is a common hardening mistake. An operator secures
-clients and sees the encrypted client connection, then ships a cluster
-whose inter-node Raft traffic, including replicated `ORDERS` data, is
-still unencrypted.
+Частая ошибка — защитить клиентов и отправить в эксплуатацию кластер, где межузловой трафик Raft, включая репликацию `ORDERS`, остаётся незашифрованным.
 
-Here's a server config that secures both the client link and the cluster
-link. Client TLS sits at the top level; cluster TLS sits inside the
-`cluster {}` block:
+Конфигурация, защищающая клиентские и кластерные соединения. Клиентский TLS находится на верхнем уровне, кластерный — внутри `cluster {}`:
 
 ```conf
 # nats.conf on n1-east — TLS for clients AND for cluster routes
@@ -73,25 +54,9 @@ cluster {
 }
 ```
 
-In the top-level `tls {}` block, `verify: true` is what makes the client
-link **mTLS** (mutual TLS): without it the server proves itself to the
-client but never checks the client's certificate; with it every client
-must present a certificate that chains to `ca_file`. Cluster and gateway
-routes work differently — the server forces mutual verification on them
-whether or not you set `verify`, because each end acts as both client and
-server on the route. So the stray-node protection on `east` holds either
-way: a node can't join just by knowing the route address; it must present
-a certificate that chains to `ca_file`. Use `verify_and_map: true` on the
-client block when you want the client certificate's subject to *be* the
-NATS user; the certificate identity mechanism is covered in
-[Security → Encryption & TLS](/learn/security/encryption).
+В верхнем `tls {}` параметр `verify: true` включает **mTLS**, взаимную аутентификацию: без него только сервер доказывает свою личность клиенту; с ним клиент обязан предъявить сертификат с цепочкой к `ca_file`. Маршруты кластера и шлюзов всегда используют взаимную проверку независимо от `verify`, поскольку обе стороны выступают и клиентом, и сервером. Поэтому одного адреса маршрута недостаточно для присоединения к `east`: нужен доверенный сертификат. Если идентичность сертификата должна *стать* пользователем NATS, задайте `verify_and_map: true` в клиентском блоке. Этот механизм описан в [Безопасность → Шифрование и TLS](/learn/security/encryption).
 
-The server re-reads `cert_file` and `key_file` when it reloads its
-configuration, so rotating certificates is drop-in-new-files plus a
-SIGHUP, not a restart. After the reload, new handshakes present the new
-certificate while existing connections keep their session. Drop the new
-files in place and send the SIGHUP you learned on the
-[config management](/learn/deployment/config-management) page:
+При перечитывании сервер заново читает `cert_file` и `key_file`. Для ротации замените файлы и отправьте SIGHUP: перезапуск не нужен. Новые соединения используют новый сертификат, существующие сохраняют сессию. Примените знакомый по [управлению конфигурацией](/learn/deployment/config-management) сигнал:
 
 ```bash
 # After dropping new cert/key files at the same paths, reload in place.
@@ -99,53 +64,29 @@ files in place and send the SIGHUP you learned on the
 systemctl reload nats-server
 ```
 
-The full set of TLS keys (cipher suites, curve preferences, and
-`pinned_certs` for certificate pinning) is documented in
-[Reference → TLS](/reference/config/tls). We use only `cert_file`,
-`key_file`, `ca_file`, and `verify` here.
+Все параметры TLS, включая наборы шифров, предпочтения кривых и `pinned_certs`, описаны в [Справочнике → TLS](/reference/config/tls). Здесь используются только `cert_file`, `key_file`, `ca_file`, `verify`.
 
-## Mount the credentials and verify the link
+## Подключите учётные данные и проверьте связь {#mount-the-credentials-and-verify-the-link}
 
-TLS encrypts the link, and credentials identify the user on it. The `ACME`
-operator from the [Security deep dive](/learn/security/operator-mode)
-issues a `.creds` file for the `order-svc` user. You don't create it
-here; you mount it as a file the server and client can read. On
-Kubernetes that file is a Secret; on a host it lives under a path only the
-`nats` user can read.
+TLS шифрует канал, учётные данные определяют пользователя. Оператор `ACME` из [главы безопасности](/learn/security/operator-mode) выдаёт `.creds` для `order-svc`. Здесь мы не создаём его, а подключаем файлом. В Kubernetes это Secret; на хосте — путь, доступный для чтения только пользователю `nats`.
 
-With the CA file and the creds file both available, one publish confirms
-the whole hardened path works. The client trusts the CA (so the link
-encrypts), presents the `order-svc` credentials (so the server
-authenticates the user), and publishes one canonical order to
-`orders.created`:
+Когда файлы CA и учётных данных доступны, одна публикация проверяет весь защищённый путь. Клиент доверяет CA, предъявляет `order-svc` и публикует заказ в `orders.created`:
 
 <div class="nats-example" data-type="learn-deployment-hardening-credsConnect" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The payload is the same Acme order shape you've carried through every
-chapter:
+Полезная нагрузка имеет ту же форму заказа Acme, что во всех главах:
 
 ```json
 {"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}
 ```
 
-If the publish succeeds, encryption and authentication are both on. If it
-fails at the handshake, TLS is misconfigured; if it fails with an
-authorization error, the credentials are wrong or unmounted, and this one
-command distinguishes the two cases.
+Успех подтверждает и шифрование, и аутентификацию. Ошибка установления TLS указывает на TLS, ошибка авторизации — на неверные или недоступные учётные данные. Одна команда различает эти случаи.
 
-## A hardened systemd unit
+## Защищённый модуль systemd {#a-hardened-systemd-unit}
 
-TLS protects the cluster from the network, while the systemd unit
-protects the host from the cluster by running `nats-server` as an
-unprivileged, sandboxed process that can access only what it needs. The
-NATS distribution ships a hardened unit (`nats-server-hardened.service`),
-which is the second and last concept of the page, and you adapt it rather
-than write it from scratch.
+TLS защищает кластер от сети, а systemd — хост от процесса: `nats-server` работает без привилегий в изолированной среде с доступом только к необходимому. Дистрибутив NATS содержит `nats-server-hardened.service`; адаптируйте готовый модуль вместо создания с нуля.
 
-The unit does three jobs: it raises the file descriptor limit so a busy
-cluster doesn't run out of sockets, it sandboxes the filesystem and
-kernel surface so a compromised process can't escape, and it drops every
-Linux capability the server doesn't need:
+Модуль решает три задачи: повышает предел файловых дескрипторов, ограничивает доступ к файловой системе и ядру, удаляет ненужные возможности Linux:
 
 ```ini
 # /etc/systemd/system/nats-server.service (hardened)
@@ -170,44 +111,22 @@ CapabilityBoundingSet=
 SystemCallFilter=@system-service ~@privileged ~@resources
 ```
 
-Two flags matter most for an operator. `LimitNOFILE=800000`
-lifts the file descriptor (FD) ceiling far above the default 1024. Each
-stream costs roughly two FDs, and inter-node gossip plus client sockets
-add many more, so a real `ORDERS` cluster needs the headroom.
-`ProtectSystem=strict` mounts the entire filesystem read-only *except*
-the paths in `ReadWritePaths`, which is why the TLS certificates and the
-JetStream store both live under `/var/lib/nats`, a path the server is
-explicitly allowed to write.
+Особенно важны два параметра. `LimitNOFILE=800000` повышает предел FD значительно выше стандартных 1024. Поток требует около двух FD, а служебный обмен и клиентские сокеты добавляют остальные. `ProtectSystem=strict` делает всю файловую систему доступной только для чтения, кроме путей `ReadWritePaths`. Поэтому хранилище JetStream и сертификаты примера находятся в явно разрешённом для записи `/var/lib/nats`.
 
-The full set of sandboxing directives (`PrivateUsers`,
-`RestrictNamespaces`, `ProtectClock`, and the rest) ships in the
-distribution's hardened unit; copy that file and adjust only
-`ExecStart`, `ReadWritePaths`, and `LimitNOFILE` for your layout. The
-server-configuration keys these flags wrap are documented in
-[Reference → Configuration](/reference/config).
+Полный набор ограничений — `PrivateUsers`, `RestrictNamespaces`, `ProtectClock` и другие — находится в поставляемом модуле. Скопируйте его и адаптируйте `ExecStart`, `ReadWritePaths`, `LimitNOFILE`. Оборачиваемые им настройки сервера описаны в [Справочнике → Конфигурация](/reference/config).
 
-## Close the monitor port
+## Закройте порт мониторинга {#close-the-monitor-port}
 
-The server listens on four ports: **4222** for clients, **6222** for
-cluster routes, **7222** for gateways, and **8222** for the HTTP monitor.
-The first three carry TLS once you configure it. The monitor port does
-not: it serves `/varz`, `/healthz`, and the rest in plaintext, and
-its `/varz` output leaks the server version, connected-client count, and
-memory usage to anyone who can reach it.
+Сервер использует четыре порта: **4222** — клиенты, **6222** — маршруты кластера, **7222** — шлюзы, **8222** — HTTP-мониторинг. Первые три используют настроенный TLS. Порт мониторинга выдаёт `/varz`, `/healthz` и другие ответы открытым текстом; `/varz` раскрывает версию сервера, число клиентов и память любому, кто может обратиться к порту.
 
-On a host, bind it to localhost so only an on-host agent can read it, and
-let a firewall handle the rest:
+На отдельном хосте привяжите его к localhost, оставив чтение локальному агенту; остальное ограничьте межсетевым экраном:
 
 ```conf
 # nats.conf — monitor reachable only from the host itself
 http: "127.0.0.1:8222"
 ```
 
-Don't do this on the chapter's Kubernetes deployment. The kubelet's
-startup, readiness, and liveness probes connect to the pod's IP, not its
-loopback, so a `127.0.0.1` bind fails every probe and the pods never go
-ready. There, keep the chart's default bind and restrict the port with a
-NetworkPolicy instead.
+Не делайте так в развёртывании Kubernetes этой главы. Проверки kubelet обращаются к IP пода, а не к loopback: привязка `127.0.0.1` нарушит все проверки и не позволит подам стать готовыми. В Kubernetes сохраняйте стандартную привязку чарта и ограничивайте доступ через NetworkPolicy.
 
 ```bash
 # Firewall: clients in, cluster routes between nodes only, monitor never.
@@ -217,39 +136,15 @@ ufw allow from 10.0.0.0/24 to any port 6222 proto tcp
 ufw deny 8222/tcp
 ```
 
-What to actually scrape from `/varz` and `/healthz`, and how to read it,
-is the monitoring discipline taught in
-[Monitoring → Monitoring endpoints](/learn/monitoring/monitoring-endpoints).
-At the hardening stage, you only need to make sure the port isn't open to
-the world.
+Что собирать из `/varz` и `/healthz` и как это читать, объясняет [Мониторинг → Конечные точки мониторинга](/learn/monitoring/monitoring-endpoints). Здесь достаточно закрыть порт от внешнего мира.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A few traps affect teams the first time they harden a NATS cluster. Each
-one comes from this page's work: the sandboxed systemd unit, and locking
-down the ports that TLS now protects.
+Ловушки связаны с изоляцией systemd и доступом к портам.
 
-**`ProtectSystem=strict` blocks writes outside `ReadWritePaths`, not
-reads.** The sandbox mounts the filesystem read-only, so reading rotated
-certificates from `/etc/nats-certs` on a SIGHUP works fine: an external
-process writes the new files, and the server only reads them. What
-genuinely fails under `strict` is the server *writing* to a path not
-listed — the JetStream `store_dir` (and the pid and ports-file
-directories) must sit inside `ReadWritePaths`, or the server can't come
-up. Keep `ReadWritePaths` covering the JetStream store; certificates need
-only read access, which `strict` already allows.
+**`ProtectSystem=strict` ограничивает запись вне `ReadWritePaths`, но не чтение.** Сервер может прочитать заменённые внешним процессом сертификаты из `/etc/nats-certs` при SIGHUP. Не сработает собственная *запись* сервера за пределами разрешённых путей: `store_dir`, каталоги PID и файла портов должны входить в `ReadWritePaths`, иначе запуск невозможен. Сертификатам достаточно чтения, уже разрешённого `strict`.
 
-**A memory cap set below the working set gets the process OOM-killed under
-load.** The hardened unit can cap the process with `MemoryMax=` (systemd)
-or `GOMEMLIMIT` (the Go runtime). Neither reserves memory at startup:
-`max_memory_store` is an accounting limit checked as messages arrive, and
-`GOMEMLIMIT` is a soft target that only makes GC more aggressive. The
-failure shows up at runtime — set `MemoryMax` below what the node actually
-uses (memory-store data plus connection and route buffers plus GC
-headroom) and the cgroup OOM-kills the process once usage grows, which
-systemd logs as `Main process killed (oom-kill)`. Set `MemoryMax` above
-expected use, and `GOMEMLIMIT` somewhat below `MemoryMax` so GC reins
-memory in before the hard cap.
+**Лимит памяти ниже рабочего набора приводит к OOM под нагрузкой.** `MemoryMax=` systemd задаёт жёсткое ограничение, `GOMEMLIMIT` Go — мягкую цель, усиливающую GC. Ни один не резервирует память при запуске; `max_memory_store` тоже лишь проверяет учёт по мере поступления сообщений. Если `MemoryMax` меньше данных в памяти, буферов соединений и маршрутов вместе с запасом GC, cgroup завершит процесс при росте нагрузки; systemd запишет `Main process killed (oom-kill)`. Устанавливайте `MemoryMax` выше ожидаемого расхода, а `GOMEMLIMIT` несколько ниже, чтобы GC сработал до жёсткого предела.
 
 ```ini
 # Cap the process above what it uses at peak, not at the config number.
@@ -258,20 +153,9 @@ MemoryMax=6G
 Environment=GOMEMLIMIT=5500MiB
 ```
 
-**The monitor port exposed to the internet leaks operational detail.**
-A reachable `:8222/varz` hands out the server version, the client count,
-and the memory footprint, which is useful information for an attacker
-performing reconnaissance. Don't leave `http:`
-bound to `0.0.0.0`. Bind it to `127.0.0.1` and let the firewall deny 8222
-from everywhere else.
+**Открытый в интернет мониторинг раскрывает детали системы.** Доступный `:8222/varz` показывает версию, число клиентов и объём памяти — полезные сведения для разведки. На отдельном хосте не оставляйте `http:` на `0.0.0.0`: используйте `127.0.0.1` и блокировку внешнего доступа к 8222.
 
-**A firewall blocking cluster port 6222 leaves nodes unable to form
-quorum.** Hardening locks ports down, and it's easy to deny 6222 to the
-world while forgetting to allow it *between* the east nodes. When that
-happens the route handshakes never complete: `n1-east`, `n2-east`, and
-`n3-east` each come up alone, can't reach each other, and show as orphans
-that never join the `east` cluster. Don't deny 6222 globally. Allow it
-explicitly from the cluster subnet, and only then deny it elsewhere:
+**Блокировка кластерного порта 6222 не позволяет сформировать кворум.** Закрывая порт от внешнего мира, легко забыть разрешить его *между* узлами `east`. Тогда маршруты не устанавливаются, каждый узел запускается отдельно и не присоединяется к кластеру. Сначала явно разрешите 6222 из подсети кластера, затем запретите остальным:
 
 ```bash
 # Allow cluster routes between the east nodes; deny 6222 from anywhere else.
@@ -279,40 +163,22 @@ ufw allow from 10.0.0.0/24 to any port 6222 proto tcp
 ufw deny 6222/tcp
 ```
 
-Once the ports are open and TLS is on every link, the same authenticated
-publish from [Mount the credentials and verify the link](#mount-the-credentials-and-verify-the-link)
-confirms the whole hardened path end to end. A successful publish confirms
-the client link encrypts and the credentials authenticate. Run that check
-from a node on the cluster network to confirm the routes came up. If a
-node still shows as an orphan after you allow 6222, its route handshake is
-failing on the firewall or on a missing or mismatched cluster certificate.
+После настройки портов и TLS повторите публикацию из [подключения учётных данных и проверки связи](#mount-the-credentials-and-verify-the-link). Успех подтверждает шифрование и аутентификацию. Выполняйте проверку из сети кластера и убедитесь, что маршруты установлены. Если узел всё ещё изолирован, ищите блокировку или отсутствующий либо неподходящий сертификат кластера.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The `ORDERS` cluster now runs locked down. TLS protects every link: the
-client connection for `order-svc` and the cluster routes that replicate
-the stream between `n1-east`, `n2-east`, and `n3-east`. The `ACME`
-credentials are mounted as files, and one publish confirms auth and
-encryption are both on. The process runs under a hardened systemd unit
-that raises the FD limit and sandboxes the filesystem, and the monitor
-port responds only from localhost.
+Кластер `ORDERS` защищён. TLS шифрует соединение `order-svc` и маршруты репликации между `n1-east`, `n2-east`, `n3-east`. Учётные данные `ACME` подключены файлами, публикация проверяет вход и шифрование. Защищённый модуль systemd повышает предел FD и ограничивает файловую систему; на отдельном хосте мониторинг доступен только локально.
 
-That completes the runbook. The cluster is sized, deployed on Kubernetes,
-configurable without downtime, upgradable in place, and hardened.
+Инструкция завершена: кластер рассчитан, развёрнут в Kubernetes, настраивается без простоя, последовательно обновляется и защищён.
 
-## What's next
+## Что дальше {#whats-next}
 
-The last page recaps the whole runbook (size, deploy, configure, upgrade,
-harden) and collects every page's pitfalls into a single production
-checklist you can run down before you call the cluster ready.
+Последняя страница подводит итоги пяти шагов и собирает типичные ошибки в контрольный список перед признанием кластера готовым.
 
-Continue to [Where to go next](/learn/deployment/where-next).
+Перейдите к странице [Куда двигаться дальше](/learn/deployment/where-next).
 
-## See also
+## См. также {#see-also}
 
-- [Security → Encryption & TLS](/learn/security/encryption) — the
-  certificate-as-identity model behind `verify_and_map`.
-- [Security → Operator mode](/learn/security/operator-mode) — how the
-  `ACME` operator issues the credentials this page mounts.
-- [Monitoring → Monitoring endpoints](/learn/monitoring/monitoring-endpoints)
-  — what to scrape from the monitor port once it's locked to localhost.
+- [Безопасность → Шифрование и TLS](/learn/security/encryption) — идентичность сертификата и `verify_and_map`.
+- [Безопасность → Режим оператора](/learn/security/operator-mode) — выпуск учётных данных оператором `ACME`.
+- [Мониторинг → Конечные точки мониторинга](/learn/monitoring/monitoring-endpoints) — сбор данных после ограничения доступа к порту.

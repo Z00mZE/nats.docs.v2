@@ -1,16 +1,16 @@
-# Stream Batch Abandoned
+# Атомарный пакет отброшен {#stream-batch-abandoned}
 
-An advisory sent when a stream abandons a batch.
+Уведомление, отправляемое при отбрасывании потоком пакета.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamBatchAbandoned from '@site/src/schemas/vendor/v2.15/jsm/jetstream/advisory/v1/stream_batch_abandoned.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.STREAM.BATCH_ABANDONED.{stream}`
 
-Where `{stream}` is the stream name.
+Где `{stream}` — имя потока.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={streamBatchAbandoned} />

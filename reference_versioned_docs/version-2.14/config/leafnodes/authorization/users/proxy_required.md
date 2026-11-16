@@ -1,16 +1,12 @@
-# proxy_required
+# proxy_required {#proxy_required}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" note="Read when a leaf node authenticates, so the new value applies to connections made after the reload. Existing connections keep the setting they connected under." />
-Reject this user's leaf node connections if they did not
-arrive through a PROXY protocol header. Setting
-`proxy_required` on the surrounding `authorization` block
-applies the requirement to every user regardless of what
-they set here.
+Отклонять соединения листовых узлов этого пользователя без заголовка протокола PROXY. Параметр `proxy_required` во внешнем блоке `authorization` распространяет требование на всех пользователей независимо от их собственных настроек.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

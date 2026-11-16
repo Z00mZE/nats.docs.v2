@@ -1,307 +1,307 @@
-# JetStream Errors
+# Ошибки JetStream {#jetstream-errors}
 
-This page contains a comprehensive list of all JetStream error codes and their descriptions, organized by category.
+Полный список кодов ошибок JetStream и их описаний, сгруппированных по категориям.
 
 
-## Account Errors
+## Ошибки аккаунтов {#account-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10002      | `JSAccountResourcesExceededErr`              | 400         | resource limits exceeded for account                                                         |
-| 10035      | `JSNoAccountErr`              | 503         | account not found                                                         |
-| 10039      | `JSNotEnabledForAccountErr`              | 503         | JetStream not enabled for account                                                         |
+| 10002      | `JSAccountResourcesExceededErr`              | 400         | Превышены ограничения ресурсов учётной записи                                                         |
+| 10035      | `JSNoAccountErr`              | 503         | Учётная запись не найдена                                                         |
+| 10039      | `JSNotEnabledForAccountErr`              | 503         | JetStream не включён для учётной записи                                                         |
 
 
-## General Errors
+## Общие ошибки {#general-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10003      | `JSBadRequestErr`              | 400         | bad request                                                         |
-| 10015      | `JSSnapshotDeliverSubjectInvalidErr`              | 400         | deliver subject not valid                                                         |
-| 10023      | `JSInsufficientResourcesErr`              | 503         | insufficient resources                                                         |
-| 10025      | `JSInvalidJSONErr`              | 400         | invalid JSON: `{err}`                                                         |
-| 10028      | `JSMemoryResourcesExceededErr`              | 500         | insufficient memory resources available                                                         |
-| 10038      | `JSNotEmptyRequestErr`              | 400         | expected an empty request payload                                                         |
+| 10003      | `JSBadRequestErr`              | 400         | Некорректный запрос                                                         |
+| 10015      | `JSSnapshotDeliverSubjectInvalidErr`              | 400         | Недопустимая тема доставки                                                         |
+| 10023      | `JSInsufficientResourcesErr`              | 503         | Недостаточно ресурсов                                                         |
+| 10025      | `JSInvalidJSONErr`              | 400         | недопустимый JSON: `{err}`                                                         |
+| 10028      | `JSMemoryResourcesExceededErr`              | 500         | Недостаточно доступной памяти                                                         |
+| 10038      | `JSNotEmptyRequestErr`              | 400         | Ожидается пустое тело запроса                                                         |
 | 10041      | `JSRaftGeneralErrF`              | 500         | `{err}`                                                         |
-| 10042      | `JSRestoreSubscribeFailedErrF`              | 500         | JetStream unable to subscribe to restore snapshot `{subject}`: `{err}`                                                         |
-| 10043      | `JSSequenceNotFoundErrF`              | 400         | sequence `{seq}` not found                                                         |
-| 10047      | `JSStorageResourcesExceededErr`              | 500         | insufficient storage resources available                                                         |
-| 10072      | `JSTempStorageFailedErr`              | 500         | JetStream unable to open temp storage for restore                                                         |
-| 10073      | `JSTemplateNameNotMatchSubjectErr`              | 400         | template name in subject does not match request                                                         |
-| 10075      | `JSPeerRemapErr`              | 503         | peer remap failed                                                         |
-| 10076      | `JSNotEnabledErr`              | 503         | JetStream not enabled                                                         |
-| 10120      | `JSNoLimitsErr`              | 400         | no JetStream default or applicable tiered limit present                                                         |
-| 10133      | `JSReplicasCountCannotBeNegative`              | 400         | replicas count cannot be negative                                                         |
-| 10157      | `JSPedanticErrF`              | 400         | pedantic mode: `{err}`                                                         |
-| 10185      | `JSRequiredApiLevelErr`              | 412         | JetStream minimum api level required                                                         |
-| 10205      | `JSBatchPublishDisabledErr`              | 400         | batch publish is disabled                                                         |
-| 10206      | `JSBatchPublishInvalidPatternErr`              | 400         | batch publish pattern is invalid                                                         |
-| 10207      | `JSBatchPublishInvalidBatchIDErr`              | 400         | batch publish ID is invalid                                                         |
-| 10208      | `JSBatchPublishUnknownBatchIDErr`              | 400         | batch publish ID unknown                                                         |
-| 10211      | `JSBatchPublishTooManyInflight`              | 429         | batch publish too many inflight                                                         |
+| 10042      | `JSRestoreSubscribeFailedErrF`              | 500         | JetStream не удалось подписаться для восстановления снимка `{subject}`: `{err}`                                                         |
+| 10043      | `JSSequenceNotFoundErrF`              | 400         | порядковый номер `{seq}` не найден                                                         |
+| 10047      | `JSStorageResourcesExceededErr`              | 500         | Недостаточно ресурсов хранилища                                                         |
+| 10072      | `JSTempStorageFailedErr`              | 500         | JetStream не удалось открыть временное хранилище для восстановления                                                         |
+| 10073      | `JSTemplateNameNotMatchSubjectErr`              | 400         | Имя шаблона в теме не совпадает с запросом                                                         |
+| 10075      | `JSPeerRemapErr`              | 503         | Не удалось переназначить участника                                                         |
+| 10076      | `JSNotEnabledErr`              | 503         | JetStream не включён                                                         |
+| 10120      | `JSNoLimitsErr`              | 400         | Нет стандартного или подходящего многоуровневого лимита JetStream                                                         |
+| 10133      | `JSReplicasCountCannotBeNegative`              | 400         | Число реплик не может быть отрицательным                                                         |
+| 10157      | `JSPedanticErrF`              | 400         | строгий режим: `{err}`                                                         |
+| 10185      | `JSRequiredApiLevelErr`              | 412         | Требуется минимальный уровень API JetStream                                                         |
+| 10205      | `JSBatchPublishDisabledErr`              | 400         | Пакетная публикация отключена                                                         |
+| 10206      | `JSBatchPublishInvalidPatternErr`              | 400         | Недопустимый шаблон пакетной публикации                                                         |
+| 10207      | `JSBatchPublishInvalidBatchIDErr`              | 400         | Недопустимый идентификатор пакетной публикации                                                         |
+| 10208      | `JSBatchPublishUnknownBatchIDErr`              | 400         | Неизвестный идентификатор пакетной публикации                                                         |
+| 10211      | `JSBatchPublishTooManyInflight`              | 429         | Слишком много незавершённых пакетных публикаций                                                         |
 
 
-## Clustering Errors
+## Ошибки кластеризации {#clustering-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10004      | `JSClusterIncompleteErr`              | 503         | incomplete results                                                         |
+| 10004      | `JSClusterIncompleteErr`              | 503         | Неполные результаты                                                         |
 | 10005      | `JSClusterNoPeersErrF`              | 400         | `{err}`                                                         |
-| 10006      | `JSClusterNotActiveErr`              | 500         | JetStream not in clustered mode                                                         |
-| 10007      | `JSClusterNotAssignedErr`              | 500         | JetStream cluster not assigned to this server                                                         |
-| 10008      | `JSClusterNotAvailErr`              | 503         | JetStream system temporarily unavailable                                                         |
-| 10009      | `JSClusterNotLeaderErr`              | 500         | JetStream cluster can not handle request                                                         |
-| 10010      | `JSClusterRequiredErr`              | 503         | JetStream clustering support required                                                         |
-| 10011      | `JSClusterTagsErr`              | 400         | tags placement not supported for operation                                                         |
-| 10036      | `JSClusterUnSupportFeatureErr`              | 503         | not currently supported in clustered mode                                                         |
-| 10040      | `JSClusterPeerNotMemberErr`              | 400         | peer not a member                                                         |
-| 10044      | `JSClusterServerNotMemberErr`              | 400         | server is not a member of the cluster                                                         |
-| 10202      | `JSClusterServerMemberChangeInflightErr`              | 400         | cluster member change is in progress                                                         |
-| 10224      | `JSClusterRescueErr`              | 400         | JetStream system rescue not applied: `{err}`                                                         |
+| 10006      | `JSClusterNotActiveErr`              | 500         | JetStream работает не в кластерном режиме                                                         |
+| 10007      | `JSClusterNotAssignedErr`              | 500         | Кластер JetStream не назначен этому серверу                                                         |
+| 10008      | `JSClusterNotAvailErr`              | 503         | Система JetStream временно недоступна                                                         |
+| 10009      | `JSClusterNotLeaderErr`              | 500         | Кластер JetStream не может обработать запрос                                                         |
+| 10010      | `JSClusterRequiredErr`              | 503         | Требуется поддержка кластеризации JetStream                                                         |
+| 10011      | `JSClusterTagsErr`              | 400         | Размещение по тегам не поддерживается для операции                                                         |
+| 10036      | `JSClusterUnSupportFeatureErr`              | 503         | В кластерном режиме пока не поддерживается                                                         |
+| 10040      | `JSClusterPeerNotMemberErr`              | 400         | Участник не входит в группу                                                         |
+| 10044      | `JSClusterServerNotMemberErr`              | 400         | Сервер не входит в кластер                                                         |
+| 10202      | `JSClusterServerMemberChangeInflightErr`              | 400         | Состав кластера сейчас изменяется                                                         |
+| 10224      | `JSClusterRescueErr`              | 400         | Восстановление системы JetStream не применено: `{err}`                                                         |
 
 
-## Consumer Errors
+## Ошибки потребителей {#consumer-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
 | 10012      | `JSConsumerCreateErrF`              | 500         | `{err}`                                                         |
-| 10013      | `JSConsumerNameExistErr`              | 400         | consumer name already in use                                                         |
-| 10014      | `JSConsumerNotFoundErr`              | 404         | consumer not found                                                         |
-| 10016      | `JSConsumerDurableNameNotInSubjectErr`              | 400         | consumer expected to be durable but no durable name set in subject                                                         |
-| 10017      | `JSConsumerDurableNameNotMatchSubjectErr`              | 400         | consumer name in subject does not match durable name in request                                                         |
-| 10018      | `JSConsumerDurableNameNotSetErr`              | 400         | consumer expected to be durable but a durable name was not set                                                         |
-| 10019      | `JSConsumerEphemeralWithDurableInSubjectErr`              | 400         | consumer expected to be ephemeral but detected a durable name set in subject                                                         |
-| 10020      | `JSConsumerEphemeralWithDurableNameErr`              | 400         | consumer expected to be ephemeral but a durable name was set in request                                                         |
-| 10026      | `JSMaximumConsumersLimitErr`              | 400         | maximum consumers limit reached                                                         |
+| 10013      | `JSConsumerNameExistErr`              | 400         | Имя потребителя уже используется                                                         |
+| 10014      | `JSConsumerNotFoundErr`              | 404         | Потребитель не найден                                                         |
+| 10016      | `JSConsumerDurableNameNotInSubjectErr`              | 400         | Ожидается долговременный потребитель, но его имя не задано в теме                                                         |
+| 10017      | `JSConsumerDurableNameNotMatchSubjectErr`              | 400         | Имя потребителя в теме не совпадает с именем долговременного потребителя в запросе                                                         |
+| 10018      | `JSConsumerDurableNameNotSetErr`              | 400         | Ожидается долговременный потребитель, но его имя не задано                                                         |
+| 10019      | `JSConsumerEphemeralWithDurableInSubjectErr`              | 400         | Ожидается временный потребитель, но тема содержит имя долговременного                                                         |
+| 10020      | `JSConsumerEphemeralWithDurableNameErr`              | 400         | Ожидается временный потребитель, но запрос содержит имя долговременного                                                         |
+| 10026      | `JSMaximumConsumersLimitErr`              | 400         | Достигнут лимит числа потребителей                                                         |
 | 10029      | `JSMirrorConsumerSetupFailedErrF`              | 500         | `{err}`                                                         |
 | 10045      | `JSSourceConsumerSetupFailedErrF`              | 500         | `{err}`                                                         |
-| 10078      | `JSConsumerConfigRequiredErr`              | 400         | consumer config required                                                         |
-| 10079      | `JSConsumerDeliverToWildcardsErr`              | 400         | consumer deliver subject has wildcards                                                         |
-| 10080      | `JSConsumerPushMaxWaitingErr`              | 400         | consumer in push mode can not set max waiting                                                         |
-| 10081      | `JSConsumerDeliverCycleErr`              | 400         | consumer deliver subject forms a cycle                                                         |
-| 10082      | `JSConsumerMaxPendingAckPolicyRequiredErr`              | 400         | consumer requires ack policy for max ack pending                                                         |
-| 10083      | `JSConsumerSmallHeartbeatErr`              | 400         | consumer idle heartbeat needs to be >= 100ms                                                         |
-| 10084      | `JSConsumerPullRequiresAckErr`              | 400         | consumer in pull mode requires explicit ack policy on workqueue stream                                                         |
-| 10085      | `JSConsumerPullNotDurableErr`              | 400         | consumer in pull mode requires a durable name                                                         |
-| 10086      | `JSConsumerPullWithRateLimitErr`              | 400         | consumer in pull mode can not have rate limit set                                                         |
-| 10087      | `JSConsumerMaxWaitingNegativeErr`              | 400         | consumer max waiting needs to be positive                                                         |
-| 10088      | `JSConsumerHBRequiresPushErr`              | 400         | consumer idle heartbeat requires a push based consumer                                                         |
-| 10089      | `JSConsumerFCRequiresPushErr`              | 400         | consumer flow control requires a push based consumer                                                         |
-| 10090      | `JSConsumerDirectRequiresPushErr`              | 400         | consumer direct requires a push based consumer                                                         |
-| 10091      | `JSConsumerDirectRequiresEphemeralErr`              | 400         | consumer direct requires an ephemeral consumer                                                         |
-| 10092      | `JSConsumerOnMappedErr`              | 400         | consumer direct on a mapped consumer                                                         |
-| 10093      | `JSConsumerFilterNotSubsetErr`              | 400         | consumer filter subject is not a valid subset of the interest subjects                                                         |
+| 10078      | `JSConsumerConfigRequiredErr`              | 400         | Требуется конфигурация потребителя                                                         |
+| 10079      | `JSConsumerDeliverToWildcardsErr`              | 400         | Тема доставки потребителя содержит подстановочные символы                                                         |
+| 10080      | `JSConsumerPushMaxWaitingErr`              | 400         | Push-потребителю нельзя задавать max waiting                                                         |
+| 10081      | `JSConsumerDeliverCycleErr`              | 400         | Тема доставки потребителя образует цикл                                                         |
+| 10082      | `JSConsumerMaxPendingAckPolicyRequiredErr`              | 400         | Для ограничения ожидающих подтверждений потребителю нужна политика подтверждений                                                         |
+| 10083      | `JSConsumerSmallHeartbeatErr`              | 400         | Интервал heartbeat бездействия потребителя должен быть не меньше 100 мс                                                         |
+| 10084      | `JSConsumerPullRequiresAckErr`              | 400         | Pull-потребителю потока workqueue требуется явная политика подтверждений                                                         |
+| 10085      | `JSConsumerPullNotDurableErr`              | 400         | Pull-потребителю требуется имя долговременного потребителя                                                         |
+| 10086      | `JSConsumerPullWithRateLimitErr`              | 400         | Pull-потребителю нельзя задавать ограничение скорости                                                         |
+| 10087      | `JSConsumerMaxWaitingNegativeErr`              | 400         | Максимальное число ожидающих запросов потребителя должно быть положительным                                                         |
+| 10088      | `JSConsumerHBRequiresPushErr`              | 400         | Heartbeat бездействия требует push-потребителя                                                         |
+| 10089      | `JSConsumerFCRequiresPushErr`              | 400         | Управление потоком требует push-потребителя                                                         |
+| 10090      | `JSConsumerDirectRequiresPushErr`              | 400         | Прямой доступ требует push-потребителя                                                         |
+| 10091      | `JSConsumerDirectRequiresEphemeralErr`              | 400         | Прямой доступ требует временного потребителя                                                         |
+| 10092      | `JSConsumerOnMappedErr`              | 400         | Прямой доступ потребителя применяется к перенаправленному потребителю                                                         |
+| 10093      | `JSConsumerFilterNotSubsetErr`              | 400         | Фильтр темы потребителя не является допустимым подмножеством тем интереса                                                         |
 | 10094      | `JSConsumerInvalidPolicyErrF`              | 400         | `{err}`                                                         |
-| 10095      | `JSConsumerInvalidSamplingErrF`              | 400         | failed to parse consumer sampling configuration: `{err}`                                                         |
-| 10098      | `JSConsumerWQRequiresExplicitAckErr`              | 400         | workqueue stream requires explicit ack                                                         |
-| 10099      | `JSConsumerWQMultipleUnfilteredErr`              | 400         | multiple non-filtered consumers not allowed on workqueue stream                                                         |
-| 10100      | `JSConsumerWQConsumerNotUniqueErr`              | 400         | filtered consumer not unique on workqueue stream                                                         |
-| 10101      | `JSConsumerWQConsumerNotDeliverAllErr`              | 400         | consumer must be deliver all on workqueue stream                                                         |
-| 10102      | `JSConsumerNameTooLongErrF`              | 400         | consumer name is too long, maximum allowed is `{max}`                                                         |
-| 10103      | `JSConsumerBadDurableNameErr`              | 400         | durable name can not contain '.', '*', '>'                                                         |
-| 10104      | `JSConsumerStoreFailedErrF`              | 500         | error creating store for consumer: `{err}`                                                         |
-| 10105      | `JSConsumerExistingActiveErr`              | 400         | consumer already exists and is still active                                                         |
-| 10106      | `JSConsumerReplacementWithDifferentNameErr`              | 400         | consumer replacement durable config not the same                                                         |
-| 10107      | `JSConsumerDescriptionTooLongErrF`              | 400         | consumer description is too long, maximum allowed is `{max}`                                                         |
-| 10108      | `JSConsumerWithFlowControlNeedsHeartbeats`              | 400         | consumer with flow control also needs heartbeats                                                         |
-| 10112      | `JSConsumerInvalidDeliverSubject`              | 400         | invalid push consumer deliver subject                                                         |
-| 10114      | `JSConsumerMaxRequestBatchNegativeErr`              | 400         | consumer max request batch needs to be > 0                                                         |
-| 10115      | `JSConsumerMaxRequestExpiresTooSmall`              | 400         | consumer max request expires needs to be >= 1ms                                                         |
-| 10116      | `JSConsumerMaxDeliverBackoffErr`              | 400         | max deliver is required to be > length of backoff values                                                         |
-| 10119      | `JSConsumerOfflineErr`              | 500         | consumer is offline                                                         |
-| 10121      | `JSConsumerMaxPendingAckExcessErrF`              | 400         | consumer max ack pending exceeds system limit of `{limit}`                                                         |
-| 10125      | `JSConsumerMaxRequestBatchExceededF`              | 400         | consumer max request batch exceeds server limit of `{limit}`                                                         |
-| 10126      | `JSConsumerReplicasExceedsStream`              | 400         | consumer config replica count exceeds parent stream                                                         |
-| 10127      | `JSConsumerNameContainsPathSeparatorsErr`              | 400         | Consumer name can not contain path separators                                                         |
-| 10131      | `JSConsumerCreateFilterSubjectMismatchErr`              | 400         | Consumer create request did not match filtered subject from create subject                                                         |
-| 10132      | `JSConsumerCreateDurableAndNameMismatch`              | 400         | Consumer Durable and Name have to be equal if both are provided                                                         |
-| 10134      | `JSConsumerReplicasShouldMatchStream`              | 400         | consumer config replicas must match interest retention stream's replicas                                                         |
-| 10135      | `JSConsumerMetadataLengthErrF`              | 400         | consumer metadata exceeds maximum size of `{limit}`                                                         |
-| 10136      | `JSConsumerDuplicateFilterSubjects`              | 400         | consumer cannot have both FilterSubject and FilterSubjects specified                                                         |
-| 10137      | `JSConsumerMultipleFiltersNotAllowed`              | 400         | consumer with multiple subject filters cannot use subject based API                                                         |
-| 10138      | `JSConsumerOverlappingSubjectFilters`              | 400         | consumer subject filters cannot overlap                                                         |
-| 10139      | `JSConsumerEmptyFilter`              | 400         | consumer filter in FilterSubjects cannot be empty                                                         |
-| 10148      | `JSConsumerAlreadyExists`              | 400         | consumer already exists                                                         |
-| 10149      | `JSConsumerDoesNotExist`              | 400         | consumer does not exist                                                         |
-| 10153      | `JSConsumerInactiveThresholdExcess`              | 400         | consumer inactive threshold exceeds system limit of `{limit}`                                                         |
-| 10159      | `JSConsumerPriorityPolicyWithoutGroup`              | 400         | Setting PriorityPolicy requires at least one PriorityGroup to be set                                                         |
-| 10160      | `JSConsumerInvalidPriorityGroupErr`              | 400         | Provided priority group does not exist for this consumer                                                         |
-| 10161      | `JSConsumerEmptyGroupName`              | 400         | Group name cannot be an empty string                                                         |
-| 10162      | `JSConsumerInvalidGroupNameErr`              | 400         | Valid priority group name must match A-Z, a-z, 0-9, -_/=)+ and may not exceed 16 characters                                                         |
-| 10178      | `JSConsumerPushWithPriorityGroupErr`              | 400         | priority groups can not be used with push consumers                                                         |
-| 10181      | `JSConsumerAckPolicyInvalidErr`              | 400         | consumer ack policy invalid                                                         |
-| 10182      | `JSConsumerReplayPolicyInvalidErr`              | 400         | consumer replay policy invalid                                                         |
-| 10183      | `JSConsumerAckWaitNegativeErr`              | 400         | consumer ack wait needs to be positive                                                         |
-| 10184      | `JSConsumerBackOffNegativeErr`              | 400         | consumer backoff needs to be positive                                                         |
-| 10195      | `JSConsumerOfflineReasonErrF`              | 500         | consumer is offline: `{err}`                                                         |
-| 10196      | `JSConsumerPriorityGroupWithPolicyNone`              | 400         | consumer can not have priority groups when policy is none                                                         |
-| 10197      | `JSConsumerPinnedTTLWithoutPriorityPolicyNone`              | 400         | PinnedTTL cannot be set when PriorityPolicy is none                                                         |
-| 10204      | `JSConsumerInvalidResetErr`              | 400         | invalid reset: `{err}`                                                         |
-| 10213      | `JSMirrorDurableConsumerCfgInvalid`              | 400         | stream mirror consumer config is invalid                                                         |
-| 10214      | `JSMirrorConsumerRequiresAckFCErr`              | 400         | stream mirror consumer requires flow control ack policy                                                         |
-| 10215      | `JSSourceDurableConsumerCfgInvalid`              | 400         | stream source consumer config is invalid                                                         |
-| 10216      | `JSSourceDurableConsumerDuplicateDetected`              | 400         | duplicate stream source consumer detected                                                         |
-| 10217      | `JSSourceConsumerRequiresAckFCErr`              | 400         | stream source consumer requires flow control ack policy                                                         |
-| 10218      | `JSConsumerAckFCRequiresPushErr`              | 400         | flow control ack policy requires a push based consumer                                                         |
-| 10219      | `JSConsumerAckFCRequiresFCErr`              | 400         | flow control ack policy requires flow control                                                         |
-| 10220      | `JSConsumerAckFCRequiresMaxAckPendingErr`              | 400         | flow control ack policy requires max ack pending                                                         |
-| 10221      | `JSConsumerAckFCRequiresNoAckWaitErr`              | 400         | flow control ack policy requires unset ack wait                                                         |
-| 10222      | `JSConsumerAckFCRequiresNoMaxDeliverErr`              | 400         | flow control ack policy requires unset max deliver                                                         |
-| 10225      | `JSConsumerStreamIdentityMismatchF`              | 400         | consumer's stream identity does not match: `{msg}`                                                         |
+| 10095      | `JSConsumerInvalidSamplingErrF`              | 400         | не удалось разобрать конфигурацию выборки потребителя: `{err}`                                                         |
+| 10098      | `JSConsumerWQRequiresExplicitAckErr`              | 400         | Поток workqueue требует явных подтверждений                                                         |
+| 10099      | `JSConsumerWQMultipleUnfilteredErr`              | 400         | Несколько потребителей без фильтра недопустимы в потоке workqueue                                                         |
+| 10100      | `JSConsumerWQConsumerNotUniqueErr`              | 400         | Фильтр потребителя не уникален в потоке workqueue                                                         |
+| 10101      | `JSConsumerWQConsumerNotDeliverAllErr`              | 400         | Для потока workqueue потребителю нужна доставка всех сообщений                                                         |
+| 10102      | `JSConsumerNameTooLongErrF`              | 400         | слишком длинное имя потребителя, максимум: `{max}`                                                         |
+| 10103      | `JSConsumerBadDurableNameErr`              | 400         | Имя долговременного потребителя не может содержать '.', '*', '>'                                                         |
+| 10104      | `JSConsumerStoreFailedErrF`              | 500         | ошибка создания хранилища потребителя: `{err}`                                                         |
+| 10105      | `JSConsumerExistingActiveErr`              | 400         | Потребитель уже существует и активен                                                         |
+| 10106      | `JSConsumerReplacementWithDifferentNameErr`              | 400         | Конфигурация заменяемого долговременного потребителя отличается                                                         |
+| 10107      | `JSConsumerDescriptionTooLongErrF`              | 400         | слишком длинное описание потребителя, максимум: `{max}`                                                         |
+| 10108      | `JSConsumerWithFlowControlNeedsHeartbeats`              | 400         | Потребителю с управлением потоком также нужен heartbeat                                                         |
+| 10112      | `JSConsumerInvalidDeliverSubject`              | 400         | Недопустимая тема доставки push-потребителя                                                         |
+| 10114      | `JSConsumerMaxRequestBatchNegativeErr`              | 400         | Максимальный пакет запроса потребителя должен быть больше 0                                                         |
+| 10115      | `JSConsumerMaxRequestExpiresTooSmall`              | 400         | Максимальное время запроса потребителя должно быть не меньше 1 мс                                                         |
+| 10116      | `JSConsumerMaxDeliverBackoffErr`              | 400         | max deliver должен превышать длину списка интервалов backoff                                                         |
+| 10119      | `JSConsumerOfflineErr`              | 500         | Потребитель недоступен                                                         |
+| 10121      | `JSConsumerMaxPendingAckExcessErrF`              | 400         | лимит неподтверждённых сообщений потребителя превышает системный предел `{limit}`                                                         |
+| 10125      | `JSConsumerMaxRequestBatchExceededF`              | 400         | максимальный размер запрашиваемого пакета потребителя превышает лимит сервера `{limit}`                                                         |
+| 10126      | `JSConsumerReplicasExceedsStream`              | 400         | Число реплик потребителя превышает число реплик родительского потока                                                         |
+| 10127      | `JSConsumerNameContainsPathSeparatorsErr`              | 400         | Имя потребителя не должно содержать разделителей пути                                                         |
+| 10131      | `JSConsumerCreateFilterSubjectMismatchErr`              | 400         | Запрос создания потребителя не соответствует фильтру темы из темы создания                                                         |
+| 10132      | `JSConsumerCreateDurableAndNameMismatch`              | 400         | Если заданы Durable и Name потребителя, они должны совпадать                                                         |
+| 10134      | `JSConsumerReplicasShouldMatchStream`              | 400         | Число реплик потребителя должно совпадать с числом реплик потока с хранением по интересу                                                         |
+| 10135      | `JSConsumerMetadataLengthErrF`              | 400         | метаданные потребителя превышают максимальный размер `{limit}`                                                         |
+| 10136      | `JSConsumerDuplicateFilterSubjects`              | 400         | Потребителю нельзя одновременно задавать FilterSubject и FilterSubjects                                                         |
+| 10137      | `JSConsumerMultipleFiltersNotAllowed`              | 400         | Потребитель с несколькими фильтрами тем не может использовать API на основе темы                                                         |
+| 10138      | `JSConsumerOverlappingSubjectFilters`              | 400         | Фильтры тем потребителя не должны пересекаться                                                         |
+| 10139      | `JSConsumerEmptyFilter`              | 400         | Фильтр потребителя в FilterSubjects не может быть пустым                                                         |
+| 10148      | `JSConsumerAlreadyExists`              | 400         | Потребитель уже существует                                                         |
+| 10149      | `JSConsumerDoesNotExist`              | 400         | Потребитель не существует                                                         |
+| 10153      | `JSConsumerInactiveThresholdExcess`              | 400         | порог неактивности потребителя превышает системный лимит `{limit}`                                                         |
+| 10159      | `JSConsumerPriorityPolicyWithoutGroup`              | 400         | Для задания PriorityPolicy требуется хотя бы одна PriorityGroup                                                         |
+| 10160      | `JSConsumerInvalidPriorityGroupErr`              | 400         | Указанная приоритетная группа не существует у потребителя                                                         |
+| 10161      | `JSConsumerEmptyGroupName`              | 400         | Имя группы не может быть пустой строкой                                                         |
+| 10162      | `JSConsumerInvalidGroupNameErr`              | 400         | Имя приоритетной группы должно соответствовать A-Z, a-z, 0-9, -_/=)+ и быть не длиннее 16 символов                                                         |
+| 10178      | `JSConsumerPushWithPriorityGroupErr`              | 400         | Приоритетные группы нельзя использовать с push-потребителями                                                         |
+| 10181      | `JSConsumerAckPolicyInvalidErr`              | 400         | Недопустимая политика подтверждений потребителя                                                         |
+| 10182      | `JSConsumerReplayPolicyInvalidErr`              | 400         | Недопустимая политика воспроизведения потребителя                                                         |
+| 10183      | `JSConsumerAckWaitNegativeErr`              | 400         | Время ожидания подтверждения потребителя должно быть положительным                                                         |
+| 10184      | `JSConsumerBackOffNegativeErr`              | 400         | Интервал повторных попыток потребителя должен быть положительным                                                         |
+| 10195      | `JSConsumerOfflineReasonErrF`              | 500         | потребитель недоступен: `{err}`                                                         |
+| 10196      | `JSConsumerPriorityGroupWithPolicyNone`              | 400         | При политике none у потребителя не может быть приоритетных групп                                                         |
+| 10197      | `JSConsumerPinnedTTLWithoutPriorityPolicyNone`              | 400         | PinnedTTL нельзя задавать при PriorityPolicy, равном none                                                         |
+| 10204      | `JSConsumerInvalidResetErr`              | 400         | недопустимый сброс: `{err}`                                                         |
+| 10213      | `JSMirrorDurableConsumerCfgInvalid`              | 400         | Недопустимая конфигурация потребителя зеркала потока                                                         |
+| 10214      | `JSMirrorConsumerRequiresAckFCErr`              | 400         | Потребителю зеркала потока требуется политика подтверждений flow control                                                         |
+| 10215      | `JSSourceDurableConsumerCfgInvalid`              | 400         | Недопустимая конфигурация потребителя источника потока                                                         |
+| 10216      | `JSSourceDurableConsumerDuplicateDetected`              | 400         | Обнаружен повторяющийся потребитель источника потока                                                         |
+| 10217      | `JSSourceConsumerRequiresAckFCErr`              | 400         | Потребителю источника потока требуется политика подтверждений flow control                                                         |
+| 10218      | `JSConsumerAckFCRequiresPushErr`              | 400         | Политика подтверждений flow control требует push-потребителя                                                         |
+| 10219      | `JSConsumerAckFCRequiresFCErr`              | 400         | Политика подтверждений flow control требует управления потоком                                                         |
+| 10220      | `JSConsumerAckFCRequiresMaxAckPendingErr`              | 400         | Политика подтверждений flow control требует max ack pending                                                         |
+| 10221      | `JSConsumerAckFCRequiresNoAckWaitErr`              | 400         | Политика подтверждений flow control требует отсутствия ack wait                                                         |
+| 10222      | `JSConsumerAckFCRequiresNoMaxDeliverErr`              | 400         | Политика подтверждений flow control требует отсутствия max deliver                                                         |
+| 10225      | `JSConsumerStreamIdentityMismatchF`              | 400         | идентификатор потока потребителя не совпадает: `{msg}`                                                         |
 
 
-## Stream Errors
+## Ошибки потоков {#stream-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10021      | `JSStreamExternalApiOverlapErrF`              | 400         | stream external api prefix `{prefix}` must not overlap with `{subject}`                                                         |
-| 10022      | `JSStreamExternalDelPrefixOverlapsErrF`              | 400         | stream external delivery prefix `{prefix}` overlaps with stream subject `{subject}`                                                         |
-| 10024      | `JSStreamInvalidExternalDeliverySubjErrF`              | 400         | stream external delivery prefix `{prefix}` must not contain wildcards                                                         |
-| 10027      | `JSMaximumStreamsLimitErr`              | 400         | maximum number of streams reached                                                         |
+| 10021      | `JSStreamExternalApiOverlapErrF`              | 400         | внешний префикс API потока `{prefix}` не должен пересекаться с `{subject}`                                                         |
+| 10022      | `JSStreamExternalDelPrefixOverlapsErrF`              | 400         | внешний префикс доставки потока `{prefix}` пересекается с субъектом потока `{subject}`                                                         |
+| 10024      | `JSStreamInvalidExternalDeliverySubjErrF`              | 400         | внешний префикс доставки потока `{prefix}` не должен содержать подстановки                                                         |
+| 10027      | `JSMaximumStreamsLimitErr`              | 400         | Достигнуто максимальное число потоков                                                         |
 | 10048      | `JSStreamAssignmentErrF`              | 500         | `{err}`                                                         |
 | 10049      | `JSStreamCreateErrF`              | 500         | `{err}`                                                         |
 | 10050      | `JSStreamDeleteErrF`              | 500         | `{err}`                                                         |
 | 10051      | `JSStreamGeneralErrorF`              | 500         | `{err}`                                                         |
 | 10052      | `JSStreamInvalidConfigF`              | 500         | `{err}`                                                         |
 | 10053      | `JSStreamLimitsErrF`              | 500         | `{err}`                                                         |
-| 10054      | `JSStreamMessageExceedsMaximumErr`              | 400         | message size exceeds maximum allowed                                                         |
-| 10056      | `JSStreamMismatchErr`              | 400         | stream name in subject does not match request                                                         |
+| 10054      | `JSStreamMessageExceedsMaximumErr`              | 400         | Размер сообщения превышает допустимый максимум                                                         |
+| 10056      | `JSStreamMismatchErr`              | 400         | Имя потока в теме не совпадает с запросом                                                         |
 | 10057      | `JSStreamMsgDeleteFailedF`              | 500         | `{err}`                                                         |
-| 10058      | `JSStreamNameExistErr`              | 400         | stream name already in use with a different configuration                                                         |
-| 10059      | `JSStreamNotFoundErr`              | 404         | stream not found                                                         |
-| 10060      | `JSStreamNotMatchErr`              | 400         | expected stream does not match                                                         |
-| 10061      | `JSStreamReplicasNotUpdatableErr`              | 400         | Replicas configuration can not be updated                                                         |
-| 10062      | `JSStreamRestoreErrF`              | 500         | restore failed: `{err}`                                                         |
-| 10063      | `JSStreamSequenceNotMatchErr`              | 503         | expected stream sequence does not match                                                         |
-| 10064      | `JSStreamSnapshotErrF`              | 500         | snapshot failed: `{err}`                                                         |
-| 10065      | `JSStreamSubjectOverlapErr`              | 400         | subjects overlap with an existing stream                                                         |
+| 10058      | `JSStreamNameExistErr`              | 400         | Имя потока уже используется с другой конфигурацией                                                         |
+| 10059      | `JSStreamNotFoundErr`              | 404         | Поток не найден                                                         |
+| 10060      | `JSStreamNotMatchErr`              | 400         | Ожидаемый поток не совпадает                                                         |
+| 10061      | `JSStreamReplicasNotUpdatableErr`              | 400         | Конфигурацию реплик нельзя обновить                                                         |
+| 10062      | `JSStreamRestoreErrF`              | 500         | восстановление не удалось: `{err}`                                                         |
+| 10063      | `JSStreamSequenceNotMatchErr`              | 503         | Ожидаемый порядковый номер потока не совпадает                                                         |
+| 10064      | `JSStreamSnapshotErrF`              | 500         | создание снимка не удалось: `{err}`                                                         |
+| 10065      | `JSStreamSubjectOverlapErr`              | 400         | Темы пересекаются с существующим потоком                                                         |
 | 10066      | `JSStreamTemplateCreateErrF`              | 500         | `{err}`                                                         |
 | 10067      | `JSStreamTemplateDeleteErrF`              | 500         | `{err}`                                                         |
-| 10068      | `JSStreamTemplateNotFoundErr`              | 404         | template not found                                                         |
+| 10068      | `JSStreamTemplateNotFoundErr`              | 404         | Шаблон не найден                                                         |
 | 10069      | `JSStreamUpdateErrF`              | 500         | `{err}`                                                         |
-| 10070      | `JSStreamWrongLastMsgIDErrF`              | 400         | wrong last msg ID: `{id}`                                                         |
-| 10071      | `JSStreamWrongLastSequenceErrF`              | 400         | wrong last sequence: `{seq}`                                                         |
-| 10074      | `JSStreamReplicasNotSupportedErr`              | 500         | replicas > 1 not supported in non-clustered mode                                                         |
+| 10070      | `JSStreamWrongLastMsgIDErrF`              | 400         | неверный идентификатор последнего сообщения: `{id}`                                                         |
+| 10071      | `JSStreamWrongLastSequenceErrF`              | 400         | неверный последний порядковый номер: `{seq}`                                                         |
+| 10074      | `JSStreamReplicasNotSupportedErr`              | 500         | Несколько реплик не поддерживаются вне кластерного режима                                                         |
 | 10077      | `JSStreamStoreFailedF`              | 503         | `{err}`                                                         |
-| 10096      | `JSStreamInvalidErr`              | 500         | stream not valid                                                         |
-| 10097      | `JSStreamHeaderExceedsMaximumErr`              | 400         | header size exceeds maximum allowed of 64k                                                         |
-| 10109      | `JSStreamSealedErr`              | 400         | invalid operation on sealed stream                                                         |
+| 10096      | `JSStreamInvalidErr`              | 500         | Недопустимый поток                                                         |
+| 10097      | `JSStreamHeaderExceedsMaximumErr`              | 400         | Размер заголовков превышает допустимые 64 КБ                                                         |
+| 10109      | `JSStreamSealedErr`              | 400         | Недопустимая операция над запечатанным потоком                                                         |
 | 10110      | `JSStreamPurgeFailedF`              | 500         | `{err}`                                                         |
 | 10111      | `JSStreamRollupFailedF`              | 500         | `{err}`                                                         |
-| 10113      | `JSStreamMaxBytesRequired`              | 400         | account requires a stream config to have max bytes set                                                         |
-| 10117      | `JSStreamInfoMaxSubjectsErr`              | 500         | subject details would exceed maximum allowed                                                         |
-| 10118      | `JSStreamOfflineErr`              | 500         | stream is offline                                                         |
-| 10122      | `JSStreamMaxStreamBytesExceeded`              | 400         | stream max bytes exceeds account limit max stream bytes                                                         |
-| 10123      | `JSStreamMoveAndScaleErr`              | 400         | can not move and scale a stream in a single update                                                         |
-| 10124      | `JSStreamMoveInProgressErr`              | 400         | stream move already in progress                                                         |
-| 10128      | `JSStreamNameContainsPathSeparatorsErr`              | 400         | Stream name can not contain path separators                                                         |
-| 10129      | `JSStreamReconfigureNotInProgressErr`              | 400         | stream reconfiguration not in progress                                                         |
-| 10130      | `JSStreamNameExistRestoreFailedErr`              | 400         | stream name already in use, cannot restore                                                         |
-| 10156      | `JSStreamTransformInvalidDestination`              | 400         | stream transform: `{err}`                                                         |
-| 10158      | `JSStreamDuplicateMessageConflict`              | 409         | duplicate message id is in process                                                         |
-| 10163      | `JSStreamExpectedLastSeqPerSubjectNotReady`              | 503         | expected last sequence per subject temporarily unavailable                                                         |
-| 10164      | `JSStreamWrongLastSequenceConstantErr`              | 400         | wrong last sequence                                                         |
-| 10167      | `JSStreamTooManyRequests`              | 429         | too many requests                                                         |
-| 10180      | `JSStreamMinLastSeqErr`              | 412         | min last sequence                                                         |
-| 10193      | `JSStreamExpectedLastSeqPerSubjectInvalid`              | 400         | missing sequence for expected last sequence per subject                                                         |
-| 10194      | `JSStreamOfflineReasonErrF`              | 500         | stream is offline: `{err}`                                                         |
-| 10226      | `JSStreamReconfigureInProgressErr`              | 400         | stream reconfiguration already in progress                                                         |
+| 10113      | `JSStreamMaxBytesRequired`              | 400         | Учётная запись требует задания максимального размера потока в байтах                                                         |
+| 10117      | `JSStreamInfoMaxSubjectsErr`              | 500         | Сведения о темах превысят допустимый максимум                                                         |
+| 10118      | `JSStreamOfflineErr`              | 500         | Поток недоступен                                                         |
+| 10122      | `JSStreamMaxStreamBytesExceeded`              | 400         | Максимальный размер потока превышает лимит учётной записи на размер одного потока                                                         |
+| 10123      | `JSStreamMoveAndScaleErr`              | 400         | Нельзя одновременно перемещать поток и менять число реплик одним обновлением                                                         |
+| 10124      | `JSStreamMoveInProgressErr`              | 400         | перемещение потока уже выполняется                                                         |
+| 10128      | `JSStreamNameContainsPathSeparatorsErr`              | 400         | Имя потока не должно содержать разделителей пути                                                         |
+| 10129      | `JSStreamReconfigureNotInProgressErr`              | 400         | изменение конфигурации потока не выполняется                                                         |
+| 10130      | `JSStreamNameExistRestoreFailedErr`              | 400         | Имя потока уже используется; восстановление невозможно                                                         |
+| 10156      | `JSStreamTransformInvalidDestination`              | 400         | преобразование потока: `{err}`                                                         |
+| 10158      | `JSStreamDuplicateMessageConflict`              | 409         | Сообщение с таким идентификатором уже обрабатывается                                                         |
+| 10163      | `JSStreamExpectedLastSeqPerSubjectNotReady`              | 503         | Проверка ожидаемого последнего номера темы временно недоступна                                                         |
+| 10164      | `JSStreamWrongLastSequenceConstantErr`              | 400         | Неверный последний порядковый номер                                                         |
+| 10167      | `JSStreamTooManyRequests`              | 429         | Слишком много запросов                                                         |
+| 10180      | `JSStreamMinLastSeqErr`              | 412         | Минимальный последний порядковый номер                                                         |
+| 10193      | `JSStreamExpectedLastSeqPerSubjectInvalid`              | 400         | Отсутствует номер для проверки ожидаемого последнего номера темы                                                         |
+| 10194      | `JSStreamOfflineReasonErrF`              | 500         | поток недоступен: `{err}`                                                         |
+| 10226      | `JSStreamReconfigureInProgressErr`              | 400         | изменение конфигурации потока уже выполняется                                                         |
 
 
-## Mirror Errors
+## Ошибки зеркал {#mirror-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10030      | `JSMirrorMaxMessageSizeTooBigErr`              | 400         | stream mirror must have max message size >= source                                                         |
-| 10031      | `JSMirrorWithSourcesErr`              | 400         | stream mirrors can not also contain other sources                                                         |
-| 10032      | `JSMirrorWithStartSeqAndTimeErr`              | 400         | stream mirrors can not have both start seq and start time configured                                                         |
-| 10033      | `JSMirrorWithSubjectFiltersErr`              | 400         | stream mirrors can not contain filtered subjects                                                         |
-| 10034      | `JSMirrorWithSubjectsErr`              | 400         | stream mirrors can not contain subjects                                                         |
-| 10055      | `JSStreamMirrorNotUpdatableErr`              | 400         | stream mirror configuration can not be updated                                                         |
-| 10142      | `JSMirrorInvalidStreamName`              | 400         | mirrored stream name is invalid                                                         |
-| 10143      | `JSMirrorWithFirstSeqErr`              | 400         | stream mirrors can not have first sequence configured                                                         |
-| 10150      | `JSMirrorMultipleFiltersNotAllowed`              | 400         | mirror with multiple subject transforms cannot also have a single subject filter                                                         |
-| 10151      | `JSMirrorInvalidSubjectFilter`              | 400         | mirror transform source: `{err}`                                                         |
-| 10152      | `JSMirrorOverlappingSubjectFilters`              | 400         | mirror subject filters can not overlap                                                         |
-| 10154      | `JSMirrorInvalidTransformDestination`              | 400         | mirror transform: `{err}`                                                         |
-| 10173      | `JSMirrorWithCountersErr`              | 400         | stream mirrors can not also calculate counters                                                         |
-| 10186      | `JSMirrorWithMsgSchedulesErr`              | 400         | stream mirrors can not also schedule messages                                                         |
-| 10198      | `JSMirrorWithAtomicPublishErr`              | 400         | stream mirrors can not also use atomic publishing                                                         |
-| 10209      | `JSMirrorWithBatchPublishErr`              | 400         | stream mirrors can not also use batch publishing                                                         |
+| 10030      | `JSMirrorMaxMessageSizeTooBigErr`              | 400         | Максимальный размер сообщения зеркала должен быть не меньше, чем у источника                                                         |
+| 10031      | `JSMirrorWithSourcesErr`              | 400         | Зеркала потоков не могут содержать другие источники                                                         |
+| 10032      | `JSMirrorWithStartSeqAndTimeErr`              | 400         | Зеркалу нельзя одновременно задавать начальный номер и начальное время                                                         |
+| 10033      | `JSMirrorWithSubjectFiltersErr`              | 400         | Зеркала потоков не могут содержать фильтры тем                                                         |
+| 10034      | `JSMirrorWithSubjectsErr`              | 400         | Зеркала потоков не могут содержать темы                                                         |
+| 10055      | `JSStreamMirrorNotUpdatableErr`              | 400         | Конфигурацию зеркала потока нельзя обновить                                                         |
+| 10142      | `JSMirrorInvalidStreamName`              | 400         | Недопустимое имя зеркалируемого потока                                                         |
+| 10143      | `JSMirrorWithFirstSeqErr`              | 400         | Зеркалу нельзя задавать первый порядковый номер                                                         |
+| 10150      | `JSMirrorMultipleFiltersNotAllowed`              | 400         | Зеркало с несколькими преобразованиями тем не может дополнительно иметь одиночный фильтр темы                                                         |
+| 10151      | `JSMirrorInvalidSubjectFilter`              | 400         | источник преобразования зеркала: `{err}`                                                         |
+| 10152      | `JSMirrorOverlappingSubjectFilters`              | 400         | Фильтры тем зеркала не должны пересекаться                                                         |
+| 10154      | `JSMirrorInvalidTransformDestination`              | 400         | преобразование зеркала: `{err}`                                                         |
+| 10173      | `JSMirrorWithCountersErr`              | 400         | Зеркала потоков не могут одновременно вычислять счётчики                                                         |
+| 10186      | `JSMirrorWithMsgSchedulesErr`              | 400         | Зеркала потоков не могут одновременно планировать сообщения                                                         |
+| 10198      | `JSMirrorWithAtomicPublishErr`              | 400         | Зеркала потоков не могут использовать атомарную публикацию                                                         |
+| 10209      | `JSMirrorWithBatchPublishErr`              | 400         | Зеркала потоков не могут использовать пакетную публикацию                                                         |
 
 
-## Source Errors
+## Ошибки источников {#source-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10046      | `JSSourceMaxMessageSizeTooBigErr`              | 400         | stream source must have max message size >= target                                                         |
-| 10140      | `JSSourceDuplicateDetected`              | 400         | duplicate source configuration detected                                                         |
-| 10141      | `JSSourceInvalidStreamName`              | 400         | sourced stream name is invalid                                                         |
-| 10144      | `JSSourceMultipleFiltersNotAllowed`              | 400         | source with multiple subject transforms cannot also have a single subject filter                                                         |
-| 10145      | `JSSourceInvalidSubjectFilter`              | 400         | source transform source: `{err}`                                                         |
-| 10146      | `JSSourceInvalidTransformDestination`              | 400         | source transform: `{err}`                                                         |
-| 10147      | `JSSourceOverlappingSubjectFilters`              | 400         | source filters can not overlap                                                         |
-| 10155      | `JSStreamTransformInvalidSource`              | 400         | stream transform source: `{err}`                                                         |
-| 10187      | `JSSourceWithMsgSchedulesErr`              | 400         | stream source can not also schedule messages                                                         |
-| 10203      | `JSMessageSchedulesSourceInvalidErr`              | 400         | message schedules source is invalid                                                         |
-| 10227      | `JSMessageSourceHdrNotAllowedErr`              | 400         | message stream source header is not allowed                                                         |
+| 10046      | `JSSourceMaxMessageSizeTooBigErr`              | 400         | Максимальный размер сообщения источника должен быть не меньше, чем у целевого потока                                                         |
+| 10140      | `JSSourceDuplicateDetected`              | 400         | Обнаружена повторяющаяся конфигурация источника                                                         |
+| 10141      | `JSSourceInvalidStreamName`              | 400         | Недопустимое имя потока-источника                                                         |
+| 10144      | `JSSourceMultipleFiltersNotAllowed`              | 400         | Источник с несколькими преобразованиями тем не может дополнительно иметь одиночный фильтр темы                                                         |
+| 10145      | `JSSourceInvalidSubjectFilter`              | 400         | источник преобразования источника: `{err}`                                                         |
+| 10146      | `JSSourceInvalidTransformDestination`              | 400         | преобразование источника: `{err}`                                                         |
+| 10147      | `JSSourceOverlappingSubjectFilters`              | 400         | Фильтры источника не должны пересекаться                                                         |
+| 10155      | `JSStreamTransformInvalidSource`              | 400         | источник преобразования потока: `{err}`                                                         |
+| 10187      | `JSSourceWithMsgSchedulesErr`              | 400         | Источник потока не может одновременно планировать сообщения                                                         |
+| 10203      | `JSMessageSchedulesSourceInvalidErr`              | 400         | Недопустимый источник расписания сообщений                                                         |
+| 10227      | `JSMessageSourceHdrNotAllowedErr`              | 400         | заголовок источника потока сообщения не разрешён                                                         |
 
 
-## Message Errors
+## Ошибки сообщений {#message-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10037      | `JSNoMessageFoundErr`              | 404         | no message found                                                         |
-| 10165      | `JSMessageTTLInvalidErr`              | 400         | invalid per-message TTL                                                         |
-| 10166      | `JSMessageTTLDisabledErr`              | 400         | per-message TTL is disabled                                                         |
-| 10168      | `JSMessageIncrDisabledErr`              | 400         | message counters is disabled                                                         |
-| 10169      | `JSMessageIncrMissingErr`              | 400         | message counter increment is missing                                                         |
-| 10170      | `JSMessageIncrPayloadErr`              | 400         | message counter has payload                                                         |
-| 10171      | `JSMessageIncrInvalidErr`              | 400         | message counter increment is invalid                                                         |
-| 10172      | `JSMessageCounterBrokenErr`              | 400         | message counter is broken                                                         |
-| 10188      | `JSMessageSchedulesDisabledErr`              | 400         | message schedules is disabled                                                         |
-| 10189      | `JSMessageSchedulesPatternInvalidErr`              | 400         | message schedules pattern is invalid                                                         |
-| 10190      | `JSMessageSchedulesTargetInvalidErr`              | 400         | message schedules target is invalid                                                         |
-| 10191      | `JSMessageSchedulesTTLInvalidErr`              | 400         | message schedules invalid per-message TTL                                                         |
-| 10192      | `JSMessageSchedulesRollupInvalidErr`              | 400         | message schedules invalid rollup                                                         |
-| 10201      | `JSAtomicPublishContainsDuplicateMessageErr`              | 400         | atomic publish batch contains duplicate message id                                                         |
-| 10212      | `JSMessageSchedulesSchedulerInvalidErr`              | 400         | message schedules invalid scheduler                                                         |
-| 10223      | `JSMessageSchedulesTimeZoneInvalidErr`              | 400         | message schedules time zone is invalid                                                         |
+| 10037      | `JSNoMessageFoundErr`              | 404         | Сообщение не найдено                                                         |
+| 10165      | `JSMessageTTLInvalidErr`              | 400         | Недопустимый TTL отдельного сообщения                                                         |
+| 10166      | `JSMessageTTLDisabledErr`              | 400         | TTL отдельных сообщений отключён                                                         |
+| 10168      | `JSMessageIncrDisabledErr`              | 400         | Счётчики сообщений отключены                                                         |
+| 10169      | `JSMessageIncrMissingErr`              | 400         | Отсутствует приращение счётчика сообщений                                                         |
+| 10170      | `JSMessageIncrPayloadErr`              | 400         | Сообщение счётчика содержит полезную нагрузку                                                         |
+| 10171      | `JSMessageIncrInvalidErr`              | 400         | Недопустимое приращение счётчика сообщений                                                         |
+| 10172      | `JSMessageCounterBrokenErr`              | 400         | Счётчик сообщений повреждён                                                         |
+| 10188      | `JSMessageSchedulesDisabledErr`              | 400         | Расписания сообщений отключены                                                         |
+| 10189      | `JSMessageSchedulesPatternInvalidErr`              | 400         | Недопустимый шаблон расписания сообщений                                                         |
+| 10190      | `JSMessageSchedulesTargetInvalidErr`              | 400         | Недопустимое назначение расписания сообщений                                                         |
+| 10191      | `JSMessageSchedulesTTLInvalidErr`              | 400         | Недопустимый TTL отдельного сообщения расписания                                                         |
+| 10192      | `JSMessageSchedulesRollupInvalidErr`              | 400         | Недопустимая свёртка сообщения расписания                                                         |
+| 10201      | `JSAtomicPublishContainsDuplicateMessageErr`              | 400         | Пакет атомарной публикации содержит повторяющийся идентификатор сообщения                                                         |
+| 10212      | `JSMessageSchedulesSchedulerInvalidErr`              | 400         | Недопустимый планировщик сообщений                                                         |
+| 10223      | `JSMessageSchedulesTimeZoneInvalidErr`              | 400         | Недопустимый часовой пояс расписания сообщений                                                         |
 
 
-## Atomic Publish Errors
+## Ошибки атомарной публикации {#atomic-publish-errors}
 
-| Error Code | Constant                                     | HTTP Status | Description                                                                                  |
+| Код ошибки | Константа                                     | Статус HTTP | Описание                                                                                  |
 | ---------- | -------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| 10174      | `JSAtomicPublishDisabledErr`              | 400         | atomic publish is disabled                                                         |
-| 10175      | `JSAtomicPublishMissingSeqErr`              | 400         | atomic publish sequence is missing                                                         |
-| 10176      | `JSAtomicPublishIncompleteBatchErr`              | 400         | atomic publish batch is incomplete                                                         |
-| 10177      | `JSAtomicPublishUnsupportedHeaderBatchErr`              | 400         | atomic publish unsupported header used: `{header}`                                                         |
-| 10179      | `JSAtomicPublishInvalidBatchIDErr`              | 400         | atomic publish batch ID is invalid                                                         |
-| 10199      | `JSAtomicPublishTooLargeBatchErrF`              | 400         | atomic publish batch is too large: `{size}`                                                         |
-| 10200      | `JSAtomicPublishInvalidBatchCommitErr`              | 400         | atomic publish batch commit is invalid                                                         |
-| 10210      | `JSAtomicPublishTooManyInflight`              | 429         | atomic publish too many inflight                                                         |
+| 10174      | `JSAtomicPublishDisabledErr`              | 400         | Атомарная публикация отключена                                                         |
+| 10175      | `JSAtomicPublishMissingSeqErr`              | 400         | Отсутствует порядковый номер атомарной публикации                                                         |
+| 10176      | `JSAtomicPublishIncompleteBatchErr`              | 400         | Пакет атомарной публикации неполон                                                         |
+| 10177      | `JSAtomicPublishUnsupportedHeaderBatchErr`              | 400         | использован неподдерживаемый заголовок атомарной публикации: `{header}`                                                         |
+| 10179      | `JSAtomicPublishInvalidBatchIDErr`              | 400         | Недопустимый идентификатор пакета атомарной публикации                                                         |
+| 10199      | `JSAtomicPublishTooLargeBatchErrF`              | 400         | слишком большой пакет атомарной публикации: `{size}`                                                         |
+| 10200      | `JSAtomicPublishInvalidBatchCommitErr`              | 400         | Некорректная фиксация пакета атомарной публикации                                                         |
+| 10210      | `JSAtomicPublishTooManyInflight`              | 429         | Слишком много незавершённых атомарных публикаций                                                         |
 
 
-## Appendix
+## Приложение {#appendix}
 
-### Additional Information
+### Дополнительная информация {#additional-information}
 
-Some errors include additional context:
+Некоторые ошибки содержат дополнительный контекст:
 
-- **Help Text**: Some errors provide additional help information to guide troubleshooting
-- **Comments**: Internal comments about the error condition
-- **Deprecations**: Some errors deprecate older error codes
-- **Placeholders**: Errors with `F` suffix typically include placeholders (e.g., `{err}`, `{limit}`) that are replaced with actual values at runtime
+- **Справочный текст**: некоторые ошибки содержат дополнительную информацию для устранения неполадок
+- **Комментарии**: внутренние комментарии об условии возникновения ошибки
+- **Устаревшие коды**: некоторые ошибки заменяют более старые коды ошибок
+- **Подстановки**: ошибки с суффиксом `F` обычно содержат подстановки (например, `{err}`, `{limit}`), заменяемые фактическими значениями во время выполнения
 
-### HTTP Status Codes
+### Коды состояния HTTP {#http-status-codes}
 
-JetStream errors typically map to the following HTTP status codes:
+Ошибки JetStream обычно соответствуют следующим кодам состояния HTTP:
 
-- **400 Bad Request**: Client error, invalid request or configuration
-- **404 Not Found**: Resource not found (stream, consumer, message)
-- **409 Conflict**: Conflicting operation or state
-- **412 Precondition Failed**: Required precondition not met
-- **429 Too Many Requests**: Rate limiting
-- **500 Internal Server Error**: Server-side error
-- **503 Service Unavailable**: Temporary unavailability or clustering issues
+- **400 Bad Request**: ошибка клиента, недопустимый запрос или конфигурация
+- **404 Not Found**: ресурс не найден (поток, потребитель, сообщение)
+- **409 Conflict**: конфликт операции или состояния
+- **412 Precondition Failed**: необходимое предусловие не выполнено
+- **429 Too Many Requests**: ограничение частоты запросов
+- **500 Internal Server Error**: ошибка на стороне сервера
+- **503 Service Unavailable**: временная недоступность или проблемы кластеризации

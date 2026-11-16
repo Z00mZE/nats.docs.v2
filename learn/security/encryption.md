@@ -1,53 +1,31 @@
 ---
 id: encryption
-title: "Encryption & TLS"
+title: "Шифрование и TLS"
 sidebar_position: 9
-description: Secure the wire with TLS and mTLS, then encrypt the JetStream store on disk
+description: "Защита канала TLS и mTLS и шифрование хранилища JetStream на диске"
 ---
 
-# Encryption & TLS
+# Шифрование и TLS {#encryption--tls}
 
-The chapter has built three ways to authenticate a client: a user list
-in the config, a signature chain rooted in the ACME operator, and an
-auth callout service that decides on its own. Every one of them still
-talks over a plaintext link — the credentials and the order JSON cross
-the wire readable by anyone who can see the connection.
+Освоены список пользователей, цепочка ACME и auth callout, но все пока передают данные по открытому каналу. Учётные данные и JSON заказов читаемы наблюдателю соединения.
 
-This page closes that gap. It wraps the client-to-server link in TLS,
-lets the client's certificate serve as the `order-svc` identity, moves the
-TLS handshake in front of the first protocol byte, and encrypts the
-JetStream store on disk.
+Добавим TLS, сертификат клиента как личность order-svc, TLS до первого байта протокола и шифрование JetStream на диске.
 
-## TLS is per connection type
+## TLS каждого типа соединения {#tls-is-per-connection-type}
 
-A NATS server speaks to more than one kind of peer. Clients connect to
-it, servers route to each other in a cluster, a leaf node dials a hub,
-and gateways join superclusters.
+Есть клиентские, кластерные, листовые и шлюзовые соединения.
 
-Each of those is a separate connection type, and each one carries its
-own TLS configuration. The top-level `tls {}` block secures client
-connections. It doesn't touch the others.
+У каждого своя конфигурация. Верхний tls защищает только клиентов.
 
-The monitoring, websocket, mqtt, leafnode, cluster, and gateway connections
-have their own `tls {}` sub-blocks, nested inside their own configuration.
-Turning on TLS for clients leaves cluster routes plaintext until you configure
-the cluster block too.
+Мониторинг, WebSocket, MQTT, leafnodes, cluster и gateway имеют собственные вложенные tls. Клиентский TLS не шифрует маршруты автоматически.
 
-This independence is deliberate: a laptop client and an inter-datacenter
-gateway have different threat models, so each link gets its own
-configuration. This page secures the one link in our scenario: the
-client-to-server connection for `order-svc`.
+Это позволяет разным моделям угроз иметь отдельные параметры. Здесь защищаем order-svc — сервер.
 
-## Server-side TLS
+## Серверный TLS {#server-side-tls}
 
-TLS needs three files on the server. The server's **certificate**
-(`cert_file`) proves the server's identity. Its **private key**
-(`key_file`) is the secret that pairs with that certificate. The
-**CA certificate** (`ca_file`) is the authority the server trusts to
-have signed peer certificates.
+Нужны **сертификат** cert_file, **закрытый ключ** key_file и **сертификат CA** ca_file, которому доверяются сертификаты участников.
 
-If you don't have certificates yet, mint a throwaway CA and a server
-certificate with `openssl`:
+Для обучения создайте временный CA и серверный сертификат openssl:
 
 ```bash
 openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
@@ -59,13 +37,9 @@ openssl x509 -req -in server.csr -CA ca.pem -CAkey ca-key.pem \
   -extfile <(printf "subjectAltName=DNS:nats.acme.internal,IP:127.0.0.1")
 ```
 
-The SAN list covers the DNS name and the loopback address, so you can
-dial either. Copy the three `.pem` files to `/etc/nats/certs/`, where
-this page's config expects them. A throwaway CA is enough to follow
-along; a production server carries certificates from your
-organization's PKI or a public CA.
+SAN включает DNS и loopback. Скопируйте три PEM в /etc/nats/certs/. Для эксплуатации используйте организационную PKI или публичный CA.
 
-Add a `tls {}` block to the server config:
+Добавьте tls:
 
 ```conf
 # nats.conf — client connections now require TLS
@@ -79,34 +53,21 @@ tls {
 }
 ```
 
-`timeout` is the handshake budget in seconds. The default is `2`, and
-two seconds is enough for a healthy network. Too short and a slow client
-can't finish the negotiation; too long and a stalled handshake holds a
-slot open.
+Timeout — секунды установления TLS, стандарт 2. Короткий не даст медленным клиентам закончить, длинный удерживает зависшие подключения.
 
-You can check the config before starting anything with
-`nats-server -t -c nats.conf`. Then start the server the same
-way as before:
+Проверьте `nats-server -t -c nats.conf`, затем запустите:
 
 ```sh
 nats-server -c nats.conf
 ```
 
-The boot log includes `TLS required for client connections`. A
-plaintext client gets refused at the handshake; it never reaches
-authentication.
+Журнал: `TLS required for client connections`. Открытый клиент отвергается до аутентификации.
 
-## The client must trust the CA
+## Доверие CA на клиенте {#the-client-must-trust-the-ca}
 
-A TLS client verifies the server's certificate before it sends a single
-byte of credentials. To do that, the client needs to have in its CA
-certificate pool store a CA certificate which is valid for the signing path to
-the NATS server's TLS-enabled certificate.
+До отправки секретов клиент проверяет сервер по доверенному CA своей цепочки сертификатов.
 
-`order-svc` connects exactly as it did on the
-[Authentication basics](/learn/security/authentication-basics) page,
-with one addition: it points at the CA file. The CLI flag is `--tlsca`;
-the client libraries take a path to the same PEM file.
+К прежнему [подключению](/learn/security/authentication-basics) добавляется --tlsca; библиотеки принимают тот же PEM.
 
 <div class="nats-example" data-type="learn-security-encryption-connect-tls" data-languages="cli"></div>
 
@@ -114,70 +75,25 @@ the client libraries take a path to the same PEM file.
 14:22:18 Published 91 bytes to "orders.shipped"
 ```
 
-The payload is the same 91 bytes of order JSON. The link now encrypts
-them in transit, and the client has verified it's talking to the real
-server.  The server which you talk to is itself the TLS end-point and so sees
-the plaintext traffic; any routed copies of the traffic will happen outside of
-your TLS connection and so depend upon whatever other TLS configuration, if
-any, exists for those onward links.
+91 байт теперь зашифрован в пути. Сам сервер является конечной точкой TLS и видит открытые данные; дальнейшая пересылка зависит от защиты следующих соединений.
 
-TLS verification checks that the hostname you
-dial matches a name inside the server certificate. A certificate issued
-for `nats.acme.internal` rejects a client that specifies to connect to
-`127.0.0.1`, because the address isn't listed in the certificate.
-Match the connection address to a name the certificate covers.
-If `nats.acme.internal` happens to resolve to `127.0.0.1` (and your DNS
-resolvers do not filter such claims) then that would still work.
+Имя подключения должно совпадать с сертификатом. Только nats.acme.internal не покрывает прямой 127.0.0.1. Но подключение по имени, разрешившемуся в loopback, корректно, если DNS это допускает.
 
-The full set of TLS options (cipher suites, curve preferences, and
-certificate pinning) is documented in
-[Reference](/reference/config/tls). This page uses only `cert_file`,
-`key_file`, `ca_file`, and `timeout`.
+Шифры, кривые и закрепление — в [TLS](/reference/config/tls). Здесь cert_file, key_file, ca_file, timeout.
 
-Note that NATS supports learning the connection addresses of servers in the
-same cluster as the server which you connected to (configurable for a given
-server with the `client_advertise` option); this functionality supports
-automatic reconnections gracefully handling lame-duck server shutdowns, etc.
-If, and only if, a NATS client sees an IP address in the advertised server
-lists, then that is treated as equivalent to an updated DNS entry, and when
-reconnecting the NATS client should use the original DNS hostname as the
-server identity to verify even as it connects to a specific different IP.
+Сервер объявляет соседей через client_advertise для переподключений. Если объявлен IP, клиент должен трактовать его как обновление адреса DNS и при соединении с новым IP проверять исходное DNS-имя. Это правило именно для IP в обнаруженном списке.
 
-## Mutual TLS: mapping the certificate to the identity
+## Взаимный TLS и личность сертификата {#mutual-tls-mapping-the-certificate-to-the-identity}
 
-So far TLS proves the server to the client. When the client proves
-itself to the server with its own certificate, that's
-**mutual TLS (mTLS)**.
+**MTLS** также доказывает серверу личность клиента его сертификатом.
 
-mTLS demands a certificate from every connecting client and rejects any
-client whose certificate doesn't chain to the receiving server's `ca_file`.
-That proves the client holds a valid certificate, but it doesn't yet say who
-the client is.
+Сертификат обязан строить цепочку к серверному ca_file; это ещё не определяет пользователя.
 
-[`verify_and_map: true`](/reference/config/tls/verify_and_map) covers
-both steps. It requires and verifies the
-client certificate, then reads an identity out of it and uses that as
-the NATS user. The server tries the certificate's email SANs first,
-then DNS SANs, then URI SANs, and only then the **subject** — the
-certificate's distinguished name in RFC 2253 form. A SAN is used only
-if it matches a user; when none does, the server falls back to the
-subject, so a certificate that carries SANs can still map by its DN.
+[`verify_and_map: true`](/reference/config/tls/verify_and_map) проверяет и отображает: сначала email SAN, затем DNS, URI, затем subject DN RFC 2253. SAN используется при совпадении с пользователем, иначе возможен DN даже при наличии SAN.
 
-With `verify_and_map`, the certificate is the credential. There's no
-password, no creds file to ship. The certificate the client already
-presents for the TLS handshake also names the user. The server matches
-that distinguished name against its user list using a DN-aware match,
-not a plain string compare, so differences in attribute spacing and
-ordering don't matter.
+Сертификат заменяет пароль и creds. DN сравнивается по правилам имён, а не простыми строками: пробелы и порядок атрибутов не мешают.
 
-Here's the server config that ties a client certificate to the
-`order-svc` identity. The user moves into the `ORDERS` account exactly
-where the [Accounts and multitenancy](/learn/security/accounts-and-multitenancy)
-page put it, keeping the `orders.>` permissions from the
-[Authorization](/learn/security/authorization) page — only the `user`
-value changes, from a name-and-password pair to the certificate's
-distinguished name. The `ANALYTICS` account and the rest of the config
-stay as they were:
+В ORDERS пользователь остаётся в своей [учётной записи](/learn/security/accounts-and-multitenancy) и получает прежние [права orders.>](/learn/security/authorization). Имя заменяется на DN. ANALYTICS и остальная конфигурация прежние:
 
 ```conf
 # nats.conf — the client certificate is the user
@@ -206,10 +122,7 @@ accounts {
 }
 ```
 
-The client certificate comes from the same throwaway CA. The subject
-attributes are written smallest-last on the `openssl` command line, so
-they render in RFC 2253 order as `CN=order-svc,O=Acme` — the exact
-string the `user` field above holds:
+Выпустите сертификат тем же CA. Атрибуты openssl дают RFC 2253 `CN=order-svc,O=Acme`, как user:
 
 ```bash
 openssl req -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
@@ -218,9 +131,7 @@ openssl x509 -req -in order-svc.csr -CA ca.pem -CAkey ca-key.pem \
   -CAcreateserial -out order-svc-cert.pem -days 30
 ```
 
-`order-svc` now connects by presenting its own certificate and key —
-no password, no creds file. The CLI passes the client certificate with
-`--tlscert` and its key with `--tlskey`:
+Клиент использует --tlscert и --tlskey вместо пароля:
 
 <div class="nats-example" data-type="learn-security-encryption-connect-mtls" data-languages="cli"></div>
 
@@ -228,32 +139,21 @@ no password, no creds file. The CLI passes the client certificate with
 14:23:05 Published 91 bytes to "orders.shipped"
 ```
 
-The server reads `CN=order-svc,O=Acme` from the certificate, matches it
-to the user in `ORDERS`, and applies that user's permissions.
+Сервер связывает CN=order-svc,O=Acme с пользователем ORDERS и применяет права.
 
-Note that the rules for matching certificate DNs can be a little complex and
-are more than just a simple string equality match.  The NATS server handles
-the rules and can deal with DNs which contain sets, and so forth.
+Правила DN сложнее равенства строк; сервер понимает в том числе множества атрибутов.
 
-`verify_and_map` includes everything `verify: true` does and adds the
-mapping step, so you don't set both. Reach for plain `verify` only when
-an external system already maps certificates to users and the server
-doesn't need to.
+Verify_and_map включает verify, оба не нужны. Обычный verify используйте, если личность сертификата уже отображает внешняя система.
 
-## TLS-first handshakes
+## TLS-first {#tls-first-handshakes}
 
-By default, NATS starts every connection in plaintext: the server sends
-its `INFO` line first, and only then do both sides upgrade to TLS. The
-upgrade happens before any credentials flow, but the `INFO` itself —
-server version, connect URLs — crosses the wire unencrypted.
+Обычно первым идёт открытый INFO с версией и URL, затем TLS до секретов.
 
 <div class="nats-flow" data-scenario="tlsFirstHandshakeAnimated" data-width="600" data-height="380"></div>
 
-In the top lane that `INFO` line is the first byte on the wire, in the
-clear. In the bottom lane the first byte belongs to the TLS handshake.
+На верхней дорожке INFO открыт, на нижней первый байт принадлежит TLS.
 
-**`handshake_first`** flips that order. With it on, the TLS handshake
-happens before any protocol byte, the way an HTTPS server behaves:
+**Handshake_first** выполняет TLS до протокола, как HTTPS:
 
 ```conf
 tls {
@@ -264,57 +164,33 @@ tls {
 }
 ```
 
-The server warns you about the cost at startup:
+Сервер предупреждает при запуске:
 
 ```
 [WRN] Clients that are not using "TLS Handshake First" option will fail to connect
 ```
 
-A client that expects the plaintext `INFO` hangs until its read
-timeout and fails with
-`nats: error: read tcp ...: i/o timeout`. The CLI opts in with
-`--tlsfirst` (also available on `nats context save`); the client
-libraries have an equivalent connect option.
+Ожидающий INFO клиент получит `nats: error: read tcp ...: i/o timeout`. В CLI нужен --tlsfirst, также у context save; библиотеки имеют аналог.
 
-For migration, `handshake_first` also accepts `"auto"` (or
-`"auto_fallback"`) — fall back to plaintext `INFO` if no TLS bytes
-arrive within 50 ms — or a duration like `"300ms"` for a custom
-fallback delay.
+Для перехода auto/auto_fallback ждут TLS 50 мс, затем отправляют INFO. Строка 300ms задаёт другой период.
 
-One diagnostic side effect: `openssl s_client` fails immediately
-against a default NATS TLS port with a `wrong version number` error,
-because the first bytes on the wire are the plaintext `INFO` line
-rather than a TLS record — that error doesn't mean TLS is broken. With
-`handshake_first` on, the port behaves like any TLS endpoint and
-`s_client` works.
+OpenSSL s_client на обычном NATS-порту получает wrong version number из-за INFO, не поломки TLS. При handshake_first работает как с обычной TLS-точкой.
 
-If you have the GnuTLS CLI tools installed, then you can use:
+Для GnuTLS CLI:
 
 ```sh
 gnutls-cli --starttls --port 4222 server.host.name
 ```
 
-and then after you see the `INFO` line, type Control-D to start the TLS
-handshake.
+После INFO нажмите Control-D для начала TLS.
 
-## Encryption at rest
+## Шифрование хранения {#encryption-at-rest}
 
-TLS protects messages in transit. It does nothing for messages
-already written to disk by a JetStream stream. That's a separate
-control: **encryption at rest**, a server-wide setting that encrypts
-stream data and metadata on disk with an AEAD cipher. It's global, not
-per account, and independent of everything above — a stream can be
-encrypted on disk behind a plaintext link, or plaintext on disk behind
-TLS.
+TLS не защищает диск. **Шифрование хранения** — отдельная общесерверная AEAD-защита данных и метаданных JetStream, не по записям. Оно независимо от транспортного TLS.
 
-Note that some disk controllers can handle encryption-at-rest at the block
-layer, beneath the visibility of processes such as the nats-server, and do so
-at high performance without impacting upon server CPU.  You should carefully
-evaluate if having the nats-server do the encryption itself is the right
-solution for your deployment scenario.
+Шифрование блоков может выполнять контроллер диска без нагрузки CPU сервера. Оцените, требуется ли именно серверное шифрование.
 
-Give the `jetstream {}` block a key, and keep the key itself out of the
-config file with an environment variable:
+Задайте key в jetstream через переменную окружения, не секретом в файле:
 
 ```conf
 jetstream {
@@ -327,33 +203,19 @@ jetstream {
 JS_KEY="s3cr3t-master-key" nats-server -c nats.conf
 ```
 
-The startup log confirms the cipher — ChaCha20-Poly1305 is the default;
-`cipher: aes` switches to AES-GCM:
+Стандарт — ChaCha20-Poly1305, cipher: aes выбирает AES-GCM:
 
 ```
 [INF]   Encryption:      ChaCha20-Poly1305
 ```
 
-To rotate the master key, restart once with the new key in `key` and
-the old one in `prev_key` (also settable from an environment variable).
-The server re-wraps the per-stream keys and persists the result, so a
-later restart with only the new key recovers cleanly. `prev_key` is
-transitional — drop it after the rotation restart. The remaining
-options (TPM-backed keys, per-cipher details) live in
-[Reference](/reference/config/jetstream/encryption_key).
+Для ротации перезапустите с новым key и старым prev_key. Сервер перепакует ключи потоков; затем запускайте только с новым. Prev_key нужен один переходный рестарт. TPM и прочее — в [encryption_key](/reference/config/jetstream/encryption_key).
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Teams hit a few traps the first time they secure a NATS link or a
-JetStream store.
+Ловушки канала и диска:
 
-**TLS on without `verify` is encryption, not authentication.** A
-top-level `tls {}` block with `cert_file`, `key_file`, and `ca_file`
-encrypts the link and proves the server to the client. It doesn't
-ask the client for a certificate. Until you add `verify: true` (or
-`verify_and_map: true`), any client that trusts your CA connects
-without presenting one. Set `verify` and confirm it's working by
-pointing a client that holds no certificate at the server:
+**TLS без verify не проверяет клиента.** Сервер доказывает себя, но не требует клиентский сертификат. Включите verify или verify_and_map и проверьте вход без сертификата:
 
 <div class="nats-example" data-type="learn-security-encryption-verify-required" data-languages="cli"></div>
 
@@ -361,91 +223,35 @@ pointing a client that holds no certificate at the server:
 nats: error: remote error: tls: certificate required
 ```
 
-That's the correct outcome: the handshake fails because no `--tlscert`
-was supplied, and the server log shows `[ERR] ... TLS handshake error:
-tls: client didn't provide a certificate`. If the publish succeeds
-instead, the server isn't checking client certificates.
+Правильный результат — отказ и `[ERR] ... TLS handshake error:
+tls: client didn't provide a certificate`. Успех означает отсутствие проверки.
 
-**`verify_and_map` needs the certificate subject to name a real user.**
-The DN-aware match tolerates attribute spacing and ordering:
-`CN=order-svc,O=Acme` still matches a user written
-`CN=order-svc, O=Acme` or `O=Acme,CN=order-svc`. A different value
-fails the match — a typo, a wrong attribute, or a user the list
-doesn't contain. The client then sees
-`nats: error: nats: Authorization Violation` and the server logs
-`[ERR] ... authentication error`. Don't hand-type the DN. Read it back
-from the certificate with `openssl x509 -noout -subject` and paste that
-value into the `user` field.
+**Verify_and_map требует существующую личность.** CN=order-svc,O=Acme эквивалентен вариантам с пробелами и порядком, но неверное значение даёт `nats: error: nats: Authorization Violation` и authentication error. Читайте DN через openssl x509 -noout -subject, не набирайте вручную.
 
-**Cluster and gateway certificates need both `serverAuth` and
-`clientAuth` key usages.** TLS between cluster routes and between
-gateways is always mutual, and each node presents its one certificate
-both as a server (accepting routes) and as a client (dialing them). A
-`serverAuth`-only certificate fails the route handshake — the most
-common cluster-TLS failure. The rejection is logged on the peer, not
-the misconfigured node: `TLS route handshake error: ... certificate
-specifies an incompatible key usage`. Watch for that line rather than
-a missing route — when both nodes list each other in `routes`, the
-cluster can still come up through the one direction where the bad
-certificate acts as the server, leaving a mesh that works but logs the
-error on every reconnect attempt. The per-link blocks are covered in
-[Clustering](/learn/clustering) and
-[Leaf nodes](/learn/topologies/leaf-nodes); the full field list is in
-[Reference](/reference/config/tls).
+**Кластеру и шлюзу нужны serverAuth и clientAuth.** Одна сторона и принимает, и подключается; TLS всегда взаимный. Сертификат только serverAuth вызывает на соседе `TLS route handshake error: ... certificate
+specifies an incompatible key usage`. Обратное направление иногда сохраняет работающий кластер, поэтому ищите журнал, не только отсутствие маршрута. См. [Кластеризацию](/learn/clustering), [Листы](/learn/topologies/leaf-nodes), [TLS](/reference/config/tls).
 
-**Certificates rotate on disk, not in the server.** The server reads
-`cert_file`, `key_file`, and `ca_file` once at startup. Overwriting the
-files does nothing until you signal a reload with
-`nats-server --signal reload=<pid>` (or send SIGHUP). Even then,
-existing connections keep the certificate they handshook with; only new
-connections get the rotated one. A certificate that expires unnoticed
-fails as a handshake rejection, not an auth error — monitor validity
-dates and pair renewal with the reload signal, the discipline the
-[Deployment hardening](/learn/deployment/hardening) guide applies.
+**Замена файлов требует reload.** cert_file/key_file/ca_file читаются при запуске или SIGHUP, не при каждой установке связи. Существующие соединения сохраняют сессию, новые используют замену. Следите за сроком и применяйте `nats-server --signal reload=<pid>`; см. [Защиту системы](/learn/deployment/hardening).
 
-**`handshake_first: true` locks out every legacy client.** Any client
-not using `--tlsfirst` (or its library equivalent) times out instead of
-connecting. Migrate with a duration value — `handshake_first: "300ms"`
-accepts both kinds of client — and flip to `true` only after the last
-client has opted in.
+**Handshake_first true закрывает старых клиентов.** Сначала используйте 300ms для совместимости, затем true после перехода всех на tlsfirst.
 
-**A wrong at-rest key hides streams; it doesn't destroy them.** If a
-stream vanishes after a restart and the log shows
-`Error decrypting our stream metafile: unable to recover keys`, the
-server was started with the wrong key — restart with the right one and
-the stream returns. And after a key rotation, don't keep running with
-`prev_key` set: it exists for the one transitional restart, and leaving
-the old key in place keeps a retired secret live.
+**Неверный дисковый ключ скрывает потоки, не уничтожает.** `Error decrypting our stream metafile: unable to recover keys` исправляется рестартом с верным. После ротации удалите prev_key, не держите старый секрет активным.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The client-to-server link for `order-svc` now runs over TLS, optionally
-with the handshake before the first protocol byte. With
-`verify_and_map`, the client certificate carries the `order-svc`
-identity directly, and the server applies the same `orders.>`
-permissions inside the `ORDERS` account — no password or creds file
-involved. On disk, the JetStream store is encrypted with a key the
-config file never contains.
+Order-svc использует TLS, при желании до INFO. Verify_and_map связывает сертификат с прежними правами ORDERS без пароля/creds. JetStream шифруется ключом вне конфигурации.
 
-The cluster, leafnode, and gateway links each still need their own
-`tls {}` block. Securing those is the same three files in a different
-place — see [Clustering](/learn/clustering) and
-[Leaf nodes](/learn/topologies/leaf-nodes).
+Кластер, листы и шлюзы всё ещё требуют собственных tls; см. [Кластеризацию](/learn/clustering) и [Листы](/learn/topologies/leaf-nodes).
 
-## What's next
+## Что дальше {#whats-next}
 
-That completes the chapter's build. The last page puts the whole model
-back together and gathers every Pitfall into one production checklist.
+Последняя страница собирает модель и контрольный список.
 
-Continue to [Where to go next](/learn/security/where-next).
+Перейдите к [итогам](/learn/security/where-next).
 
-## See also
+## См. также {#see-also}
 
-- [TLS configuration](/reference/config/tls) — every `tls {}` field:
-  cipher suites, curve preferences, pinning, OCSP
-- [JetStream `encryption_key`](/reference/config/jetstream/encryption_key) —
-  the at-rest key and its aliases
-- [Core Concepts → Security](/concepts/security) — the five-minute
-  overview of the same material
-- [Deployment hardening](/learn/deployment/hardening) — certificate
-  rotation and monitoring in a real deployment
+- [TLS](/reference/config/tls) — шифры, кривые, pinning, OCSP.
+- [encryption_key](/reference/config/jetstream/encryption_key) — шифрование диска.
+- [Основы безопасности](/concepts/security).
+- [Защита системы](/learn/deployment/hardening) — ротация и наблюдение.

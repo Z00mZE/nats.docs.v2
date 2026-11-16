@@ -1,16 +1,15 @@
-# default_permissions
+# default_permissions {#default_permissions}
 
 <Reloadable state="reloadable" note="Deprecated form; also ignored entirely if a top-level cluster{permissions} block is present (opts.go:2074)." />
-The default permissions applied to users, if permissions are
-not explicitly defined for them.
+Разрешения по умолчанию для пользователей, если для них явно не заданы разрешения.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`publish`](./publish/index.md) | A single subject, list of subjects, or a allow-deny map of subjects for publishing. Specifying a single subject or list of subjects denotes an *allow* and implcitly denies publishing to all other subjects. | `(multiple)` | - | Yes |
-| [`subscribe`](./subscribe/index.md) | A single subject, list of subjects, or a allow-deny map of subjects for subscribing. Note, that the subject permission can have an optional second value declaring a queue name. | `(multiple)` | - | Yes |
-| [`allow_responses`](./allow_responses/index.md) |  | `(multiple)` | - | Ignored\* |
+| [`publish`](./publish/index.md) | Один субъект, список субъектов или объект с разрешёнными и запрещёнными субъектами для публикации. Один субъект или список задаёт *разрешение* и неявно запрещает публикацию во все остальные субъекты. | `(multiple)` | - | Да |
+| [`subscribe`](./subscribe/index.md) | Один субъект, список субъектов или объект с разрешёнными и запрещёнными субъектами для подписки. Разрешение на субъект может содержать второе необязательное значение — имя группы очереди. | `(multiple)` | - | Да |
+| [`allow_responses`](./allow_responses/index.md) |  | `(multiple)` | - | Игнорируется\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

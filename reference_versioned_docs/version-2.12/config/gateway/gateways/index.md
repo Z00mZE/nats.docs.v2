@@ -1,16 +1,16 @@
-# gateways
+# gateways {#gateways}
 
 <Reloadable state="not-reloadable" note="Only per-remote TLS *material* may change; the set of remotes and their names/URLs is fixed until restart." />
-List of gateway entries.
+Список записей о шлюзах.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`name`](./name.md) | Name of the gateway being connected to. | `string` | - | No |
-| [`url`](./url.md) | A single URL to connect to. | `string` | - | No |
-| [`urls`](./urls.md) | A list of URLs to connect to (multiple servers in a cluster). | `string` | - | No |
-| [`tls`](./tls/index.md) | A TLS configuration map for creating a secure gateway connection. If the top-level `gateway{}` tls block contains certificates that have both client and server purposes, it is possible to omit this one and the server will use the certificates from the `gateway{tls{}}` section. | `object` | - | Yes\* |
+| [`name`](./name.md) | Имя шлюза, к которому выполняется подключение. | `string` | - | Нет |
+| [`url`](./url.md) | Один URL для подключения. | `string` | - | Нет |
+| [`urls`](./urls.md) | Список URL для подключения (несколько серверов кластера). | `string` | - | Нет |
+| [`tls`](./tls/index.md) | Объект конфигурации TLS для создания защищённого соединения шлюза. Если блок tls верхнего уровня `gateway{}` содержит сертификаты и для клиента, и для сервера, этот объект можно опустить: сервер использует сертификаты из раздела `gateway{tls{}}`. | `object` | - | Да\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

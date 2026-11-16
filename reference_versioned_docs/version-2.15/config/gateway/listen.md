@@ -1,11 +1,11 @@
-# listen
+# listen {#listen}
 
 <Reloadable state="not-reloadable" />
-`<host>:<port>` format. Alternative to `host`/`port`.
+Формат `<host>:<port>`. Альтернатива `host`/`port`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `string` | This is an alternate to setting the `host` and `port` separately. | - |
+| `string` | Альтернатива раздельному заданию `host` и `port`. | - |

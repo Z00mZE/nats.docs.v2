@@ -1,12 +1,12 @@
-# http_port
+# http_port {#http_port}
 
 <Aliases aliases="monitor_port" />
 <Reloadable state="not-reloadable" />
-HTTP port for server monitoring.
+Порт HTTP для мониторинга сервера.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

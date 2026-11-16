@@ -1,21 +1,21 @@
-# Delete Message
+# Удаление сообщения {#delete-message}
 
-Deletes a specific message from a stream.
+Удаление определённого сообщения из потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamMsgDeleteRequest from '@site/src/schemas/vendor/v2.12/jsm/jetstream/api/v1/stream_msg_delete_request.json';
 import streamMsgDeleteResponse from '@site/src/schemas/vendor/v2.12/jsm/jetstream/api/v1/stream_msg_delete_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.MSG.DELETE.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamMsgDeleteRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamMsgDeleteResponse} />

@@ -1,11 +1,11 @@
-# verify
+# verify {#verify}
 
 <Reloadable state="reloadable" />
-Enable OCSP revocation checking of the peer's certificate.
+Включить проверку отзыва сертификата другой стороны через OCSP.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

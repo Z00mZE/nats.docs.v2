@@ -1,11 +1,11 @@
-# key_file
+# key_file {#key_file}
 
 <Reloadable state="reloadable" note="New connections only." />
-TLS certificate key file.
+Файл ключа сертификата TLS.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,134 +1,134 @@
-# Server Monitoring
+# Мониторинг сервера {#server-monitoring}
 
-Server monitoring endpoints provide detailed information about the NATS server state, performance metrics, and operational health.
+Точки мониторинга предоставляют подробные сведения о состоянии сервера NATS, его производительности и работоспособности.
 
-## Overview
+## Обзор {#overview}
 
-NATS Server exposes HTTP monitoring endpoints that return JSON-formatted data about server operations. These endpoints are essential for:
-- Health checks and liveness probes
-- Performance monitoring
-- Troubleshooting issues
-- Capacity planning
-- Integration with monitoring systems
+Сервер NATS предоставляет HTTP-точки мониторинга с данными о работе в формате JSON. Они необходимы для:
+- Проверок работоспособности и активности
+- Мониторинга производительности
+- Устранения неполадок
+- Планирования ресурсов
+- Интеграции с системами мониторинга
 
-## Available Endpoints
+## Доступные точки мониторинга {#available-endpoints}
 
-### [Varz](./varz.md)
-General server information including:
-- Server version and configuration
-- Current connections and subscriptions
-- Message rates and data throughput
-- Memory and CPU usage
-- Cluster membership information
+### [Varz](./varz.md) {#varz}
+Общая информация о сервере:
+- Версия и конфигурация
+- Текущие соединения и подписки
+- Частота сообщений и пропускная способность
+- Использование памяти и процессора
+- Сведения об участии в кластере
 
-### [Connz](./connz.md)
-Detailed connection information for all clients connected to the server:
-- Client connection details
-- Connection state and statistics
-- IP addresses and ports
-- Subscription counts per connection
+### [Connz](./connz.md) {#connz}
+Подробная информация обо всех подключённых клиентах:
+- Параметры клиентских соединений
+- Состояние и статистика соединений
+- IP-адреса и порты
+- Число подписок на соединение
 
-### [Subsz](./subsz.md)
-Subscription routing details:
-- Active subscriptions
-- Queue group information
-- Subscription statistics
-- Filtering and pagination options
+### [Subsz](./subsz.md) {#subsz}
+Сведения о маршрутизации подписок:
+- Активные подписки
+- Группы очередей
+- Статистика подписок
+- Параметры фильтрации и постраничного вывода
 
-### [Routez](./routez.md)
-Cluster route information:
-- Route connections between cluster nodes
-- Route statistics and health
-- Cluster topology information
+### [Routez](./routez.md) {#routez}
+Информация о маршрутах кластера:
+- Соединения маршрутов между узлами
+- Статистика и работоспособность маршрутов
+- Топология кластера
 
-### [Gatewayz](./gatewayz.md)
-Gateway connections for superclusters:
-- Gateway connection status
-- Remote gateway information
-- Traffic statistics between gateways
+### [Gatewayz](./gatewayz.md) {#gatewayz}
+Шлюзовые соединения суперкластеров:
+- Состояние шлюзовых соединений
+- Сведения об удалённых шлюзах
+- Статистика трафика между шлюзами
 
-### [Leafz](./leafz.md)
-Leafnode connections:
-- Leafnode server connections
-- Remote leafnode details
-- Connection statistics
+### [Leafz](./leafz.md) {#leafz}
+Соединения листовых узлов:
+- Соединения серверов листовых узлов
+- Сведения об удалённых листовых узлах
+- Статистика соединений
 
-### [Accountz](./accountz.md)
-Account information:
-- Account configuration and limits
-- Connection and subscription counts per account
-- Import/export configurations
+### [Accountz](./accountz.md) {#accountz}
+Информация об учётных записях:
+- Конфигурация и лимиты
+- Число соединений и подписок на учётную запись
+- Конфигурация импорта и экспорта
 
-### [Accstatz](./accstatz.md)
-Account statistics:
-- Detailed account usage statistics
-- Message and byte counts
-- Connection metrics per account
+### [Accstatz](./accstatz.md) {#accstatz}
+Статистика учётных записей:
+- Подробная статистика использования
+- Число сообщений и байтов
+- Метрики соединений по учётным записям
 
-### [JSz](./jsz.md)
-JetStream information:
-- Stream and consumer details
-- JetStream cluster status
-- Memory and storage usage
+### [JSz](./jsz.md) {#jsz}
+Информация о JetStream:
+- Потоки и потребители
+- Состояние кластера JetStream
+- Использование памяти и хранилища
 
-### [Healthz](./healthz.md)
-Health check endpoint:
-- Server health status
-- Suitable for liveness/readiness probes
-- Simple OK/Error responses
+### [Healthz](./healthz.md) {#healthz}
+Проверка работоспособности:
+- Состояние сервера
+- Подходит для проверок активности и готовности
+- Простые ответы об успехе или ошибке
 
-### [Statsz](./statsz.md)
-Server statistics summary:
-- Aggregated server metrics
-- Performance statistics
-- System resource usage
+### [Statsz](./statsz.md) {#statsz}
+Сводная статистика сервера:
+- Агрегированные метрики сервера
+- Статистика производительности
+- Использование системных ресурсов
 
-### [IPQueuesz](./ipqueuesz.md)
-IP queue information:
-- Client IP-based queue statistics
-- Connection queuing metrics
+### [IPQueuesz](./ipqueuesz.md) {#ipqueuesz}
+Информация об IP-очередях:
+- Статистика очередей по IP клиентов
+- Метрики очередей соединений
 
-### [Idz](./idz.md)
-Server identification:
-- Server identity information
-- Unique server identifiers
+### [Idz](./idz.md) {#idz}
+Идентификация сервера:
+- Сведения об идентичности сервера
+- Уникальные идентификаторы
 
-### [Profilez](./profilez.md)
-Server profiling data:
-- CPU and memory profiling endpoints
-- Performance debugging information
+### [Profilez](./profilez.md) {#profilez}
+Данные профилирования сервера:
+- Точки профилирования процессора и памяти
+- Сведения для отладки производительности
 
-### [Raftz](./raftz.md)
-Raft consensus information:
-- JetStream Raft cluster details
-- Leader election status
-- Raft log information
+### [Raftz](./raftz.md) {#raftz}
+Информация о консенсусе Raft:
+- Сведения о кластерах Raft JetStream
+- Состояние выборов лидера
+- Информация о журнале Raft
 
-## Access Configuration
+## Настройка доступа {#access-configuration}
 
-Monitoring endpoints are configured in the server configuration file:
+Точки мониторинга задаются в конфигурационном файле сервера:
 
 ```
 http_port: 8222
 ```
 
-Endpoints are then accessible at:
+После этого они доступны по следующим адресам:
 ```
 http://localhost:8222/varz
 ```
 
-## Security Considerations
+## Безопасность {#security-considerations}
 
-- Use authentication to protect monitoring endpoints
-- Consider TLS for encrypted monitoring traffic
-- Limit access to monitoring endpoints via firewall rules
-- Be aware that some endpoints may expose sensitive information
+- Используйте аутентификацию для защиты точек мониторинга
+- Рассмотрите TLS для шифрования трафика мониторинга
+- Ограничьте доступ правилами межсетевого экрана
+- Учитывайте, что некоторые точки могут раскрывать конфиденциальную информацию
 
-## Integration
+## Интеграция {#integration}
 
-Monitoring endpoints integrate well with:
-- Prometheus for metrics collection
-- Grafana for visualization
-- Kubernetes liveness/readiness probes
-- Custom monitoring solutions
-- Alert managers
+Точки мониторинга удобно интегрировать с:
+- Prometheus для сбора метрик
+- Grafana для визуализации
+- Проверками активности и готовности Kubernetes
+- Собственными решениями мониторинга
+- Системами управления оповещениями

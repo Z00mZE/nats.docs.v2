@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -207,15 +208,15 @@ function WsUpgradeAnimatedInner({
                     flexWrap: "wrap",
                 }}
             >
-                {STAGE_ORDER.map((s, i) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s, i) => (
                     <button
                         key={s}
                         onClick={() => setStageIndex(i)}
                         style={buttonStyle(stage === s)}
                     >
-                        {STEP_LABELS[s]}
+                        {localizeDiagramContent(STEP_LABELS[s])}
                     </button>
-                ))}
+                )))}
             </div>
 
             <div
@@ -228,7 +229,7 @@ function WsUpgradeAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -249,9 +250,9 @@ function WsUpgradeAnimatedInner({
                 </ReactFlow>
 
                 <div style={phaseStyle(isHttpPhase ? "http" : "nats")}>
-                    {isHttpPhase
+                    {localizeDiagramContent(isHttpPhase
                         ? "HTTP — one exchange"
-                        : "NATS protocol in binary frames"}
+                        : "NATS protocol in binary frames")}
                 </div>
             </div>
 
@@ -264,9 +265,9 @@ function WsUpgradeAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageIndex + 1}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {step.caption}
+                    {localizeDiagramContent(stageIndex + 1)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(step.caption)}
             </div>
         </div>
     );

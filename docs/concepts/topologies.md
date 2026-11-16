@@ -1,78 +1,78 @@
 ---
 id: topologies
-title: Topologies
-description: How NATS servers can be arranged — from a single process to globally distributed deployments
+title: "Топологии"
+description: "Варианты организации серверов NATS: от одного процесса до глобально распределённых развёртываний"
 ---
 
-# Topologies
+# Топологии {#topologies}
 
-NATS scales by composing servers. The same server binary and the same client APIs work across every shape — you change the deployment topology, not your application. Start with one server. Add more when you need to. Stretch across regions. Push to the edge. Mix it all.
+NATS масштабируется за счёт объединения серверов. Один и тот же исполняемый файл сервера и те же клиентские API работают во всех вариантах: меняется топология развёртывания, а не приложение. Начните с одного сервера. Добавляйте серверы по мере необходимости. Объединяйте регионы. Подключайте периферийные устройства. Сочетайте эти варианты.
 
-For a runnable, step-by-step treatment that grows one server into a cluster, a super-cluster, and out to leaf nodes at the edge, see the [Topologies deep dive](/learn/topologies).
+Пошаговое практическое руководство, в котором один сервер превращается в кластер, затем в суперкластер и дополняется периферийными листовыми узлами, см. в разделе [углублённого изучения топологий](/learn/topologies).
 
-## Single Server
+## Один сервер {#single-server}
 
-The simplest possible NATS deployment: one server process. All clients connect to it directly.
+Самое простое развёртывание NATS — один серверный процесс. Все клиенты подключаются к нему напрямую.
 
 <div class="nats-flow" data-scenario="singleServer" data-width="600" data-height="350"></div>
 
-Use a single server for:
+Используйте один сервер для:
 
-- Local development and demos
-- Embedded use inside another application
-- Small services where one node is enough
-- Quick experiments and learning
+- Локальной разработки и демонстраций
+- Встраивания в другое приложение
+- Небольших сервисов, которым достаточно одного узла
+- Быстрых экспериментов и обучения
 
-## Cluster
+## Кластер {#cluster}
 
-A **cluster** is a group of NATS servers connected by routes, forming a full mesh. Clients connect to any server in the cluster — messages flow across routes to reach subscribers anywhere in the mesh. If one server goes down, clients reconnect to another and keep working. With [JetStream](./jetstream.md), [streams](/reference/jetstream/api/stream) and [consumers](/reference/jetstream/api/consumer) can be replicated across nodes for durability.
+**Кластер** — группа серверов NATS, соединённых маршрутами в полносвязную сеть. Клиенты подключаются к любому серверу кластера, а сообщения проходят по маршрутам к подписчикам в любой части сети. При отказе сервера клиенты переподключаются к другому и продолжают работать. С помощью [JetStream](./jetstream.md) [потоки](/reference/jetstream/api/stream) и [потребители](/reference/jetstream/api/consumer) можно реплицировать между узлами для надёжного хранения.
 
 <div class="nats-flow" data-scenario="cluster" data-width="650" data-height="350"></div>
 
-Reach for a cluster when you need:
+Используйте кластер, когда нужны:
 
-- High availability — a server can fail without dropping the system
-- More throughput than one server can handle
-- Production deployments
-- Rolling upgrades without downtime
-- [JetStream](./jetstream.md) replication for durable streams and consumers
+- Высокая доступность — отказ сервера не останавливает всю систему
+- Пропускная способность выше возможностей одного сервера
+- Промышленная эксплуатация
+- Последовательные обновления без простоя
+- Репликация [JetStream](./jetstream.md) для надёжного хранения потоков и состояния потребителей
 
-## Super-Cluster
+## Суперкластер {#super-cluster}
 
-A **super-cluster** connects multiple clusters together with **gateways**. Each cluster operates independently — usually in its own region or cloud — and gateways only carry the traffic that has interest on the other side, keeping cross-region chatter to a minimum. Queue groups prefer local workers automatically (geo-affinity), so most messages stay close to home.
+**Суперкластер** соединяет несколько кластеров с помощью **шлюзов (gateways)**. Каждый кластер работает независимо, обычно в своём регионе или облаке. Шлюзы передают только трафик, к которому есть интерес на другой стороне, сводя межрегиональный обмен к минимуму. Группы очередей автоматически предпочитают локальные обработчики (географическая привязка), поэтому большинство сообщений остаётся в своём регионе.
 
 <div class="nats-flow" data-scenario="superCluster" data-width="850" data-height="450"></div>
 
-Super-clusters fit when you need:
+Суперкластеры подходят, когда нужны:
 
-- Multi-region or multi-cloud deployments
-- Global services with regional locality
+- Развёртывания в нескольких регионах или облаках
+- Глобальные сервисы с локальной обработкой в регионах
 
-## Leaf Nodes
+## Листовые узлы {#leaf-nodes}
 
-A **leaf node** is a NATS server that initiates an outbound connection to a remote NATS system — a single server, cluster, or super-cluster — and bridges subject interest between the two. Because the connection is established from the leaf side, the leaf can run anywhere with outbound network access: another datacenter, a developer laptop, or a tiny edge device. Clients connected to the leaf see a regular NATS server. [JetStream](./jetstream.md) [streams](/reference/jetstream/api/stream) can be mirrored or sourced across the leaf link when you need local copies of data.
+**Листовой узел (leaf node)** — сервер NATS, который устанавливает исходящее соединение с удалённой системой NATS (одним сервером, кластером или суперкластером) и передаёт между ними сведения об интересе к темам. Поскольку соединение устанавливается со стороны листового узла, он может работать везде, где разрешены исходящие подключения: в другом дата-центре, на ноутбуке разработчика или небольшом периферийном устройстве. Для подключённых к нему клиентов это обычный сервер NATS. Если нужны локальные копии данных, [потоки](/reference/jetstream/api/stream) [JetStream](./jetstream.md) можно зеркалировать или наполнять из источников через соединение листового узла.
 
 <div class="nats-flow" data-scenario="leafNode" data-width="700" data-height="350"></div>
 
-Leaf nodes are great for:
+Листовые узлы хорошо подходят для:
 
-- Edge and IoT deployments
-- On-prem services bridging to a cloud cluster
-- Hub-and-spoke architectures
-- Multi-tenant isolation, where each tenant runs its own leaf
+- Периферийных развёртываний и IoT
+- Связи локальных сервисов с облачным кластером
+- Архитектур «центр — лучи»
+- Изоляции арендаторов, когда каждый запускает собственный листовой узел
 
-## Massive Scale
+## Крупномасштабные системы {#massive-scale}
 
-Real deployments combine all of the above. Multiple clusters span regions and connect via gateways. Each cluster fans out to leaf nodes at edge sites, factories, or branch offices. Each leaf serves its local clients. Same client code everywhere.
+В реальных развёртываниях сочетаются все эти варианты. Несколько кластеров охватывают регионы и соединяются шлюзами. Каждый кластер связан с листовыми узлами на периферийных площадках, заводах или в филиалах. Каждый листовой узел обслуживает локальных клиентов. Клиентский код везде один и тот же.
 
 <div class="nats-flow" data-scenario="massiveScale" data-width="900" data-height="650"></div>
 
-A cluster of NATS servers sits in the middle. Each cluster server can host its own clients. Leaf nodes extend outwards — every leaf brings its own group of clients, and the cluster sees one leaf connection rather than the individual clients, which the leaf authenticates on its own. The leaf still bridges subject interest into the account it binds to on the hub, so the subject namespace is shared unless you bind each leaf to its own account. The same pattern keeps composing: add more leaves, add more clients, add more cluster servers, add more clusters connected by gateways. Applications talk to NATS the same way regardless of where they sit.
+В центре находится кластер серверов NATS. Каждый сервер кластера может обслуживать собственных клиентов. Листовые узлы расширяют сеть: каждый приносит свою группу клиентов, а кластер видит одно соединение листового узла вместо отдельных клиентов, которых узел аутентифицирует самостоятельно. При этом листовой узел передаёт интерес к темам в ту учётную запись центральной системы, к которой привязан, поэтому пространство имён тем остаётся общим, если не привязать каждый листовой узел к отдельной учётной записи. Этот подход можно повторять: добавлять листовые узлы, клиентов, серверы кластера и кластеры, соединённые шлюзами. Приложения взаимодействуют с NATS одинаково независимо от своего расположения.
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Topologies deep dive](/learn/topologies) — grow these shapes hands-on
-- [Clustering & replication](/learn/clustering) — the mechanism behind the mesh
-- [Route protocol](/reference/protocols/route) — how cluster servers talk to each other
-- [Gateway protocol](/reference/protocols/gateway) — how clusters talk across a super-cluster
-- [Leafnode protocol](/reference/protocols/leafnode) — how leaf nodes connect to a hub
+- [Углублённое изучение топологий](/learn/topologies) — постройте эти конфигурации на практике
+- [Кластеризация и репликация](/learn/clustering) — механизмы работы сети
+- [Протокол маршрутов](/reference/protocols/route) — взаимодействие серверов кластера
+- [Протокол шлюзов](/reference/protocols/gateway) — взаимодействие кластеров в суперкластере
+- [Протокол листовых узлов](/reference/protocols/leafnode) — подключение листовых узлов к центральной системе

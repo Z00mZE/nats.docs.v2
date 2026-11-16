@@ -1,68 +1,59 @@
 ---
 id: first-stream
-title: "4. Persist messages with JetStream"
+title: "4. Сохранение сообщений с JetStream"
 sidebar_position: 5
-description: Create your first stream, publish to it, and replay stored messages
+description: "Создайте первый поток, опубликуйте в него сообщения и прочитайте сохранённые сообщения повторно"
 ---
 
-# 4. Persist messages with JetStream
+# 4. Сохранение сообщений с JetStream {#4-persist-messages-with-jetstream}
 
-So far your messages have been fleeting: a subscriber that isn't listening at
-the moment you publish never sees them. In this tutorial you turn on JetStream,
-create a **stream** that stores messages durably, publish a few, and then
-**replay** them from the very beginning. By the end you'll have proof that
-the messages survived, sitting in storage, ready to read again.
+До сих пор сообщения были мимолётными: подписчик, не слушавший тему в момент публикации, их не получал. В этом руководстве вы включите JetStream, создадите **поток** для долговременного хранения сообщений, опубликуете несколько сообщений, а затем **прочитаете их повторно** с самого начала. В результате вы убедитесь, что сообщения сохранились и доступны для повторного чтения.
 
 <div class="nats-flow" data-scenario="jetStreamContrastAnimated" data-width="600" data-height="350"></div>
 
-## What you'll need
+## Что понадобится {#what-youll-need}
 
-- `nats-server` and the `nats` CLI installed (from [Hello NATS](/tutorials/hello-nats)).
-- A terminal. You'll start the server in one and run commands in another.
+- Установленные `nats-server` и CLI `nats` (из руководства [Привет, NATS](/tutorials/hello-nats)).
+- Терминалы: в одном вы запустите сервер, в другом будете выполнять команды.
 
-## Step 1: Start the server with JetStream
+## Шаг 1: запустите сервер с JetStream {#step-1-start-the-server-with-jetstream}
 
-Stop any server you started earlier, then start a new one with the `-js` flag.
-That flag turns on JetStream, the subsystem that stores messages.
+Остановите ранее запущенный сервер и запустите новый с флагом `-js`. Этот флаг включает JetStream — подсистему хранения сообщений.
 
 ```bash
 nats-server -js
 ```
 
-You should see a startup log that mentions JetStream, including a line like:
+В журнале запуска должна появиться информация о JetStream, включая строку вида:
 
 ```
 [INF] Starting JetStream
 [INF] Server is ready
 ```
 
-Leave this running. Open a second terminal for the remaining steps.
+Оставьте сервер работающим. Для остальных шагов откройте второй терминал.
 
-## Step 2: Create a stream
+## Шаг 2: создайте поток {#step-2-create-a-stream}
 
-In the second terminal, create a stream named `EVENTS` that captures every
-subject beginning with `events.`. The `--defaults` flag fills in sensible
-starting values so you aren't prompted for anything.
+Во втором терминале создайте поток `EVENTS`, который сохраняет сообщения из всех тем, начинающихся с `events.`. Флаг `--defaults` подставляет разумные начальные значения, чтобы команда не задавала вопросов.
 
 <div class="nats-example" data-type="tutorials-first-stream-create" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see output ending with:
+Вывод должен заканчиваться следующим:
 
 ```
 Stream EVENTS was created
 ```
 
-Your stream now exists and is waiting for messages.
+Поток создан и ожидает сообщения.
 
-## Step 3: Publish a few messages
+## Шаг 3: опубликуйте несколько сообщений {#step-3-publish-a-few-messages}
 
-Publish three messages to subjects under `events.`. Because each subject matches
-the stream, the server stores every one.
+Опубликуйте три сообщения в темы с префиксом `events.`. Поскольку каждая тема соответствует настройкам потока, сервер сохранит все сообщения.
 
 <div class="nats-example" data-type="tutorials-first-stream-publish" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-For each publish you should see two lines: one confirming the message was sent,
-and one confirming the stream stored it with an assigned sequence number:
+Для каждой публикации должны появиться две строки: подтверждение отправки и подтверждение сохранения в потоке с присвоенным порядковым номером:
 
 ```
 13:42:01 Published 16 bytes to "events.page_loaded"
@@ -73,13 +64,13 @@ and one confirming the stream stored it with an assigned sequence number:
 13:42:01 Stored in Stream: EVENTS Sequence: 3
 ```
 
-Confirm the stream now holds three messages:
+Убедитесь, что в потоке три сообщения:
 
 ```bash
 nats stream info EVENTS
 ```
 
-You should see a `State` block reporting three messages:
+В блоке `State` должно быть указано три сообщения:
 
 ```
 State:
@@ -92,15 +83,13 @@ State:
    Number of Subjects: 2
 ```
 
-## Step 4: Replay the stored messages
+## Шаг 4: прочитайте сохранённые сообщения повторно {#step-4-replay-the-stored-messages}
 
-Now read the messages back. This replays every message the stream holds, oldest
-first, starting from the very first one. Nothing is removed: replaying a stream
-is a read.
+Теперь прочитайте сообщения из хранилища. Команда воспроизводит все сообщения потока от самого первого, начиная с наиболее старых. Ничего не удаляется: воспроизведение потока — это чтение.
 
 <div class="nats-example" data-type="tutorials-first-stream-replay" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see all three messages, in the order they were published:
+Вы должны увидеть все три сообщения в порядке публикации:
 
 ```
 [#1] Received JetStream message: stream: EVENTS seq: 1 / pending: 2 / subject: events.page_loaded / time: 2026-06-09 13:42:01
@@ -113,19 +102,13 @@ You should see all three messages, in the order they were published:
 {"page":"/pricing"}
 ```
 
-The command exits on its own once it's read everything stored. Run it again
-and you'll see the same three messages: the stream still has them.
+Команда завершится сама после чтения всех сохранённых сообщений. Запустите её снова — вы увидите те же три сообщения: они по-прежнему в потоке.
 
-## What you built
+## Что вы создали {#what-you-built}
 
-You enabled JetStream, created the `EVENTS` stream, published three messages into
-it, and replayed all three back from storage. And they were still there to read
-again afterward.
+Вы включили JetStream, создали поток `EVENTS`, опубликовали в него три сообщения и прочитали все три из хранилища. После этого они остались доступны для повторного чтения.
 
-## Next
+## Дальше {#next}
 
-- Next tutorial: [Read a stream with a durable consumer](/tutorials/stream-consumer)
-  — a reader that tracks what it's processed and resumes after a restart.
-- Understand how this works: the [JetStream deep dive](/learn/jetstream) explains
-  what a stream really is, and [Your first stream](/learn/jetstream/your-first-stream)
-  walks through every value JetStream filled in for you.
+- Следующее руководство: [Чтение потока долговременным потребителем](/tutorials/stream-consumer) — читатель, который отслеживает обработанные сообщения и продолжает работу после перезапуска.
+- Как это работает: [углублённый курс JetStream](/learn/jetstream) объясняет устройство потока, а глава [Первый поток](/learn/jetstream/your-first-stream) разбирает все значения, которые JetStream заполнил автоматически.

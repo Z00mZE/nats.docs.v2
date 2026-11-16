@@ -1,37 +1,27 @@
 ---
 id: worker-pool
-title: "Scaling a consumer"
+title: "Масштабирование потребителя"
 sidebar_position: 9
-description: Point several workers at one consumer to share the load, and what happens when one crashes mid-message
+description: "Несколько обработчиков одного потребителя и восстановление после падения во время обработки"
 ---
 
-# Scaling a consumer
+# Масштабирование потребителя {#scaling-a-consumer}
 
-On the [previous page](/learn/jetstream/pull-consumers), one worker consumed
-the `shipping` consumer: a continuous pull loop that ships each order and
-acks. That kept up while Acme shipped a few orders an hour.
+На [предыдущей странице](/learn/jetstream/pull-consumers) один обработчик непрерывно запрашивал shipping, отправлял заказы и подтверждал. Для нескольких заказов в час хватало.
 
-Then Acme's order volume climbed. Orders arrive faster than one worker can
-ship them, and the unshipped ones pile up in `ORDERS`.
+Теперь заказы поступают быстрее обработки и накапливаются в ORDERS.
 
-You clear that backlog by adding workers. Point several processes at the same
-`shipping` consumer and they share the load: the server hands each stored
-order to exactly one worker. You reuse the `ORDERS` stream and `shipping`
-consumer you already have.
+Запустите несколько процессов для того же shipping: сервер разделит сохранённые заказы между ними. Поток и потребитель прежние.
 
-## One consumer, many workers
+## Один потребитель, много обработчиков {#one-consumer-many-workers}
 
-Each worker names the same `shipping` consumer and runs the same pull loop.
-Start that loop in several processes at once:
+Каждый использует то же имя shipping и цикл pull:
 
 <div class="nats-example"
      data-type="learn-jetstream-worker-pool-worker"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Open three terminals and run that loop in each. The `ORDERS` stream
-already holds the orders from earlier pages; now add a fresh handful of
-`orders.shipped` messages from a fourth terminal so all three workers
-have something to compete for:
+Запустите в трёх терминалах, а из четвёртого добавьте `orders.shipped` к уже имеющимся:
 
 ```bash
 nats pub --jetstream orders.shipped '{"order_id":"ord_9x3f","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T11:01:50Z"}'
@@ -39,21 +29,13 @@ nats pub --jetstream orders.shipped '{"order_id":"ord_7p4d","customer":"globex",
 nats pub --jetstream orders.shipped '{"order_id":"ord_5xk1","customer":"initech","total_cents":1500,"ts":"2026-05-22T11:02:00Z"}'
 ```
 
-Each `--jetstream` publish returns a `PubAck` confirming the order landed in
-`ORDERS`. The server hands each waiting order to one worker, serving pull
-requests in the order they arrived. No two workers get the same order, so the
-three split the backlog roughly evenly, because each loop pulls one order at a
-time:
+Каждый `--jetstream` получает `PubAck`. Сервер обслуживает запросы по очереди поступления и выдаёт заказ одному обработчику. При одиночных запросах нагрузка делится примерно поровну:
 
 <div class="nats-flow" data-scenario="workerPoolAnimated" data-width="640" data-height="320"></div>
 
-A worker only takes a turn while it's actually asking. One that's still
-shipping an order has no pull request open, so the server skips it and gives
-the order to the next worker in line. Distribution follows demand: a faster
-worker pulls more often and ships more.
+Занятый обработчик без открытого запроса пропускает очередь. Распределение зависит от спроса: быстрый чаще запрашивает и больше выполняет.
 
-The consumer still tracks a single position through all of this. Ask the
-server and the acked count climbs as one number:
+Позиция потребителя едина; число подтверждённых продвигается одним счётчиком:
 
 ```bash
 nats consumer info ORDERS shipping
@@ -67,133 +49,73 @@ State:
          Outstanding Acks: 0 out of maximum 1,000
 ```
 
-Your exact sequence numbers depend on the earlier pages; what matters is the
-shape. The two Acknowledgment Floor numbers advance together as workers ack,
-and the Last Delivered pair sits at or ahead of them. The position belongs to
-the consumer, not to each worker, so it advances the same whether one process
-pulls or three.
+Номера зависят от прошлых шагов. Пара Acknowledgment Floor растёт с ack, Last Delivered не отстаёт от неё. Позиция принадлежит потребителю независимо от числа процессов.
 
-## This works on the log you already have
+## Работа с прежним журналом {#this-works-on-the-log-you-already-have}
 
-`ORDERS` is the same Limits-retention stream from page one; nothing about it
-changed to make this work. Sharing is a property of the consumer, not the
-stream: point many workers at one consumer and the server splits the work on
-any stream.
+ORDERS по-прежнему использует Limits. Разделение работы — свойство потребителя, оно работает с любым потоком без изменения хранения.
 
-One consequence matters here. An ack advances the position, it doesn't remove
-the order. The order stays in `ORDERS` for `billing`, `analytics`, and any
-consumer that reads the log later. The workers share a *position*, not the
-messages.
+Ack двигает позицию, но не удаляет заказ. Billing, analytics и будущие читатели сохраняют доступ. Обработчики делят *позицию*, не копии сообщений.
 
-## How this differs from a queue group
+## Отличие от группы очереди {#how-this-differs-from-a-queue-group}
 
-If you read the Core Concepts, this looks like a queue group, but the two
-balance different things.
+Шаблон похож на группу очереди, но распределяет другие данные.
 
-A queue group splits **live** messages across core NATS subscribers as each
-one arrives, with no storage behind it. A subscriber that's offline when a
-message arrives misses it for good.
+Core-группа очереди делит **живые** сообщения без хранения: отключённый подписчик пропускает их.
 
-Workers sharing a consumer split **stored** messages against the stream. A
-message waits in the stream until some worker pulls it and acks it, so a
-worker that's offline just leaves its share for the others.
+Общий потребитель делит **сохранённое**: сообщение ждёт запроса и ack, а отключённый обработчик оставляет работу другим.
 
-Only the stream-backed split survives a worker dropping out or a restart.
+Второй вариант переживает уход обработчика и перезапуск.
 
-## When a worker crashes mid-message
+## Падение во время обработки {#when-a-worker-crashes-mid-message}
 
-A worker pulls an order and starts shipping it. Before it acks, the process
-dies. On the consumer that order is still in progress: the server delivered
-it and is waiting on the ack. When `AckWait` runs out (30 seconds by
-default), the server hands the order to another worker. This is the
-redelivery loop from the [acknowledgment page](/learn/jetstream/acknowledgment),
-now spread across the pool.
+Если процесс падает после получения, но до ack, заказ остаётся ожидающим. После стандартных 30 секунд AckWait он выдаётся другому. Это цикл [подтверждений](/learn/jetstream/acknowledgment) на уровне пула.
 
 <div class="nats-flow" data-scenario="crashRedeliveryAnimated" data-width="640" data-height="320"></div>
 
-Watch it happen. The loop above acks the instant it pulls, so there's no window
-to interrupt — a real ship takes time. Add a brief delay before the ack (a
-`sleep 5` in the shell loop, or a pause in your handler), then kill that worker
-during the delay. After `AckWait` (30 seconds by default), the order reappears
-on a surviving worker and ships once, because some worker eventually acks it. If
-the dead worker had already shipped the order before crashing, it ships twice;
-the pitfall below covers keying side effects by `order_id`.
+Для наблюдения добавьте задержку перед ack (`sleep 5` в оболочке или паузу обработчика) и завершите процесс в ней. После AckWait заказ появится у другого и будет подтверждён. Если первый успел выполнить отправку до падения, действие повторится: ниже рассмотрена идемпотентность по `order_id`.
 
-## Capping how many orders are in progress
+## Ограничение параллельной работы {#capping-how-many-orders-are-in-progress}
 
-Each worker can hold an order in progress, so more workers mean more in
-progress at once. There's a ceiling on that.
+Больше обработчиков — больше одновременно выполняемых заказов, но есть предел.
 
-The ceiling is `MaxAckPending`: how many delivered-but-unacked messages the
-consumer allows at once, default 1000. Hit it and the server stops delivering
-new orders until some get acked. The cap is shared across the whole consumer,
-not per worker: five workers get 1000 between them, not 1000 each.
+`MaxAckPending`, стандартно 1000, ограничивает доставленные без ack сообщения **всего потребителя**. Пять процессов получают тысячу на всех, не каждому. При достижении выдача ждёт подтверждений.
 
-You set it when you create or update the consumer:
+Задайте при создании или обновлении:
 
 ```bash
 nats consumer edit ORDERS shipping --max-pending 1000
 ```
 
-Set it too low and workers sit idle waiting for a slot. Set it too high and a
-slow ack leaves a big in-progress backlog that all redelivers at once if many
-workers die together.
+Слишком низкий предел оставляет процессы без работы, слишком высокий создаёт большой объём одновременных повторов при массовом отказе.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Running several workers makes two consumer settings, `AckWait` and
-`MaxAckPending`, matter in practice.
+На практике важны AckWait и MaxAckPending.
 
-**A redelivered order can arrive at a second worker.** When one worker
-crashes mid-order, the server gives that order to another worker after
-`AckWait`, so the work still gets done. The same order can then run twice, so
-key side effects by `order_id`. A redelivery shows up in the message's
-delivery count.
+**Повтор достаётся другому обработчику.** Побочные действия могут выполниться дважды; обеспечьте идемпотентность по `order_id`. Повтор виден по счётчику доставки.
 
-The pool shares work by demand, so you don't choose which worker gets an
-order. For that control, use [priority groups](/learn/jetstream/priority-groups):
-send everything to one worker until it fails, or keep a standby worker idle
-until the pool falls behind.
+Пул распределяет по спросу, а не вашему выбору. Для предпочтительного обработчика или резервного используйте [группы приоритетов](/learn/jetstream/priority-groups).
 
-**A low `MaxAckPending` starves a large set of workers.** The cap is shared
-across the whole consumer, not per worker. Set it to 3 and only three
-messages are ever in progress, so ten workers leave seven of them idle no
-matter how much is stored. Set the cap to at least your worker count, with
-room to spare.
+**Малый MaxAckPending оставляет большой пул простаивать.** При лимите 3 у десяти процессов одновременно заняты только три. Держите предел хотя бы на уровне числа обработчиков с запасом.
 
-**A crashed worker holds its order until `AckWait`.** The server can't tell
-a crash from slow work; it only knows the ack hasn't come. Until the timer
-runs out (30 seconds by default), that order stays in progress and goes to no
-one else. Set `AckWait` to your normal processing time: too short redelivers
-while a healthy worker is still working, too long leaves real failures stuck.
-The full set of in-progress and redelivery options (`AckWait`, `MaxDeliver`,
-backoff arrays) is in
-[Reference → Consumer Configuration](/reference/jetstream/api/consumer/create).
+**Заказ упавшего процесса ждёт AckWait.** Сервер не отличает сбой от медленной работы. Короткий срок создаёт преждевременные повторы, длинный задерживает восстановление. Настройте по времени обработки. AckWait, MaxDeliver и backoff описаны в [Конфигурации потребителя](/reference/jetstream/api/consumer/create).
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You now have:
+Теперь есть:
 
-- One `shipping` consumer, unchanged from earlier pages.
-- Several workers pulling from it, splitting the stored messages between
-  them.
-- A name for the ceiling on how much runs at once: `MaxAckPending`,
-  shared across every worker.
+- Прежний shipping.
+- Несколько процессов, делящих сохранённые сообщения.
+- Общий предел MaxAckPending.
 
-You scale by starting more processes; the consumer is unchanged. And because
-`ORDERS` is a log, it keeps every order after a worker handles it.
+Масштабирование — запуск дополнительных процессов без изменения потребителя. ORDERS как журнал сохраняет обработанные заказы.
 
-## What's next
+## Что дальше {#whats-next}
 
-Every consumer so far — `billing`, `analytics`, `shipping` — was built to
-last: named, durable, resumable. The next page is the opposite kind of read:
-an [ordered consumer](/learn/jetstream/ordered-consumer), a fast single pass
-over the whole log, in order, that cleans up after itself — for a job like
-totaling every order once, with no position to keep.
+Billing, analytics и shipping долговременны и возобновляемы. [Упорядоченный потребитель](/learn/jetstream/ordered-consumer) предназначен для обратного: одного последовательного прохода, например подсчёта всех заказов, без сохраняемой позиции.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Consumer Configuration](/reference/jetstream/api/consumer/create)
-  — `MaxAckPending`, `AckWait`, backoff, and every other consumer field.
-- [Core Concepts → Queue Groups](/concepts/queue-groups) — the core NATS
-  balancing this page contrasts with.
+- [Справочник → Конфигурация потребителя](/reference/jetstream/api/consumer/create) — MaxAckPending, AckWait, backoff и остальные поля.
+- [Основные понятия → Группы очередей](/concepts/queue-groups) — распределение Core NATS.

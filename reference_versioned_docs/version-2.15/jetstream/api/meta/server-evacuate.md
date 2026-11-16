@@ -1,21 +1,21 @@
-# Server Evacuate
+# Эвакуация сервера {#server-evacuate}
 
-Moves every stream and consumer off one server, so it can be taken out of the cluster. Each asset keeps its replica count and the server picks the replacement peers. Replacement is best effort: an asset with no qualifying peer is moved off the server anyway and runs under-replicated until one becomes available. The evacuated server is excluded from placement for those assets so they are not handed straight back to it.
+Перемещение всех потоков и потребителей с сервера для его вывода из кластера. Число реплик каждого ресурса сохраняется, а сервер выбирает новых участников. Замена выполняется по возможности: ресурс без подходящего участника всё равно переносится с сервера и работает с недостаточным числом реплик до появления замены. Эвакуируемый сервер исключается из размещения этих ресурсов, чтобы они не вернулись на него сразу.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import metaServerEvacuateRequest from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/meta_server_evacuate_request.json';
 import metaServerEvacuateResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/meta_server_evacuate_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.SERVER.EVACUATE`
 
-Only works from the system account.
+Работает только из системной учётной записи.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={metaServerEvacuateRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={metaServerEvacuateResponse} />

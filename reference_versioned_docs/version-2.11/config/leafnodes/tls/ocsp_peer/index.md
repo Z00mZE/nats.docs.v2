@@ -1,23 +1,22 @@
-# ocsp_peer
+# ocsp_peer {#ocsp_peer}
 
 <Reloadable state="reloadable" />
-Verify the peer's certificate against its OCSP responder and reject
-revoked certificates. Set an object to tune the checks.
+Проверять сертификат другой стороны через её ответчик OCSP и отклонять отозванные сертификаты. Для настройки проверок задайте объект.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` |  | `true`, `false` |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`verify`](./verify.md) | Enable OCSP revocation checking of the peer's certificate. | `boolean` | `false` | Yes |
-| [`ca_timeout`](./ca_timeout.md) | How long to wait for the OCSP responder. | `duration` | `2s` | Yes |
-| [`allowed_clockskew`](./allowed_clockskew.md) | Clock skew tolerated when checking responder timestamps. | `duration` | `30s` | Yes |
-| [`unknown_is_good`](./unknown_is_good.md) | Treat an `unknown` response from the responder as good. | `boolean` | `false` | Yes |
-| [`warn_only`](./warn_only.md) | Log revocation failures instead of rejecting the connection. | `boolean` | `false` | Yes |
-| [`cache_ttl_when_next_update_unset`](./cache_ttl_when_next_update_unset.md) | How long to cache a response that carries no next-update time. | `duration` | `1h` | Yes |
+| [`verify`](./verify.md) | Включить проверку отзыва сертификата другой стороны через OCSP. | `boolean` | `false` | Да |
+| [`ca_timeout`](./ca_timeout.md) | Время ожидания ответчика OCSP. | `duration` | `2s` | Да |
+| [`allowed_clockskew`](./allowed_clockskew.md) | Допустимое расхождение часов при проверке временных меток ответчика. | `duration` | `30s` | Да |
+| [`unknown_is_good`](./unknown_is_good.md) | Считать ответ `unknown` от ответчика положительным. | `boolean` | `false` | Да |
+| [`warn_only`](./warn_only.md) | Записывать ошибки проверки отзыва в журнал вместо отклонения соединения. | `boolean` | `false` | Да |
+| [`cache_ttl_when_next_update_unset`](./cache_ttl_when_next_update_unset.md) | Время кэширования ответа без времени следующего обновления. | `duration` | `1h` | Да |

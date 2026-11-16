@@ -1,19 +1,19 @@
-# Cancel Move
+# Отмена перемещения {#cancel-move}
 
-Cancels an in-progress stream reconfiguration and rolls the stream back to the config and peers it had before the reconfiguration started. This covers any in-flight desired state, not only moves: a scale up or down and a retention change are rolled back the same way.
+Отмена текущего изменения конфигурации потока и возврат к конфигурации и участникам, использовавшимся до его начала. Это относится к любому незавершённому желаемому состоянию, а не только к перемещению: увеличение или уменьшение числа реплик и изменение политики хранения отменяются так же.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamCancelMoveResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/stream_cancel_move_response.json';
 
-## Subject
+## Тема {#subject}
 
 - `$JS.API.STREAM.CANCEL_MOVE.{stream}`
 - `$JS.API.ACCOUNT.STREAM.CANCEL_MOVE.{account}.{stream}`
 
-Where `{stream}` is the name of the stream and `{account}` is the account that holds it.
+Где `{stream}` — имя потока, а `{account}` — содержащая его учётная запись.
 
-The first subject is used from the account that owns the stream. The second cancels a move on behalf of another account and is only available from the system account.
+Первая тема используется из учётной записи, которой принадлежит поток. Вторая отменяет перемещение от имени другой учётной записи и доступна только из системной учётной записи.
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamCancelMoveResponse} />

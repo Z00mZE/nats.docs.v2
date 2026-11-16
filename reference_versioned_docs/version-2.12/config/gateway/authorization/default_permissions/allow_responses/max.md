@@ -1,11 +1,11 @@
-# max
+# max {#max}
 
 <Reloadable state="noop" />
-The maximum number of response messages that can be published.
+Максимальное число сообщений ответа, которое можно опубликовать.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

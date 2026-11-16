@@ -1,14 +1,12 @@
-# disable_sublist_cache
+# disable_sublist_cache {#disable_sublist_cache}
 
 <Aliases aliases="no_sublist_cache" />
 <Reloadable state="not-reloadable" />
-If true, disable subscription caches for all accounts. This saves
-resources in situations where different subjects are used
-all the time.
+Если true, отключает кэши подписок для всех аккаунтов. Это экономит ресурсы, когда постоянно используются разные субъекты.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

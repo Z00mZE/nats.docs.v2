@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { BaseNode, nodeLabel, nodeStack, nodeSubLabel } from './BaseNode';
@@ -25,12 +26,12 @@ export function ServerNode({ data, selected }: NodeProps) {
           gap: 2,
         }}
       >
-        {(data as any).icon === 'leaf'
+        {localizeDiagramContent((data as any).icon === 'leaf'
           ? <span style={{ color: (data as any).iconColor }}><LeafIcon width={24} height={24} /></span>
-          : <NatsIcon width={28} height={28} />}
+          : <NatsIcon width={28} height={28} />)}
         <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', textAlign: 'center', lineHeight: 1.2 }}>
-          {nodeData.label}
-          {(data as any).subtitle && <div style={{ fontWeight: 400, fontSize: 11, color: '#6b7280' }}>{(data as any).subtitle}</div>}
+          {localizeDiagramContent(nodeData.label)}
+          {localizeDiagramContent((data as any).subtitle && <div style={{ fontWeight: 400, fontSize: 11, color: '#6b7280' }}>{localizeDiagramContent((data as any).subtitle)}</div>)}
         </div>
         <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
         <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
@@ -46,13 +47,13 @@ export function ServerNode({ data, selected }: NodeProps) {
     <BaseNode selected={selected}>
       <div style={nodeStack}>
         <NatsIcon width={32} height={32} />
-        <div style={nodeLabel}>{nodeData.label}</div>
+        <div style={nodeLabel}>{localizeDiagramContent(nodeData.label)}</div>
         {/* Defaults to "Server"; pass data.subtitle to say something more useful,
             or an empty string to drop the line. Anything that isn't a NATS
             server should use BoxNode instead of overriding this. */}
-        {(data as any).subtitle !== "" && (
-          <div style={nodeSubLabel}>{(data as any).subtitle ?? 'Server'}</div>
-        )}
+        {localizeDiagramContent((data as any).subtitle !== "" && (
+          <div style={nodeSubLabel}>{localizeDiagramContent((data as any).subtitle ?? 'Server')}</div>
+        ))}
       </div>
       {/* Default handles for pub-sub */}
       <Handle

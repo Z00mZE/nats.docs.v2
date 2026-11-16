@@ -1,58 +1,31 @@
 ---
 id: index
-title: Core NATS Deep Dive
+title: "Углублённый курс Core NATS"
 sidebar_position: 1
-description: Publish-subscribe, subjects, request-reply, queue groups, and scatter-gather — from the first connection to debugging delivery, built up step by step
+description: "Публикация и подписка, темы, запрос-ответ, группы очередей и scatter-gather: пошагово от первого соединения до отладки доставки"
 ---
 
-# Core NATS Deep Dive
+# Углублённый курс Core NATS {#core-nats-deep-dive}
 
-Core NATS is the foundation everything else is built on. It's a
-publish-subscribe system: a publisher publishes a message to a
-subject, and every subscriber interested in that subject receives a
-copy. There's no broker queue, no storage, and no acknowledgment. The
-message goes to whoever is listening right now, and it goes to nobody
-else.
+Core NATS — основа всех остальных возможностей. Это система публикации и подписки: издатель публикует сообщение в тему, а каждый заинтересованный подписчик получает копию. Здесь нет очереди брокера, хранения и подтверждений. Сообщение получают только те, кто слушает прямо сейчас, и никто другой.
 
-That single idea, subjects plus interest, is enough to build four
-communication patterns and the addressing they share. This chapter
-walks through them the way you'd discover them while writing real
-code: start with one publisher and one subscriber, then add
-addressing, replies, load balancing, and reply gathering, one page
-at a time. The chapter starts a step before that, with the
-connection every client opens first, and continues past the
-patterns into message headers, server-side subject mapping,
-connection lifecycle, and debugging delivery.
+Этой единственной идеи — темы и интереса к ним — достаточно для четырёх шаблонов взаимодействия и общей системы адресации. Глава знакомит с ними так, как вы осваивали бы их при написании кода: сначала один издатель и один подписчик, затем адресация, ответы, балансировка нагрузки и сбор ответов, по одной странице за раз. Начинается глава ещё на шаг раньше — с соединения, которое первым делом открывает каждый клиент. После шаблонов разбираются заголовки сообщений, серверное преобразование тем, жизненный цикл соединения и отладка доставки.
 
 <div class="nats-flow" data-scenario="publishSubscribeAnimated" data-width="600" data-height="350"></div>
 
-## Core NATS is ephemeral
+## Core NATS не хранит сообщения {#core-nats-is-ephemeral}
 
-The one property to hold in your head for the whole chapter:
-**core NATS is at-most-once**. A message reaches every interested
-subscriber that's connected at the moment of publish, at most
-once. If a subscriber is offline, restarting, or not
-subscribed yet, it never sees that message. The server does not store
-it for later.
+Ключевое свойство, о котором нужно помнить на протяжении всей главы: **Core NATS обеспечивает доставку не более одного раза**. Сообщение доходит до каждого заинтересованного подписчика, подключённого в момент публикации, не более одного раза. Если подписчик не в сети, перезапускается или ещё не подписался, он никогда не увидит это сообщение. Сервер не сохраняет его для последующей доставки.
 
-That behavior is intentional. It keeps core NATS small and fast, and
-it's exactly right when each message is superseded by the next one,
-such as a live price, a current temperature, or a cache invalidation.
+Это намеренное поведение. Оно делает Core NATS компактным и быстрым и хорошо подходит, когда каждое сообщение заменяется следующим: текущая цена, температура или уведомление об устаревании кеша.
 
-When you need messages to wait for a subscriber, survive a restart,
-or be replayed later, you add a stream. That's
-[JetStream](/learn/jetstream), the persistence layer that sits on top
-of core NATS. This chapter is everything that happens *before* you
-reach for it.
+Если сообщения должны дожидаться подписчика, переживать перезапуск или воспроизводиться позже, добавьте поток. Это [JetStream](/learn/jetstream) — слой долговременного хранения поверх Core NATS. В этой главе рассматривается всё, что происходит *до* обращения к нему.
 
-## The running scenario
+## Сквозной сценарий {#the-running-scenario}
 
-Every page builds the same example: the Acme ORDERS platform, shown at
-its foundation, before it adds any persistence. The order services
-talk over core NATS only.
+Каждая страница развивает один пример: платформу Acme ORDERS на начальном этапе, ещё без долговременного хранения. Сервисы заказов взаимодействуют только через Core NATS.
 
-Three things happen to an order: it's created, shipped, or
-canceled. Each one shows up as a message on a subject:
+С заказом происходят три события: создание, отправка и отмена. Каждое представлено сообщением в своей теме:
 
 ```
 orders.created
@@ -60,8 +33,7 @@ orders.shipped
 orders.canceled
 ```
 
-The payload is a small JSON object, the same shape across every
-example in this chapter:
+Полезная нагрузка — небольшой JSON-объект одинаковой структуры во всех примерах главы:
 
 ```json
 {
@@ -72,73 +44,48 @@ example in this chapter:
 }
 ```
 
-Several services care about these messages. A `warehouse` process
-packs the box on `orders.created`. A `notifications` service emails
-the customer when an order ships. An `analytics` pipeline counts
-everything. Later pages add regional analytics and audit views on
-wildcard subjects, an `inventory` service that answers requests, a pool
-of `packers` that share the load, and three shipping-quote providers
-that each reply to the same question.
+Этими сообщениями интересуются несколько сервисов. Процесс `warehouse` упаковывает заказ по событию `orders.created`. Сервис `notifications` отправляет письмо покупателю при отгрузке. Конвейер `analytics` подсчитывает все события. Далее появятся региональная аналитика и аудит через шаблоны тем, сервис `inventory`, отвечающий на запросы, пул `packers`, распределяющий нагрузку, и три поставщика тарифов доставки, отвечающие на один вопрос.
 
-You keep a single local `nats-server` through the whole chapter —
-two later pages restart it with a flag or a config file — and add
-subscribers and services as you go.
+На протяжении главы используется один локальный `nats-server` (на двух последующих страницах он перезапускается с флагом или конфигурационным файлом), а подписчики и сервисы добавляются по мере изучения.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You've read the [Core Concepts → Publish & Subscribe](/concepts/pub-sub-basics)
-primer, or you're otherwise comfortable with the idea of subjects and
-subscribers. Rather than re-teaching the *what*, this chapter shows
-the *how*: the mechanism on the wire, the trade-off behind each
-pattern, and a runnable session you build up command by command. Each
-page introduces one or two new ideas and builds on the one before it.
+Вы прочитали введение [Основные понятия → Публикация и подписка](/concepts/pub-sub-basics) или уже знакомы с темами и подписчиками. Вместо повторения *что это такое* глава показывает, *как это работает*: протокольный механизм, компромиссы каждого шаблона и практический сеанс, выстраиваемый команда за командой. Каждая страница вводит одну-две новые идеи и опирается на предыдущую.
 
-## Map
+## План главы {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Connecting](/learn/core-nats/connecting) | One long-lived connection per client, the connect URL and handshake, connection names, and PING/PONG heartbeats |
-| [Publish-subscribe](/learn/core-nats/publish-subscribe) | Fire-and-forget publish, subscribing and unsubscribing, the interest graph, at-most-once delivery, and the 1 MB max payload |
-| [Subjects & wildcards](/learn/core-nats/subjects-and-wildcards) | Dot-delimited subject hierarchies and the `*` and `>` subscriber wildcards |
-| [Request-reply](/learn/core-nats/request-reply) | The `_INBOX` reply subject, timeouts, and the no-responders signal |
-| [Queue groups](/learn/core-nats/queue-groups) | Load balancing where each message goes to exactly one group member |
-| [Scatter-gather](/learn/core-nats/scatter-gather) | Fan one request to many responders and gather the replies |
-| [Message headers](/learn/core-nats/headers) | Key/value metadata in the `NATS/1.0` format, setting and reading it, and the status codes the server sends in-band |
-| [Subject mapping](/learn/core-nats/subject-mapping) | Server-side rewriting of a subject before routing, to rename it, split its traffic by weight, or shard it by a hashed token |
-| [Connection lifecycle](/learn/core-nats/connection-lifecycle) | What a dropped connection does to your client and in-flight messages, the client-owned reconnect, and the lifecycle callbacks that watch it |
-| [Debugging delivery](/learn/core-nats/debugging-delivery) | Why a published message never arrived, found with a wire tap, the server's subscription list, and message tracing |
-| [Where to go next](/learn/core-nats/where-next) | The four-idea recap and a map of what's beyond the foundation |
+| [Подключение](/learn/core-nats/connecting) | Одно долгоживущее соединение на клиента, URL и установление соединения, имена соединений и heartbeat PING/PONG |
+| [Публикация и подписка](/learn/core-nats/publish-subscribe) | Публикация без ожидания, подписка и отписка, граф интереса, доставка не более одного раза и лимит полезной нагрузки 1 МБ |
+| [Темы и подстановочные символы](/learn/core-nats/subjects-and-wildcards) | Иерархии тем с точками-разделителями и символы `*` и `>` в подписках |
+| [Запрос-ответ](/learn/core-nats/request-reply) | Тема ответа `_INBOX`, тайм-ауты и сигнал отсутствия отвечающих сервисов |
+| [Группы очередей](/learn/core-nats/queue-groups) | Балансировка нагрузки с доставкой каждого сообщения ровно одному участнику группы |
+| [Scatter-gather](/learn/core-nats/scatter-gather) | Рассылка одного запроса нескольким сервисам и сбор ответов |
+| [Заголовки сообщений](/learn/core-nats/headers) | Метаданные «ключ — значение» в формате `NATS/1.0`, их запись и чтение, коды состояния, передаваемые сервером в том же канале |
+| [Преобразование тем](/learn/core-nats/subject-mapping) | Перезапись темы на сервере до маршрутизации: переименование, взвешенное разделение трафика и секционирование по хешу сегмента |
+| [Жизненный цикл соединения](/learn/core-nats/connection-lifecycle) | Влияние разрыва на клиента и сообщения в пути, переподключение силами клиента и обратные вызовы для отслеживания жизненного цикла |
+| [Отладка доставки](/learn/core-nats/debugging-delivery) | Поиск причин отсутствия сообщения с помощью перехвата трафика, списка подписок сервера и трассировки |
+| [Куда двигаться дальше](/learn/core-nats/where-next) | Повторение четырёх основных идей и дальнейшие возможности |
 
-## Prerequisites
+## Предварительные требования {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- A single local `nats-server`. The default build is all you need;
-  core NATS requires no flags. Start it with `nats-server`.
-- The `nats` CLI installed and pointed at your server. Every example
-  leads with the CLI; most pages show the same operation in
-  JavaScript, Go, Python, Java, Rust, and C# as well. The two
-  server-side pages (Subject mapping, Debugging delivery) are
-  CLI-only.
-- One later page, [Subject mapping](/learn/core-nats/subject-mapping),
-  starts the server from a config file with `nats-server -c
-  server.conf`; that page gives you the file.
-- [Debugging delivery](/learn/core-nats/debugging-delivery) reads the
-  server's monitoring port, which you turn on with `nats-server -m
+- Один локальный `nats-server`. Достаточно стандартной сборки: Core NATS не требует флагов. Запустите его командой `nats-server`.
+- CLI `nats`, установленный и настроенный на ваш сервер. Каждый пример начинается с CLI; большинство страниц также показывает операции на JavaScript, Go, Python, Java, Rust и C#. Две страницы о серверных возможностях (преобразование тем и отладка доставки) используют только CLI.
+- На странице [Преобразование тем](/learn/core-nats/subject-mapping) сервер запускается с конфигурационным файлом командой `nats-server -c
+  server.conf`; содержимое файла приведено на странице.
+- Для [Отладки доставки](/learn/core-nats/debugging-delivery) нужен порт мониторинга сервера, включаемый командой `nats-server -m
   8222`.
 
-Open a terminal, run `nats-server`, and continue to the next page.
+Откройте терминал, выполните `nats-server` и переходите к следующей странице.
 
-## What's next
+## Что дальше {#whats-next}
 
-Start with [Connecting](/learn/core-nats/connecting): the one
-long-lived connection every client opens before it can publish or
-subscribe, and the handshake that opens it and the heartbeats that
-keep it alive.
+Начните с [Подключения](/learn/core-nats/connecting): одно долгоживущее соединение, которое клиент открывает перед публикацией или подпиской, обмен сообщениями при его установлении и heartbeat для проверки доступности.
 
-## See also
+## См. также {#see-also}
 
-- [Core Concepts → Publish & Subscribe](/concepts/pub-sub-basics) —
-  the five-minute overview of the same material.
-- [JetStream Deep Dive](/learn/jetstream) — the persistence layer this
-  chapter stops short of.
+- [Основные понятия → Публикация и подписка](/concepts/pub-sub-basics) — пятиминутный обзор той же темы.
+- [Углублённый курс JetStream](/learn/jetstream) — слой долговременного хранения, который не рассматривается в этой главе.

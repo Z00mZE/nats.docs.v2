@@ -1,94 +1,54 @@
 ---
 id: index
-title: Key-Value Store
+title: "Хранилище ключей и значений"
 sidebar_position: 1
-description: Buckets, keys, watching, revisions, and TTL, built on the stream you already have
+description: "Бакеты, ключи, наблюдение, ревизии и TTL на основе уже знакомого потока"
 ---
 
-# Key-Value Store
+# Хранилище ключей и значений {#key-value-store}
 
-NATS gives you a key-value store. It is not a separate database: a
-bucket is a JetStream stream named `KV_<bucket>` whose subjects are
-`$KV.<bucket>.>`; a key is the last token of that subject, and a value is
-a message on it. Everything in this chapter is that one stream presented
-through a key-value API.
+NATS предоставляет хранилище ключей и значений. Это не отдельная база данных: бакет — поток JetStream с именем `KV_<bucket>` и темами `$KV.<bucket>.>`; ключ — последний токен темы, а значение — сообщение в ней. Всё в этой главе представляет этот единственный поток через API ключей и значений.
 
-Keep that framing in mind from the start. A `put` of a value appends a
-message, a `get` of a value reads the last message for a subject, and a
-`watch` of a bucket opens a consumer. The API (`put`, `get`, `watch`,
-`create`, `update`, TTL) is what you use day to day, and the stream
-underneath is what makes it work.
+Помните об этом с самого начала. Операция `put` добавляет сообщение, `get` читает последнее сообщение темы, а `watch` бакета открывает потребителя. В повседневной работе вы используете API (`put`, `get`, `watch`, `create`, `update`, TTL), а его работу обеспечивает лежащий в основе поток.
 
-This chapter teaches the abstraction first and describes the stream last.
-The first four pages teach you the key-value API on its own terms, so you
-can be productive without memorizing JetStream internals.
-[Under the hood](./under-the-hood.md) shows you the stream that the API has
-been using all along.
+Сначала глава знакомит с абстракцией, а в конце раскрывает устройство потока. Первые четыре страницы объясняют API ключей и значений, чтобы вы могли работать без запоминания внутренностей JetStream. Страница [Внутреннее устройство](./under-the-hood.md) показывает поток, который API использовал всё это время.
 
-## By the end you will have
+## Что получится к концу главы {#by-the-end-you-will-have}
 
-- An `INVENTORY` bucket whose keys are SKUs (`widget-blue`, `widget-red`,
-  `gadget-pro`) and whose values are stock counts the inventory service
-  reads and decrements.
-- A warehouse dashboard that **watches** the bucket: it receives the
-  current count of every key as a snapshot, then live updates as counts
-  change.
-- A safe decrement of `widget-blue` from 41 to 40 using **compare-and-swap**,
-  so two concurrent sales never lose a write.
-- A `flash-sale` key with a per-key **TTL** that expires on its own, and a
-  feel for the bucket-wide limits that bound the whole thing.
-- A clear picture of the `KV_INVENTORY` stream underneath: the subjects,
-  the direct read path, and the difference between delete and purge.
+- Бакет `INVENTORY` с артикулами в качестве ключей (`widget-blue`, `widget-red`, `gadget-pro`) и остатками товара в качестве значений, которые сервис inventory читает и уменьшает.
+- Складская панель, **наблюдающая** за бакетом: сначала она получает снимок текущих значений всех ключей, затем изменения в реальном времени.
+- Безопасное уменьшение `widget-blue` с 41 до 40 через **сравнение с заменой**, чтобы одновременные продажи не теряли записи.
+- Ключ `flash-sale` с собственным **TTL**, удаляющийся по истечении срока, и понимание общих лимитов бакета.
+- Ясное представление о потоке `KV_INVENTORY`: темы, прямое чтение и различие удаления и очистки.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You've read the [JetStream Deep Dive](/learn/jetstream) or the
-[Core Concepts → JetStream](/concepts/jetstream) primer, so the sentence
-"a stream stores messages" already means something to you. This chapter
-doesn't re-teach what a stream is, how a consumer tracks its position,
-or how acknowledgment works. Where you'd want those, it names the gap
-and links back to [JetStream](/learn/jetstream).
+Вы прочитали [углублённый курс JetStream](/learn/jetstream) или введение [Основные концепции → JetStream](/concepts/jetstream) и уже понимаете, что поток хранит сообщения. Здесь не объясняются заново поток, позиция потребителя и подтверждения. Там, где нужны эти знания, глава указывает на них и ссылается на [JetStream](/learn/jetstream).
 
-You don't need to know anything about key-value specifically. We start
-from "what is a bucket and why would you want one" and grow from there.
+Специальные знания о хранилищах ключей и значений не требуются. Начнём с того, что такое бакет и зачем он нужен.
 
-## How to read it
+## Как читать главу {#how-to-read-it}
 
-Each page introduces at most two new concepts and builds on the one
-before it: the same `INVENTORY` bucket carries through, and you can
-keep one terminal open through the whole chapter without resetting state.
-You create the bucket on [Your first bucket](./your-first-bucket.md), add a
-watcher on [Watching](./watching.md), decrement a key safely on
-[History and revisions](./history-and-revisions.md), give a key a TTL on
-[TTL and limits](./ttl-and-limits.md), and inspect the stream underneath on
-[Under the hood](./under-the-hood.md).
+Каждая страница вводит не более двух новых понятий и опирается на предыдущую. Один бакет `INVENTORY` используется на протяжении всей главы, поэтому можно держать один терминал открытым, не сбрасывая состояние. На странице [Первый бакет](./your-first-bucket.md) вы создадите бакет, на странице [Наблюдение](./watching.md) добавите наблюдателя, в разделе [История и ревизии](./history-and-revisions.md) безопасно уменьшите значение, в разделе [TTL и лимиты](./ttl-and-limits.md) зададите срок жизни ключа, а затем изучите [внутреннее устройство](./under-the-hood.md).
 
-Key-value has many configuration options, covering bucket limits, watch
-options, and headers on the wire. Where a feature has a long list, the
-page covers only what you need to understand the concept. Because a bucket is created as a
-stream, the full set of bucket configuration options lives in
-[Reference → Create Stream](/reference/jetstream/api/stream/create).
+У хранилища ключей и значений много настроек: лимиты бакета, параметры наблюдения и сетевые заголовки. При длинном списке страница объясняет лишь необходимое для понимания. Бакет создаётся как поток, поэтому полный набор параметров приведён в разделе [Справочник → Создание потока](/reference/jetstream/api/stream/create).
 
-## Map
+## Содержание {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Your first bucket](./your-first-bucket.md) | Create `INVENTORY`, put and get `widget-blue`, and read its status |
-| [Watching](./watching.md) | Receive a snapshot of every key, then live changes as they happen |
-| [History and revisions](./history-and-revisions.md) | Track revisions, read history, and decrement safely with compare-and-swap |
-| [TTL and limits](./ttl-and-limits.md) | Expire a single key with a per-key TTL, and bound the bucket with limits |
-| [Under the hood](./under-the-hood.md) | See the `KV_INVENTORY` stream, the direct read, and delete versus purge |
-| [Where to go next](./where-next.md) | A map of what's beyond key-value, and one pre-production checklist |
+| [Первый бакет](./your-first-bucket.md) | Создание `INVENTORY`, запись и чтение `widget-blue`, просмотр состояния |
+| [Наблюдение](./watching.md) | Получение снимка всех ключей и последующих изменений |
+| [История и ревизии](./history-and-revisions.md) | Ревизии, история и безопасное уменьшение через сравнение с заменой |
+| [TTL и лимиты](./ttl-and-limits.md) | Автоматическое удаление ключа по TTL и общие ограничения бакета |
+| [Внутреннее устройство](./under-the-hood.md) | Поток `KV_INVENTORY`, прямое чтение, удаление и очистка |
+| [Куда двигаться дальше](./where-next.md) | Возможности за пределами KV и проверки перед эксплуатацией |
 
-## Prerequisites
+## Предварительные требования {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- A working `nats-server` with JetStream enabled. The key-value store is
-  built on JetStream, so JetStream must be on. The simplest way is
-  `nats-server -js`.
-- The `nats` CLI installed and pointed at your server. The first page
-  uses only the CLI. Later pages add JavaScript, Go, Python, Java, Rust,
-  and C# examples for the same operations.
+- Работающий `nats-server` с включённым JetStream: хранилище ключей и значений построено на нём. Проще всего запустить `nats-server -js`.
+- Установленный CLI `nats`, подключённый к вашему серверу. Первая страница использует только CLI. Позднее появятся примеры тех же операций на JavaScript, Go, Python, Java, Rust и C#.
 
-Open a terminal, run `nats-server -js`, and continue to the first page.
+Откройте терминал, выполните `nats-server -js` и переходите к первой странице.

@@ -1,9 +1,9 @@
-# port
+# port {#port}
 
 <Reloadable state="not-reloadable" note="Keeping `port: -1` across reloads is fine (the original port is restored); any other change fails." />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

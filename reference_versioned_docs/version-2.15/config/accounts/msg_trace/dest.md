@@ -1,11 +1,11 @@
-# dest
+# dest {#dest}
 
 <Reloadable state="reloadable" />
-Subject the trace events are published to.
+Субъект публикации событий трассировки.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

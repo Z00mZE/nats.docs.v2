@@ -1,12 +1,11 @@
-# reconnect
+# reconnect {#reconnect}
 
 <Reloadable state="not-reloadable" />
-Interval in seconds at which reconnect attempts to a
-remote server are made.
+Интервал в секундах между попытками переподключения к удалённому серверу.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

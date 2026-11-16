@@ -4,11 +4,11 @@ import { DocsIcon, TutorialsIcon, LearnIcon, ReferenceIcon, RocketIcon } from '@
 import type { Props } from '@theme/NavbarItem/DefaultNavbarItem';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; width?: number; height?: number }>> = {
-  'Concepts': DocsIcon,
-  'Tutorials': TutorialsIcon,
-  'Learn': LearnIcon,
-  'Reference': ReferenceIcon,
-  'Release Notes': RocketIcon,
+  "Основные понятия": DocsIcon,
+  "Практические руководства": TutorialsIcon,
+  "Изучение": LearnIcon,
+  "Справочник": ReferenceIcon,
+  "Выпуски": RocketIcon,
 };
 
 export default function CustomDocSidebarNavbarItem(props: Props): React.JSX.Element {

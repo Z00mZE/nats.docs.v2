@@ -1,86 +1,45 @@
 ---
 id: index
-title: Learn
+title: "Изучение"
 sidebar_position: 1
-description: Long-form deep dives into NATS subsystems
+description: "Углублённые курсы по подсистемам NATS"
 ---
 
-# Learn
+# Изучение {#learn}
 
-This section holds the long-form deep dives in the NATS documentation.
-Each deep dive walks through one subsystem from first encounter to
-working confidence, building up a single running scenario, the Acme
-`ORDERS` platform, step by step.
+Этот раздел документации содержит подробные курсы по NATS. Каждый курс знакомит с одной подсистемой от первых шагов до уверенной работы, постепенно развивая единый сквозной сценарий — платформу Acme `ORDERS`.
 
-Deep dives sit between two other layers of the docs:
+Углублённые курсы находятся между двумя другими уровнями документации:
 
-- **[Concepts](/concepts/intro/)** Short primers and Getting
-  Started. Read those first if you're new to NATS.
-- **[Reference](/reference/)** Exhaustive, versioned catalog of
-  every configuration option, header, and wire-protocol detail. Deep
-  dives link out to Reference for the full surface area, since Reference
-  is a catalog rather than a teaching resource.
+- **[Основные понятия](/concepts/intro/)** — краткие введения и начало работы. Если вы новичок в NATS, сначала прочитайте их.
+- **[Справочник](/reference/)** — исчерпывающий версионный каталог параметров конфигурации, заголовков и деталей протоколов. Курсы ссылаются на него за полными сведениями: справочник служит каталогом, а не учебным материалом.
 
-Every deep dive follows the same pattern: it uses one running scenario,
-introduces at most two new concepts per page, provides runnable examples
-in CLI and the client libraries, and links out to Reference for the
-remaining detail.
+Все курсы построены одинаково: единый сквозной сценарий, не более двух новых понятий на странице, запускаемые примеры для CLI и клиентских библиотек и ссылки на справочник с остальными подробностями.
 
-## Develop
+## Разработка {#develop}
 
-Build applications with NATS.
+Создавайте приложения с NATS.
 
-- **[Core NATS](/learn/core-nats/)** the foundation:
-  connections, publish-subscribe, subjects and wildcards,
-  request-reply, queue groups, scatter-gather, headers, and
-  server-side subject mapping.
-- **[Services](/learn/services/)** the micro request-reply
-  framework: endpoints, groups, discovery, observability, and scaling.
-- **[JetStream](/learn/jetstream/)** the persistence layer:
-  streams, consumers, and the acknowledgment loop, built up from a
-  single `ORDERS` stream.
-- **[Resilient Clients](/learn/resilient-clients/)**
-  production-grade connections: reconnection, drain, slow consumers,
-  request-reply resilience, and TLS plus auth.
-- **[Key-Value Store](/learn/key-value/)** buckets,
-  watches, history and revisions, TTLs, and how KV sits on top of a
-  stream.
-- **[Object Store](/learn/object-store/)** chunked blobs over
-  JetStream, with metadata, links, and listing.
+- **[Core NATS](/learn/core-nats/)** — основы: соединения, публикация и подписка, темы и подстановочные символы, запрос-ответ, группы очередей, scatter-gather, заголовки и серверное преобразование тем.
+- **[Сервисы](/learn/services/)** — фреймворк микросервисов запрос-ответ: конечные точки, группы, обнаружение, наблюдаемость и масштабирование.
+- **[JetStream](/learn/jetstream/)** — слой долговременного хранения: потоки, потребители и цикл подтверждений на примере одного потока `ORDERS`.
+- **[Устойчивые клиенты](/learn/resilient-clients/)** — соединения для промышленной эксплуатации: переподключение, drain, медленные потребители, устойчивость запросов и ответов, TLS и аутентификация.
+- **[Хранилище ключей и значений](/learn/key-value/)** — бакеты, наблюдение, история и ревизии, TTL и устройство KV поверх потока.
+- **[Объектное хранилище](/learn/object-store/)** — большие двоичные объекты, разбитые на фрагменты в JetStream, с метаданными, ссылками и получением списков.
 
-## Operate
+## Эксплуатация {#operate}
 
-Run, scale, and secure NATS.
+Запускайте, масштабируйте и защищайте NATS.
 
-- **[Topologies](/learn/topologies/)** Topological shapes: a single
-  server growing into a cluster, a super-cluster, and leaf nodes at the
-  edge.
-- **[Security](/learn/security/)** authentication, authorization,
-  and accounts: centralized and decentralized auth, TLS, and auth
-  callout.
-- **[Clustering & Replication](/learn/clustering/)** the
-  mechanism under a cluster: routes and gossip, RAFT and leaders, `R=3`
-  quorum, placement, and peer management.
-- **[Monitoring & Observability](/learn/monitoring/)** the
-  monitoring endpoints, JetStream health, advisories and events, and
-  Prometheus with dashboards.
-- **[Backup & Recovery](/learn/backup-recovery/)** stream
-  snapshots, mirrors for disaster recovery, a recovery runbook, and
-  backing up identity.
-- **[Deployment & Upgrades](/learn/deployment/)**
-  production: sizing, Kubernetes, config management, rolling upgrades,
-  and hardening.
-- **[MQTT](/learn/mqtt/)** running `nats-server` as the MQTT
-  broker for your devices: topic-to-subject conversion, QoS, sessions
-  and retained messages, and MQTT users on a cluster.
-- **[WebSocket](/learn/websocket/)** the NATS protocol over a
-  WebSocket transport: browser clients, origin checking and cookie
-  credentials, TLS behind a proxy, and leaf nodes over port 443.
+- **[Топологии](/learn/topologies/)** — от одного сервера к кластеру, суперкластеру и листовым узлам на периферии.
+- **[Безопасность](/learn/security/)** — аутентификация, авторизация и учётные записи: централизованная и децентрализованная аутентификация, TLS и auth callout.
+- **[Кластеризация и репликация](/learn/clustering/)** — внутренние механизмы кластера: маршруты и gossip, RAFT и лидеры, кворум `R=3`, размещение и управление участниками.
+- **[Мониторинг и наблюдаемость](/learn/monitoring/)** — точки мониторинга, работоспособность JetStream, уведомления и события, Prometheus и панели мониторинга.
+- **[Резервное копирование и восстановление](/learn/backup-recovery/)** — снимки потоков, зеркала для аварийного восстановления, регламент восстановления и резервное копирование идентификационных данных.
+- **[Развёртывание и обновления](/learn/deployment/)** — промышленная эксплуатация: подбор ресурсов, Kubernetes, управление конфигурацией, последовательные обновления и усиление защиты.
+- **[MQTT](/learn/mqtt/)** — `nats-server` в роли MQTT-брокера для устройств: преобразование тем, QoS, сеансы, сохранённые сообщения и пользователи MQTT в кластере.
+- **[WebSocket](/learn/websocket/)** — протокол NATS поверх WebSocket: браузерные клиенты, проверка origin и учётные данные в cookie, TLS за прокси и листовые узлы через порт 443.
 
-## Where to start
+## С чего начать {#where-to-start}
 
-If you're new to NATS, start with the
-[Core NATS deep dive](/learn/core-nats/); it's the foundation every
-other chapter builds on. If you're already comfortable with the basics
-and here for persistence, go straight to the
-[JetStream deep dive](/learn/jetstream/).
+Если вы новичок в NATS, начните с [углублённого курса Core NATS](/learn/core-nats/): на нём основаны все остальные главы. Если основы уже знакомы и вас интересует долговременное хранение, переходите прямо к [углублённому курсу JetStream](/learn/jetstream/).

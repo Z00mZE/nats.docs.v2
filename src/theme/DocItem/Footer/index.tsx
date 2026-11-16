@@ -25,7 +25,7 @@ export default function DocItemFooterWrapper(): ReactNode {
   const mdPath = mdUrlFor(permalink, baseUrl);
   const absoluteUrl = absoluteMdUrl(mdPath, siteUrl);
   const claudeUrl = `https://claude.ai/new?q=${encodeURIComponent(
-    `Read the NATS documentation page at ${absoluteUrl} and help me with it.`,
+    `Прочитай страницу документации NATS по адресу ${absoluteUrl} и помоги мне разобраться в ней.`,
   )}`;
 
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
@@ -39,7 +39,7 @@ export default function DocItemFooterWrapper(): ReactNode {
       setCopyState('copied');
       setTimeout(() => setCopyState('idle'), 2000);
     } catch (err) {
-      console.error('Copy as Markdown failed:', err);
+      console.error('Не удалось скопировать Markdown:', err);
       setCopyState('failed');
       setTimeout(() => setCopyState('idle'), 2000);
     }
@@ -59,13 +59,13 @@ export default function DocItemFooterWrapper(): ReactNode {
           type="button"
           onClick={onCopy}
           className="button button--secondary button--sm"
-          aria-label="Copy this page as Markdown"
+          aria-label="Скопировать страницу в Markdown"
         >
           {copyState === 'copied'
-            ? 'Copied!'
+            ? 'Скопировано!'
             : copyState === 'failed'
-              ? 'Failed'
-              : 'Copy as Markdown'}
+              ? 'Ошибка'
+              : 'Скопировать Markdown'}
         </button>
         <a
           href={mdPath}
@@ -73,7 +73,7 @@ export default function DocItemFooterWrapper(): ReactNode {
           rel="noopener noreferrer"
           className="button button--secondary button--sm"
         >
-          View as Markdown
+          Открыть Markdown
         </a>
         <a
           href={claudeUrl}
@@ -81,7 +81,7 @@ export default function DocItemFooterWrapper(): ReactNode {
           rel="noopener noreferrer"
           className="button button--secondary button--sm"
         >
-          Open in Claude
+          Открыть в Claude
         </a>
       </div>
       <OriginalDocItemFooter />

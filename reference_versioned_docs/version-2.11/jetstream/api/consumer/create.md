@@ -1,21 +1,21 @@
-# Create Consumer
+# Создание потребителя {#create-consumer}
 
-Creates a new consumer.
+Создание нового потребителя.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerCreateRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/consumer_create_request.json';
 import consumerCreateResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/consumer_create_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.CREATE.{stream}.{consumer}`
 
-Where `{stream}` is the stream name and `{consumer}` is the consumer name (optional).
+Где `{stream}` — имя потока, а `{consumer}` — имя потребителя (необязательно).
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={consumerCreateRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={consumerCreateResponse} />

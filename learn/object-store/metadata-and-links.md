@@ -1,159 +1,81 @@
 ---
 id: metadata-and-links
-title: Metadata and links
+title: Метаданные и ссылки
 sidebar_position: 4
-description: Attach a description, headers, and a metadata map to an object, then link one object to another
+description: Описание, заголовки и произвольные метаданные объекта, а также ссылки между объектами
 ---
 
-# Metadata and links
+# Метаданные и ссылки {#metadata-and-links}
 
-An object carries more than its bytes. So far `invoice-ord_8w2k.pdf` is only a
-name and a payload: `warehouse` has to fetch the whole thing to learn
-anything about it. This page adds metadata to the object: a human-readable
-description, HTTP-style headers, and a free-form metadata map
-that travel with the object. Then it teaches links, so one object can
-stand in for another.
+Объект содержит не только байты. Пока `invoice-ord_8w2k.pdf` — лишь имя и содержимое: для любых сведений `warehouse` должен прочитать файл целиком. Добавим понятное описание, HTTP-подобные заголовки и произвольные метаданные. Затем изучим ссылки, позволяющие одному объекту представлять другой.
 
-The invoices you stored on the previous pages are still in the `INVOICES`
-bucket; keep that terminal open.
+Счета с предыдущих страниц остаются в `INVOICES`; держите терминал открытым.
 
-## Every object carries an ObjectInfo
+## Каждый объект имеет ObjectInfo {#every-object-carries-an-objectinfo}
 
-When you `put` an object, the store writes the chunks and then one final
-metadata message describing the whole thing. That metadata message is an
-`ObjectInfo` record. Some of its fields the store computes for you: the
-byte size, the chunk count, the SHA-256 digest, the modification time, and
-whether the object is deleted. Three fields are ones you set.
+При `put` записываются фрагменты, затем итоговые метаданные всего объекта — запись `ObjectInfo`. Часть полей вычисляется автоматически: размер в байтах, число фрагментов, SHA-256, время изменения и признак удаления. Три поля задаёте вы.
 
-The first is the **description**: a single human-readable label for the
-object. The second is **headers**: HTTP-style key/value pairs, the same
-shape as the headers on a NATS message. The third is the **metadata** map:
-free-form key/value strings for whatever your application wants to record.
+Первое — **описание**, понятная человеку подпись объекта. Второе — **заголовки**, пары ключ/значение в формате HTTP, как заголовки сообщения NATS. Третье — **метаданные**, произвольные строковые пары для нужд приложения.
 
-Set them on the put. `order-svc` stores the invoice with a description and a
-`content-type` header so a reader knows the bytes are a PDF without fetching
-them first:
+Задайте их при put. `order-svc` сохраняет счёт с описанием и заголовком `content-type`, чтобы читатель узнал о PDF до загрузки байтов:
 
 <div class="nats-example" data-type="learn-object-store-metadata-and-links-putWithMeta" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-The object name and the bytes are unchanged: this is the same
-`invoice-ord_8w2k.pdf` from your first object, now carrying a description and
-a header. The metadata is held in that one trailing metadata message, so it
-adds no extra storage cost and no extra read cost.
+Имя и байты не изменились: это прежний `invoice-ord_8w2k.pdf`, теперь с описанием и заголовком. Метаданные находятся в том же завершающем сообщении, без отдельной дополнительной записи или операции чтения.
 
-## Reading the metadata back
+## Чтение метаданных {#reading-the-metadata-back}
 
-Reading the metadata doesn't fetch the object's bytes. The store keeps the
-latest `ObjectInfo` for each name as one small message, so `warehouse` can
-read an object's details without reading the bytes.
+Чтение метаданных не получает байты объекта. Последний `ObjectInfo` каждого имени хранится одним небольшим сообщением, поэтому `warehouse` может узнать свойства файла без его загрузки.
 
 <div class="nats-example" data-type="learn-object-store-metadata-and-links-info" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-The output shows your description and header next to the computed fields:
-size, chunks, digest, modification time. `warehouse` reads the
-`content-type` header and the size here, then decides whether to fetch the
-bytes. The metadata is a low-cost index over the bucket, and you only read the
-larger bytes when you need them.
+В выводе описание и заголовок находятся рядом с вычисленными размером, числом фрагментов, хешем и временем изменения. `warehouse` читает `content-type` и размер, затем решает, нужны ли байты. Метаданные служат недорогим указателем содержимого бакета; крупные данные читаются лишь при необходимости.
 
-There's one boundary to keep in mind. The metadata describes the *current*
-object, not a history of past versions. Each re-put replaces the
-metadata, keeping only the latest. If you want a full revision history per
-name, that's the Key-Value store's job, covered in
-[Key-Value](/learn/key-value); the object store keeps the current
-`ObjectInfo`, not the trail of edits that produced it.
+Метаданные описывают *текущий* объект, а не историю его версий. Каждый повторный put заменяет их, оставляя последние. История ревизий каждого имени — задача [хранилища ключей и значений](/learn/key-value); хранилище объектов сохраняет текущий `ObjectInfo`, а не последовательность изменений.
 
-## Links point one object at another
+## Ссылка направляет один объект на другой {#links-point-one-object-at-another}
 
-A **link** is an object whose target is another object. A `get` on the link
-transparently returns the target's bytes: you request the link, the store
-follows it and returns the target. The link is a reference rather than a
-copy: it stores no chunks of its own, only a record of the target's bucket
-and name.
+**Ссылка** — объект, указывающий на другой объект. `Get` ссылки прозрачно возвращает байты цели: хранилище следует по ссылке. Это ссылка, а не копия: собственных фрагментов у неё нет, сохраняются только бакет и имя цели.
 
-This is useful when two names should resolve to the same bytes. In the Acme
-platform a shipping label and an invoice can share a document, or a stable
-name can serve as the entry point for a frequently changing set of files. Here `label-ord_8w2k.png` becomes a
-link to the invoice, so fetching the label returns the invoice's bytes:
+Это полезно, когда два имени должны возвращать одни байты. В Acme этикетка и счёт могут представлять общий документ; стабильное имя может также служить входом к меняющимся файлам. Здесь `label-ord_8w2k.png` становится ссылкой на счёт, поэтому запрос этикетки возвращает байты счёта:
 
 <div class="nats-example" data-type="learn-object-store-metadata-and-links-addLink" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-A link can also target a whole bucket instead of a single object. That's a
-**bucket link**: the target name is empty, so it records only a reference to
-another bucket. A `get` on a bucket link doesn't return bytes — it returns an
-error (`ErrCantGetBucket` in Go). You read the link's info to learn the target
-bucket, then open that bucket yourself. Reach for a bucket link when you want a
-stored pointer to another store, not a gettable object.
+Ссылка может указывать на целый бакет. Это **ссылка на бакет**: имя цели пустое, сохраняется только другой бакет. `Get` такой ссылки не возвращает байты, а завершается ошибкой (`ErrCantGetBucket` в Go). Прочитайте сведения ссылки, узнайте целевой бакет и откройте его самостоятельно. Это сохранённый указатель на хранилище, а не доступный через get объект.
 
-Two rules constrain links, and the store enforces both. A link can't point
-at a deleted object, and a link can't point at another link — the store
-won't build a chain of links you'd have to follow. When you add a link, the
-store records the target as it stands at that moment and traverses it on
-every get from then on.
+Хранилище соблюдает два ограничения: нельзя ссылаться на удалённый объект или на другую ссылку. Цепочки ссылок не создаются. При добавлении записывается текущая цель, а каждый последующий get разрешает её.
 
-The full set of `ObjectInfo` fields and link options is documented in
-[Reference](/reference/). We only need the behavior here.
+Все поля `ObjectInfo` и параметры ссылок приведены в [справочнике](/reference/). Здесь достаточно поведения.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Metadata and links have two pitfalls: what a link does when its target
-moves, and what `UpdateMeta` will and won't change.
+Здесь две ловушки: изменение цели ссылки и границы действия `UpdateMeta`.
 
-**A link is a snapshot rather than a live reference.** Adding a link records the
-target's bucket and name at creation time; it doesn't keep the target alive.
-Delete the target and the link is left dangling: a get on the link
-traverses to a deleted object and fails with `ErrObjectNotFound`. The link
-still exists, but its destination does not. Renames break a link the same way:
-the link holds the old name, so renaming the target leaves the link
-pointing at a name that no longer resolves. Do not assume `addLink` keeps the
-target around or follows it under a rename. Do verify the target exists with
-`info` before you depend on the link, and re-create the link after you delete
-or rename its target.
+**Ссылка фиксирует адрес при создании и не отслеживает его изменения.** Она сохраняет бакет и имя, но не поддерживает существование цели. После удаления цели ссылка остаётся висячей: get возвращает `ErrObjectNotFound`. Переименование ломает её так же, поскольку сохранено старое имя. Не считайте, что `addLink` удерживает цель или следует за переименованием. Перед использованием проверяйте её через `info`; после удаления или переименования создавайте ссылку заново.
 
-You can see the failure and the safe check side by side. Delete the invoice,
-get the now-stale label link, confirm the target with `info`, then re-put the
-invoice so the link resolves again and the bucket is back to where you left it:
+Вот ошибка и безопасная проверка рядом: удалите счёт, запросите устаревшую ссылку этикетки, проверьте цель через `info`, затем снова запишите счёт, чтобы ссылка разрешалась, а бакет вернулся в прежнее состояние:
 
 <div class="nats-example" data-type="learn-object-store-metadata-and-links-staleLink" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-**`UpdateMeta` changes the name, description, headers, and metadata, not the
-chunk size or the link.** Changing the name renames the object in place. If
-you hand `UpdateMeta` a new chunk size or a new link target, those fields are
-discarded without error or notification: the call succeeds, but neither is
-stored. The chunk size is fixed when the bytes are written, and a link target
-is fixed when the link is created. Don't expect `UpdateMeta` to re-chunk an
-object or to change a link target. To change the chunk size, delete the object
-and put it again. To change a link target, delete the link and add a new one.
-And don't rename onto a name already in use: renaming an object to an
-existing, non-deleted name fails with `ErrObjectAlreadyExists`. You *can*
-rename onto a name that was deleted; that reclaims the name for the renamed
-object.
+**`UpdateMeta` меняет имя, описание, заголовки и метаданные, но не размер фрагмента или цель ссылки.** Изменение имени переименовывает объект. Переданные новые размер фрагмента или цель ссылки молча отбрасываются: вызов успешен, но поля не сохраняются. Размер фиксируется при записи байтов, цель — при создании ссылки. Для изменения размера удалите объект и выполните put заново; для изменения цели удалите ссылку и добавьте новую. Переименование в существующее неудалённое имя возвращает `ErrObjectAlreadyExists`. В удалённое имя переименовать *можно*, заняв его снова.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- `invoice-ord_8w2k.pdf` carrying a description and a `content-type` header,
-  readable without fetching the bytes.
-- `label-ord_8w2k.png` as a link to the invoice, traversed transparently on
-  get.
-- A working sense of the two link rules (no link to a deleted object, no
-  link to a link) and of what `UpdateMeta` does and doesn't touch.
+- `invoice-ord_8w2k.pdf` с описанием и заголовком `content-type`, доступными без чтения байтов.
+- `label-ord_8w2k.png` как ссылка на счёт с прозрачным разрешением при get.
+- Понимание ограничений ссылок — без удалённой цели и без ссылки на ссылку — и полей, изменяемых `UpdateMeta`.
 
-The bucket now holds an object that carries its own metadata, and a link beside
-it. The next page moves from single objects to the whole bucket: how to
-take a snapshot of everything in it, and how to watch it change in real time.
+В бакете есть объект с метаданными и ссылка рядом с ним. Следующая страница переходит к бакету целиком: снимку содержимого и наблюдению за изменениями.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page teaches list and watch: a snapshot of every object in
-the bucket, and a live stream of metadata updates as `analytics` watches the
-bucket fill.
+Изучим list и watch: снимок всех объектов и поток метаданных, через который `analytics` наблюдает за заполнением бакета.
 
-Continue to [Watching and listing](/learn/object-store/watching-and-listing).
+Переходите к странице [Наблюдение и список объектов](/learn/object-store/watching-and-listing).
 
-## See also
+## См. также {#see-also}
 
-- [Key-Value](/learn/key-value) — the multi-revision store, when you want a
-  history per key rather than the latest object.
-- [Reference](/reference/) — the full set of `ObjectInfo` fields and link
-  options.
+- [Ключи и значения](/learn/key-value) — история ревизий каждого ключа вместо только последнего объекта.
+- [Справочник](/reference/) — все поля `ObjectInfo` и параметры ссылок.

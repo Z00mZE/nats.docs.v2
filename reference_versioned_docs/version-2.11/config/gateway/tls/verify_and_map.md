@@ -1,11 +1,11 @@
-# verify_and_map
+# verify_and_map {#verify_and_map}
 
 <Reloadable state="not-reloadable" />
-If true, require and verify client certificates and map certificate values for authentication. Does not apply to monitoring.
+Если true, требует и проверяет сертификаты клиентов и отображает значения сертификата для аутентификации. К мониторингу не применяется.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

@@ -1,11 +1,11 @@
-# max_control_line
+# max_control_line {#max_control_line}
 
 <Reloadable state="reloadable" note="Applied to client connections only. Route, gateway and leafnode connections keep the value they were created with." />
-Maximum length of a protocol line (including combined length of subject and queue group). Increasing this value may require client changes to be used. Applies to all traffic.
+Максимальная длина строки протокола (включая суммарную длину субъекта и группы очереди). Использование увеличенного значения может потребовать изменений в клиентах. Применяется ко всему трафику.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

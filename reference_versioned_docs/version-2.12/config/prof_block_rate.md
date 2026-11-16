@@ -1,12 +1,11 @@
-# prof_block_rate
+# prof_block_rate {#prof_block_rate}
 
 <Reloadable state="reloadable" />
-Go block-profile sampling rate. Set only while profiling; it slows
-the server down.
+Частота выборки профиля блокировок Go. Задавайте только при профилировании: параметр замедляет сервер.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

@@ -1,11 +1,11 @@
-# Stream Action
+# Действие с потоком {#stream-action}
 
-Stream lifecycle events.
+События жизненного цикла потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamAction from '@site/src/schemas/vendor/v2.14/jsm/jetstream/advisory/v1/stream_action.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 ```
 $JS.EVENT.ADVISORY.STREAM.CREATED.{stream}
@@ -13,8 +13,8 @@ $JS.EVENT.ADVISORY.STREAM.DELETED.{stream}
 $JS.EVENT.ADVISORY.STREAM.UPDATED.{stream}
 ```
 
-Where `{stream}` is the stream name.
+Где `{stream}` — имя потока.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={streamAction} />

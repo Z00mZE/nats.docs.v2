@@ -1,11 +1,11 @@
-# srk_password
+# srk_password {#srk_password}
 
 <Reloadable state="not-reloadable" />
-Password for the TPM storage root key.
+Пароль корневого ключа хранения TPM.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

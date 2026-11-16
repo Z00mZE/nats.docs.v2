@@ -1,113 +1,74 @@
 ---
 id: index
-title: "Connect over WebSocket"
+title: Подключение через WebSocket
 sidebar_position: 1
-description: Run the NATS protocol over a WebSocket transport, so browsers and anything behind an HTTP ingress can reach the same server
+description: "Протокол NATS поверх WebSocket: доступ к серверу из браузеров и через HTTP ingress"
 ---
 
-# Connect over WebSocket
+# Подключение через WebSocket {#connect-over-websocket}
 
-`nats-server` speaks the NATS protocol over WebSocket. Add a
-`websocket {}` block with a `listen` address and the same binary that
-serves clients on port 4222 also accepts WebSocket connections on a
-listener of its own.
+`nats-server` поддерживает протокол NATS поверх WebSocket. Добавьте блок `websocket {}` с адресом `listen`: тот же процесс, обслуживающий клиентов на 4222, начнёт принимать WebSocket на отдельном слушателе.
 
-Nothing above the transport changes. The same client libraries connect,
-publish to the same subjects, and use the same JetStream API. What
-changes is the URL scheme: `ws://` or `wss://` instead of `nats://`.
+Выше транспортного уровня ничего не меняется. Те же библиотеки публикуют в те же темы и используют то же API JetStream. Меняется схема URL: `ws://` или `wss://` вместо `nats://`.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You're running a NATS system and something needs to reach it that a
-plain client connection can't.
+У вас работает NATS, и к нему нужно подключить то, что не может использовать обычное клиентское соединение.
 
-Most often that's **a browser**. A page running in a browser can't open
-a TCP socket, so WebSocket is the only way it reaches NATS at all. A
-dashboard, an admin console, or any front end subscribing to live
-subjects connects this way.
+Чаще всего это **браузер**. Страница не может открыть TCP-сокет, поэтому WebSocket — её способ доступа к NATS. Так подключаются панели, административные консоли и другие интерфейсы с подписками на текущие данные.
 
-The other case is **infrastructure that only speaks HTTP**. A cloud
-HTTP load balancer or a CDN in front of your domain routes HTTP and
-nothing else, so a `nats://` connection has no path through them.
-Exposing NATS behind one means exposing the WebSocket listener. The
-same applies to a leaf node reaching a hub that sits behind that kind
-of edge.
+Другой случай — **инфраструктура только с HTTP**. Облачный HTTP-балансировщик или CDN перед доменом маршрутизирует HTTP, а для `nats://` пути нет. В таком окружении нужно открыть слушатель WebSocket. То же относится к листовому узлу, подключающемуся к центру за подобной инфраструктурой.
 
-If neither applies, keep using `nats://`. It's one less moving part, and
-a plain TCP connection avoids the WebSocket framing overhead.
+Если эти случаи не относятся к вам, используйте `nats://`: компонентов меньше, а обычный TCP избегает накладных расходов кадров WebSocket.
 
-## Which clients can connect
+## Какие клиенты поддерживаются {#which-clients-can-connect}
 
-Six of the seven [Tier 1 clients](/concepts/ecosystem#tier-1-clients)
-implement the WebSocket transport: Go, JavaScript/TypeScript, Python,
-Java, Rust, and C#/.NET. The C client has no WebSocket transport. For the
-six that do, the change is the URL scheme and nothing else.
+WebSocket реализован в шести из семи [клиентов Tier 1](/concepts/ecosystem#tier-1-clients): Go, JavaScript/TypeScript, Python, Java, Rust и C#/.NET. В клиенте C этого транспорта нет. Для поддерживающих клиентов меняется только схема URL.
 
-The `nats` CLI is built on the Go client, so it takes a `ws://` URL too.
-That makes it the quickest way to prove a listener works, and this
-chapter uses it for exactly that.
+CLI `nats` построен на клиенте Go и тоже принимает `ws://`. Это быстрый способ убедиться в работе слушателя; здесь мы используем его именно для этого.
 
-## A dashboard and a branch office
+## Панель и филиал {#a-dashboard-and-a-branch-office}
 
-Acme runs its ORDERS platform on NATS. Two things need in, and neither
-can open a plain connection to port 4222.
+Платформа ORDERS компании Acme работает на NATS. Подключиться нужно двум участникам, ни один не может открыть обычное соединение на 4222.
 
-The **warehouse dashboard** is a page that staff keep open on a screen
-by the packing benches. It subscribes to `orders.>` and shows each order
-as it arrives. It runs in a browser, so WebSocket is the only option.
+**Складская панель** открыта в браузере на экране возле упаковочных столов. Она подписывается на `orders.>` и показывает поступающие заказы. В браузере доступен только WebSocket.
 
-An Acme **retail branch** runs a leaf node so its tills keep working
-when the link to head office drops. The `east` cluster is reached
-through the same HTTPS ingress that fronts the rest of Acme's estate,
-and that ingress publishes HTTP routes only, so the branch can't dial
-the leafnode port directly.
+**Торговый филиал** Acme использует листовой узел, чтобы кассы работали при потере связи с центром. Кластер `east` доступен через общий HTTPS ingress, публикующий только HTTP-маршруты, поэтому филиал не может напрямую подключиться к порту листовых узлов.
 
-Neither adds a subsystem. Both are new ways into the system the
-earlier chapters set up.
+Новой подсистемы не появляется: это два способа входа в уже построенную систему.
 
-## By the end you'll have
+## Что получится к концу главы {#by-the-end-youll-have}
 
-- a `websocket {}` listener running, and `nats -s ws://…` subscribing
-  through it
-- a browser page receiving `orders.>` live
-- origin checking configured, and a clear view of what it does and
-  doesn't protect
-- TLS terminated at an ingress, with `advertise` telling clients the
-  right address
-- a leaf node joining the `east` cluster over `wss://`
+- Работающий слушатель `websocket {}` и подписка через `nats -s ws://…`.
+- Страница браузера с текущими сообщениями `orders.>`.
+- Проверка источника страницы с пониманием её границ.
+- Завершение TLS на ingress и правильный адрес для клиентов через `advertise`.
+- Листовой узел, подключённый к `east` через `wss://`.
 
-## Map
+## Содержание {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Your first WebSocket connection](/learn/websocket/your-first-websocket-connection) | Enable the listener, connect the CLI, then a browser |
-| [Browsers and origins](/learn/websocket/browsers-and-origins) | Origin checking, and how a browser presents credentials |
-| [TLS and proxies](/learn/websocket/tls-and-proxies) | TLS on the listener or at an ingress, and what a proxy must pass through |
-| [Leaf nodes over WebSocket](/learn/websocket/leaf-nodes-over-websocket) | Attaching an edge site through HTTP-only infrastructure |
-| [Where to go next](/learn/websocket/where-next) | A map of what's beyond this chapter |
+| [Первое соединение WebSocket](/learn/websocket/your-first-websocket-connection) | Включение слушателя, подключение CLI и браузера |
+| [Браузеры и источники](/learn/websocket/browsers-and-origins) | Проверка Origin и учётные данные браузера |
+| [TLS и прокси](/learn/websocket/tls-and-proxies) | TLS на слушателе или ingress и требования к прокси |
+| [Листовые узлы через WebSocket](/learn/websocket/leaf-nodes-over-websocket) | Подключение периферийной площадки через HTTP-инфраструктуру |
+| [Куда двигаться дальше](/learn/websocket/where-next) | Возможности за пределами главы |
 
-## Prerequisites
+## Предварительные требования {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- **A `nats-server`.** The examples use a single local server until
-  [Leaf nodes over
-  WebSocket](/learn/websocket/leaf-nodes-over-websocket), which uses the
-  `east` cluster.
-- **The `nats` CLI**, which connects over both `nats://` and `ws://`.
-- **A browser**, for the dashboard pages.
+- **`nats-server`**. До страницы [Листовые узлы через WebSocket](/learn/websocket/leaf-nodes-over-websocket) используется один локальный сервер, затем кластер `east`.
+- **CLI `nats`**, поддерживающий `nats://` и `ws://`.
+- **Браузер** для страниц панели.
 
-No client libraries need installing. The browser example is a single
-HTML file that loads nats.js from a module import.
+Устанавливать клиентские библиотеки не нужно. Пример браузера — один HTML-файл с модульным импортом nats.js.
 
-Open a terminal and turn to [Your first WebSocket
-connection](/learn/websocket/your-first-websocket-connection).
+Откройте терминал и переходите к странице [Первое соединение WebSocket](/learn/websocket/your-first-websocket-connection).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → websocket](/reference/config/websocket/) — every field of
-  the `websocket {}` block, versioned and exhaustive
-- [Core NATS → Connecting](/learn/core-nats/connecting) — the connection
-  this chapter changes the transport of
-- [Topologies → Leaf nodes](/learn/topologies/leaf-nodes) — the leaf-node
-  model the final page of this chapter carries over WebSocket
+- [Справочник → websocket](/reference/config/websocket/) — все поля `websocket {}` с разделением по версиям.
+- [Core NATS → Подключение](/learn/core-nats/connecting) — соединение, для которого здесь меняется транспорт.
+- [Топологии → Листовые узлы](/learn/topologies/leaf-nodes) — модель узлов, переносимая поверх WebSocket.

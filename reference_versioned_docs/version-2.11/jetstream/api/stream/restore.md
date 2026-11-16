@@ -1,21 +1,21 @@
-# Restore Stream
+# Восстановление потока {#restore-stream}
 
-Restores a stream from a snapshot.
+Восстановление потока из снимка.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamRestoreRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_restore_request.json';
 import streamRestoreResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_restore_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.RESTORE.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamRestoreRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamRestoreResponse} />

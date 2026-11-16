@@ -1,16 +1,16 @@
-# Get Next Message
+# Получение следующего сообщения {#get-next-message}
 
-Gets next message(s) from a consumer.
+Получение следующего сообщения или нескольких сообщений от потребителя.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerGetnextRequest from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/consumer_getnext_request.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.MSG.NEXT.{stream}.{consumer}`
 
-Where `{stream}` is the stream name and `{consumer}` is the consumer name.
+Где `{stream}` — имя потока, а `{consumer}` — имя потребителя.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={consumerGetnextRequest} />

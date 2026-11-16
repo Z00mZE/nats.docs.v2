@@ -1,19 +1,19 @@
-# Server Remove
+# Удаление сервера {#server-remove}
 
-Removes a server from the JetStream cluster.
+Удаление сервера из кластера JetStream.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import metaServerRemoveRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/meta_server_remove_request.json';
 import metaServerRemoveResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/meta_server_remove_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.SERVER.REMOVE`
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={metaServerRemoveRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={metaServerRemoveResponse} />

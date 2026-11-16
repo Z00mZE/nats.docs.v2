@@ -1,14 +1,11 @@
-# unique_tag
+# unique_tag {#unique_tag}
 
 <Reloadable state="not-reloadable" />
-Defines a tag prefix as a constraint for placement of assets across
-a JetStream domain. For example, if the value is `az:` then replicas
-of an assets will be required to be placed on servers having
-different `az:` tags.
+Задаёт префикс тега как ограничение размещения ресурсов в домене JetStream. Например, при значении `az:` реплики ресурса должны размещаться на серверах с разными тегами `az:`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

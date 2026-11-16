@@ -1,60 +1,51 @@
 ---
 id: request-reply
-title: "2. Request and reply"
+title: "2. Запрос и ответ"
 sidebar_position: 3
-description: Build a tiny responder service and call it with a request that gets one answer back
+description: "Создайте небольшой отвечающий сервис и отправьте ему запрос, на который вернётся один ответ"
 ---
 
-# 2. Request and reply
+# 2. Запрос и ответ {#2-request-and-reply}
 
-In [Hello NATS](/tutorials/hello-nats) a publisher sent a message and never
-heard back. This time you'll build a two-way conversation: a small **responder**
-that answers questions on a subject, and a **request** that calls it and gets
-exactly one reply. By the end you'll start a `time` service in one terminal
-and ask it for the time from another.
+В руководстве [Привет, NATS](/tutorials/hello-nats) издатель отправлял сообщение без ответа. Теперь вы создадите двусторонний обмен: небольшой **отвечающий сервис**, который отвечает на вопросы в теме, и **запрос**, который обращается к нему и получает ровно один ответ. В результате вы запустите сервис `time` в одном терминале и спросите у него время из другого.
 
 <div class="nats-flow" data-scenario="requestReply" data-width="600" data-height="350"></div>
 
-## What you'll need
+## Что понадобится {#what-youll-need}
 
-- The `nats` CLI and a running `nats-server` from
-  [Hello NATS](/tutorials/hello-nats). If the server isn't running, start it:
+- CLI `nats` и работающий `nats-server` из руководства [Привет, NATS](/tutorials/hello-nats). Если сервер не работает, запустите его:
 
   ```bash
   nats-server
   ```
 
-- Two terminals: one for the responder, one for the request.
+- Два терминала: один для сервиса, другой для запроса.
 
-## Step 1: Start a responder
+## Шаг 1: запустите отвечающий сервис {#step-1-start-a-responder}
 
-In your first terminal, start a responder on the subject `time`. The `--command`
-flag tells `nats reply` to run a command for each request and send its output
-back as the reply.
+В первом терминале запустите сервис на теме `time`. Флаг `--command` указывает команде `nats reply` запускать программу для каждого запроса и отправлять её вывод в качестве ответа.
 
 <div class="nats-example"
      data-type="tutorials-request-reply-responder"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see it start up and wait:
+Сервис должен запуститься и перейти в ожидание:
 
 ```
 17:42:10 Listening on "time" in group "NATS-RPLY-22"
 ```
 
-Leave this terminal running. It's now a service waiting to answer.
+Оставьте этот терминал работающим. Сервис готов отвечать на запросы.
 
-## Step 2: Send a request
+## Шаг 2: отправьте запрос {#step-2-send-a-request}
 
-Open your second terminal and call the service. `nats request` publishes one
-message on `time` and waits for a single reply, up to the global `--timeout`
-(five seconds by default).
+Откройте второй терминал и вызовите сервис. Команда `nats request` публикует одно сообщение в `time` и ожидает один ответ в течение глобального `--timeout` (по умолчанию пять секунд).
 
 <div class="nats-example"
      data-type="tutorials-request-reply-request"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see one reply printed, the current date and time from the responder:
+Должен появиться один ответ — текущие дата и время от сервиса:
 
 ```
 17:42:31 Sending request on "time"
@@ -62,48 +53,40 @@ You should see one reply printed, the current date and time from the responder:
 Mon Jun  9 17:42:31 CEST 2026
 ```
 
-That date came from the responder's `date` command, sent back to your request.
+Эта дата получена от команды `date`, запущенной сервисом, и отправлена обратно в ответ на ваш запрос.
 
-## Step 3: Watch the responder log the call
+## Шаг 3: проверьте запись вызова в журнале сервиса {#step-3-watch-the-responder-log-the-call}
 
-Switch back to your first terminal. You should see the responder log the call:
+Вернитесь к первому терминалу. Вы должны увидеть запись вызова:
 
 ```
 17:42:31 [#0] Received on subject "time":
 ```
 
-Each time you rerun the request in your second terminal, the counter goes up by
-one (`[#1]`, `[#2]`, …) and a fresh reply comes back. Try it a couple of times.
+При каждом повторном запросе из второго терминала счётчик увеличивается на единицу (`[#1]`, `[#2]`, …), и приходит новый ответ. Повторите запрос несколько раз.
 
-## Step 4: See what happens with no responder
+## Шаг 4: проверьте поведение без отвечающего сервиса {#step-4-see-what-happens-with-no-responder}
 
-Stop the responder in your first terminal with `Ctrl+C`, then send the request
-again from your second terminal:
+Остановите сервис в первом терминале с помощью `Ctrl+C`, затем снова отправьте запрос из второго:
 
 ```bash
 nats request time "" --timeout 2s
 ```
 
-Instead of waiting out the timeout, the request returns right away, because the
-server knows nobody is subscribed to `time`:
+Запрос завершится сразу, не дожидаясь тайм-аута: сервер знает, что на `time` никто не подписан:
 
 ```
 17:43:02 No responders are available
 ```
 
-Start the responder again and the same request succeeds.
+Запустите сервис снова — тот же запрос выполнится успешно.
 
-## What you built
+## Что вы создали {#what-you-built}
 
-You ran a `time` responder and called it with a request, getting exactly one
-reply per call, all over NATS with no shared address between the two sides.
+Вы запустили отвечающий сервис `time` и обратились к нему через запрос, получая ровно один ответ на каждый вызов. Всё взаимодействие идёт через NATS, и сторонам не нужно знать адреса друг друга.
 
-## Next
+## Дальше {#next}
 
-- Next tutorial: [3. Work queue](/tutorials/work-queue) — split work across
-  several workers so each message goes to exactly one of them.
-- Understand how this works: [Core NATS deep dive →
-  Request-reply](/learn/core-nats/request-reply) covers the inbox, timeouts, and
-  the no-responders signal.
-- Turn responders into discoverable services with stats and schemas:
-  [Learn → Services](/learn/services).
+- Следующее руководство: [3. Очередь заданий](/tutorials/work-queue) — распределите работу между несколькими обработчиками так, чтобы каждое сообщение получал только один.
+- Как это работает: [Core NATS → Запрос-ответ](/learn/core-nats/request-reply) объясняет inbox, тайм-ауты и сигнал отсутствия отвечающих сервисов.
+- Превратите отвечающие приложения в обнаруживаемые сервисы со статистикой и схемами: [Изучение → Сервисы](/learn/services).

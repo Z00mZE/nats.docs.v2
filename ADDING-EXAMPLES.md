@@ -1,44 +1,50 @@
-# Adding Code Examples to NATS Documentation
+<a id="adding-code-examples-to-nats-documentation"></a>
 
-Quick reference for adding code examples using the nats-example system.
+# Добавление примеров кода в документацию NATS
 
-## TL;DR
+Краткая инструкция по добавлению примеров с помощью системы nats-example.
+
+<a id="tldr"></a>
+
+## Краткий порядок действий
 
 ```bash
-# 1. Create CLI example (in this repo)
+# 1. Создайте пример CLI в этом репозитории
 echo '#!/bin/bash
 nats pub subject "message"' > static/examples/snippets/cli/[page]/[snippet].sh
 
-# 2. IMPORTANT: Add to git!
+# 2. ВАЖНО: добавьте файл в git!
 git add static/examples/snippets/cli/[page]/[snippet].sh
 
-# 3. Create Go example (in nats.go-docs repo)
+# 3. Создайте пример Go в репозитории nats.go-docs
 cd ~/coding/nats.go-docs
-# Create examples/docs/[page]-[snippet]/main.go with NATS-DOC-START/END markers
+# Создайте examples/docs/[page]-[snippet]/main.go с маркерами NATS-DOC-START/END
 git add examples/docs/[page]-[snippet]/
 git commit -m "Add [page]-[snippet] example"
 git push origin doc-examples
 
-# 4. Create Rust example (in nats.rs-docs repo)
+# 4. Создайте пример Rust в репозитории nats.rs-docs
 cd ~/coding/nats.rs-docs
-# Create async-nats/examples/docs_[page]_[snippet].rs with NATS-DOC-START/END markers
+# Создайте async-nats/examples/docs_[page]_[snippet].rs с маркерами NATS-DOC-START/END
 git add async-nats/examples/docs_[page]_[snippet].rs
 git commit -m "Add [page]-[snippet] example"
 git push origin doc-examples
 
-# 5. Update fetch config and test locally
+# 5. Обновите конфигурацию загрузки и проверьте локально
 cd ~/coding/new-nats.docs
-# Add entries to scripts/fetch-examples.js
+# Добавьте записи в scripts/fetch-examples.js
 npm run fetch-examples
 
-# 6. Use in documentation
+# 6. Используйте пример в документации
 # <div class="nats-example" data-type="[page]-[snippet]" data-languages="cli,js,go,python,java,rust,csharp"></div>
 ```
 
-## Directory Structure
+<a id="directory-structure"></a>
+
+## Структура каталогов
 
 ```
-# CLI examples (stored in git in this repo)
+# Примеры CLI: хранятся в git в этом репозитории
 static/examples/snippets/cli/
   ├── queue-groups/
   │   ├── basic.sh
@@ -49,14 +55,14 @@ static/examples/snippets/cli/
   └── subjects/
       └── monitoring.sh
 
-# Go examples (fetched from nats.go during build)
+# Примеры Go: загружаются из nats.go при сборке
 ~/coding/nats.go-docs/examples/docs/
   ├── queue-groups-basic/main.go
   ├── queue-groups-dynamic-scaling/main.go
   ├── request-reply-basic/main.go
   └── request-reply-timeout/main.go
 
-# Rust examples (fetched from nats.rs during build)
+# Примеры Rust: загружаются из nats.rs при сборке
 ~/coding/nats.rs-docs/async-nats/examples/
   ├── docs_queue_groups_basic.rs
   ├── docs_queue_groups_dynamic_scaling.rs
@@ -64,44 +70,54 @@ static/examples/snippets/cli/
   └── docs_request_reply_timeout.rs
 ```
 
-## Naming Convention
+<a id="naming-convention"></a>
 
-Examples use pattern: `[page]-[snippet]`
+## Правила именования
 
-- **Documentation page**: `queue-groups`
-- **Example snippet**: `basic`
-- **Example type**: `queue-groups-basic`
+Имена примеров имеют формат `[page]-[snippet]`.
 
-### Language-Specific Paths
+- **Страница документации:** `queue-groups`
+- **Фрагмент примера:** `basic`
+- **Тип примера:** `queue-groups-basic`
 
-| Language | Path Pattern | Example |
+<a id="language-specific-paths"></a>
+
+### Пути для разных языков
+
+| Язык | Шаблон пути | Пример |
 |----------|-------------|---------|
 | CLI | `cli/[page]/[snippet].sh` | `cli/queue-groups/basic.sh` |
 | Go | `[page]-[snippet]/main.go` | `queue-groups-basic/main.go` |
 | Rust | `docs_[page]_[snippet].rs` | `docs_queue_groups_basic.rs` |
 
-## Step-by-Step Walkthrough
+<a id="step-by-step-walkthrough"></a>
 
-### 1. Create CLI Example
+## Пошаговое руководство
+
+<a id="1-create-cli-example"></a>
+
+### 1. Создайте пример CLI
 
 ```bash
-# CLI examples live in this repo
+# Примеры CLI находятся в этом репозитории
 mkdir -p static/examples/snippets/cli/queue-groups
 cat > static/examples/snippets/cli/queue-groups/basic.sh << 'EOF'
 #!/bin/bash
 
-# Terminal 1: Worker subscribes to queue
+# Терминал 1: обработчик подписывается на очередь
 nats sub tasks --queue workers
 
-# Terminal 2: Publish work
+# Терминал 2: публикация заданий
 nats pub tasks "Process this"
 EOF
 
-# CRITICAL: Add to git (CLI examples MUST be in git)
+# ОБЯЗАТЕЛЬНО добавьте в git: примеры CLI должны храниться в репозитории
 git add static/examples/snippets/cli/queue-groups/basic.sh
 ```
 
-### 2. Create Go Example
+<a id="2-create-go-example"></a>
+
+### 2. Создайте пример Go
 
 ```bash
 cd ~/coding/nats.go-docs
@@ -135,7 +151,9 @@ git commit -m "Add queue-groups-basic example"
 git push origin doc-examples
 ```
 
-### 3. Create Rust Example
+<a id="3-create-rust-example"></a>
+
+### 3. Создайте пример Rust
 
 ```bash
 cd ~/coding/nats.rs-docs
@@ -169,82 +187,100 @@ git commit -m "Add queue-groups-basic example"
 git push origin doc-examples
 ```
 
-### 4. Update Fetch Configuration
+<a id="4-update-fetch-configuration"></a>
+
+### 4. Обновите конфигурацию загрузки
 
 ```bash
 cd ~/coding/new-nats.docs
 
-# Edit scripts/fetch-examples.js
-# Add to "go" section:
+# Отредактируйте scripts/fetch-examples.js
+# Добавьте в раздел "go":
 "queue-groups-basic": "examples/docs/queue-groups-basic/main.go",
 
-# Add to "rust" section:
+# Добавьте в раздел "rust":
 "queue-groups-basic": "async-nats/examples/docs_queue_groups_basic.rs",
 ```
 
-### 5. Test Locally
+<a id="5-test-locally"></a>
+
+### 5. Проверьте локально
 
 ```bash
-# Fetch examples from GitHub
+# Загрузите примеры с GitHub
 npm run fetch-examples
 
-# Should see:
+# Ожидаемый вывод:
 # ✓ queue-groups-basic -> queue-groups/basic.go
 # ✓ queue-groups-basic -> queue-groups/basic.rs
 # ✓ queue-groups-basic -> queue-groups/basic.sh
 ```
 
-### 6. Use in Documentation
+<a id="6-use-in-documentation"></a>
+
+### 6. Используйте в документации
 
 ```mdx
-## Queue Groups
+## Группы очередей
 
 Basic queue group example:
 
 <div class="nats-example" data-type="queue-groups-basic" data-languages="cli,js,go,python,java,rust,csharp"></div>
 ```
 
-## Common Issues
+<a id="common-issues"></a>
 
-### CLI Example Not Showing in Production
+## Частые проблемы
 
-**Problem**: Created CLI example but it's missing online
-**Solution**: CLI examples must be committed to git
+<a id="cli-example-not-showing-in-production"></a>
+
+### Пример CLI не отображается на опубликованном сайте
+
+**Проблема:** пример CLI создан, но отсутствует на сайте.
+**Решение:** примеры CLI должны быть добавлены в коммит git.
 ```bash
 git add static/examples/snippets/cli/[page]/[snippet].sh
 git commit -m "Add CLI example"
 ```
 
-### Go/Rust Example Not Showing
+<a id="gorust-example-not-showing"></a>
 
-**Problem**: Example exists but not fetched
-**Solution**:
-1. Verify it's pushed to GitHub doc-examples branch
-2. Verify it's in scripts/fetch-examples.js
-3. Run `npm run fetch-examples` locally to test
+### Пример Go/Rust не отображается
 
-### Example Shows Wrong Code
+**Проблема:** пример существует, но не загружается.
+**Решение:**
+1. Убедитесь, что он отправлен в ветку `doc-examples` на GitHub.
+2. Убедитесь, что он зарегистрирован в `scripts/fetch-examples.js`.
+3. Запустите `npm run fetch-examples` для локальной проверки.
 
-**Problem**: Old version is displayed
-**Solution**: Clear build cache and re-fetch
+<a id="example-shows-wrong-code"></a>
+
+### В примере отображается неверный код
+
+**Проблема:** отображается старая версия.
+**Решение:** очистите кэш сборки и повторно загрузите примеры.
 ```bash
 rm -rf static/examples/snippets/go static/examples/snippets/rust
 npm run fetch-examples
 ```
 
-## Key Differences: CLI vs Other Languages
+<a id="key-differences-cli-vs-other-languages"></a>
 
-| Aspect | CLI Examples | Other Languages (Go/Rust/JS/etc) |
+## Различия между CLI и другими языками
+
+| Аспект | Примеры CLI | Другие языки (Go/Rust/JS и прочие) |
 |--------|--------------|----------------------------------|
-| **Location** | This repo | Client repos (nats.go, nats.rs, etc.) |
-| **Storage** | Committed to git | Fetched during build |
-| **Path** | `static/examples/snippets/cli/` | `static/examples/snippets/{go,rust,javascript,python,...}/` |
-| **When to add** | `git add` immediately | Push to client repo, then fetch |
-| **gitignore** | NOT ignored (exception) | ALL ignored (rule: `static/examples/snippets/*`) |
-| **Future languages** | Never changes | Automatically ignored when added |
+| **Расположение** | Этот репозиторий | Репозитории клиентов: nats.go, nats.rs и другие |
+| **Хранение** | В коммитах git | Загружаются при сборке |
+| **Путь** | `static/examples/snippets/cli/` | `static/examples/snippets/{go,rust,javascript,python,...}/` |
+| **Когда добавлять** | Сразу выполнить `git add` | Отправить в репозиторий клиента, затем загрузить |
+| **gitignore** | Не исключены благодаря исключению | Все исключены правилом `static/examples/snippets/*` |
+| **Новые языки** | Ничего не меняется | Автоматически исключаются при добавлении |
 
-## Documentation
+<a id="documentation"></a>
 
-- Full workflow: `static/examples/snippets/cli/README.md`
-- Style guide: `CLAUDE.md`
-- Fetch script: `scripts/fetch-examples.js`
+## Документация
+
+- Полный порядок работы: `static/examples/snippets/cli/README.md`
+- Руководство по стилю: `CLAUDE.md`
+- Скрипт загрузки: `scripts/fetch-examples.js`

@@ -1,140 +1,140 @@
 ---
-title: Request-Reply
-description: Synchronous communication pattern in NATS
+title: "Запрос-ответ"
+description: "Шаблон синхронного взаимодействия в NATS"
 ---
 
-# Request-Reply
+# Запрос-ответ {#request-reply}
 
-Request-Reply is a communication pattern that brings synchronous communication to NATS's asynchronous messaging system. It allows a client to send a request and wait for a response, building RPC-style interactions on top of the core publish-subscribe mechanism.
+Запрос-ответ (Request-Reply) — шаблон, добавляющий синхронное взаимодействие в асинхронную систему обмена сообщениями NATS. Клиент отправляет запрос и ожидает ответ, создавая взаимодействие в стиле RPC поверх базового механизма публикации и подписки.
 
-For a runnable, step-by-step treatment, see the [request-reply chapter in the Core NATS deep dive](/learn/core-nats/request-reply).
+Пошаговое практическое руководство см. в главе [Запрос-ответ углублённого курса Core NATS](/learn/core-nats/request-reply).
 
-## How Request-Reply Works
+## Как работает запрос-ответ {#how-request-reply-works}
 
-Under the hood, request-reply uses NATS's publish-subscribe with these steps:
+Под капотом запрос-ответ использует публикацию и подписку NATS следующим образом:
 
-1. **Client creates a unique reply subject** (inbox)
-2. **Client subscribes to the reply subject**
-3. **Client publishes the request** with the reply subject
-4. **Service receives the request** and sees the reply subject
-5. **Service publishes the response** to the reply subject
-6. **Client receives the response**
+1. **Клиент создаёт уникальную тему для ответа** (inbox)
+2. **Клиент подписывается на тему ответа**
+3. **Клиент публикует запрос**, указывая тему ответа
+4. **Сервис получает запрос** и видит тему ответа
+5. **Сервис публикует ответ** в указанную тему
+6. **Клиент получает ответ**
 
-This pattern is so common that NATS clients provide a simplified `request()` method that handles all these steps automatically.
+Этот шаблон настолько распространён, что клиенты NATS предоставляют удобный метод `request()`, автоматически выполняющий все эти шаги.
 
 <div class="nats-flow" data-scenario="requestReply" data-width="800" data-height="350"></div>
 
-In the animation above:
-- The **orange arrow** shows the request flowing from client to service
-- The **green dashed arrow** shows the reply flowing back
-- This demonstrates the bidirectional, synchronous nature of request-reply
+На анимации выше:
+- **Оранжевая стрелка** показывает запрос от клиента к сервису
+- **Зелёная пунктирная стрелка** показывает ответ обратно
+- Так наглядно показано двустороннее синхронное взаимодействие в шаблоне запрос-ответ
 
-## Basic Request-Reply
+## Простой запрос-ответ {#basic-request-reply}
 
 <div class="nats-example" data-type="request-reply-basic" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Handling Timeouts
+## Обработка тайм-аутов {#handling-timeouts}
 
-Timeouts are crucial in request-reply to prevent indefinite waiting. All NATS clients support configurable timeouts:
+Тайм-ауты необходимы, чтобы запрос не ожидал ответ бесконечно. Все клиенты NATS поддерживают настраиваемые тайм-ауты:
 
 <div class="nats-example" data-type="request-reply-timeout" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Multiple Responders
+## Несколько отвечающих сервисов {#multiple-responders}
 
-When multiple services subscribe to the same request subject, NATS supports two distinct patterns depending on whether queue groups are used:
+Если несколько сервисов подписаны на одну тему запросов, NATS поддерживает два разных шаблона в зависимости от использования групп очередей:
 
-### Pattern 1: All Services Respond (Scatter-Gather)
+### Шаблон 1: отвечают все сервисы (Scatter-Gather) {#pattern-1-all-services-respond-scatter-gather}
 
-If each app creates a "service" subscription, all of them will receive the request and **all** can respond. The client can collect multiple responses:
+Если каждое приложение создаёт обычную подписку сервиса, запрос получат все и **все** смогут ответить. Клиент может собрать несколько ответов:
 
 <div class="nats-flow" data-scenario="requestReplyScatterGather" data-width="800" data-height="450"></div>
 
-In this pattern, one request is broadcast to all three services (A, B, C), and all three send responses back. This is useful for:
-- Gathering data from multiple sources
-- Aggregating results from distributed services
-- Querying multiple replicas for consensus
+В этом шаблоне один запрос рассылается всем трём сервисам (A, B, C), и каждый отправляет ответ. Это полезно для:
+- Сбора данных из нескольких источников
+- Агрегации результатов распределённых сервисов
+- Опроса нескольких реплик для достижения согласия
 
-### Pattern 2: One Service Responds (Load Balancing)
+### Шаблон 2: отвечает один сервис (балансировка нагрузки) {#pattern-2-one-service-responds-load-balancing}
 
-With [queue groups](./queue-groups.md), **only one** service receives the request and responds, providing automatic load balancing for scalability:
+При использовании [групп очередей](./queue-groups.md) запрос получает и обрабатывает **только один** сервис. Автоматическая балансировка нагрузки позволяет масштабировать систему:
 
 <div class="nats-flow" data-scenario="requestReplyQueueGroup" data-width="800" data-height="450"></div>
 
-In this pattern, NATS selects one service from the queue group (Service B in this example) to handle the request. This provides:
-- Automatic load distribution across service instances
-- Horizontal scalability
-- Built-in failover (if one service is down, another handles it)
+В этом шаблоне NATS выбирает для обработки запроса один сервис из группы очереди (в примере — сервис B). Это обеспечивает:
+- Автоматическое распределение нагрузки между экземплярами сервиса
+- Горизонтальное масштабирование
+- Встроенное переключение при отказе (если один сервис недоступен, запрос обработает другой)
 
-By default, the `request()` method returns the first response and drops the rest. The example below starts multiple responders and shows the client receiving a single reply. To gather every response, subscribe to a reply inbox directly and read messages until a timeout instead of calling `request()`.
+По умолчанию метод `request()` возвращает первый ответ и отбрасывает остальные. Пример ниже запускает несколько отвечающих сервисов и показывает получение клиентом одного ответа. Чтобы собрать все ответы, вместо вызова `request()` напрямую подпишитесь на inbox для ответов и читайте сообщения до истечения тайм-аута.
 
 <div class="nats-example" data-type="request-reply-multiple-responders" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## No Responders Detection
+## Обнаружение отсутствия отвечающих сервисов {#no-responders-detection}
 
-NATS will detect when no services are available to handle a request. When there are no subscribers for the request subject, NATS server will return a "no responders" error immediately:
+NATS обнаруживает отсутствие сервисов, способных обработать запрос. Если у темы запроса нет подписчиков, сервер NATS немедленно возвращает ошибку «no responders»:
 
 <div class="nats-example" data-type="request-reply-no-responders" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Request with Headers
+## Запрос с заголовками {#request-with-headers}
 
-NATS supports headers in request-reply, enabling metadata exchange:
+NATS поддерживает заголовки в запросах и ответах для обмена метаданными:
 
 <div class="nats-example" data-type="request-reply-headers" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Best Practices
+## Рекомендации {#best-practices}
 
-### Timeout Strategy
+### Выбор тайм-аутов {#timeout-strategy}
 
-- **Set appropriate timeouts**: Too short may miss valid responses, too long blocks unnecessarily
-- **Consider network latency**: Add buffer for network round-trip time
-- **Implement retry logic**: For transient failures
+- **Задавайте подходящие тайм-ауты**: слишком короткий не позволит дождаться корректного ответа, слишком длинный приведёт к лишнему ожиданию
+- **Учитывайте сетевую задержку**: добавляйте запас на передачу запроса и ответа
+- **Реализуйте повторные попытки**: для временных сбоев
 
-### Error Handling
+### Обработка ошибок {#error-handling}
 
-- **Always handle timeouts**: Don't assume responses will arrive
-- **Check for no responders**: React appropriately when services are unavailable
-- **Validate responses**: Ensure response data is valid before processing
+- **Всегда обрабатывайте тайм-ауты**: не считайте получение ответа гарантированным
+- **Проверяйте отсутствие отвечающих сервисов**: корректно реагируйте на их недоступность
+- **Проверяйте ответы**: убедитесь в корректности данных перед обработкой
 
-### Service Design
+### Проектирование сервисов {#service-design}
 
-- **Idempotent operations**: Requests might be retried
-- **Lightweight processing**: Long operations should be async
-- **Health checks**: Implement service health endpoints
-- **Graceful shutdown**: Drain pending requests before shutting down
+- **Идемпотентные операции**: запросы могут повторяться
+- **Лёгкая обработка**: длительные операции следует выполнять асинхронно
+- **Проверки работоспособности**: реализуйте точки проверки состояния сервиса
+- **Корректное завершение**: завершайте обработку ожидающих запросов перед остановкой
 
-### Performance
+### Производительность {#performance}
 
-- **Connection pooling**: Reuse connections for multiple requests
-- **Inbox reuse**: Modern clients reuse inbox subjects for efficiency
-- **Batch operations**: Group related requests when possible
+- **Пул соединений**: повторно используйте соединения для нескольких запросов
+- **Повторное использование inbox**: современные клиенты переиспользуют темы ответов для эффективности
+- **Пакетные операции**: по возможности объединяйте связанные запросы
 
-## Request-Reply vs Publish-Subscribe
+## Запрос-ответ и публикация-подписка {#request-reply-vs-publish-subscribe}
 
-Choose request-reply when you need:
-- **Synchronous communication**: Wait for a response before continuing
-- **Service discovery**: Automatic "no responders" detection
-- **Load balancing**: Combined with queue groups
-- **RPC-style APIs**: Traditional request-response patterns
+Выбирайте запрос-ответ, когда нужны:
+- **Синхронное взаимодействие**: ожидание ответа перед продолжением
+- **Обнаружение сервисов**: автоматическое обнаружение отсутствия отвечающих сервисов
+- **Балансировка нагрузки**: в сочетании с группами очередей
+- **API в стиле RPC**: традиционная модель запроса и ответа
 
-Use publish-subscribe when you need:
-- **Fire-and-forget**: No response needed
-- **Multiple consumers**: All subscribers should receive the message
-- **Event streaming**: Continuous flow of events
-- **Decoupled systems**: Publishers shouldn't know about subscribers
+Используйте публикацию и подписку, когда нужны:
+- **Отправка без ожидания**: ответ не требуется
+- **Несколько получателей**: сообщение должны получить все подписчики
+- **Поток событий**: непрерывная передача событий
+- **Независимые системы**: издателям не нужно знать о подписчиках
 
-## Related Concepts
+## Связанные понятия {#related-concepts}
 
-- [Subjects](./subjects.md) - Understanding subject-based addressing
-- [Queue Groups](./queue-groups.md) - Load balancing for services
-- [Publish-Subscribe](./pub-sub-basics.md) - Asynchronous messaging patterns
+- [Темы](./subjects.md) — адресация по темам
+- [Группы очередей](./queue-groups.md) — балансировка нагрузки сервисов
+- [Публикация и подписка](./pub-sub-basics.md) — асинхронные шаблоны обмена сообщениями
 
-## Try It Yourself
+## Попробуйте сами {#try-it-yourself}
 
-Create a simple calculator service:
+Создайте простой сервис-калькулятор:
 
 <div class="nats-example" data-type="request-reply-calculator" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Request-reply in the Core NATS deep dive](/learn/core-nats/request-reply) — runnable, step-by-step walkthrough
-- [The Services framework](/learn/services) — build production request-reply services
+- [Запрос-ответ в углублённом курсе Core NATS](/learn/core-nats/request-reply) — пошаговое практическое руководство
+- [Фреймворк сервисов](/learn/services) — создание сервисов запрос-ответ для промышленной эксплуатации

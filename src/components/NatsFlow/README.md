@@ -1,274 +1,288 @@
-# NatsFlow Component
+<a id="natsflow-component"></a>
 
-Interactive flow diagrams for NATS messaging patterns, built with React Flow.
+# Компонент NatsFlow
 
-## Overview
+Интерактивные диаграммы обмена сообщениями NATS на основе React Flow.
 
-NatsFlow provides animated, interactive visualizations of NATS messaging patterns directly in Markdown documentation files. No MDX required!
+<a id="overview"></a>
 
-## Usage in Markdown
+## Обзор
 
-Simply add a `<div>` tag with the `nats-flow` class:
+NatsFlow позволяет размещать интерактивные анимации обмена сообщениями NATS прямо в файлах Markdown. MDX не требуется.
+
+<a id="usage-in-markdown"></a>
+
+## Использование в Markdown
+
+Добавьте тег `<div>` с классом `nats-flow`:
 
 ```html
 <div class="nats-flow" data-scenario="publishSubscribe"></div>
 ```
 
-### Available Scenarios
+<a id="available-scenarios"></a>
 
-Two kinds exist (see [Adding New Scenarios](#adding-new-scenarios)):
+### Доступные сценарии
 
-- **Animated components** — `data-scenario` names ending in `Animated`
-  (e.g. `clusterMeshAnimated`, `kvWatchAnimated`). These make up most of the
-  ~80 scenarios used across the Learn section.
-- **Static scenarios** — fixed diagrams like `publishSubscribe`,
-  `requestReply`, `queueGroup`, `fanOut`.
+Есть два вида сценариев (см. [Добавление сценариев](#adding-new-scenarios)):
 
-The authoritative list is the export list in
-[`scenarios/index.ts`](./scenarios/index.ts).
+- **Анимированные компоненты** — имена `data-scenario` оканчиваются на `Animated`, например `clusterMeshAnimated` и `kvWatchAnimated`. Они составляют большинство из примерно 80 сценариев раздела Learn.
+- **Статические сценарии** — фиксированные диаграммы, например `publishSubscribe`, `requestReply`, `queueGroup` и `fanOut`.
+
+Полный актуальный список — экспорты в [`scenarios/index.ts`](./scenarios/index.ts).
 
 ```html
 <div class="nats-flow" data-scenario="publishSubscribe"></div>
 <div class="nats-flow" data-scenario="clusterMeshAnimated" data-width="600" data-height="350"></div>
 ```
 
-### Options
+<a id="options"></a>
 
-Customize the diagram with data attributes:
+### Параметры
+
+Настройте диаграмму с помощью атрибутов data:
 
 ```html
-<!-- Custom size -->
+<!-- Нестандартный размер -->
 <div class="nats-flow"
      data-scenario="publishSubscribe"
      data-width="800"
      data-height="500">
 </div>
 
-<!-- Hide controls -->
+<!-- Скрыть элементы управления -->
 <div class="nats-flow"
      data-scenario="requestReply"
      data-show-controls="false">
 </div>
 ```
 
-#### Available Options
+<a id="available-options"></a>
 
-- `data-scenario` (required): The scenario to display (see
-  [`scenarios/index.ts`](./scenarios/index.ts) for the full list)
-- `data-width`: Width in pixels (default: 600)
-- `data-height`: Height in pixels (default: 400)
-- `data-show-controls`: Show zoom/pan controls (default: **false**; pass
-  `data-show-controls="true"` to enable)
+#### Доступные параметры
 
-## Architecture
+- `data-scenario` (обязательный): отображаемый сценарий; полный список — в [`scenarios/index.ts`](./scenarios/index.ts).
+- `data-width`: ширина в пикселях, по умолчанию 600.
+- `data-height`: высота в пикселях, по умолчанию 400.
+- `data-show-controls`: отображение элементов масштабирования и перемещения; по умолчанию **false**. Для включения укажите `data-show-controls="true"`.
 
-### Component Structure
+<a id="architecture"></a>
+
+## Архитектура
+
+<a id="component-structure"></a>
+
+### Структура компонента
 
 ```
 NatsFlow/
-├── index.tsx              # Main NatsFlow component
-├── types.ts               # TypeScript type definitions
-├── README.md              # This file
-├── nodes/                 # Custom node components
-│   ├── BaseNode.tsx       # Styled base node
+├── index.tsx              # Основной компонент NatsFlow
+├── types.ts               # Определения типов TypeScript
+├── README.md              # Этот файл
+├── nodes/                 # Пользовательские компоненты узлов
+│   ├── BaseNode.tsx       # Базовый узел с оформлением
 │   ├── PublisherNode.tsx / SubscriberNode.tsx / ServiceNode.tsx
 │   └── ClientNode.tsx / ServerNode.tsx / LabelNode.tsx
-├── edges/                 # Custom edge components
-│   ├── AnimatedEdge.tsx   # Animated message flow
-│   └── FloatingEdge.tsx   # Auto-anchoring edge for mesh topologies
-├── scenarios/             # ~100 files: static .ts scenarios + *Animated.tsx components
-├── icons/                 # Shared SVG icons
-├── hooks/                 # React hooks (useInterval)
-└── lib/                   # Utilities
+├── edges/                 # Пользовательские компоненты связей
+│   ├── AnimatedEdge.tsx   # Анимация передачи сообщений
+│   └── FloatingEdge.tsx   # Связь с автоматическим выбором точек соединения для сетчатых топологий
+├── scenarios/             # Около 100 файлов: статические сценарии .ts и компоненты *Animated.tsx
+├── icons/                 # Общие значки SVG
+├── hooks/                 # Хуки React (useInterval)
+└── lib/                   # Вспомогательные функции
 ```
 
-### How It Works
+<a id="how-it-works"></a>
 
-1. **Markdown files**: authors add `<div class="nats-flow" data-scenario="...">` tags
-2. **Docusaurus plugin** (`src/plugins/nats-flow/`): its client module
-   dynamically imports the NatsFlow barrel, assigns `window.NatsFlow`
-   (base component + PascalCase animated components + a nested `scenarios`
-   map of static scenarios), then fires a `natsflow-loaded` event
-3. **Loader** (`/static/js/nats-flow-loader.js`): finds uninitialized
-   `.nats-flow` divs and renders them — a `data-scenario` ending in
-   `Animated` auto-resolves to the PascalCase component (the loader never
-   needs edits for new scenarios); anything else looks up the static
-   `scenarios` map. A MutationObserver re-runs on Docusaurus SPA navigation
-4. **Build-time fallback** (`scripts/rehype-nats-flow.mjs`): replaces each
-   div in the markdown/LLM output with a titled prose description + edge
-   list, from the scenario's `description` or its `FALLBACKS`/`TITLES`
-   entries (build warns when neither exists)
+### Как это работает
 
-`src/types/global.d.ts` mirrors the `window.NatsFlow` shape by convention
-but is not typecheck-enforced — keep it in sync when registering scenarios.
+1. **Файлы Markdown:** авторы добавляют теги `<div class="nats-flow" data-scenario="...">`.
+2. **Плагин Docusaurus** (`src/plugins/nats-flow/`): клиентский модуль динамически импортирует общий модуль NatsFlow, присваивает `window.NatsFlow` базовый компонент, анимированные компоненты с именами PascalCase и вложенное отображение статических сценариев `scenarios`, затем отправляет событие `natsflow-loaded`.
+3. **Загрузчик** (`/static/js/nats-flow-loader.js`): находит неинициализированные блоки `.nats-flow` и отображает их. Значение `data-scenario`, оканчивающееся на `Animated`, автоматически преобразуется в имя компонента PascalCase, поэтому для новых сценариев загрузчик менять не нужно. Остальные имена ищутся в отображении `scenarios`. MutationObserver повторяет инициализацию при переходах SPA в Docusaurus.
+4. **Текстовая замена при сборке** (`scripts/rehype-nats-flow.mjs`): в выводе Markdown/LLM каждый блок заменяется заголовком, текстовым описанием и списком связей из `description` сценария или записей `FALLBACKS`/`TITLES`. Если описания нет, сборка выводит предупреждение.
 
-### Key Features
+Файл `src/types/global.d.ts` по соглашению повторяет структуру `window.NatsFlow`, но проверка типов не обеспечивает их соответствие. Обновляйте его при регистрации сценариев.
 
-- Works in regular Markdown (`.md`) files
-- Animated message flows
-- Interactive (zoom/pan optional)
-- Prebuilt NATS patterns
-- Automatic initialization via MutationObserver (works with Docusaurus navigation)
+<a id="key-features"></a>
 
-## Adding New Scenarios
+### Основные возможности
 
-There are two kinds of scenario. Most new work uses the **animated** kind.
+- Работа в обычных файлах Markdown (`.md`)
+- Анимация передачи сообщений
+- Интерактивность с необязательным масштабированием и перемещением
+- Готовые схемы NATS
+- Автоматическая инициализация через MutationObserver, совместимая с навигацией Docusaurus
 
-| Kind | File | When |
+<a id="adding-new-scenarios"></a>
+
+## Добавление сценариев
+
+Есть два вида сценариев. Для большинства новых диаграмм используются **анимированные** компоненты.
+
+| Вид | Файл | Когда использовать |
 |------|------|------|
-| **Animated component** (`.tsx`) | `scenarios/<name>Animated.tsx` exporting a React component `XxxAnimated` | Anything with motion, steps, state, or toggles — the default for new charts |
-| **Static scenario** (`.ts`) | `scenarios/<name>.ts` exporting a `{ description, nodes, edges }` object | A fixed diagram with no animation logic |
+| **Анимированный компонент** (`.tsx`) | `scenarios/<name>Animated.tsx`, экспортирующий компонент React `XxxAnimated` | Движение, шаги, состояние или переключатели; основной вариант для новых диаграмм |
+| **Статический сценарий** (`.ts`) | `scenarios/<name>.ts`, экспортирующий объект `{ description, nodes, edges }` | Фиксированная диаграмма без логики анимации |
 
-> Don't write a scenario from scratch — copy the closest existing one. For a
-> round-trip (request → reply, publish → ack) start from
-> `requestRetryAnimated.tsx`; for a multi-node topology start from
-> `clusterMeshAnimated.tsx`. Both show the standard shape below.
+> Скопируйте наиболее похожий существующий сценарий. Для обмена с ответом (запрос → ответ, публикация → подтверждение) начните с `requestRetryAnimated.tsx`, а для топологии из нескольких узлов — с `clusterMeshAnimated.tsx`. Оба используют приведённую ниже стандартную структуру.
 
-### Animated component (the common case)
+<a id="animated-component-the-common-case"></a>
 
-The runtime loader auto-resolves any `data-scenario` ending in `Animated` to
-the **PascalCase** component on `window.NatsFlow` — so `data-scenario="myFlowAnimated"`
-looks up `MyFlowAnimated`. Wire it up in **four** places (the component file
-shows none of these, which is why they're easy to miss):
+### Анимированный компонент (основной вариант)
 
-1. **Create** `scenarios/myFlowAnimated.tsx`. The shape:
+Загрузчик автоматически сопоставляет любое значение `data-scenario`, оканчивающееся на `Animated`, с компонентом **PascalCase** в `window.NatsFlow`: например, `data-scenario="myFlowAnimated"` обращается к `MyFlowAnimated`. Подключите сценарий в **четырёх** местах. Сам файл компонента не показывает эти подключения, поэтому их легко пропустить:
+
+1. **Создайте** `scenarios/myFlowAnimated.tsx` со следующей структурой:
 
 ```tsx
 import { ReactFlow, ReactFlowProvider, Background, MarkerType } from '@xyflow/react';
-import { PublisherNode, ServerNode } from '../nodes';   // reuse shared nodes
+import { PublisherNode, ServerNode } from '../nodes';   // Используйте общие узлы
 import { AnimatedEdge } from '../edges';
 
-const nodeTypes = { publisher: PublisherNode, server: ServerNode /* + custom inline nodes */ };
+const nodeTypes = { publisher: PublisherNode, server: ServerNode /* и пользовательские встроенные узлы */ };
 const edgeTypes = { animated: AnimatedEdge };
 
 function MyFlowAnimatedInner({ width = 600, height = 320 }) {
-  const [stage, setStage] = useState('a');          // a stage state machine,
-  useEffect(() => { /* setTimeout to advance stage, loop */ }, [stage]);
-  const nodes = [ /* rebuilt from `stage` each render */ ];
-  const edges = [ /* only the active stage's edges; AnimatedEdge data:
+  const [stage, setStage] = useState('a');          // Состояние автомата этапов
+  useEffect(() => { /* setTimeout для смены этапа и повторения цикла */ }, [stage]);
+  const nodes = [ /* Пересоздаются по `stage` при каждом отображении */ ];
+  const edges = [ /* Только связи активного этапа; данные AnimatedEdge:
                      { color, label, labelColor, animated, interval } */ ];
-  return (<div>{/* stepper buttons */}<ReactFlow nodes={nodes} edges={edges}
-            nodeTypes={nodeTypes} edgeTypes={edgeTypes} fitView .../>{/* caption */}</div>);
+  return (<div>{/* Кнопки переключения этапов */}<ReactFlow nodes={nodes} edges={edges}
+            nodeTypes={nodeTypes} edgeTypes={edgeTypes} fitView .../>{/* Подпись */}</div>);
 }
 
-// Always wrap in ReactFlowProvider.
+// Всегда оборачивайте в ReactFlowProvider.
 export function MyFlowAnimated(props) {
   return <ReactFlowProvider><MyFlowAnimatedInner {...props} /></ReactFlowProvider>;
 }
 ```
 
-2. **Export** from `scenarios/index.ts`:
+2. **Экспортируйте** компонент из `scenarios/index.ts`:
 
 ```typescript
 export { MyFlowAnimated } from './myFlowAnimated';
 ```
 
-3. **Register** on `window.NatsFlow` in `src/plugins/nats-flow/client-module.tsx`
-   (the top-level object, *not* the nested `scenarios` map):
+3. **Зарегистрируйте** компонент в `window.NatsFlow` в `src/plugins/nats-flow/client-module.tsx`: в объекте верхнего уровня, а не во вложенном отображении `scenarios`:
 
 ```typescript
 MyFlowAnimated: module.MyFlowAnimated,
 ```
 
-4. **Add fallback text** in `scripts/rehype-nats-flow.mjs` — a `FALLBACKS` entry
-   (the prose shown in non-JS / markdown / LLM output) and a `TITLES` entry.
-   Skipping this is non-fatal but prints a build warning and yields generic
-   markdown output:
+4. **Добавьте текстовую замену** в `scripts/rehype-nats-flow.mjs`: запись `FALLBACKS` для вывода без JavaScript, Markdown и LLM, а также запись `TITLES`. Без них сборка продолжится, но выдаст предупреждение, а вывод Markdown будет содержать общее описание:
 
 ```javascript
 // FALLBACKS
-myFlowAnimated: 'One or two sentences describing what the animation shows.',
+myFlowAnimated: 'Одно или два предложения о том, что показывает анимация.',
 // TITLES
-myFlowAnimated: 'My flow (animated)',
+myFlowAnimated: 'Моя схема (анимация)',
 ```
 
-Then embed it (note camelCase in the attribute):
+Затем вставьте сценарий. Обратите внимание на camelCase в атрибуте:
 
 ```html
 <div class="nats-flow" data-scenario="myFlowAnimated" data-width="600" data-height="320"></div>
 ```
 
-### Static scenario
+<a id="static-scenario"></a>
 
-1. Create `scenarios/myScenario.ts` exporting a `NatsFlowScenario` object
-   (`{ description, nodes, edges }`) — same node/edge shape as above.
-2. Export it from `scenarios/index.ts`.
-3. Add it to the `scenarios: { ... }` map inside `window.NatsFlow` in
-   `src/plugins/nats-flow/client-module.tsx` (this is the lookup for any
-   `data-scenario` that does **not** end in `Animated`).
-4. Embed: `<div class="nats-flow" data-scenario="myScenario"></div>`.
+### Статический сценарий
 
-> Custom node components register in the scenario's local `nodeTypes` map; for
-> a node made of sub-parts, draw them inside one node component, or use
-> `parentId` children. Keep internal mechanics (e.g. replication leader →
-> followers) for the pages where they're real, not on intro flows.
+1. Создайте `scenarios/myScenario.ts`, экспортирующий объект `NatsFlowScenario` (`{ description, nodes, edges }`) с той же структурой узлов и связей.
+2. Экспортируйте его из `scenarios/index.ts`.
+3. Добавьте его в отображение `scenarios: { ... }` внутри `window.NatsFlow` в `src/plugins/nats-flow/client-module.tsx`. Оно используется для значений `data-scenario`, которые не оканчиваются на `Animated`.
+4. Вставьте: `<div class="nats-flow" data-scenario="myScenario"></div>`.
 
-## Node Types
+> Пользовательские компоненты узлов регистрируются в локальном отображении `nodeTypes` сценария. Составные узлы рисуйте внутри одного компонента либо используйте дочерние узлы с `parentId`. Внутренние механизмы, например репликацию от лидера к последователям, показывайте на посвящённых им страницах, а не во вводных схемах.
 
-### Publisher Node
-- Green indicator
-- Source handle (right side)
-- Use for message publishers
+<a id="node-types"></a>
 
-### Subscriber Node
-- Blue indicator
-- Target handle (left side)
-- Use for message subscribers
+## Типы узлов
 
-### Service Node
-- Purple indicator
-- Target handle (left, top) for requests
-- Source handle (right, bottom) for replies
-- Use for request-reply services
+<a id="publisher-node"></a>
 
-## Edge Types
+### Узел издателя
+- Зелёный индикатор
+- Исходящая точка соединения справа
+- Используется для издателей сообщений
 
-### Animated Edge
-- Bezier curves
-- Animated particles flowing along the path
-- Customizable color, size, and labels
-- Set `animated: true` in edge data to enable animation
+<a id="subscriber-node"></a>
 
-## Styling
+### Узел подписчика
+- Синий индикатор
+- Входящая точка соединения слева
+- Используется для подписчиков сообщений
 
-The component uses Tailwind CSS classes for styling. Animated scenarios use
-the NATS brand colors (see CLAUDE.md):
+<a id="service-node"></a>
 
-- Primary Blue: `#27AAE1`
-- Navy: `#375C93`
-- Green: `#34A574`
-- Lime: `#8DC63F`
+### Узел сервиса
+- Фиолетовый индикатор
+- Входящие точки соединения слева и сверху для запросов
+- Исходящие точки соединения справа и снизу для ответов
+- Используется для сервисов request-reply
 
-## Development
+<a id="edge-types"></a>
 
-### Testing Locally
+## Типы связей
 
-1. Start the dev server:
+<a id="animated-edge"></a>
+
+### Анимированная связь
+- Кривые Безье
+- Анимированные частицы вдоль пути
+- Настраиваемые цвет, размер и подписи
+- Для включения анимации укажите `animated: true` в данных связи
+
+<a id="styling"></a>
+
+## Оформление
+
+Для оформления компонент использует классы Tailwind CSS. Анимированные сценарии используют фирменные цвета NATS (см. CLAUDE.md):
+
+- Основной голубой: `#27AAE1`
+- Тёмно-синий: `#375C93`
+- Зелёный: `#34A574`
+- Лаймовый: `#8DC63F`
+
+<a id="development"></a>
+
+## Разработка
+
+<a id="testing-locally"></a>
+
+### Локальная проверка
+
+1. Запустите сервер разработки:
 ```bash
 cd nats.docs.v2
 npm start
 ```
 
-2. Add a test flow to any `.md` file:
+2. Добавьте тестовую диаграмму в любой файл `.md`:
 ```html
 <div class="nats-flow" data-scenario="publishSubscribe"></div>
 ```
 
-3. View at `http://localhost:3000`
+3. Откройте `http://localhost:3000`.
 
-### Debugging
+<a id="debugging"></a>
 
-Enable browser console to see:
-- Component loading status
-- Scenario errors
-- Rendering issues
+### Отладка
 
-Add `?debug=true` to any URL to enable React DevTools.
+Откройте консоль браузера, чтобы увидеть:
+- Состояние загрузки компонента
+- Ошибки сценариев
+- Проблемы отображения
 
-## Dependencies
+Добавьте `?debug=true` к любому URL, чтобы включить React DevTools.
 
-- `@xyflow/react`: React Flow library
-- `react` & `react-dom`: React 19
-- `clsx` & `tailwind-merge`: Utility class management
+<a id="dependencies"></a>
 
-All dependencies are already included in the main project's `package.json`.
+## Зависимости
+
+- `@xyflow/react`: библиотека React Flow
+- `react` и `react-dom`: React 19
+- `clsx` и `tailwind-merge`: управление служебными CSS-классами
+
+Все зависимости уже включены в основной `package.json` проекта.

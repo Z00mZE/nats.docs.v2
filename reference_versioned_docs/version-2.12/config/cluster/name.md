@@ -1,11 +1,11 @@
-# name
+# name {#name}
 
 <Reloadable state="reloadable" />
-Name of the cluster.
+Имя кластера.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

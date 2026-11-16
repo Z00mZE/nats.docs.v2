@@ -1,11 +1,11 @@
-# cert_file
+# cert_file {#cert_file}
 
 <Reloadable state="reloadable" note="Applies to outbound gateway connections established after the reload." />
-TLS certificate file.
+Файл сертификата TLS.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

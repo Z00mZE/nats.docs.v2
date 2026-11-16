@@ -1,12 +1,11 @@
-# no_fast_producer_stall
+# no_fast_producer_stall {#no_fast_producer_stall}
 
 <Reloadable state="reloadable" />
-Do not stall a fast producer when a consumer cannot keep up. The
-server drops messages to the slow consumer instead.
+Не задерживать быстрого издателя, когда потребитель не успевает. Вместо этого сервер отбрасывает сообщения для медленного потребителя.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

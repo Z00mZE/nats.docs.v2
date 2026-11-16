@@ -1,125 +1,173 @@
-# NATS Documentation (rebuild)
+<a id="nats-documentation-rebuild"></a>
 
-A ground-up rebuild of the [NATS](https://nats.io) documentation, built with
-[Docusaurus](https://docusaurus.io/). It reorganizes the docs around
-[Diátaxis](https://diataxis.fr/): Core Concepts, hands-on Tutorials, long-form
-Learn deep dives, and per-version generated Reference (from `nats-server` and
-`jsm.go` source), plus interactive message-flow animations and multi-language
-code examples pulled from the client repositories.
+# Документация NATS: новая версия
 
-## Overview
+Документация [NATS](https://nats.io), полностью переработанная на основе [Docusaurus](https://docusaurus.io/). Материалы организованы по принципам [Diátaxis](https://diataxis.fr/): основные понятия, практические учебные руководства, подробные статьи Learn и справочник для каждой версии, генерируемый из исходного кода `nats-server` и `jsm.go`. Документацию дополняют интерактивные анимации обмена сообщениями и примеры на нескольких языках из репозиториев клиентов.
 
-**What is this repository?**
+<a id="overview"></a>
 
-- A rebuilt NATS documentation site
-- Written in Markdown/MDX with React components
-- Reference docs generated per NATS version from upstream source
-- Builds to a static site (`npm run build`) servable by any static host
+## Обзор
 
-**For new contributors:**
+**Что находится в этом репозитории?**
 
-- 📝 **Editing docs?** See [Common Tasks](#common-tasks)
-- 💻 **Adding code examples?** See [Contributing](#contributing)
-- 🔧 **Technical deep dive?** See [Development](#development)
-- ❓ **Having issues?** See [Troubleshooting](#troubleshooting)
+- Переработанный сайт документации NATS
+- Страницы Markdown/MDX с компонентами React
+- Справочник, генерируемый для каждой версии NATS из исходного кода вышестоящих проектов
+- Сборка статического сайта (`npm run build`), который можно разместить на любом статическом хостинге
 
-## Table of Contents
+**Новым участникам:**
 
-- [Quick Start](#quick-start)
-- [Common Tasks](#common-tasks)
-- [Development](#development)
-- [Contributing](#contributing)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
+- 📝 **Редактируете документацию?** См. [Типовые задачи](#common-tasks)
+- 💻 **Добавляете примеры кода?** См. [Участие в проекте](#contributing)
+- 🔧 **Изучаете устройство проекта?** См. [Разработка](#development)
+- ❓ **Возникли проблемы?** См. [Устранение неполадок](#troubleshooting)
 
-## Quick Start
+<a id="table-of-contents"></a>
 
-### Requirements
+## Содержание
 
-- **Node.js** 18 or higher
-- **npm** 8 or higher (comes with Node.js)
+- [Быстрый старт](#quick-start)
+- [Типовые задачи](#common-tasks)
+- [Разработка](#development)
+- [Участие в проекте](#contributing)
+- [Развёртывание](#deployment)
+- [Устранение неполадок](#troubleshooting)
 
-### Installation
+<a id="quick-start"></a>
 
-1. Clone this repository:
+## Быстрый старт
+
+<a id="requirements"></a>
+
+### Требования
+
+- **Node.js** 18 или новее
+- **npm** 8 или новее (поставляется с Node.js)
+
+<a id="installation"></a>
+
+### Установка
+
+1. Клонируйте репозиторий:
 
 ```bash
 git clone https://github.com/nats-io/nats.docs.v2.git
 cd nats.docs.v2
 ```
 
-2. Install dependencies:
+2. Установите зависимости:
 
 ```bash
 npm install
 ```
 
-3. Start the development server:
+3. Запустите сервер разработки:
 
 ```bash
 npm start
 ```
 
-4. Open your browser to [http://localhost:3000](http://localhost:3000)
+4. Откройте [http://localhost:3000](http://localhost:3000) в браузере.
 
-The dev server supports hot reloading - most changes are reflected immediately without restarting.
+Сервер разработки поддерживает горячую перезагрузку: большинство изменений появляются сразу, без перезапуска.
 
-### Build
+<a id="build"></a>
 
-To create a production build:
+### Сборка
+
+Чтобы создать сборку для публикации:
 
 ```bash
 npm run build
 ```
 
-This generates static content in the `build/` directory that can be served by any static hosting service.
+Статические файлы появятся в каталоге `build/`. Их можно разместить на любом статическом хостинге.
 
-## Common Tasks
+### Запуск в Docker
 
-### Editing Documentation Pages
+Установите и запустите Docker с поддержкой Linux-контейнеров и Docker Compose.
+В корне репозитория выполните:
 
-Documentation pages are located in the `docs/` directory and written in Markdown (`.md`) or MDX (`.mdx`).
+```bash
+task docker:up
+```
 
-**To edit an existing page:**
+Или без Task:
 
-1. Find the file in `docs/` (e.g., `docs/concepts/getting-started/index.md`)
-2. Make your changes
-3. Save the file - changes appear immediately in your browser (hot reload)
-4. Commit and push your changes
+```bash
+docker compose up --build --detach --wait
+```
 
-**Example file locations:**
+Откройте [http://localhost:3000](http://localhost:3000). Образ собирает сайт
+и загружает примеры кода, затем Nginx обслуживает готовые статические файлы.
+Node.js и npm на основной машине не требуются. Первая сборка требует доступа
+к реестрам образов, npm и GitHub. Справочник берётся из готовых файлов репозитория,
+поэтому инициализировать подмодули для этой сборки не нужно.
 
-- Getting Started: `docs/concepts/getting-started/index.md`
-- Concepts: `docs/concepts/*.md`
-- Learn deep dives: `learn/<chapter>/*.md` (own docs instance, served at `/learn`)
-- Tutorials: `tutorials/*.md` (own docs instance, served at `/tutorials`)
-- Reference: `reference_versioned_docs/version-<ver>/**` (generated — do not hand-edit; fix the generators under `tools/config-generator` and `scripts/` instead)
+Чтобы выбрать другой порт, выполните `task docker:up PORT=3001`. При прямом
+запуске Compose задайте переменную окружения `SITE_PORT` или добавьте
+`SITE_PORT=3001` в файл `.env`.
 
-**Note:** The `docs/` directory maps to the root URL path `/`. For example:
+```bash
+task docker:logs
+task docker:down
+```
+
+После изменения документации повторите `task docker:up`, чтобы пересобрать образ.
+Список команд Task доступен через `task --list`.
+
+<a id="common-tasks"></a>
+
+## Типовые задачи
+
+<a id="editing-documentation-pages"></a>
+
+### Редактирование страниц документации
+
+Страницы документации находятся в каталоге `docs/` и написаны на Markdown (`.md`) или MDX (`.mdx`).
+
+**Чтобы изменить существующую страницу:**
+
+1. Найдите файл в `docs/`, например `docs/concepts/getting-started/index.md`.
+2. Внесите изменения.
+3. Сохраните файл — благодаря горячей перезагрузке изменения сразу появятся в браузере.
+4. Создайте коммит и отправьте изменения.
+
+**Примеры расположения файлов:**
+
+- Начало работы: `docs/concepts/getting-started/index.md`
+- Основные понятия: `docs/concepts/*.md`
+- Подробные статьи Learn: `learn/<chapter>/*.md` (отдельный раздел документации по адресу `/learn`)
+- Учебные руководства: `tutorials/*.md` (отдельный раздел по адресу `/tutorials`)
+- Справочник: `reference_versioned_docs/version-<ver>/**` (генерируется автоматически; исправляйте генераторы в `tools/config-generator` и `scripts/`, а не сами страницы)
+
+**Примечание:** каталог `docs/` соответствует корневому пути URL `/`. Например:
 
 - `docs/concepts/getting-started/index.md` → `http://localhost:3000/concepts/getting-started`
 - `docs/concepts/publish-subscribe.md` → `http://localhost:3000/concepts/publish-subscribe`
 
-### Adding Code Examples
+<a id="adding-code-examples"></a>
 
-**Where do code examples live?**
+### Добавление примеров кода
 
-- **Programming language examples** (Go, Rust, JavaScript, Python, Java, C#): Always in their respective client repositories
+**Где хранятся примеры кода?**
 
-  - Go → `nats.go` repository
-  - Rust → `nats.rs` repository
-  - JavaScript/TypeScript → `nats.js` repository
-  - Java → `nats.java` repository
+- **Примеры на языках программирования** (Go, Rust, JavaScript, Python, Java, C#) всегда находятся в соответствующих репозиториях клиентов.
 
-- **CLI-only examples**: In this documentation repository
-  - Location: `static/examples/snippets/cli/[page]/[snippet].sh`
-  - Only use this for examples that have no programming language equivalents
+  - Go → репозиторий `nats.go`
+  - Rust → репозиторий `nats.rs`
+  - JavaScript/TypeScript → репозиторий `nats.js`
+  - Java → репозиторий `nats.java`
 
-**Two ways to add examples:**
+- **Примеры только для CLI** находятся в этом репозитории документации.
+  - Путь: `static/examples/snippets/cli/[page]/[snippet].sh`
+  - Используйте этот вариант только для примеров без аналогов на языках программирования.
 
-**Option 1: Inline examples** (for unique, one-off snippets)
+**Два способа добавить примеры:**
 
-Use Docusaurus tabs directly in your MDX file:
+**Вариант 1: встроенные примеры** (для уникальных фрагментов, используемых один раз)
+
+Используйте вкладки Docusaurus прямо в файле MDX:
 
 ```mdx
 import Tabs from "@theme/Tabs";
@@ -143,231 +191,251 @@ nc.Publish("hello", []byte("Hello NATS!"))
 </Tabs>
 ```
 
-**Option 2: Multi-repository examples** (for reusable, tested code - PREFERRED)
+**Вариант 2: примеры из нескольких репозиториев** (для повторно используемого и проверенного кода; ПРЕДПОЧТИТЕЛЬНЫЙ вариант)
 
-See the [Adding Code Examples](#adding-code-examples-1) section in Contributing below.
+См. раздел [Добавление примеров кода](#adding-code-examples-1) ниже, в описании участия в проекте.
 
-### Checking for Type Errors
+<a id="checking-for-type-errors"></a>
 
-Before committing, run TypeScript type checking:
+### Проверка ошибок типов
+
+Перед созданием коммита запустите проверку типов TypeScript:
 
 ```bash
 npm run typecheck
 ```
 
-### Available npm Commands
+<a id="available-npm-commands"></a>
+
+### Доступные команды npm
 
 ```bash
-npm start              # Start dev server (http://localhost:3000)
-npm run build          # Build production site
-npm run typecheck      # Run TypeScript type checking
-npm run fetch-examples # Fetch code examples from GitHub repos
-npm run generate-docs:all-versions  # Generate per-version reference docs (nats-server + jsm.go)
-npm run serve          # Serve production build locally
-npm run clear          # Clear Docusaurus cache
+npm start              # Запустить сервер разработки (http://localhost:3000)
+npm run build          # Собрать сайт для публикации
+npm run typecheck      # Проверить типы TypeScript
+npm run fetch-examples # Загрузить примеры кода из репозиториев GitHub
+npm run generate-docs:all-versions  # Сгенерировать справочник для каждой версии (nats-server + jsm.go)
+npm run serve          # Запустить собранный сайт локально
+npm run clear          # Очистить кэш Docusaurus
 ```
 
-## Deployment
+<a id="deployment"></a>
 
-`npm run build` produces a fully static site in `build/` that any static host
-can serve. No CI deployment pipeline is wired up in this repository yet.
+## Развёртывание
 
-For GitHub Pages, Docusaurus's built-in deploy command works:
+Команда `npm run build` создаёт полностью статический сайт в `build/`, который можно разместить на любом статическом хостинге. Автоматическое развёртывание через CI в этом репозитории пока не настроено.
+
+Для GitHub Pages подходит встроенная команда развёртывания Docusaurus:
 
 ```bash
 USE_SSH=true npm run deploy
-# or
+# или
 GIT_USER=<Your GitHub username> npm run deploy
 ```
 
-### Generating Reference Documentation
+<a id="generating-reference-documentation"></a>
 
-Reference documentation is generated per NATS version from upstream source code. Each version checks out matching tags of both `nats-server` and `jsm.go` submodules (tag mapping in `scripts/doc-versions.json`), parses errors/headers/monitor schemas, vendors JSON schemas, and writes a version-scoped doc tree.
+### Генерация справочной документации
 
-**What gets generated (per version):**
+Справочник генерируется из исходного кода отдельно для каждой версии NATS. Для каждой версии выбираются соответствующие теги подмодулей `nats-server` и `jsm.go` (сопоставление задано в `scripts/doc-versions.json`), разбираются ошибки, заголовки и схемы мониторинга, копируются JSON-схемы и создаётся дерево страниц этой версии.
+
+**Что генерируется для каждой версии:**
 
 - `reference_versioned_docs/version-<ver>/jetstream/errors.md`
 - `reference_versioned_docs/version-<ver>/system/errors.md`
 - `reference_versioned_docs/version-<ver>/jetstream/api/headers.md`
-- `reference_versioned_docs/version-<ver>/config/**` (from `tools/config-generator`)
-- `reference_versioned_docs/version-<ver>/**/*` (schema-refs pages from `scripts/schema-refs.json`)
+- `reference_versioned_docs/version-<ver>/config/**` (из `tools/config-generator`)
+- `reference_versioned_docs/version-<ver>/**/*` (страницы ссылок на схемы из `scripts/schema-refs.json`)
 - `reference_versioned_sidebars/version-<ver>-sidebars.json`
-- `src/schemas/vendor/v<ver>/**` (vendored JSON schemas)
+- `src/schemas/vendor/v<ver>/**` (копии JSON-схем)
 
-**Prerequisites:**
+**Предварительные требования:**
 
-- Go + Node (to run the generators)
-- `nats-server` and `jsm.go` submodules initialized
+- Go и Node для запуска генераторов
+- Инициализированные подмодули `nats-server` и `jsm.go`
 
 ```bash
 git submodule update --init
 ```
 
-**Generate documentation:**
+**Генерация документации:**
 
 ```bash
-# Generate all versions listed in scripts/doc-versions.json
+# Сгенерировать все версии из scripts/doc-versions.json
 npm run generate-docs:all-versions
 
-# Or a single version
+# Или одну версию
 npm run generate-docs:v2.11
 npm run generate-docs:v2.12
 
-# Dry-run the parser (stdout only; no docs-out required)
+# Проверить парсер без записи файлов: только stdout, docs-out не требуется
 npm run generate-docs:dry-run
 ```
 
-**When to regenerate:**
+**Когда нужна повторная генерация:**
 
-- After bumping a version's tag in `scripts/doc-versions.json`
-- When adding or changing entries in `scripts/schema-refs.json`
-- When modifying generation templates in `scripts/templates/`
-- Before committing reference doc changes
+- После изменения тега версии в `scripts/doc-versions.json`
+- При добавлении или изменении записей в `scripts/schema-refs.json`
+- При изменении шаблонов в `scripts/templates/`
+- Перед коммитом изменений справочника
 
-## Development
+<a id="development"></a>
 
-### Technology Stack
+## Разработка
 
-This site is built with:
+<a id="technology-stack"></a>
 
-- **[Docusaurus](https://docusaurus.io/)** - Static site generator optimized for documentation
-- **React** - UI components and interactive elements
-- **MDX** - Markdown with JSX for rich documentation pages
-- **TypeScript** - Type-safe configuration and components
+### Технологии
 
-### Project Structure
+Сайт использует следующие технологии:
+
+- **[Docusaurus](https://docusaurus.io/)** — генератор статических сайтов, предназначенный для документации
+- **React** — компоненты интерфейса и интерактивные элементы
+- **MDX** — Markdown с JSX для расширенных страниц документации
+- **TypeScript** — конфигурация и компоненты с проверкой типов
+
+<a id="project-structure"></a>
+
+### Структура проекта
 
 ```
 nats.docs.v2/
-├── docs/                      # Core Concepts pages (served at "/")
+├── docs/                      # Страницы основных понятий (путь "/")
 │   └── concepts/
-├── learn/                     # Learn deep dives (own docs instance, "/learn")
-├── tutorials/                 # Hands-on tutorials (own docs instance, "/tutorials")
-├── reference_versioned_docs/  # Generated per-version Reference ("/reference")
+├── learn/                     # Подробные статьи Learn (отдельный раздел, "/learn")
+├── tutorials/                 # Практические учебные руководства (отдельный раздел, "/tutorials")
+├── reference_versioned_docs/  # Генерируемый справочник для каждой версии ("/reference")
 ├── src/
-│   ├── components/            # React components
-│   │   └── NatsFlow/          # Interactive flow diagrams
-│   ├── plugins/               # Docusaurus plugins (NatsFlow client module)
-│   └── css/                   # Global styles
+│   ├── components/            # Компоненты React
+│   │   └── NatsFlow/          # Интерактивные диаграммы обмена сообщениями
+│   ├── plugins/               # Плагины Docusaurus (клиентский модуль NatsFlow)
+│   └── css/                   # Глобальные стили
 ├── static/
 │   ├── examples/snippets/
-│   │   └── cli/               # Committed CLI examples (other languages fetched)
+│   │   └── cli/               # Примеры CLI в git; остальные языки загружаются
 │   ├── js/
-│   │   └── nats-flow-loader.js  # Mounts NatsFlow animations client-side
-│   └── img/                   # Images and assets
-├── scripts/                   # fetch-examples, generate-version, rehype plugins
-├── tools/config-generator/    # Go generator for the config reference tree
-├── docusaurus.config.ts       # Site configuration
+│   │   └── nats-flow-loader.js  # Подключение анимаций NatsFlow на стороне клиента
+│   └── img/                   # Изображения и ресурсы
+├── scripts/                   # fetch-examples, generate-version, плагины rehype
+├── tools/config-generator/    # Генератор дерева справочника конфигурации на Go
+├── docusaurus.config.ts       # Конфигурация сайта
 ├── sidebars.ts                # + sidebars-learn/tutorials/reference.ts
-└── package.json               # Dependencies and scripts
+└── package.json               # Зависимости и команды
 ```
 
-**Important notes:**
+**Важные замечания:**
 
-- `docs/` content is served at the root URL path (`/`)
-- `static/examples/snippets/cli/` is committed; the Go/Rust/JS/Python/Java/C# subtrees and `metadata.json` are fetched by `npm run fetch-examples` and gitignored
-- `scripts/rehype-nats-example.mjs` renders `nats-example` divs into language tabs at build time (restart the dev server after fetching new examples — the plugin caches `metadata.json`)
+- Содержимое `docs/` доступно от корневого пути URL (`/`).
+- Каталог `static/examples/snippets/cli/` хранится в git; подкаталоги Go/Rust/JS/Python/Java/C# и `metadata.json` загружаются командой `npm run fetch-examples` и исключены из git.
+- Плагин `scripts/rehype-nats-example.mjs` преобразует блоки `nats-example` во вкладки языков при сборке. После загрузки новых примеров перезапустите сервер разработки: плагин кэширует `metadata.json`.
 
-### How Code Examples Work
+<a id="how-code-examples-work"></a>
 
-The documentation uses a **multi-repository example system**:
+### Как устроены примеры кода
 
-**For programming language examples (Go, Rust, JavaScript, Python, Java, C#):**
+Документация использует **систему примеров из нескольких репозиториев**:
 
-1. Code examples live in the actual NATS client repositories (nats.go, nats.rs, nats.js, nats.py, nats.java, nats.net)
-2. All examples are on the `doc-examples` branch in each repository
-3. `scripts/fetch-examples.js` fetches examples from GitHub
-4. Examples are saved to `static/examples/snippets/[language]/` and indexed in `metadata.json`
-5. `scripts/rehype-nats-example.mjs` renders the language tabs at build time from `metadata.json`
-6. Documentation pages use `<div class="nats-example" data-type="..." data-languages="..."></div>` tags
+**Для примеров на языках программирования (Go, Rust, JavaScript, Python, Java, C#):**
 
-**For CLI examples:**
+1. Примеры находятся в репозиториях клиентов NATS: nats.go, nats.rs, nats.js, nats.py, nats.java и nats.net.
+2. Во всех репозиториях примеры размещаются в ветке `doc-examples`.
+3. Скрипт `scripts/fetch-examples.js` загружает примеры с GitHub.
+4. Файлы сохраняются в `static/examples/snippets/[language]/` и индексируются в `metadata.json`.
+5. Плагин `scripts/rehype-nats-example.mjs` создаёт вкладки языков по `metadata.json` при сборке.
+6. Страницы используют теги `<div class="nats-example" data-type="..." data-languages="..."></div>`.
 
-1. CLI snippets always live in this repo at `static/examples/snippets/cli/[page]/[snippet].sh` and are committed to git
-2. `npm run fetch-examples` auto-scans that directory into `metadata.json` alongside the fetched languages
+**Для примеров CLI:**
 
-**Why this approach?**
+1. Фрагменты CLI всегда находятся в этом репозитории по пути `static/examples/snippets/cli/[page]/[snippet].sh` и хранятся в git.
+2. Команда `npm run fetch-examples` автоматически добавляет содержимое этого каталога в `metadata.json` вместе с загруженными языками.
 
-- **Programming language examples** are tested, working code from actual client libraries
-- Examples can be run and validated in their native repositories
-- Single source of truth - if the client library changes, examples stay in sync
-- **CLI-only examples** live in docs repo because they're just shell commands, not library code
+**Почему выбран этот подход?**
 
-### Key Configuration Files
+- **Примеры на языках программирования** — проверенный рабочий код из настоящих клиентских библиотек.
+- Примеры можно запускать и проверять в исходных репозиториях.
+- Единый источник данных позволяет поддерживать примеры в соответствии с изменениями клиентской библиотеки.
+- **Примеры только для CLI** находятся в репозитории документации, поскольку это команды оболочки.
+
+<a id="key-configuration-files"></a>
+
+### Основные файлы конфигурации
 
 **docusaurus.config.ts**
 
-- Main site configuration
-- Navbar and footer settings
-- Plugin configuration
-- Theme settings
-- Deployment configuration
+- Основная конфигурация сайта
+- Настройки панели навигации и подвала
+- Конфигурация плагинов
+- Настройки темы
+- Конфигурация развёртывания
 
 **sidebars.ts**
 
-- Documentation sidebar navigation structure
-- Controls the order and grouping of doc pages
-- Uses file paths relative to `docs/` directory
+- Структура боковой навигации документации
+- Порядок и группировка страниц
+- Пути к файлам относительно каталога `docs/`
 
 **package.json**
 
-- Dependencies and versions
-- npm scripts (start, build, fetch-examples, etc.)
-- Project metadata
+- Зависимости и их версии
+- Команды npm (start, build, fetch-examples и другие)
+- Метаданные проекта
 
 **scripts/fetch-examples.js**
 
-- Configuration for code examples from GitHub
-- Maps example names to file paths in client repos
-- Defines which examples to fetch and where to find them
+- Настройки загрузки примеров кода с GitHub
+- Сопоставление названий примеров с путями в репозиториях клиентов
+- Перечень загружаемых примеров и их расположение
 
 **scripts/rehype-nats-example.mjs**
 
-- Build-time rehype plugin that replaces `nats-example` divs with language tabs
-- Reads `static/examples/snippets/metadata.json` (caches it — restart the dev
-  server after `npm run fetch-examples`)
+- Плагин rehype, заменяющий блоки `nats-example` вкладками языков при сборке
+- Читает и кэширует `static/examples/snippets/metadata.json`; после `npm run fetch-examples` перезапустите сервер разработки
 
-### Branch Strategy and PRs
+<a id="branch-strategy-and-prs"></a>
 
-**Main branches:**
+### Ветки и запросы на слияние
 
-- `main` - Production branch, auto-deploys to GitHub Pages
-- Feature branches - Create from `main` for your work
+**Основные ветки:**
 
-**Workflow:**
+- `main` — ветка для публикации, автоматически развёртывается на GitHub Pages
+- Рабочие ветки — создавайте их от `main` для своих изменений
 
-1. Create a feature branch: `git checkout -b your-feature-name`
-2. Make your changes and commit regularly
-3. Push to GitHub: `git push origin your-feature-name`
-4. Open a Pull Request targeting `main`
-5. PR gets a Netlify preview URL automatically
-6. After review and approval, merge to `main`
-7. Changes auto-deploy to production
+**Порядок работы:**
 
-**For code examples in client repos:**
-All examples must be on the `doc-examples` branch in the respective repository (nats.go, nats.rs, nats.js).
+1. Создайте рабочую ветку: `git checkout -b your-feature-name`.
+2. Вносите изменения и регулярно создавайте коммиты.
+3. Отправьте ветку на GitHub: `git push origin your-feature-name`.
+4. Откройте запрос на слияние в `main`.
+5. Для запроса автоматически появится адрес предварительного просмотра Netlify.
+6. После проверки и одобрения выполните слияние в `main`.
+7. Изменения автоматически публикуются на основном сайте.
 
-### What NOT to Commit
+**Примеры кода в репозиториях клиентов:**
+Все примеры должны находиться в ветке `doc-examples` соответствующего репозитория (nats.go, nats.rs, nats.js).
 
-**Generated files (excluded by .gitignore):**
+<a id="what-not-to-commit"></a>
 
-- `static/examples/snippets/go/` - Fetched from nats.go repository
-- `static/examples/snippets/rust/` - Fetched from nats.rs repository
-- `static/examples/snippets/javascript/` - Fetched from nats.js repository
-- `static/examples/snippets/metadata.json` - Generated by fetch script
-- `build/` - Production build output
-- `.docusaurus/` - Docusaurus cache
-- `node_modules/` - npm dependencies
+### Что не следует добавлять в коммиты
 
-**Files you SHOULD commit:**
+**Генерируемые файлы, исключённые через .gitignore:**
 
-- Documentation pages in `docs/`
-- React components in `src/`
-- CLI examples in `static/examples/snippets/cli/` (source of truth for CLI examples)
-- Configuration files (`docusaurus.config.ts`, `sidebars.ts`, etc.)
-- Static assets in `static/` (images, fonts, etc.)
+- `static/examples/snippets/go/` — загружается из nats.go
+- `static/examples/snippets/rust/` — загружается из nats.rs
+- `static/examples/snippets/javascript/` — загружается из nats.js
+- `static/examples/snippets/metadata.json` — создаётся скриптом загрузки
+- `build/` — результат сборки для публикации
+- `.docusaurus/` — кэш Docusaurus
+- `node_modules/` — зависимости npm
 
-**Important:** The `static/examples/snippets/` directory structure:
+**Файлы, которые СЛЕДУЕТ добавлять в коммиты:**
+
+- Страницы документации в `docs/`
+- Компоненты React в `src/`
+- Примеры CLI в `static/examples/snippets/cli/` — их исходные файлы хранятся здесь
+- Файлы конфигурации (`docusaurus.config.ts`, `sidebars.ts` и другие)
+- Статические ресурсы в `static/`: изображения, шрифты и прочее
+
+**Важно:** структура каталога `static/examples/snippets/`:
 
 ```
 static/examples/snippets/
@@ -381,80 +449,86 @@ static/examples/snippets/
 └── metadata.json     # ❌ DON'T COMMIT - Generated by fetch script
 ```
 
-**Where programming language examples live:**
+**Где находятся примеры на языках программирования:**
 
-- Go: `nats.go` · Rust: `nats.rs` · JavaScript/TypeScript: `nats.js` ·
-  Python: `nats.py` · Java: `nats.java` · C#: `nats.net` — each on its
-  `doc-examples` branch
+- Go: `nats.go` · Rust: `nats.rs` · JavaScript/TypeScript: `nats.js` · Python: `nats.py` · Java: `nats.java` · C#: `nats.net` — во всех случаях используется ветка `doc-examples`
 
-### Writing Documentation
+<a id="writing-documentation"></a>
 
-**File format:**
+### Написание документации
 
-- Use `.md` for simple pages with plain Markdown
-- Use `.mdx` for pages that need React components (tabs, NatsFlow animations, etc.)
+**Формат файлов:**
 
-**Front matter:**
-Every documentation page should have front matter at the top:
+- Используйте `.md` для простых страниц с обычным Markdown.
+- Используйте `.mdx` для страниц с компонентами React: вкладками, анимациями NatsFlow и другими.
+
+**Метаданные в начале файла:**
+Каждая страница документации должна начинаться с блока метаданных:
 
 ```yaml
 ---
 title: Page Title
-sidebar_label: Short Label # Optional, for sidebar
+sidebar_label: Короткая подпись # Необязательно, для боковой навигации
 ---
 ```
 
-**Best practices:**
+**Рекомендации:**
 
-- **Start simple:** Begin with core concepts before diving into details
-- **Show, don't just tell:** Use code examples and animations to illustrate concepts
-- **Be consistent:** Follow the style guide in [CLAUDE.md](./CLAUDE.md)
-- **Link liberally:** Connect related concepts with internal links
-- **Test examples:** All code should be runnable and tested
-- **Use active voice:** "NATS delivers messages" not "Messages are delivered by NATS"
-- **Keep it current:** Use realistic examples with `demo.nats.io`
+- **Начинайте с простого:** сначала объясняйте основные понятия, затем детали.
+- **Показывайте на примерах:** иллюстрируйте понятия кодом и анимациями.
+- **Соблюдайте единый стиль:** следуйте руководству [CLAUDE.md](./CLAUDE.md).
+- **Добавляйте ссылки:** связывайте близкие понятия внутренними ссылками.
+- **Проверяйте примеры:** весь код должен запускаться и проходить проверку.
+- **Используйте активный залог:** «NATS доставляет сообщения» вместо «Сообщения доставляются системой NATS».
+- **Поддерживайте актуальность:** используйте реалистичные примеры с `demo.nats.io`.
 
-**Language order for code examples:**
-Always show examples in this order: CLI, JavaScript/TypeScript, Go, Python, Java, Rust, C#/.NET
+**Порядок языков в примерах кода:**
+Всегда показывайте примеры в следующем порядке: CLI, JavaScript/TypeScript, Go, Python, Java, Rust, C#/.NET.
 
-**When to use NatsFlow animations:**
+**Когда использовать анимации NatsFlow:**
 
-- Message flow patterns (pub/sub, request/reply)
-- Timing and sequencing diagrams
-- Fan-out and load balancing visualization
+- Схемы обмена сообщениями: pub/sub, request/reply
+- Временные диаграммы и диаграммы последовательностей
+- Визуализация рассылки и балансировки нагрузки
 
-**When to use code examples:**
+**Когда использовать примеры кода:**
 
-- API syntax and usage
-- Configuration examples
-- Step-by-step tutorials
+- Синтаксис и использование API
+- Примеры конфигурации
+- Пошаговые учебные руководства
 
-## Contributing
+<a id="contributing"></a>
 
-### Adding Code Examples
+## Участие в проекте
 
-This documentation site uses a **multi-repository example system** that pulls code examples from the actual NATS client repositories. This ensures examples are tested, working code.
+<a id="adding-code-examples-1"></a>
 
-**Important principle:**
+### Добавление примеров кода
 
-- **Programming language examples** (Go, Rust, JavaScript, Python, Java, C#) → Always add to respective client repositories
-- **CLI-only examples** (no programming language versions) → Add to this documentation repository
+Сайт использует **систему примеров из нескольких репозиториев**: примеры загружаются из репозиториев клиентов NATS. Благодаря этому документация содержит проверенный рабочий код.
 
-If you're creating a multi-language example that includes CLI + Go + Rust + JavaScript, the CLI portion goes in this repo (`static/examples/snippets/cli/`), while Go/Rust/JS go in their respective client repos.
+**Основной принцип:**
 
-#### Repository Setup
+- **Примеры на языках программирования** (Go, Rust, JavaScript, Python, Java, C#) → всегда добавляйте в соответствующие репозитории клиентов.
+- **Примеры только для CLI**, без вариантов на языках программирования → добавляйте в этот репозиторий документации.
 
-For the best experience, clone the client repositories alongside this docs repository:
+Если пример включает CLI, Go, Rust и JavaScript, часть CLI помещается в этот репозиторий (`static/examples/snippets/cli/`), а Go/Rust/JS — в репозитории соответствующих клиентов.
+
+<a id="repository-setup"></a>
+
+#### Подготовка репозиториев
+
+Для удобства клонируйте репозитории клиентов рядом с репозиторием документации:
 
 ```bash
 ~/coding/
-├── nats.docs.v2/            # This repository
-├── nats.go-docs/            # Go examples
-├── nats.rs-docs/            # Rust examples
-└── nats.js-docs/            # JavaScript/TypeScript examples
+├── nats.docs.v2/            # Этот репозиторий
+├── nats.go-docs/            # Примеры Go
+├── nats.rs-docs/            # Примеры Rust
+└── nats.js-docs/            # Примеры JavaScript/TypeScript
 ```
 
-Clone the repositories:
+Клонируйте репозитории:
 
 ```bash
 cd ~/coding
@@ -463,7 +537,7 @@ git clone https://github.com/nats-io/nats.rs nats.rs-docs
 git clone https://github.com/nats-io/nats.js nats.js-docs
 ```
 
-Switch to the `doc-examples` branch in each:
+В каждом переключитесь на ветку `doc-examples`:
 
 ```bash
 cd nats.go-docs && git checkout -b doc-examples origin/doc-examples
@@ -471,49 +545,57 @@ cd ../nats.rs-docs && git checkout -b doc-examples origin/doc-examples
 cd ../nats.js-docs && git checkout -b doc-examples origin/doc-examples
 ```
 
-#### Example Naming Convention
+<a id="example-naming-convention"></a>
 
-Examples follow the pattern `[page]-[snippet]`:
+#### Имена примеров
 
-- `getting-started-publish` - Publish example on the getting-started page
-- `basics-subscribe` - Subscribe example on the basics page
+Имена примеров имеют формат `[page]-[snippet]`:
 
-#### Adding Examples for Each Language
+- `getting-started-publish` — пример публикации на странице начала работы
+- `basics-subscribe` — пример подписки на странице основ
 
-##### CLI Examples (Local)
+<a id="adding-examples-for-each-language"></a>
 
-CLI examples are stored locally in this repository. This includes:
+#### Добавление примеров для каждого языка
 
-- CLI portions of multi-language examples
-- CLI-only examples (examples with no programming language equivalents)
+<a id="cli-examples-local"></a>
 
-**Location:**
+##### Примеры CLI (локальные)
+
+Примеры CLI хранятся локально в этом репозитории. К ним относятся:
+
+- Части CLI в примерах на нескольких языках
+- Примеры только для CLI, без аналогов на языках программирования
+
+**Расположение:**
 
 ```bash
 static/examples/snippets/cli/[page]/[snippet].sh
 ```
 
-**Example:**
+**Пример:**
 
 ```bash
 # static/examples/snippets/cli/getting-started/publish.sh
 #!/bin/bash
 
-# Publish a message to demo.nats.io
+# Опубликовать сообщение на demo.nats.io
 nats pub --server=demo.nats.io hello "Hello NATS!"
 ```
 
-**After creating CLI examples:**
+**После создания примеров CLI:**
 
-- CLI examples are committed directly to this repository (not fetched from GitHub)
-- They do not need to be pushed to a separate branch
-- Just commit and push to your feature branch in this repo
+- Добавьте их в коммит непосредственно в этом репозитории; они не загружаются с GitHub.
+- Отдельная ветка в другом репозитории не требуется.
+- Создайте коммит и отправьте его в свою рабочую ветку этого репозитория.
 
-##### Go Examples
+<a id="go-examples"></a>
 
-**Repository:** `nats.go` (cloned as `~/coding/nats.go-docs`)
-**Branch:** `doc-examples`
-**Location:** `~/coding/nats.go-docs/examples/docs/[page]-[snippet]/main.go`
+##### Примеры Go
+
+**Репозиторий:** `nats.go` (клонирован в `~/coding/nats.go-docs`)
+**Ветка:** `doc-examples`
+**Расположение:** `~/coding/nats.go-docs/examples/docs/[page]-[snippet]/main.go`
 
 ```go
 // examples/docs/getting-started-publish/main.go
@@ -525,14 +607,14 @@ import (
 )
 
 func main() {
-	// Connect to NATS demo server
+	// Подключиться к демонстрационному серверу NATS
 	nc, err := nats.Connect("demo.nats.io")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer nc.Close()
 
-	// Publish a message
+	// Опубликовать сообщение
 	err = nc.Publish("hello", []byte("Hello NATS!"))
 	if err != nil {
 		log.Fatal(err)
@@ -542,7 +624,7 @@ func main() {
 }
 ```
 
-After creating examples:
+После создания примеров:
 
 ```bash
 cd ~/coding/nats.go-docs
@@ -552,13 +634,15 @@ git commit -m "Add getting-started-publish example"
 git push origin doc-examples
 ```
 
-##### Rust Examples
+<a id="rust-examples"></a>
 
-**Repository:** `nats.rs` (cloned as `~/coding/nats.rs-docs`)
-**Branch:** `doc-examples`
-**Location:** `~/coding/nats.rs-docs/async-nats/examples/docs_[page]_[snippet].rs`
+##### Примеры Rust
 
-**Note:** Use underscores instead of hyphens in filenames.
+**Репозиторий:** `nats.rs` (клонирован в `~/coding/nats.rs-docs`)
+**Ветка:** `doc-examples`
+**Расположение:** `~/coding/nats.rs-docs/async-nats/examples/docs_[page]_[snippet].rs`
+
+**Примечание:** в именах файлов используйте подчёркивания вместо дефисов.
 
 ```rust
 // async-nats/examples/docs_getting_started_publish.rs
@@ -566,10 +650,10 @@ use async_nats;
 
 #[tokio::main]
 async fn main() -> Result<(), async_nats::Error> {
-    // Connect to NATS demo server
+    // Подключиться к демонстрационному серверу NATS
     let client = async_nats::connect("demo.nats.io").await?;
 
-    // Publish a message
+    // Опубликовать сообщение
     client.publish("hello", "Hello NATS!".into()).await?;
     client.flush().await?;
 
@@ -579,7 +663,7 @@ async fn main() -> Result<(), async_nats::Error> {
 }
 ```
 
-After creating examples:
+После создания примеров:
 
 ```bash
 cd ~/coding/nats.rs-docs/async-nats
@@ -590,29 +674,31 @@ git commit -m "Add getting-started-publish example"
 git push origin doc-examples
 ```
 
-##### JavaScript/TypeScript Examples
+<a id="javascripttypescript-examples"></a>
 
-**Repository:** `nats.js` (cloned as `~/coding/nats.js-docs`)
-**Branch:** `doc-examples`
-**Location:** `~/coding/nats.js-docs/examples/docs/[page]-[snippet]/index.ts`
+##### Примеры JavaScript/TypeScript
+
+**Репозиторий:** `nats.js` (клонирован в `~/coding/nats.js-docs`)
+**Ветка:** `doc-examples`
+**Расположение:** `~/coding/nats.js-docs/examples/docs/[page]-[snippet]/index.ts`
 
 ```typescript
 // examples/docs/getting-started-publish/index.ts
-// import the connect function from a transport
+// Импортировать функцию connect из транспортного модуля
 import { connect } from "@nats-io/transport-deno";
 
-// connect to NATS demo server
+// Подключиться к демонстрационному серверу NATS
 const nc = await connect({ servers: "demo.nats.io:4222" });
 
-// publish a message to the 'hello' subject
+// Опубликовать сообщение в теме 'hello'
 nc.publish("hello", "Hello NATS!");
 console.log("Message published to hello");
 
-// drain the connection (flushes and closes)
+// Завершить обработку соединения: отправить буфер и закрыть его
 await nc.drain();
 ```
 
-After creating examples:
+После создания примеров:
 
 ```bash
 cd ~/coding/nats.js-docs
@@ -621,30 +707,34 @@ git commit -m "Add getting-started-publish example"
 git push origin doc-examples
 ```
 
-#### Using NATS-DOC Markers (Optional)
+<a id="using-nats-doc-markers-optional"></a>
 
-For examples that need setup code but you only want to show a specific section in the docs:
+#### Использование маркеров NATS-DOC (необязательно)
+
+Если пример требует подготовительного кода, но в документации нужно показать только определённый фрагмент:
 
 ```go
 func main() {
-    // Setup code here
+    // Здесь находится подготовительный код
     nc, _ := nats.Connect("demo.nats.io")
     defer nc.Close()
 
     // NATS-DOC-START
-    // This is the code that will be extracted
+    // Этот код будет извлечён
     nc.Publish("hello", []byte("Hello!"))
     // NATS-DOC-END
 
-    // More code here
+    // Здесь находится остальной код
 }
 ```
 
-If no markers are present, the entire file is used (recommended for "getting started" examples).
+Если маркеров нет, используется весь файл. Это рекомендуемый вариант для примеров начала работы.
 
-#### Registering Examples
+<a id="registering-examples"></a>
 
-Add your examples to `scripts/fetch-examples.js`:
+#### Регистрация примеров
+
+Добавьте свои примеры в `scripts/fetch-examples.js`:
 
 ```javascript
 const EXAMPLES_CONFIG = {
@@ -652,42 +742,46 @@ const EXAMPLES_CONFIG = {
     examples: {
       "getting-started-publish":
         "examples/docs/getting-started-publish/main.go",
-      // ... add more
+      // ... добавьте остальные примеры
     },
   },
   rust: {
     examples: {
       "getting-started-publish":
         "async-nats/examples/docs_getting_started_publish.rs",
-      // ... add more
+      // ... добавьте остальные примеры
     },
   },
   javascript: {
     examples: {
       "getting-started-publish":
         "examples/docs/getting-started-publish/index.ts",
-      // ... add more
+      // ... добавьте остальные примеры
     },
   },
 };
 ```
 
-#### Fetching Examples
+<a id="fetching-examples"></a>
 
-After pushing examples to GitHub, fetch them into this repo:
+#### Загрузка примеров
+
+После отправки примеров на GitHub загрузите их в этот репозиторий:
 
 ```bash
 npm run fetch-examples
 ```
 
-This downloads examples from GitHub and saves them to `static/examples/snippets/`.
+Команда загружает примеры с GitHub и сохраняет их в `static/examples/snippets/`.
 
-#### Using Examples in Documentation
+<a id="using-examples-in-documentation"></a>
 
-In your MDX files:
+#### Использование примеров в документации
+
+В файлах MDX:
 
 ```mdx
-### Publisher Example
+### Пример издателя
 
 <div
   class="nats-example"
@@ -696,179 +790,193 @@ In your MDX files:
 ></div>
 ```
 
-Languages are shown in the order specified. CLI should always be first with `default` attribute.
+Языки отображаются в указанном порядке. CLI всегда должен идти первым и иметь атрибут `default`.
 
-#### Complete Workflow
+<a id="complete-workflow"></a>
 
-**For multi-language examples (CLI + Go + Rust + JS):**
+#### Полный порядок работы
 
-1. **Create CLI example** in this repository: `static/examples/snippets/cli/[page]/[snippet].sh`
-2. **Create Go example** in `~/coding/nats.go-docs` repository on `doc-examples` branch
-3. **Create Rust example** in `~/coding/nats.rs-docs` repository on `doc-examples` branch
-4. **Create JavaScript example** in `~/coding/nats.js-docs` repository on `doc-examples` branch
-5. **Format code** in each repository (go fmt, cargo fmt, etc.)
-6. **Commit and push** CLI example to this repo, other examples to `doc-examples` branch in client repos
-7. **Update** `scripts/fetch-examples.js` to register new Go/Rust/JS examples
-8. **Fetch examples**: `npm run fetch-examples` (pulls Go/Rust/JS from GitHub)
-9. **Use in docs**: Add `<div class="nats-example" data-type="..." data-languages="cli,js,go,java,rust,csharp"></div>`
-10. **Test locally**: `npm start` and verify all tabs appear correctly
+**Для примеров на нескольких языках (CLI + Go + Rust + JS):**
 
-**For CLI-only examples:**
+1. **Создайте пример CLI** в этом репозитории: `static/examples/snippets/cli/[page]/[snippet].sh`.
+2. **Создайте пример Go** в `~/coding/nats.go-docs`, в ветке `doc-examples`.
+3. **Создайте пример Rust** в `~/coding/nats.rs-docs`, в ветке `doc-examples`.
+4. **Создайте пример JavaScript** в `~/coding/nats.js-docs`, в ветке `doc-examples`.
+5. **Отформатируйте код** в каждом репозитории (go fmt, cargo fmt и так далее).
+6. **Создайте коммиты и отправьте** пример CLI в этот репозиторий, остальные примеры — в ветки `doc-examples` репозиториев клиентов.
+7. **Обновите** `scripts/fetch-examples.js`, зарегистрировав новые примеры Go/Rust/JS.
+8. **Загрузите примеры:** `npm run fetch-examples` получает Go/Rust/JS с GitHub.
+9. **Добавьте их в документацию:** `<div class="nats-example" data-type="..." data-languages="cli,js,go,java,rust,csharp"></div>`.
+10. **Проверьте локально:** запустите `npm start` и убедитесь, что все вкладки отображаются правильно.
 
-1. **Create CLI example** in this repository: `static/examples/snippets/cli/[page]/[snippet].sh`
-2. **Commit and push** to this repo
-3. **Use in docs**: Add `<div class="nats-example" data-type="..." data-languages="cli"></div>`
-4. **Test locally**: `npm start` and verify example appears
+**Для примеров только для CLI:**
 
-### Style Guide
+1. **Создайте пример CLI** в этом репозитории: `static/examples/snippets/cli/[page]/[snippet].sh`.
+2. **Создайте коммит и отправьте** его в этот репозиторий.
+3. **Добавьте пример в документацию:** `<div class="nats-example" data-type="..." data-languages="cli"></div>`.
+4. **Проверьте локально:** запустите `npm start` и убедитесь, что пример отображается.
 
-See [CLAUDE.md](./CLAUDE.md) for detailed documentation style guidelines including:
+<a id="style-guide"></a>
 
-- Code example structure
-- Tab ordering (CLI, JavaScript/TypeScript, Go, Python, Java, Rust, C#/.NET)
-- Comment style
-- When to use NatsFlow animations vs code examples
+### Руководство по стилю
 
-## Troubleshooting
+Подробные правила оформления документации находятся в [CLAUDE.md](./CLAUDE.md) и включают:
 
-### Development Server Won't Start
+- Структуру примеров кода
+- Порядок вкладок: CLI, JavaScript/TypeScript, Go, Python, Java, Rust, C#/.NET
+- Стиль комментариев
+- Выбор между анимациями NatsFlow и примерами кода
 
-**Issue:** `npm start` fails or shows port conflicts
+<a id="troubleshooting"></a>
 
-**Solutions:**
+## Устранение неполадок
 
-1. Check if port 3000 is already in use:
+<a id="development-server-wont-start"></a>
+
+### Сервер разработки не запускается
+
+**Проблема:** `npm start` завершается с ошибкой или сообщает о конфликте портов.
+
+**Решения:**
+
+1. Проверьте, не занят ли порт 3000:
    ```bash
    lsof -i :3000
    ```
-2. Kill any existing process:
+2. Завершите уже работающий процесс:
    ```bash
    lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs kill
    ```
-3. Clear Docusaurus cache and try again:
+3. Очистите кэш Docusaurus и повторите попытку:
    ```bash
    npm run clear
    npm start
    ```
 
-### Code Examples Not Appearing
+<a id="code-examples-not-appearing"></a>
 
-**Issue:** `<div class="nats-example">` tags show "No examples available"
+### Примеры кода не отображаются
 
-**Possible causes and solutions:**
+**Проблема:** вместо тегов `<div class="nats-example">` появляется сообщение об отсутствии примеров («No examples available»).
 
-1. **Examples not fetched from GitHub:**
+**Возможные причины и решения:**
+
+1. **Примеры не загружены с GitHub:**
 
    ```bash
    npm run fetch-examples
    ```
 
-   Check that `static/examples/snippets/metadata.json` exists and contains your example.
+   Убедитесь, что файл `static/examples/snippets/metadata.json` существует и содержит ваш пример.
 
-2. **Wrong data-type attribute:**
-   Verify the `data-type` matches the example name in `scripts/fetch-examples.js`.
-   For example, if the config has `"getting-started-publish"`, use:
+2. **Неверный атрибут data-type:**
+   Убедитесь, что `data-type` совпадает с именем примера в `scripts/fetch-examples.js`. Например, для `"getting-started-publish"` используйте:
 
    ```html
    <div class="nats-example" data-type="getting-started-publish" ...></div>
    ```
 
-3. **CLI examples missing:**
-   CLI examples are stored in this repository at `static/examples/snippets/cli/[page]/[snippet].sh`.
+3. **Отсутствуют примеры CLI:**
+   Они хранятся в этом репозитории по пути `static/examples/snippets/cli/[page]/[snippet].sh`.
 
-   If a CLI example doesn't appear:
+   Если пример CLI не отображается:
 
-   - Check that the file exists: `static/examples/snippets/cli/[page]/[snippet].sh`
-   - Verify the file is committed to git (CLI examples should be in the repository)
-   - Re-run `npm run fetch-examples` (it scans the CLI tree into `metadata.json`) and restart the dev server — the rehype plugin caches `metadata.json`
+   - Проверьте наличие файла `static/examples/snippets/cli/[page]/[snippet].sh`.
+   - Убедитесь, что файл добавлен в git: примеры CLI должны храниться в репозитории.
+   - Повторно запустите `npm run fetch-examples`, чтобы добавить каталог CLI в `metadata.json`, затем перезапустите сервер разработки: плагин rehype кэширует `metadata.json`.
 
-### Type Checking Errors
+<a id="type-checking-errors"></a>
 
-**Issue:** `npm run typecheck` shows errors
+### Ошибки проверки типов
 
-**Solutions:**
+**Проблема:** `npm run typecheck` сообщает об ошибках.
 
-1. Make sure `docusaurus.config.ts` and other TypeScript files have correct types
-2. Check imports in MDX files - use `@site/` prefix for absolute imports:
+**Решения:**
+
+1. Убедитесь, что в `docusaurus.config.ts` и остальных файлах TypeScript используются правильные типы.
+2. Проверьте импорты в MDX: для абсолютных импортов используйте префикс `@site/`:
    ```typescript
    import { NatsFlow } from "@site/src/components/NatsFlow";
    ```
-3. Restart your IDE's TypeScript server if errors persist after fixing
+3. Если после исправления ошибки остаются, перезапустите сервер TypeScript в своей IDE.
 
-### Hot Reload Not Working
+<a id="hot-reload-not-working"></a>
 
-**Issue:** Changes to files don't appear in the browser
+### Горячая перезагрузка не работает
 
-**Solutions:**
+**Проблема:** изменения файлов не появляются в браузере.
 
-1. Restart the dev server (`Ctrl+C`, then `npm start`)
-2. Hard refresh the browser (`Cmd+Shift+R` on Mac, `Ctrl+Shift+R` on Windows/Linux)
-3. Check the terminal for build errors
-4. Clear cache: `npm run clear` then `npm start`
+**Решения:**
 
-### Build Fails
+1. Перезапустите сервер разработки: `Ctrl+C`, затем `npm start`.
+2. Выполните полное обновление страницы: `Cmd+Shift+R` в macOS или `Ctrl+Shift+R` в Windows/Linux.
+3. Проверьте терминал на ошибки сборки.
+4. Очистите кэш командой `npm run clear`, затем запустите `npm start`.
 
-**Issue:** `npm run build` fails
+<a id="build-fails"></a>
 
-**Common causes:**
+### Ошибка сборки
 
-1. **Broken links:** Check for invalid internal links in markdown files
-2. **Type errors:** Run `npm run typecheck` to identify issues
-3. **Missing dependencies:** Run `npm install` to ensure all packages are installed
-4. **Code example issues:** Run `npm run fetch-examples` to refresh examples
+**Проблема:** `npm run build` завершается с ошибкой.
 
-### Examples Not Updating After Push to Client Repo
+**Частые причины:**
 
-**Issue:** Pushed new examples but they don't appear in docs
+1. **Неработающие ссылки:** проверьте внутренние ссылки в файлах Markdown.
+2. **Ошибки типов:** запустите `npm run typecheck`.
+3. **Отсутствующие зависимости:** выполните `npm install`, чтобы установить все пакеты.
+4. **Проблемы с примерами кода:** обновите их командой `npm run fetch-examples`.
 
-**For programming language examples (Go, Rust, JavaScript, Python, Java, C#):**
-Examples are fetched from GitHub, not local repositories. You need to:
+<a id="examples-not-updating-after-push-to-client-repo"></a>
 
-1. Push your changes to the `doc-examples` branch in the client repo (nats.go, nats.rs, or nats.js)
-2. Wait a moment for GitHub to process the push
-3. Run `npm run fetch-examples` in this repository to pull from GitHub
-4. Refresh your browser
+### Примеры не обновляются после отправки в репозиторий клиента
 
-**Note:** The fetch script pulls from GitHub's raw content URLs, so changes must be pushed to be visible.
+**Проблема:** новые примеры отправлены, но в документации не появились.
 
-**For CLI examples:**
-CLI examples are stored directly in this repository at `static/examples/snippets/cli/`, so they don't need to be fetched:
+**Для примеров на языках программирования (Go, Rust, JavaScript, Python, Java, C#):**
+Примеры загружаются с GitHub. Выполните следующие действия:
 
-1. Commit your CLI example to this repository
-2. Changes appear immediately after saving (hot reload)
-3. No need to run `npm run fetch-examples` for CLI-only changes
+1. Отправьте изменения в ветку `doc-examples` репозитория клиента (nats.go, nats.rs или nats.js).
+2. Дождитесь обработки изменений на GitHub.
+3. Запустите `npm run fetch-examples` в этом репозитории, чтобы загрузить обновления с GitHub.
+4. Обновите страницу в браузере.
 
-### Interactive Animations (NatsFlow) Not Working
+**Примечание:** скрипт использует адреса исходных файлов GitHub, поэтому изменения станут доступны только после отправки.
 
-**Issue:** `<div class="nats-flow" data-scenario="...">` not rendering
+**Для примеров CLI:**
+Они находятся непосредственно в этом репозитории, в `static/examples/snippets/cli/`, и не требуют загрузки:
 
-**Solutions:**
+1. Добавьте пример CLI в коммит этого репозитория.
+2. Изменения появляются сразу после сохранения благодаря горячей перезагрузке.
+3. При изменениях только CLI запуск `npm run fetch-examples` не требуется.
 
-1. Verify the `data-scenario` name: `*Animated` scenarios must be exported from
-   `src/components/NatsFlow/scenarios/index.ts` and registered in
-   `src/plugins/nats-flow/client-module.tsx`
-2. Check the browser console for JavaScript errors
-3. See `src/components/NatsFlow/README.md` for the full authoring and wiring guide
+<a id="interactive-animations-natsflow-not-working"></a>
 
-### Getting Help
+### Интерактивные анимации NatsFlow не работают
 
-- Check [Docusaurus documentation](https://docusaurus.io/docs)
-- Review [CLAUDE.md](./CLAUDE.md) for style guidelines
-- Check existing documentation pages for examples
-- Look at `src/components/NatsFlow/README.md` for animation component details
+**Проблема:** блок `<div class="nats-flow" data-scenario="...">` не отображается.
 
-## License and Attribution
+**Решения:**
 
-The original code and documentation in this repository are licensed under
-the [MIT License](./LICENSE).
+1. Проверьте имя `data-scenario`: сценарии `*Animated` должны экспортироваться из `src/components/NatsFlow/scenarios/index.ts` и регистрироваться в `src/plugins/nats-flow/client-module.tsx`.
+2. Проверьте консоль браузера на ошибки JavaScript.
+3. Полное руководство по созданию и подключению сценариев находится в `src/components/NatsFlow/README.md`.
 
-Parts of this repository derive from Apache-2.0-licensed upstream projects,
-and those portions remain under the Apache License 2.0 — see
-[NOTICE](./NOTICE) for details and [LICENSE-APACHE](./LICENSE-APACHE) for the
-license text:
+<a id="getting-help"></a>
 
-- Documentation content derived from
-  [nats-io/nats.docs](https://github.com/nats-io/nats.docs)
-- Reference documentation and JSON schemas generated from
-  [nats-io/nats-server](https://github.com/nats-io/nats-server) and
-  [nats-io/jsm.go](https://github.com/nats-io/jsm.go)
+### Где искать помощь
+
+- Изучите [документацию Docusaurus](https://docusaurus.io/docs).
+- Ознакомьтесь с правилами оформления в [CLAUDE.md](./CLAUDE.md).
+- Посмотрите примеры на существующих страницах документации.
+- Устройство компонентов анимации описано в `src/components/NatsFlow/README.md`.
+
+<a id="license-and-attribution"></a>
+
+## Лицензия и указание авторства
+
+Оригинальный код и документация этого репозитория распространяются по [лицензии MIT](./LICENSE).
+
+Часть материалов основана на вышестоящих проектах с лицензией Apache-2.0 и сохраняет эту лицензию. Подробности приведены в [NOTICE](./NOTICE), текст лицензии — в [LICENSE-APACHE](./LICENSE-APACHE):
+
+- Материалы документации на основе [nats-io/nats.docs](https://github.com/nats-io/nats.docs)
+- Справочная документация и JSON-схемы, сгенерированные из [nats-io/nats-server](https://github.com/nats-io/nats-server) и [nats-io/jsm.go](https://github.com/nats-io/jsm.go)

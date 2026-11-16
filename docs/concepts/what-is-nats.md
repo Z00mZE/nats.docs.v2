@@ -1,98 +1,98 @@
 ---
 id: what-is-nats
-title: What is NATS?
+title: "Что такое NATS?"
 sidebar_position: 1
 ---
 
-# What is NATS?
+# Что такое NATS? {#what-is-nats}
 
-NATS is an open source messaging system. Applications connect to a NATS server and exchange messages by subject, without knowing each other's network addresses.
+NATS — система обмена сообщениями с открытым исходным кодом. Приложения подключаются к серверу NATS и обмениваются сообщениями по темам (subjects), не зная сетевых адресов друг друга.
 
-## Overview
+## Обзор {#overview}
 
-At its core, NATS is about **publishing and listening for messages**. It provides a layer between application components, allowing them to communicate without being directly connected or even aware of each other's existence.
+В основе NATS лежат **публикация и получение сообщений**. Система служит прослойкой между компонентами приложения: они могут взаимодействовать без прямого соединения и даже не зная о существовании друг друга.
 
-NATS optimizes for a small single binary, low latency at high message rates, and secure defaults. It runs from one server on a laptop up to clusters of servers spanning regions.
+NATS рассчитан на небольшой единый исполняемый файл, низкую задержку при высокой частоте сообщений и безопасные настройки по умолчанию. Его можно запускать как на одном сервере на ноутбуке, так и в кластерах, охватывающих несколько регионов.
 
-## How NATS Works
+## Как работает NATS {#how-nats-works}
 
-NATS is a **messaging fabric** that connects all your applications and services:
+NATS — **среда обмена сообщениями**, которая связывает все ваши приложения и сервисы:
 
 <div class="nats-flow" data-scenario="publishSubscribe" data-width="600" data-height="400"></div>
 
-### Core Components
+### Основные компоненты {#core-components}
 
-1. **NATS Server** - The messaging broker that routes messages
-2. **Publishers** - Applications that send messages
-3. **Subscribers** - Applications that receive messages
-4. **Subjects** - Named channels for message organization
+1. **Сервер NATS** — брокер, маршрутизирующий сообщения
+2. **Издатели** — приложения, отправляющие сообщения
+3. **Подписчики** — приложения, получающие сообщения
+4. **Темы (subjects)** — именованные каналы для организации сообщений
 
-## The NATS Ecosystem
+## Экосистема NATS {#the-nats-ecosystem}
 
-NATS ships as a small set of pieces you compose together: the server, a client for your language, and tooling you add as you need it.
+NATS состоит из небольшого набора компонентов, которые можно сочетать: сервер, клиент для вашего языка и инструменты, добавляемые по мере необходимости.
 
-- **Server** — the single [`nats-server`](https://github.com/nats-io/nats-server) binary. Clustering, JetStream, leaf nodes, [MQTT](/learn/mqtt/), and [WebSocket](/learn/websocket/) are all configuration on the same process.
-- **Clients** — official Tier 1 clients exist for Go, JavaScript/TypeScript, Python, Java, Rust, C#/.NET, and C. Tier 2 clients (may lag on new server features) cover Zig, Swift, Ruby, and Elixir.
-- **Orbit** — optional per-language extension libraries with higher-level utilities and experimental features built on top of the core client.
-- **Tooling** — the `nats` CLI with built-in `nats auth` identity commands, `nsc` as the standalone identity tool, NACK and Helm charts for Kubernetes, Prometheus exporter, surveyor, bridges to Kafka / JMS / Spark / Flink, and a Terraform provider.
+- **Сервер** — единый исполняемый файл [`nats-server`](https://github.com/nats-io/nats-server). Кластеризация, JetStream, листовые узлы, [MQTT](/learn/mqtt/) и [WebSocket](/learn/websocket/) настраиваются в том же процессе.
+- **Клиенты** — официальные клиенты первого уровня поддержки (Tier 1) доступны для Go, JavaScript/TypeScript, Python, Java, Rust, C#/.NET и C. Клиенты второго уровня (Tier 2) охватывают Zig, Swift, Ruby и Elixir; поддержка новых возможностей сервера в них может появляться позже.
+- **Orbit** — необязательные библиотеки расширений для отдельных языков с высокоуровневыми утилитами и экспериментальными возможностями поверх основного клиента.
+- **Инструменты** — CLI `nats` со встроенными командами управления идентификационными данными `nats auth`, отдельный инструмент `nsc`, NACK и Helm-чарты для Kubernetes, экспортёр Prometheus, surveyor, мосты к Kafka / JMS / Spark / Flink и провайдер Terraform.
 
-See the [ecosystem page](./ecosystem.md) for the full list with links.
+Полный список со ссылками приведён на [странице экосистемы](./ecosystem.md).
 
-## Key Differentiators
+## Ключевые особенности {#key-differentiators}
 
-### Simplicity
-NATS focuses on moving messages between applications. The server is one binary, and the client API is small.
+### Простота {#simplicity}
+NATS сосредоточен на передаче сообщений между приложениями. Сервер поставляется одним исполняемым файлом, а клиентский API невелик.
 
-### Performance
-- Process millions of messages per second
-- Sub-millisecond latency
-- Small memory footprint (typically ~15MB)
+### Производительность {#performance}
+- Обработка миллионов сообщений в секунду
+- Задержка менее миллисекунды
+- Небольшое потребление памяти (обычно около 15 МБ)
 
-### Location transparency
-Applications don't need to know where other services are located. NATS handles:
-- Service discovery
-- Load balancing
-- Fault tolerance
+### Прозрачность расположения {#location-transparency}
+Приложениям не нужно знать, где находятся другие сервисы. NATS обеспечивает:
+- Обнаружение сервисов
+- Балансировку нагрузки
+- Отказоустойчивость
 
-### Multi-tenancy
-Accounts isolate messaging domains within one server or cluster, which supports:
-- Secure multi-tenant deployments
-- Department or team isolation
-- SaaS platform building
+### Многопользовательская изоляция {#multi-tenancy}
+Учётные записи (accounts) изолируют области обмена сообщениями внутри одного сервера или кластера, позволяя:
+- Безопасно размещать несколько независимых арендаторов
+- Изолировать отделы или команды
+- Создавать SaaS-платформы
 
-## Use Cases
+## Варианты использования {#use-cases}
 
-NATS excels in scenarios requiring:
+NATS хорошо подходит для следующих задач:
 
-### Agentic AI
-- Agent-to-agent communication with automatic service discovery
-- Real-time event streams for LLM inference and tool calls
-- Multi-region GPU inference routing with scale-to-zero
+### Агентный ИИ {#agentic-ai}
+- Взаимодействие между агентами с автоматическим обнаружением сервисов
+- Потоки событий в реальном времени для инференса LLM и вызовов инструментов
+- Маршрутизация инференса на GPU между регионами с масштабированием до нуля
 
-### Real-time Data Streaming
-- IoT telemetry collection
-- Financial market data distribution
-- Log and metrics aggregation
+### Потоковая передача данных в реальном времени {#real-time-data-streaming}
+- Сбор телеметрии IoT
+- Распространение данных финансовых рынков
+- Агрегация журналов и метрик
 
-### Microservices Communication
-- Service mesh data plane
-- Event-driven architectures
-- CQRS and Event Sourcing patterns
+### Взаимодействие микросервисов {#microservices-communication}
+- Передача данных в сервисной сетке
+- Событийно-ориентированные архитектуры
+- Шаблоны CQRS и Event Sourcing
 
-### Edge Computing
-- Edge-to-cloud connectivity
-- Intermittent network handling
-- Bandwidth and resource-constrained environments
+### Периферийные вычисления {#edge-computing}
+- Связь периферийных устройств с облаком
+- Работа при нестабильном сетевом соединении
+- Среды с ограниченной пропускной способностью и ресурсами
 
-### Command and Control
-- Remote procedure calls
-- Configuration management
-- System orchestration
+### Команды и управление {#command-and-control}
+- Удалённые вызовы процедур
+- Управление конфигурацией
+- Оркестрация систем
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Core NATS deep dive](/learn/core-nats) — go hands-on with the messaging fundamentals
-- [The full Learn section](/learn) — guided chapters across every NATS topic
-- [Getting Started Guide](./getting-started/index.md) — set up your first NATS application
-- [Pub/Sub Basics](./pub-sub-basics.md) — deep dive into the publish-subscribe pattern
-- [Request-Reply](./request-reply.md) — learn synchronous communication patterns
+- [Углублённое изучение Core NATS](/learn/core-nats) — практика по основам обмена сообщениями
+- [Раздел «Изучение» целиком](/learn) — главы по всем темам NATS
+- [Начало работы](./getting-started/index.md) — настройка первого приложения NATS
+- [Основы публикации и подписки](./pub-sub-basics.md) — подробный разбор шаблона publish-subscribe
+- [Запрос-ответ](./request-reply.md) — синхронное взаимодействие

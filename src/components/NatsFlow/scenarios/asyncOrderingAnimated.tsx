@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // asyncOrderingAnimated
@@ -72,9 +73,9 @@ function AsyncOrderingAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Async is fast — but re-publishing a failed order reorders the stream.</strong>{" "}
-                Nothing is resent on its own. When your code retries order 3, it lands{" "}
-                <span style={{ color: RED, fontWeight: 600 }}>after</span> the orders you sent next.
+                <strong>Асинхронная обработка быстра, но повторная публикация неудачного заказа меняет порядок потока.</strong>{localizeDiagramContent(" ")}
+                Автоматического повтора нет. Когда ваш код повторяет заказ 3, он попадает{localizeDiagramContent(" ")}
+                <span style={{ color: RED, fontWeight: 600 }}>после</span> заказов, отправленных следом.
             </div>
 
             {/* publisher firing pill */}
@@ -92,17 +93,17 @@ function AsyncOrderingAnimatedInner() {
                         transition: "background 0.2s",
                     }}
                 >
-                    {retrying ? "order-svc: re-publish order 3" : "order-svc: PublishAsync × 6"}
+                    {localizeDiagramContent(retrying ? "order-svc: re-publish order 3" : "order-svc: PublishAsync × 6")}
                 </span>
             </div>
 
             {/* what you sent */}
             <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-                    Initial sent order
+                    Исходный порядок отправки
                 </div>
                 <div style={{ display: "flex", gap: SLOT_GAP }}>
-                    {[1, 2, 3, 4, 5, 6].map((o) => {
+                    {localizeDiagramContent([1, 2, 3, 4, 5, 6].map((o) => {
                         const isFail = o === 3 && failShown;
                         return (
                             <div
@@ -121,11 +122,11 @@ function AsyncOrderingAnimatedInner() {
                                 }}
                             >
                                 <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: isFail ? RED : "#475569" }}>
-                                    #{o}
+                                    #{localizeDiagramContent(o)}
                                 </span>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
             </div>
 
@@ -143,10 +144,10 @@ function AsyncOrderingAnimatedInner() {
             >
                 <div>
                     <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 8 }}>
-                        Stored in ORDERS
+                        Сохранено в ORDERS
                     </div>
                     <div style={{ display: "flex", gap: SLOT_GAP, alignItems: "flex-end" }}>
-                        {seqs.map((seq) => {
+                        {localizeDiagramContent(seqs.map((seq) => {
                             const isFailed = seq === FAILED_SEQ && failShown;
                             const order = seq; // before failure, seq n holds order n
                             const pending = firing;
@@ -155,7 +156,7 @@ function AsyncOrderingAnimatedInner() {
                                 <div key={seq} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                                     {/* ack badge */}
                                     <span style={{ fontSize: 11, fontWeight: 800, height: 14, color: !acksShown ? "transparent" : isFailed ? RED : GREEN }}>
-                                        {!acksShown ? "·" : isFailed ? "✗" : "✓"}
+                                        {localizeDiagramContent(!acksShown ? "·" : isFailed ? "✗" : "✓")}
                                     </span>
                                     <div
                                         style={{
@@ -172,13 +173,13 @@ function AsyncOrderingAnimatedInner() {
                                         }}
                                     >
                                         <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: isFailed ? RED : pending ? "#94a3b8" : color }}>
-                                            {isFailed ? "—" : `#${order}`}
+                                            {localizeDiagramContent(isFailed ? "—" : `#${order}`)}
                                         </span>
                                     </div>
-                                    <span style={{ fontSize: 9, fontFamily: "monospace", color: isFailed ? RED : "#9ca3af" }}>seq {seq}</span>
+                                    <span style={{ fontSize: 9, fontFamily: "monospace", color: isFailed ? RED : "#9ca3af" }}>номер {localizeDiagramContent(seq)}</span>
                                 </div>
                             );
-                        })}
+                        }))}
 
                         {/* the retried order 3, landing at seq 7 */}
                         <div
@@ -192,7 +193,7 @@ function AsyncOrderingAnimatedInner() {
                             }}
                         >
                             <span style={{ fontSize: 11, fontWeight: 800, height: 14, color: reordered ? GREEN : AMBER }}>
-                                {reordered ? "✓" : "·"}
+                                {localizeDiagramContent(reordered ? "✓" : "·")}
                             </span>
                             <div
                                 style={{
@@ -209,7 +210,7 @@ function AsyncOrderingAnimatedInner() {
                             >
                                 <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: GREEN }}>#3</span>
                             </div>
-                            <span style={{ fontSize: 9, fontFamily: "monospace", color: GREEN, fontWeight: 700 }}>seq {RETRY_SEQ}</span>
+                            <span style={{ fontSize: 9, fontFamily: "monospace", color: GREEN, fontWeight: 700 }}>номер {localizeDiagramContent(RETRY_SEQ)}</span>
                         </div>
                     </div>
                 </div>
@@ -218,13 +219,12 @@ function AsyncOrderingAnimatedInner() {
             {/* Reserve this row's height so it doesn't shove the page down when
                 it appears only in the reorder phase. */}
             <div style={{ marginTop: 10, minHeight: 36, fontSize: 12, color: "#374151" }}>
-                {reordered && (
+                {localizeDiagramContent(reordered && (
                     <>
-                        Stored order: <span style={{ fontFamily: "monospace" }}>#1 #2 #4 #5 #6 #3</span>. Fix it by failing the
-                        retry fast with{" "}
+                        Сохранённый заказ: <span style={{ fontFamily: "monospace" }}>#1 #2 #4 #5 #6 #3</span>. Для исправления быстро отклоняйте повтор с помощью{localizeDiagramContent(" ")}
                         <span style={{ fontFamily: "monospace", color: BLUE, fontWeight: 600 }}>Nats-Expected-Last-Subject-Sequence</span>.
                     </>
-                )}
+                ))}
             </div>
 
             <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 14 }}>
@@ -232,9 +232,9 @@ function AsyncOrderingAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

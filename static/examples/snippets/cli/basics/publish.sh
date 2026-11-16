@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# Publish a message to the "weather.updates" subject
+# Опубликовать сообщение в теме "weather.updates"
 nats pub weather.updates "Temperature: 72°F"

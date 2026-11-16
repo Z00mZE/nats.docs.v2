@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useState, useEffect } from 'react';
 import { MarkerType, ReactFlow, Background, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -117,7 +118,7 @@ function QueueGroupAnimatedInner({
           fontStyle: 'italic',
         }}
       >
-        All workers are subscribed. Watch as each message (dot) flows to only ONE worker at a time.
+        Все обработчики подписаны. Каждое сообщение (точка) поступает только ОДНОМУ обработчику.
       </div>
 
       {/* Flow diagram */}
@@ -131,7 +132,7 @@ function QueueGroupAnimatedInner({
           position: 'relative',
         }}
       >
-        <ReactFlow
+        <ReactFlow ariaLabelConfig={diagramAriaLabels}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -160,7 +161,7 @@ function QueueGroupAnimatedInner({
           color: '#6b7280',
         }}
       >
-        Current message routing to: <strong>Worker {activeWorker + 1}</strong> (NATS randomly selects one worker per message)
+        Текущее сообщение направляется: <strong>Обработчик {localizeDiagramContent(activeWorker + 1)}</strong> (NATS случайно выбирает одного обработчика для каждого сообщения)
       </div>
     </div>
   );

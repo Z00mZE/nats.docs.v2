@@ -1,21 +1,21 @@
-# Meta Rescue
+# Аварийное восстановление метаданных {#meta-rescue}
 
-Lowers the quorum the meta group needs, so peers can be removed when too many servers are permanently gone. This is unsafe and is only for disaster recovery.
+Уменьшение кворума группы метаданных для удаления участников, когда слишком много серверов потеряно безвозвратно. Операция небезопасна и предназначена только для аварийного восстановления.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import metaRescueRequest from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/meta_rescue_request.json';
 import metaRescueResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/meta_rescue_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.META.RESCUE`
 
-Only works from the system account. This is a broadcast subject: every online server evaluates the request and replies on its own, so expect one response per server rather than a single reply.
+Работает только из системной учётной записи. Это широковещательная тема: каждый доступный сервер самостоятельно оценивает запрос и отвечает, поэтому ожидается по одному ответу от сервера, а не один общий ответ.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={metaRescueRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={metaRescueResponse} />

@@ -1,15 +1,12 @@
-# dial_timeout
+# dial_timeout {#dial_timeout}
 
 <Since version="2.15" />
 <Reloadable state="not-reloadable" />
-How long to wait for the TCP connection to this remote to be
-established. Overrides the server-wide `leafnodes.dial_timeout`
-for this remote only. If not set, the server-wide value applies,
-which itself defaults to `1s`.
+Время ожидания установки TCP-соединения с этим удалённым узлом. Переопределяет общий параметр сервера `leafnodes.dial_timeout` только для этого узла. Если не задано, используется общее значение сервера, по умолчанию `1s`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

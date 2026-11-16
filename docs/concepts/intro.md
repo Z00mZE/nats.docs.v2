@@ -1,36 +1,36 @@
 ---
 id: intro
-title: Welcome to NATS
+title: "Добро пожаловать в NATS"
 sidebar_position: 1
 ---
 
-# Welcome to NATS Documentation
+# Добро пожаловать в документацию NATS {#welcome-to-nats-documentation}
 
-Welcome to the official documentation for **NATS** - a simple, secure and high-performance open source messaging system for cloud native applications, IoT messaging, and microservices architectures.
+Добро пожаловать в официальную документацию **NATS** — простой, безопасной и высокопроизводительной системы обмена сообщениями с открытым исходным кодом для облачных приложений, Интернета вещей и микросервисных архитектур.
 
-## Quick Start
+## Быстрый старт {#quick-start}
 
-- **[What is NATS?](./what-is-nats.md)** — Understand the fundamentals
-- **[Getting Started](./getting-started/index.md)** — Install and send your first message
+- **[Что такое NATS?](./what-is-nats.md)** — познакомьтесь с основами
+- **[Начало работы](./getting-started/index.md)** — установите NATS и отправьте первое сообщение
 
-## Community and Support
+## Сообщество и поддержка {#community-and-support}
 
-NATS has a vibrant and growing community:
+У NATS активное и растущее сообщество:
 
-- **[Slack Community](https://slack.nats.io)** - Get help and connect with other users
-- **[GitHub](https://github.com/nats-io)** - Contribute to the project
-- **[Twitter](https://twitter.com/nats_io)** - Stay updated with the latest news
+- **[Сообщество в Slack](https://slack.nats.io)** — получите помощь и общайтесь с другими пользователями
+- **[GitHub](https://github.com/nats-io)** — участвуйте в развитии проекта
+- **[Twitter](https://twitter.com/nats_io)** — следите за последними новостями
 
-## Getting Help
+## Где получить помощь {#getting-help}
 
-- Browse the documentation using the sidebar
-- Search for specific topics using the search bar
-- Join our [Slack community](https://slack.nats.io) for real-time help
-- Check out [examples and tutorials](https://natsbyexample.com)
+- Изучайте документацию с помощью бокового меню
+- Ищите нужные темы через строку поиска
+- Присоединяйтесь к нашему [сообществу в Slack](https://slack.nats.io), чтобы получить помощь в реальном времени
+- Посмотрите [примеры и руководства](https://natsbyexample.com)
 
-Ready to dive in? Start with **[What is NATS?](./what-is-nats.md)** →
+Готовы приступить? Начните с раздела **[Что такое NATS?](./what-is-nats.md)** →
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Start with the Core NATS deep dive](/learn/core-nats) — hands-on, end-to-end walkthrough
-- [Browse the Learn section](/learn) — all guided deep-dive chapters
+- [Углублённое изучение Core NATS](/learn/core-nats) — последовательное практическое руководство
+- [Раздел «Изучение»](/learn) — все главы с подробным разбором

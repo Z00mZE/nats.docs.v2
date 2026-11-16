@@ -1,13 +1,12 @@
-# server_metadata
+# server_metadata {#server_metadata}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" />
-Arbitrary key/value pairs reported with this server in monitoring
-endpoints.
+Произвольные пары ключ/значение, публикуемые для этого сервера в конечных точках мониторинга.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `{ string: string }` | - | - |

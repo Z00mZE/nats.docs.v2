@@ -1,15 +1,12 @@
-# encryption_key
+# encryption_key {#encryption_key}
 
 <Aliases aliases="key, ek" />
 <Reloadable state="not-reloadable" />
-If defined, enables JetStream filestore encryption using the
-value as the encryption key. A key length of at least 32 bytes
-is recommended. Note, this key is HMAC-256 hashed on startup which
-reduces the byte length to 64.
+Если задано, включает шифрование файлового хранилища JetStream, используя значение как ключ. Рекомендуется ключ длиной не менее 32 байт. При запуске ключ хешируется HMAC-256, что приводит длину к 64 байтам.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -13,27 +13,27 @@ function HomepageHeader() {
       <div className="container">
         <img
           src="/img/nats-icon.svg"
-          alt="NATS Logo"
+          alt="Логотип NATS"
           className={styles.heroLogo}
         />
         <h1 className={clsx("hero__title", styles.heroTitle)}>
-          Welcome to NATS Documentation
+          Добро пожаловать в документацию NATS
         </h1>
         <p className={clsx("hero__subtitle", styles.heroSubtitle)}>
-          Everything you need to build with NATS - a simple, secure, and high-performance messaging system
+          Всё для разработки с NATS — простой, безопасной и высокопроизводительной системой обмена сообщениями
         </p>
         <div className={styles.buttons}>
           <Link
             className="button button--primary button--lg"
             to="/concepts/intro"
           >
-            Get Started
+            Начать работу
           </Link>
           <Link
             className="button button--secondary button--lg"
             to="/concepts/what-is-nats"
           >
-            Learn Concepts
+            Основные понятия
           </Link>
         </div>
       </div>
@@ -45,8 +45,8 @@ export default function Home(): React.JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={`NATS Documentation`}
-      description="Complete documentation for NATS - a simple, secure and high-performance open source messaging system for cloud native applications, IoT messaging, and microservices architectures."
+      title={`Документация NATS`}
+      description="Полная документация NATS — простой, безопасной и высокопроизводительной системы обмена сообщениями с открытым исходным кодом для облачных приложений, Интернета вещей и микросервисных архитектур."
     >
       <HomepageHeader />
       <main>

@@ -1,14 +1,14 @@
-# Service Latency
+# Задержка сервиса {#service-latency}
 
-Service latency metrics.
+Метрики задержки сервисов.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import serviceLatency from '@site/src/schemas/vendor/v2.15/jsm/server/metric/v1/service_latency.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$SYS.SERVER.METRIC.SERVICE.LATENCY`
 
-## Metric Schema
+## Схема метрики {#metric-schema}
 
 <JSONSchema schema={serviceLatency} />

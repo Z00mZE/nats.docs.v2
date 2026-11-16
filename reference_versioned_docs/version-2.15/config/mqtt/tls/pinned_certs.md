@@ -1,13 +1,11 @@
-# pinned_certs
+# pinned_certs {#pinned_certs}
 
 <Reloadable state="not-reloadable" />
-List of hex-encoded SHA256 of DER-encoded public key fingerprints. When present, during the TLS handshake, the
-provided certificate's fingerprint is required to be present in the list, otherwise the connection will be
-closed.
+Список отпечатков открытых ключей: SHA256 от представления DER в шестнадцатеричной кодировке. При наличии списка отпечаток предъявленного во время TLS-рукопожатия сертификата должен входить в него, иначе соединение закрывается.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

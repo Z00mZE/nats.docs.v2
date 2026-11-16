@@ -1,16 +1,16 @@
-# API Limit Reached
+# Достигнут лимит API {#api-limit-reached}
 
-API request queue limit reached events.
+События достижения лимита очереди запросов API.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import apiLimitReached from '@site/src/schemas/vendor/v2.12/jsm/jetstream/advisory/v1/api_limit_reached.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.API.LIMIT_REACHED`
 
-The subject has no account token. The server publishes this advisory in the system account, and the `server` field identifies the server that hit the limit.
+В теме нет сегмента учётной записи. Сервер публикует уведомление в системной учётной записи, а поле `server` указывает сервер, достигший лимита.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={apiLimitReached} />

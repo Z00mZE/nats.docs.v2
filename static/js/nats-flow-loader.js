@@ -57,7 +57,7 @@
       console.error('NatsFlow components not available');
       containers.forEach((container) => {
         container.innerHTML = `<div style="padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 4px;">
-          <strong>Error:</strong> NatsFlow components failed to load
+          <strong>Ошибка:</strong> не удалось загрузить компоненты NatsFlow
         </div>`;
         container.setAttribute('data-initialized', 'true');
       });
@@ -110,7 +110,7 @@
         if (!scenario) {
           console.error(`Unknown scenario: ${scenarioName}`);
           container.innerHTML = `<div style="padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 4px;">
-            <strong>Error:</strong> Unknown scenario "${scenarioName}".
+            <strong>Ошибка:</strong> неизвестный сценарий "${scenarioName}".
             <br>Available scenarios: ${Object.keys(scenarios).join(', ')}
           </div>`;
           container.setAttribute('data-initialized', 'true');
@@ -129,9 +129,9 @@
 
         container.setAttribute('data-initialized', 'true');
       } catch (error) {
-        console.error(`Failed to initialize flow for scenario ${scenarioName}:`, error);
+        console.error(`Не удалось инициализировать диаграмму сценария ${scenarioName}:`, error);
         container.innerHTML = `<div style="padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 4px;">
-          <strong>Error:</strong> Failed to render flow diagram
+          <strong>Ошибка:</strong> не удалось отобразить диаграмму
           <br><small>${error.message}</small>
         </div>`;
         container.setAttribute('data-initialized', 'true');

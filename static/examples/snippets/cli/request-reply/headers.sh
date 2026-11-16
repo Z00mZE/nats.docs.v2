@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# Send request with headers
+# Отправить запрос с заголовками
 nats request service "data" -H "X-Request-ID:123" -H "X-Priority:high"

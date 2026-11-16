@@ -1,164 +1,188 @@
-# Documentation Generation Scripts
+<a id="documentation-generation-scripts"></a>
 
-This directory contains scripts for generating NATS documentation from source code.
+# Скрипты генерации документации
 
-## Pipeline overview
+Этот каталог содержит скрипты для генерации документации NATS из исходного кода.
 
-Reference docs are generated **per NATS version**. `scripts/generate-version.js` is the orchestrator; it checks out version-specific tags of both `nats-server` and `jsm.go` submodules (per `scripts/doc-versions.json`), then drives the generators below and atomically swaps the per-version output into place.
+<a id="pipeline-overview"></a>
 
-Direct invocation of `generate-docs.go` is only useful for dry-run parser inspection; all real generation flows through `generate-version.js`.
+## Обзор процесса
+
+Справочник генерируется **отдельно для каждой версии NATS**. Скрипт `scripts/generate-version.js` управляет процессом: выбирает теги подмодулей `nats-server` и `jsm.go` согласно `scripts/doc-versions.json`, запускает перечисленные ниже генераторы и атомарно заменяет результат для соответствующей версии.
+
+Прямой запуск `generate-docs.go` полезен только для проверки работы парсера без записи результата. Обычная генерация выполняется через `generate-version.js`.
+
+<a id="generate-docsgo"></a>
 
 ## generate-docs.go
 
-Parses nats-server source and produces the errors / headers markdown + monitor JSON schemas for one version's output tree. Invoked by `generate-version.js` with `-docs-out` pointing at a per-version staging dir; `-docs-out` is required unless `-dry-run` is passed.
+Разбирает исходный код nats-server и создаёт Markdown-страницы ошибок и заголовков, а также JSON-схемы мониторинга для одной версии. Скрипт `generate-version.js` запускает его с параметром `-docs-out`, указывающим на промежуточный каталог версии. Параметр `-docs-out` обязателен, если не указан `-dry-run`.
 
-### What It Generates
+<a id="what-it-generates"></a>
 
-#### Documentation Files (written under `-docs-out`)
+### Что генерируется
 
-1. **jetstream/errors.md** - JetStream error codes and descriptions
-   - Source: `./nats-server/server/errors.json` (via submodule)
-   - Organized by category (Account, Stream, Consumer, etc.)
-   - Curly braces in descriptions are escaped for MDX compatibility
+<a id="documentation-files-written-under--docs-out"></a>
 
-2. **system/errors.md** - System error messages
-   - Source: `./nats-server/server/errors.go` (via submodule)
-   - Categorized by error type (Authentication, Protocol, etc.)
+#### Файлы документации (записываются в `-docs-out`)
 
-3. **jetstream/api/headers.md** - JetStream header reference
-   - Sources: Multiple nats-server files (see Header Generation Details below)
-   - Organized into sections (H2) and subsections (H3)
-   - Supports both const and var declarations
-   - Static examples / notes for Batch / Scheduled / Counter are gated on presence of matching `Nats-Batch-*`, `Nats-Schedule-*`, `Nats-Counter-*` constants in the checked-out server source — so 2.11 source produces a 2.11-appropriate page.
+1. **jetstream/errors.md** — коды и описания ошибок JetStream
+   - Источник: `./nats-server/server/errors.json` из подмодуля
+   - Группировка по категориям: учётные записи, потоки, потребители и другие
+   - Фигурные скобки в описаниях экранируются для совместимости с MDX
 
-#### JSON Schemas
+2. **system/errors.md** — сообщения системных ошибок
+   - Источник: `./nats-server/server/errors.go` из подмодуля
+   - Группировка по типам: аутентификация, протокол и другие
 
-4. **src/schemas/vendor/v<ver>/server/monitor/v1/*.json** - Monitor endpoint schemas
-   - Source: `./nats-server/server/monitor.go` and related files (via submodule)
-   - Request and response schemas for 15 monitor endpoints:
+3. **jetstream/api/headers.md** — справочник заголовков JetStream
+   - Источники: несколько файлов nats-server, перечисленных ниже в описании генерации заголовков
+   - Структура из разделов H2 и подразделов H3
+   - Поддерживаются объявления `const` и `var`
+   - Статические примеры и примечания для пакетных операций, отложенных сообщений и счётчиков добавляются только при наличии соответствующих констант `Nats-Batch-*`, `Nats-Schedule-*`, `Nats-Counter-*` в выбранном исходном коде сервера. Поэтому исходный код 2.11 создаёт страницу с возможностями именно версии 2.11.
+
+<a id="json-schemas"></a>
+
+#### JSON-схемы
+
+4. **src/schemas/vendor/v<ver>/server/monitor/v1/*.json** — схемы конечных точек мониторинга
+   - Источник: `./nats-server/server/monitor.go` и связанные файлы из подмодуля
+   - Схемы запросов и ответов для 15 конечных точек:
      - `varz`, `connz`, `routez`, `subsz`, `gatewayz`, `leafz`, `accountz`, `jsz`
      - `healthz`, `profilez`, `raftz`, `ipqueuesz`, `statsz`, `accstatz`, `idz`
-   - Automatically extracts:
-     - Field names from JSON struct tags
-     - Field types from Go type system
-     - Field descriptions from Go comments
-   - Handles both structs and type aliases (maps)
-   - Referenced in docs via `@site/src/schemas/vendor/v<ver>/server/monitor/v1/`
+   - Автоматически извлекаются:
+     - Имена полей из JSON-тегов структур
+     - Типы полей из системы типов Go
+     - Описания полей из комментариев Go
+   - Поддерживаются структуры и псевдонимы типов, в том числе отображения
+   - В документации схемы доступны через `@site/src/schemas/vendor/v<ver>/server/monitor/v1/`
 
-### Usage
+<a id="usage"></a>
+
+### Использование
 
 ```bash
-# Normal path: regenerate all versions from doc-versions.json
+# Обычный запуск: повторно сгенерировать все версии из doc-versions.json
 npm run generate-docs:all-versions
 
-# One version
+# Одна версия
 npm run generate-docs:v2.11
 npm run generate-docs:v2.12
 
-# Dry-run the parser (stdout only, no -docs-out required)
+# Проверить парсер без записи файлов: только stdout, -docs-out не требуется
 npm run generate-docs:dry-run
 
-# Dry-run against a specific nats-server checkout
+# Проверить конкретную рабочую копию nats-server без записи результата
 go run scripts/generate-docs.go -server /path/to/nats-server -dry-run | head -100
 ```
 
-### How It Works
+<a id="how-it-works"></a>
 
-1. **Parsing**: The script parses source files from nats-server:
-   - JSON parsing for `errors.json`
-   - Go AST parsing for `errors.go` (including manual string-literal errors)
-   - Go AST parsing for header constants and variables across 6 files
+### Как это работает
 
-2. **Categorization**: Errors and headers are automatically categorized:
-   - JetStream errors grouped by subsystem (Account, Consumer, Stream, etc.)
-   - System errors grouped by function (Authentication, Protocol, etc.)
-   - Headers grouped by usage with subsections (e.g., Message Publishing → Expected State Headers)
+1. **Разбор:** скрипт разбирает исходные файлы nats-server:
+   - JSON для `errors.json`
+   - AST Go для `errors.go`, включая вручную заданные ошибки со строковыми литералами
+   - AST Go для констант и переменных заголовков в шести файлах
 
-3. **Template Rendering**: Uses Go templates from `scripts/templates/`:
+2. **Группировка:** ошибки и заголовки автоматически распределяются по категориям:
+   - Ошибки JetStream — по подсистеме: учётная запись, потребитель, поток и другие
+   - Системные ошибки — по назначению: аутентификация, протокол и другие
+   - Заголовки — по использованию, с подразделами, например «Публикация сообщений → Заголовки ожидаемого состояния»
+
+3. **Обработка шаблонов:** используются шаблоны Go из `scripts/templates/`:
    - `jetstream-errors.md.tmpl`
    - `system-errors.md.tmpl`
    - `headers.md.tmpl`
 
-4. **Generation**: Writes markdown files to the staging directory passed via `-docs-out` (a per-version `reference_versioned_docs/version-<ver>.staging` tree under `generate-version.js` control).
+4. **Генерация:** файлы Markdown записываются в промежуточный каталог, переданный через `-docs-out`: дерево `reference_versioned_docs/version-<ver>.staging`, которым управляет `generate-version.js`.
 
-### Templates
+<a id="templates"></a>
 
-Templates are located in `scripts/templates/` and use Go's `text/template` syntax.
+### Шаблоны
 
-Template structure:
-- **Generated sections**: Tables populated from parsed source code
-- **Manual sections**: Static content like introductions, examples, and notes
-- **Preserved content**: Templates maintain manual edits in non-generated sections
+Шаблоны находятся в `scripts/templates/` и используют синтаксис Go `text/template`.
 
-### Versioning
+Структура шаблонов:
+- **Генерируемые разделы:** таблицы, заполняемые данными из исходного кода
+- **Ручные разделы:** статический текст, например введения, примеры и примечания
+- **Сохраняемый контент:** шаблоны сохраняют ручные изменения в разделах, которые не генерируются автоматически
 
-Generated per-version trees are committed to git under `reference_versioned_docs/version-<ver>/` + `reference_versioned_sidebars/` + `src/schemas/vendor/v<ver>/`:
+<a id="versioning"></a>
+
+### Версии
+
+Результаты генерации для каждой версии хранятся в git: `reference_versioned_docs/version-<ver>/`, `reference_versioned_sidebars/` и `src/schemas/vendor/v<ver>/`:
 
 ```bash
-# Check if docs are up-to-date after a submodule bump
+# Проверить актуальность документации после обновления подмодуля
 git status reference_versioned_docs/ reference_versioned_sidebars/ src/schemas/vendor/
 ```
 
-**Important**: The vendored JSON schemas in `src/schemas/vendor/v<ver>/` **ARE committed** to git:
-- They are derived from `nats-server` + `jsm.go` source at the tags pinned in `scripts/doc-versions.json`
-- Both repos are included as git submodules for reference and regeneration
-- To regenerate: `npm run generate-docs:all-versions` (requires Go, Node, and both submodules)
-- Regenerate whenever a version's pinned tag in `doc-versions.json` changes
+**Важно:** копии JSON-схем в `src/schemas/vendor/v<ver>/` **добавляются в git**:
+- Они получены из исходного кода `nats-server` и `jsm.go` по тегам, закреплённым в `scripts/doc-versions.json`.
+- Оба репозитория подключены как подмодули git для справки и повторной генерации.
+- Для повторной генерации: `npm run generate-docs:all-versions`; требуются Go, Node и оба подмодуля.
+- Повторяйте генерацию после каждого изменения закреплённого тега в `doc-versions.json`.
 
-### Header Generation Details
+<a id="header-generation-details"></a>
 
-The header generation process scans multiple nats-server source files:
+### Подробности генерации заголовков
 
-- `server/stream.go` - Core JetStream headers (Message ID, Rollup, TTL, etc.)
-- `server/consumer.go` - Pull request headers (Pending Messages, Pending Bytes, Pin ID)
-- `server/jetstream_api.go` - API headers (Required API Level)
-- `server/msgtrace.go` - Message tracing headers (Trace Dest, Trace Hop, etc.)
-- `server/accounts.go` - Account headers (Request Info)
-- `server/auth_callout.go` - Authentication headers (Server Xkey)
+Генератор заголовков просматривает несколько исходных файлов nats-server:
 
-Headers are organized into sections (H2) and subsections (H3):
+- `server/stream.go` — основные заголовки JetStream: идентификатор сообщения, свёртка, TTL и другие
+- `server/consumer.go` — заголовки pull-запросов: ожидающие сообщения, байты, идентификатор закрепления
+- `server/jetstream_api.go` — заголовки API: требуемый уровень API
+- `server/msgtrace.go` — заголовки трассировки сообщений: назначение, переход и другие
+- `server/accounts.go` — заголовки учётных записей: сведения о запросе
+- `server/auth_callout.go` — заголовки аутентификации: Xkey сервера
 
-**Sections with subsections:**
-- **Message Publishing Headers** (8 subsections):
-  - Message Identification and Deduplication
-  - Expected State Headers
-  - Message Rollup
-  - Message Size
-  - Message TTL
-  - Counter Operations
-  - Batch Operations
-  - Scheduled Messages
+Заголовки организованы в разделы H2 и подразделы H3:
 
-- **Message Delivery Headers** (5 subsections):
-  - Stream Information
-  - Consumer Information
-  - Pull Request Headers
-  - Source and Mirror Information
-  - Response Type
+**Разделы с подразделами:**
+- **Заголовки публикации сообщений** (8 подразделов):
+  - Идентификация сообщений и дедупликация
+  - Заголовки ожидаемого состояния
+  - Свёртка сообщений
+  - Размер сообщения
+  - TTL сообщения
+  - Операции со счётчиками
+  - Пакетные операции
+  - Отложенные сообщения
 
-**Sections without subsections:**
-- API Headers
-- Marker Headers
-- Authentication and Authorization Headers
-- Message Tracing Headers
-- Key-Value Store Headers
+- **Заголовки доставки сообщений** (5 подразделов):
+  - Сведения о потоке
+  - Сведения о потребителе
+  - Заголовки pull-запросов
+  - Сведения об источнике и зеркале
+  - Тип ответа
 
-The parser supports both `const` and `var` declarations, enabling it to find headers like `KV-Operation` that are defined as variables rather than constants.
+**Разделы без подразделов:**
+- Заголовки API
+- Заголовки маркеров
+- Заголовки аутентификации и авторизации
+- Заголовки трассировки сообщений
+- Заголовки хранилища ключей и значений
 
-### System Error Generation Details
+Парсер поддерживает объявления `const` и `var`, поэтому находит и такие заголовки, как `KV-Operation`, объявленные переменными.
 
-System errors are extracted from two sources:
+<a id="system-error-generation-details"></a>
 
-1. **Go error variables** in `server/errors.go` (regex-based extraction)
-2. **Manual error definitions** in `generate-docs.go` for errors that are sent as string literals
+### Подробности генерации системных ошибок
 
-Manual errors include categories:
-- **TLS and Security Errors**: Secure Connection - TLS Required, TLS Handshake Error, Certificate Not Pinned
-- **Route-Specific Errors**: Duplicate Route, Route Authorization Violation, Cluster Name Conflicts, Minimum Version Required
-- **Slow Consumer and Flow Control**: Slow Consumer, Write Deadline Exceeded
-- **Configuration and Resolver Errors**: Account Resolver Missing, System Account Not Configured, Credentials Revoked
+Системные ошибки извлекаются из двух источников:
 
-To add new manual errors, update `getManualSystemErrors()` in `generate-docs.go`:
+1. **Переменные ошибок Go** в `server/errors.go`, извлекаемые регулярными выражениями
+2. **Ручные определения ошибок** в `generate-docs.go` для ошибок, отправляемых строковыми литералами
+
+Ручные ошибки включают следующие категории:
+- **Ошибки TLS и безопасности:** требуется защищённое соединение TLS, ошибка согласования TLS, сертификат не закреплён
+- **Ошибки маршрутов:** дублирующийся маршрут, нарушение авторизации маршрута, конфликт имён кластера, требование минимальной версии
+- **Медленные потребители и управление потоком:** медленный потребитель, превышен срок записи
+- **Ошибки конфигурации и resolver:** отсутствует resolver учётных записей, не настроена системная учётная запись, учётные данные отозваны
+
+Чтобы добавить ручную ошибку, измените `getManualSystemErrors()` в `generate-docs.go`:
 
 ```go
 {
@@ -169,11 +193,15 @@ To add new manual errors, update `getManualSystemErrors()` in `generate-docs.go`
 }
 ```
 
-### Customizing
+<a id="customizing"></a>
 
-#### Add New Error Categories
+### Настройка
 
-Edit `categorizeJSErrors()` or `parseSystemErrors()` in `generate-docs.go`:
+<a id="add-new-error-categories"></a>
+
+#### Добавление категорий ошибок
+
+Измените `categorizeJSErrors()` или `parseSystemErrors()` в `generate-docs.go`:
 
 ```go
 categories := []struct {
@@ -185,35 +213,43 @@ categories := []struct {
 }
 ```
 
-#### Modify Templates
+<a id="modify-templates"></a>
 
-Edit files in `scripts/templates/`:
-- Change structure
-- Add new sections
-- Update examples
+#### Изменение шаблонов
 
-Then regenerate:
+Отредактируйте файлы в `scripts/templates/`:
+- Измените структуру
+- Добавьте разделы
+- Обновите примеры
+
+Затем повторите генерацию:
 ```bash
 npm run generate-docs:all-versions
 ```
 
-#### Add New Generated Files
+<a id="add-new-generated-files"></a>
 
-1. Create a new template in `scripts/templates/`
-2. Add parsing logic to `generate-docs.go`
-3. Add generation call in `generateDocs()` function
-4. Update this README
+#### Добавление генерируемых файлов
+
+1. Создайте шаблон в `scripts/templates/`.
+2. Добавьте логику разбора в `generate-docs.go`.
+3. Добавьте вызов генерации в функцию `generateDocs()`.
+4. Обновите этот README.
+
+<a id="fetch-examplesjs"></a>
 
 ## fetch-examples.js
 
-Fetches code examples from GitHub repositories (nats.go, nats.rs, etc.) for use in documentation.
+Загружает примеры кода из репозиториев GitHub (nats.go, nats.rs и других) для использования в документации.
 
-See [CLI examples README](../static/examples/snippets/cli/README.md) for CLI example workflow.
+Порядок работы с примерами CLI описан в [README примеров CLI](../static/examples/snippets/cli/README.md).
 
-## Future Enhancements
+<a id="future-enhancements"></a>
 
-- [ ] Add generation timestamp to file headers
-- [ ] Version comparison (detect nats-server updates)
-- [ ] CI integration to check docs are current
-- [ ] Generate advisory/monitor docs (currently manual)
-- [ ] Support for multiple nats-server versions
+## Будущие улучшения
+
+- [ ] Добавление времени генерации в заголовки файлов
+- [ ] Сравнение версий для обнаружения обновлений nats-server
+- [ ] Интеграция с CI для проверки актуальности документации
+- [ ] Генерация документации уведомлений и мониторинга (сейчас ведётся вручную)
+- [ ] Поддержка нескольких версий nats-server

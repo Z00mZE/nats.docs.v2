@@ -1,11 +1,11 @@
-# max_inflight_total
+# max_inflight_total {#max_inflight_total}
 
 <Reloadable state="reloadable" note="Enforced when a batch publish starts, so a batch already in progress is unaffected." />
-Batches allowed in flight across the server.
+Допустимое число одновременно выполняемых пакетов на сервере.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

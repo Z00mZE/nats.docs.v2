@@ -1,177 +1,86 @@
 ---
 id: stream-backup-restore
-title: "Stream backup and restore"
+title: "Резервное копирование и восстановление потока"
 sidebar_position: 2
-description: Take a point-in-time snapshot of the ORDERS stream, restore it byte-identical, and verify the counts match
+description: "Создание снимка потока ORDERS на определённый момент, точное восстановление и проверка числа сообщений"
 ---
 
-# Stream backup and restore
+# Резервное копирование и восстановление потока {#stream-backup-and-restore}
 
-The `ORDERS` stream holds every order Acme has ever taken. Replication
-keeps it available when a node dies, but it doesn't protect you from a
-mistake: an accidental `nats stream purge`, a bad migration, or a logic bug
-that deletes the wrong messages. To recover from those you need a copy
-the cluster can't touch — a point in time you can return to.
+Поток `ORDERS` хранит все заказы Acme. Репликация сохраняет доступность при отказе узла, но не защищает от ошибки: случайного `nats stream purge`, неудачной миграции или удаления не тех сообщений приложением. Для восстановления нужна копия, которую кластер не может изменить, — момент, к которому можно вернуться.
 
-This page makes that copy and proves it works. It introduces two
-operations and nothing else: taking a snapshot of `ORDERS`, and restoring the
-stream from one.
+Здесь мы создадим такую копию и проверим её пригодность. Рассмотрим две операции: снимок `ORDERS` и восстановление потока из снимка.
 
-## A snapshot is a point-in-time copy
+## Снимок — копия на определённый момент {#a-snapshot-is-a-point-in-time-copy}
 
-A **snapshot** is a complete copy of a stream as it exists at one
-instant: every message, the stream's configuration, and, if you ask for
-it, the state of its consumers. The server takes the snapshot and
-streams it to you in chunks; the CLI writes those chunks to a directory.
+**Снимок** — полная копия потока в один момент времени: все сообщения, конфигурация и при необходимости состояние потребителей. Сервер создаёт снимок и передаёт его фрагментами; CLI записывает их в каталог.
 
-That directory holds two things. A `backup.json` file records the
-stream's configuration and state: its subjects, retention, limits, and
-sequence range. Alongside it is the messages themselves, compressed with
-S2. Together they're everything you need to recreate the stream from
-scratch.
+Каталог содержит две части. Файл `backup.json` описывает конфигурацию и состояние: темы, политику хранения, ограничения и диапазон порядковых номеров. Рядом находятся сами сообщения, сжатые S2. Вместе они позволяют воссоздать поток с нуля.
 
-The archive comes in two shapes, and which one you get depends on the
-server. NATS 2.15 writes `stream.arc.s2`, an archive format the CLI can
-read and rewrite. Older servers write `stream.tar.s2`, a tarball of the
-stream's on-disk files. Restore accepts either, so backups you already
-have keep working. The backup commands later on this page need the 2.15
-shape.
+Формат архива зависит от сервера. NATS 2.15 записывает `stream.arc.s2`, который CLI умеет читать и преобразовывать. Старые серверы создают `stream.tar.s2` — tar-архив файлов потока на диске. Восстановление принимает оба формата, поэтому прежние копии остаются пригодными. Команды работы с копиями далее требуют формата 2.15.
 
-Take a snapshot of `ORDERS` into a dated, off-site directory:
+Сделайте снимок `ORDERS` в датированный каталог вне основной площадки:
 
 <div class="nats-example" data-type="learn-backup-recovery-stream-backup-restore-backup" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-The directory name carries the date on purpose. A snapshot is a point in
-time, and naming it `2026-06-04` makes that explicit. Tomorrow's snapshot
-goes in `2026-06-05`, and you keep the dated snapshots under
-`./backups/orders/`. We make that automatic later; here it's one
-command.
+Дата в имени выбрана намеренно. Снимок отражает конкретный момент, и `2026-06-04` явно его обозначает. Завтрашняя копия попадёт в `2026-06-05`; все датированные снимки хранятся под `./backups/orders/`. Позже мы автоматизируем процесс, а пока достаточно одной команды.
 
-Consumer state matters more than it looks. By default the snapshot
-records each durable consumer's config and delivery position: the
-**consumer state**. Restore that snapshot and the `shipping` and
-`analytics` consumers come back exactly where they left off, not at the
-start of the stream. Pass `--no-consumers` and the snapshot carries the
-messages but forgets the consumers reading them, so keep the default when
-you back up a production stream.
+Состояние потребителей важнее, чем кажется. По умолчанию снимок записывает конфигурацию и позицию доставки каждого долговременного потребителя — **состояние потребителя**. При восстановлении `shipping` и `analytics` возвращаются к прежним позициям, а не к началу потока. Флаг `--no-consumers` сохраняет сообщения, но исключает потребителей, поэтому для рабочего потока оставляйте поведение по умолчанию.
 
-## How the snapshot streams off the server
+## Как снимок передаётся с сервера {#how-the-snapshot-streams-off-the-server}
 
-A snapshot doesn't arrive as one big download. The server cuts the
-archive into chunks and pushes them to an inbox subject, keeping up to a
-window's worth of unacknowledged chunks in flight at once — 8 MiB by
-default, which is 64 of the default 128 KiB chunks. Each client ack frees
-a slot for the next chunk, and if no ack arrives for about five seconds
-the backup aborts. That windowed backpressure keeps a large stream from
-overwhelming a slow disk or a high-latency link.
+Снимок не скачивается одним большим ответом. Сервер делит архив на фрагменты и отправляет их в тему входящих ответов, поддерживая окно неподтверждённых данных — по умолчанию 8 МиБ, или 64 фрагмента по 128 КиБ. Каждое подтверждение освобождает место для следующего фрагмента. Если подтверждений нет около пяти секунд, копирование прерывается. Такое управление потоком не позволяет большому архиву перегрузить медленный диск или канал с высокой задержкой.
 
 <div class="nats-flow" data-scenario="streamSnapshotAnimated" data-width="600" data-height="350"></div>
 
-The request lands on the snapshot API, the server answers with the
-config and state, and then the message chunks flow to the inbox with an
-ack per chunk until the archive and `backup.json` are written to the
-backup store. The two settings that govern this, chunk size and window
-size, have sensible defaults, and you only change them when the
-defaults time out. We cover them in the [Pitfalls](#pitfalls).
+Запрос приходит в API снимков, сервер отвечает конфигурацией и состоянием, затем передаёт фрагменты в тему ответов с отдельным подтверждением каждого, пока архив и `backup.json` не будут записаны в хранилище копий. Размер фрагмента и окна имеют разумные значения по умолчанию; менять их нужно при тайм-аутах. Это разобрано в [типичных ошибках](#pitfalls).
 
-The full set of snapshot request options is documented in
-[Reference → Snapshot Stream](/reference/jetstream/api/stream/snapshot).
-We only need the behavior here.
+Полный набор параметров запроса описан в [Справочнике → Снимок потока](/reference/jetstream/api/stream/snapshot). Здесь важно поведение.
 
-## Restore rebuilds the stream
+## Восстановление воссоздаёт поток {#restore-rebuilds-the-stream}
 
-A snapshot becomes useful when you turn it back into a stream.
-**Restore** reads a snapshot directory and recreates the stream from it:
-same messages, same sequence numbers, same configuration. The server
-checks the archive's header to tell the two formats apart, so you don't
-have to say which one you have. If the snapshot included consumer state,
-restore brings the consumers back too.
+Снимок становится полезен, когда вы превращаете его обратно в поток. **Восстановление** читает каталог снимка и создаёт поток с теми же сообщениями, порядковыми номерами и конфигурацией. Сервер различает форматы по заголовку архива, поэтому указывать формат не нужно. Если сохранено состояние потребителей, они тоже восстанавливаются.
 
-Restore the directory you just wrote:
+Восстановите только что созданный каталог:
 
 <div class="nats-example" data-type="learn-backup-recovery-stream-backup-restore-restore" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-One rule shapes how you use restore: **the stream name cannot change on
-restore.** The name lives in `backup.json`, and the server rejects a
-restore that would land under a different name. A snapshot of `ORDERS`
-restores as `ORDERS`, never as `ORDERS_COPY`. That keeps a restore
-unambiguous: it rebuilds one stream under its own name rather than forking it
-into a new one. If you
-do need a second copy under a new name, restore to `ORDERS` first and
-then mirror or source it, which
-[Mirrors and sources](/learn/backup-recovery/mirrors-and-sources) covers.
+Важное правило: **имя потока при восстановлении менять нельзя.** Оно хранится в `backup.json`, и сервер отклоняет попытку восстановить под другим именем. Снимок `ORDERS` восстанавливается как `ORDERS`, а не `ORDERS_COPY`. Это однозначное воссоздание прежнего потока. Если нужна вторая копия с новым именем, сначала восстановите `ORDERS`, затем создайте зеркало или поток с источником, как описано на странице [Зеркала и источники](/learn/backup-recovery/mirrors-and-sources).
 
-Restore also expects the stream not to already exist. It recreates the
-stream; it doesn't merge a snapshot into a live one. So a real recovery
-is: confirm the broken stream is gone (or remove it), then restore.
+Кроме того, поток не должен уже существовать. Восстановление создаёт его заново, а не объединяет снимок с работающим потоком. Поэтому порядок такой: убедиться, что повреждённый поток отсутствует, или удалить его, затем восстановить.
 
-## Verify the counts
+## Проверьте показатели {#verify-the-counts}
 
-A restore you didn't check is unverified. The last step is always to read
-the rebuilt stream's state back and confirm it matches the source.
+Непроверенное восстановление остаётся неподтверждённым. Последний шаг — прочитать состояние воссозданного потока и сравнить с исходным.
 
 <div class="nats-example" data-type="learn-backup-recovery-stream-backup-restore-verify-counts" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Look at the `State` block. `Messages` and `Last Sequence` must match the
-stream you snapshotted, and `Active Consumers` shows `shipping` and
-`analytics` back if you used `--consumers`. Matching counts are what prove
-the archive is real; the backup command exiting zero does not prove it on
-its own.
+Посмотрите блок `State`. `Messages` и `Last Sequence` должны совпасть со снимком, а `Active Consumers` — показать вернувшиеся `shipping` и `analytics`, если использован `--consumers`. Совпадение показателей подтверждает пригодность архива; одного нулевого кода завершения резервного копирования недостаточно.
 
-## Read the backup without restoring it
+## Прочитайте копию без восстановления {#read-the-backup-without-restoring-it}
 
-Verifying by restoring means standing up somewhere to restore into. From
-2.15 you don't have to: the archive is a format the CLI understands, so a
-backup directory can be checked offline.
+Проверка восстановлением требует отдельного места для потока. Начиная с 2.15 каталог копии можно проверить автономно: CLI понимает формат архива.
 
 <div class="nats-example" data-type="learn-backup-recovery-stream-backup-restore-validate" data-languages="cli"></div>
 
-`nats backup validate` walks the archive and reports whether it's complete
-and restorable. `nats backup info` prints what's inside — stream name,
-message count, sequence range, consumers — and `--subjects` breaks the
-counts down per subject, which is how you catch a nightly job that has been
-quietly capturing an empty stream.
+`nats backup validate` обходит архив и проверяет полноту и возможность восстановления. `nats backup info` выводит имя потока, число сообщений, диапазон номеров и потребителей. Флаг `--subjects` разбивает количество по темам и помогает заметить ночное задание, которое незаметно копирует пустой поток.
 
-There's also `nats backup edit`, which writes a *new* backup from an
-existing one rather than changing it in place. It filters by subject, time,
-sequence range, header, or payload match, and can renumber the kept
-messages from 1. Its `--obfuscate` flag replaces names, subjects, and
-message bodies with keyed hashes and zeros of the same length, so you can
-send a support case a backup with the same shape as your production data
-but none of its contents. The key file it writes beside the target turns
-the hashes back into real values through `nats backup lookup`.
+Есть и `nats backup edit`: команда создаёт *новую* копию из существующей, не меняя исходную. Можно фильтровать по теме, времени, диапазону номеров, заголовку или содержимому, а оставшиеся сообщения перенумеровать с 1. Флаг `--obfuscate` заменяет имена, темы и тела сообщений хешами с ключом и нулями той же длины. Так в поддержку можно передать копию той же структуры, что рабочие данные, без самих данных. Созданный рядом с результатом файл ключа позволяет восстановить значения хешей через `nats backup lookup`.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Four common pitfalls, each scoped to this page's two operations: snapshot
-and restore.
+Четыре распространённые ошибки относятся к созданию снимка и восстановлению.
 
-**Before 2.15, memory streams cannot be snapshotted.** The older backup
-format copies a stream's on-disk files, so a stream with `Storage: Memory`
-has nothing to copy and the backup fails. NATS 2.15 reads the messages
-themselves rather than the files, which is what lets it back up and restore
-memory streams too. If any server you back up from is older than 2.15,
-treat file storage as a requirement for anything you can't lose, and check
-the storage type before you rely on a snapshot rather than finding out
-during an incident:
+**До 2.15 снимки потоков в памяти невозможны.** Старый формат копирует файлы потока с диска, поэтому для `Storage: Memory` копировать нечего и операция завершается ошибкой. NATS 2.15 читает сами сообщения и поэтому поддерживает копирование и восстановление потоков в памяти. Если хотя бы один исходный сервер старше 2.15, для незаменимых данных требуется файловое хранение. Проверяйте тип хранения заранее:
 
 ```bash
 nats stream info ORDERS | grep Storage
 ```
 
-**The stream name cannot change on restore.** As above, the server
-rejects a restore that would rename the stream with `stream name may not
-be changed during restore`. Restore to the original name. If you need a
-copy under a different name, restore first and then mirror or source it;
-[Mirrors and sources](/learn/backup-recovery/mirrors-and-sources) covers
-that.
+**Имя потока при восстановлении неизменно.** Сервер отклоняет переименование ошибкой `stream name may not
+be changed during restore`. Восстанавливайте исходное имя. Если нужна копия под другим именем, после восстановления создайте зеркало или источник; см. [Зеркала и источники](/learn/backup-recovery/mirrors-and-sources).
 
-**Flow control can time out on slow disks or distant links.** The server
-waits a few seconds for the client to acknowledge each chunk. On a slow
-disk or a high-latency link the acknowledgment can arrive late, and the
-backup aborts with a flow-control timeout (`408 No Flow Response`). The
-fix is to send smaller chunks and a smaller window so each round trip is
-cheaper:
+**На медленных дисках и далёких каналах управление потоком может превысить тайм-аут.** Сервер ждёт подтверждение каждого фрагмента лишь несколько секунд. При задержке копирование прерывается с `408 No Flow Response`. Уменьшите размер фрагментов и окна, чтобы сократить стоимость каждого обмена:
 
 ```bash
 # Smaller chunks and a smaller window survive a slow or distant link.
@@ -179,44 +88,27 @@ nats backup stream ORDERS ./backups/orders/2026-06-04 \
   --consumers --chunk-size 64k --window-size 1m
 ```
 
-**`--no-consumers` silently drops consumer state.** Consumer state is
-included by default; pass `--no-consumers` and the snapshot carries
-messages only. The restore rebuilds the stream with no consumers, and
-nothing warns you until `shipping` is missing in production. Keep the
-default unless you plan to recreate every consumer by hand.
+**`--no-consumers` исключает состояние потребителей.** По умолчанию оно включено; с этим флагом остаются только сообщения. Поток восстановится без потребителей, и проблема обнаружится лишь при отсутствии `shipping`. Оставляйте значение по умолчанию, если не планируете вручную пересоздавать всех потребителей.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- A dated, off-site snapshot of `ORDERS` under `./backups/orders/`:
-  `backup.json` plus the compressed archive.
-- A restore procedure that rebuilds the stream byte-identical, under its
-  original name, with its consumers intact.
-- A verification step that proves the restore by matching message counts.
+- Датированный снимок `ORDERS` вне основной площадки под `./backups/orders/`: `backup.json` и сжатый архив.
+- Процедура точного восстановления потока под прежним именем с сохранёнными потребителями.
+- Проверка восстановления сравнением количества сообщений.
 
-This is your recovery point: the instant you can return to after an
-accidental delete or a logic error. On its own, though, it won't protect
-you from losing the whole site. For that you need a live copy somewhere
-else.
+Это ваша точка восстановления — момент, к которому можно вернуться после случайного удаления или ошибки приложения. Но один снимок не обеспечивает быстрое восстановление при потере всей площадки. Для этого нужна живая копия в другом месте.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page stands up that live copy. A **mirror** of `ORDERS` at a
-second site keeps a continuously updated copy you can fail over to, and
-it distinguishes a snapshot (your recovery point) from a
-mirror (your recovery time).
+Следующая страница создаёт такую копию: **зеркало** `ORDERS` на второй площадке постоянно обновляется и готово к переключению. Мы разделим назначение снимка — точку восстановления — и зеркала — время восстановления.
 
-Continue to
-[Mirrors and sources](/learn/backup-recovery/mirrors-and-sources).
+Перейдите к [зеркалам и источникам](/learn/backup-recovery/mirrors-and-sources).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Snapshot Stream](/reference/jetstream/api/stream/snapshot)
-  — every snapshot request option and its valid range.
-- [Reference → Restore Stream](/reference/jetstream/api/stream/restore)
-  — the restore request schema.
-- [Reference → Snapshot Create Advisory](/reference/jetstream/advisory/snapshot-create)
-  — the event the server emits when a snapshot starts, for backup alerting.
-- [Upgrade to 2.15](/release-notes/upgrade-to-2.15) — the backup format
-  change and what else moved in the same release.
+- [Справочник → Снимок потока](/reference/jetstream/api/stream/snapshot) — все параметры запроса и допустимые диапазоны.
+- [Справочник → Восстановление потока](/reference/jetstream/api/stream/restore) — схема запроса восстановления.
+- [Справочник → Уведомление о создании снимка](/reference/jetstream/advisory/snapshot-create) — событие начала снимка для оповещений о копировании.
+- [Обновление до 2.15](/release-notes/upgrade-to-2.15) — смена формата копий и другие изменения выпуска.

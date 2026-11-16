@@ -1,18 +1,18 @@
-# Message Terminated
+# Доставка сообщения прекращена {#message-terminated}
 
-Message terminated.
+Доставка сообщения прекращена.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import terminated from '@site/src/schemas/vendor/v2.12/jsm/jetstream/advisory/v1/terminated.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.CONSUMER.MSG_TERMINATED.{stream}.{consumer}`
 
-Where:
-- `{stream}` is the stream name
-- `{consumer}` is the consumer name
+Где:
+- `{stream}` — имя потока
+- `{consumer}` — имя потребителя
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={terminated} />

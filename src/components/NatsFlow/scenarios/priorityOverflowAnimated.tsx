@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // priorityOverflowAnimated
@@ -54,10 +55,7 @@ function PriorityOverflowAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Overflow.</strong> us-east pulls with no threshold and
-                always drains <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>ORDERS</span>;
-                us-west pulls with <span style={{ color: AMBER, fontWeight: 600 }}>min_pending</span> and
-                is served only while the backlog is above it.
+                <strong>Переполнение.</strong> us-east выполняет pull без порога и всегда обрабатывает <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>ORDERS</span>; us-west выполняет pull с <span style={{ color: AMBER, fontWeight: 600 }}>min_pending</span> и обслуживается, только пока очередь превышает этот порог.
             </div>
 
             <div
@@ -91,15 +89,15 @@ function PriorityOverflowAnimatedInner() {
                         }}
                     >
                         <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "monospace", color: over ? AMBER : STREAM_BLUE }}>
-                            {backlog.toLocaleString()}
+                            {localizeDiagramContent(backlog.toLocaleString())}
                         </div>
-                        <div style={{ fontSize: 10, color: "#6b7280" }}>pending</div>
+                        <div style={{ fontSize: 10, color: "#6b7280" }}>ожидает</div>
                     </div>
                 </div>
 
                 {/* fan to the two workers */}
                 <svg width={FAN_W} height={COL_H} style={{ flex: "none", overflow: "visible" }}>
-                    {workers.map((w, i) => (
+                    {localizeDiagramContent(workers.map((w, i) => (
                         <line
                             key={i}
                             x1={0}
@@ -111,12 +109,12 @@ function PriorityOverflowAnimatedInner() {
                             strokeDasharray={w.active ? undefined : "4 4"}
                             style={{ transition: "stroke 0.3s, stroke-width 0.3s" }}
                         />
-                    ))}
+                    )))}
                 </svg>
 
                 {/* workers */}
                 <div style={{ display: "flex", flexDirection: "column", gap: WBOX_GAP }}>
-                    {workers.map((w, i) => (
+                    {localizeDiagramContent(workers.map((w, i) => (
                         <div
                             key={i}
                             style={{
@@ -135,13 +133,13 @@ function PriorityOverflowAnimatedInner() {
                             }}
                         >
                             <div style={{ fontSize: 12, fontWeight: 700, color: w.active ? CONSUMER_GREEN : WORKER_NAVY }}>
-                                {w.label}
+                                {localizeDiagramContent(w.label)}
                             </div>
                             <div style={{ fontSize: 10, fontFamily: "monospace", color: w.active ? CONSUMER_GREEN : IDLE_GREY, marginTop: 1 }}>
-                                {w.sub} · {w.active ? "pulling" : "waiting"}
+                                {localizeDiagramContent(w.sub)} · {localizeDiagramContent(w.active ? "pulling" : "waiting")}
                             </div>
                         </div>
-                    ))}
+                    )))}
                 </div>
             </div>
 
@@ -164,7 +162,7 @@ function PriorityOverflowAnimatedInner() {
                 </div>
             </div>
 
-            <div style={{ marginTop: 24, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 24, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

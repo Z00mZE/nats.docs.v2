@@ -1,14 +1,12 @@
-# write_timeout
+# write_timeout {#write_timeout}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-What the server does when a connection misses its
-`write_deadline`: `close` drops it, `retry` keeps trying,
-`default` uses the built-in behaviour.
+Действие сервера при превышении `write_deadline` соединения: `close` закрывает его, `retry` продолжает попытки, `default` использует встроенное поведение.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `default`, `close`, `retry` |

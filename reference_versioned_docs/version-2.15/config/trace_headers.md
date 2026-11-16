@@ -1,11 +1,11 @@
-# trace_headers
+# trace_headers {#trace_headers}
 
 <Reloadable state="reloadable" />
-Trace message headers. Also enables `trace`.
+Трассировать заголовки сообщений. Также включает `trace`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

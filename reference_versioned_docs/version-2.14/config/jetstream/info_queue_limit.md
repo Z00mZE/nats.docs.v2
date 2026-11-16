@@ -1,12 +1,12 @@
-# info_queue_limit
+# info_queue_limit {#info_queue_limit}
 
 <Since version="2.14" />
 <Reloadable state="not-reloadable" />
-Queued stream-info requests allowed before new ones are rejected.
+Допустимое число запросов информации о потоке в очереди до начала отклонения новых.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

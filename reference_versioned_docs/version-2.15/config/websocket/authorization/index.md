@@ -1,13 +1,13 @@
-# authorization
+# authorization {#authorization}
 
 <Aliases aliases="authentication" />
 <Reloadable state="not-reloadable" />
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`username`](./username.md) | Specifies a global user name that clients can use to authenticate the server (requires `password`, exclusive of `token`). | `string` | - | No |
-| [`password`](./password.md) | Specifies a global password that clients can use to authenticate the server (requires `user`, exclusive of `token`). | `string` | - | No |
-| [`token`](./token.md) | Specifies a global token that clients can use to authenticate with the server (exclusive of `user` and `password`). | `string` | - | No |
-| [`timeout`](./timeout.md) | Maximum number of seconds to wait for a client to authenticate. | `float` | `1` | No |
+| [`username`](./username.md) | Задаёт глобальное имя пользователя для аутентификации клиентов на сервере (требует `password`, не используется одновременно с `token`). | `string` | - | Нет |
+| [`password`](./password.md) | Задаёт глобальный пароль для аутентификации клиентов на сервере (требует `user`, не используется одновременно с `token`). | `string` | - | Нет |
+| [`token`](./token.md) | Задаёт глобальный токен для аутентификации клиентов на сервере (не используется одновременно с `user` и `password`). | `string` | - | Нет |
+| [`timeout`](./timeout.md) | Максимальное время ожидания аутентификации клиента в секундах. | `float` | `1` | Нет |

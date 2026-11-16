@@ -1,16 +1,15 @@
-# tpm
+# tpm {#tpm}
 
 <Reloadable state="not-reloadable" />
-Seal the filestore encryption key in the machine's TPM, so it
-cannot be read off disk.
+Запечатать ключ шифрования файлового хранилища в TPM машины, чтобы его нельзя было прочитать с диска.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`keys_file`](./keys_file.md) | File the TPM-sealed key is stored in. | `string` | - | No |
-| [`encryption_password`](./encryption_password.md) | Password protecting the sealed key. | `string` | - | No |
-| [`srk_password`](./srk_password.md) | Password for the TPM storage root key. | `string` | - | No |
-| [`pcr`](./pcr.md) | Platform Configuration Register the key is sealed against, so it only unseals on an unchanged boot state. | `integer` | - | No |
-| [`cipher`](./cipher.md) | Cipher used for the filestore once the key is unsealed. | `string` | - | No |
+| [`keys_file`](./keys_file.md) | Файл, в котором хранится ключ, запечатанный TPM. | `string` | - | Нет |
+| [`encryption_password`](./encryption_password.md) | Пароль защиты запечатанного ключа. | `string` | - | Нет |
+| [`srk_password`](./srk_password.md) | Пароль корневого ключа хранения TPM. | `string` | - | Нет |
+| [`pcr`](./pcr.md) | Регистр конфигурации платформы, к которому привязан запечатанный ключ: раскрыть его можно только при неизменном состоянии загрузки. | `integer` | - | Нет |
+| [`cipher`](./cipher.md) | Шифр файлового хранилища после раскрытия ключа. | `string` | - | Нет |

@@ -1,12 +1,12 @@
-# store_dir
+# store_dir {#store_dir}
 
 <Aliases aliases="storedir" />
 <Reloadable state="reloadable" note="Applied only while JetStream is not yet enabled. Changing the store directory on a server already running JetStream fails the reload." />
-Directory to use for file-based JetStream storage.
+Каталог файлового хранилища JetStream.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

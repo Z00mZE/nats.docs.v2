@@ -1,14 +1,14 @@
-# API Audit
+# Аудит API {#api-audit}
 
-JetStream API audit events.
+События аудита API JetStream.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import apiAudit from '@site/src/schemas/vendor/v2.14/jsm/jetstream/advisory/v1/api_audit.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.API`
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={apiAudit} />

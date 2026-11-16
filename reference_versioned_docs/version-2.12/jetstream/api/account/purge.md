@@ -1,14 +1,14 @@
-# Account Purge
+# Очистка учётной записи {#account-purge}
 
-Purges all data for an account.
+Очистка всех данных учётной записи.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import accountPurgeResponse from '@site/src/schemas/vendor/v2.12/jsm/jetstream/api/v1/account_purge_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.ACCOUNT.PURGE`
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={accountPurgeResponse} />

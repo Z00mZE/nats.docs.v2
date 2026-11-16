@@ -1,27 +1,27 @@
 ---
-title: Subjects
-description: Understanding NATS subject-based messaging and wildcards
+title: "Темы"
+description: "Обмен сообщениями по темам и подстановочные символы в NATS"
 ---
 
 import { WildcardComparison } from '@site/src/components/NatsFlow';
 
-# Subjects
+# Темы {#subjects}
 
-NATS implements a subject-based messaging system where publishers and subscribers communicate through named channels called subjects. This provides a location-transparent, interest-based communication pattern that automatically routes messages across distributed NATS servers.
+В NATS издатели и подписчики взаимодействуют через именованные каналы — темы (subjects). Такой обмен основан на интересе к данным и не зависит от расположения участников: сообщения автоматически маршрутизируются между распределёнными серверами NATS.
 
-For a runnable, step-by-step treatment, see the [Subjects and wildcards in the Core NATS deep dive](/learn/core-nats/subjects-and-wildcards).
+Пошаговое практическое руководство см. в главе [Темы и подстановочные символы углублённого курса Core NATS](/learn/core-nats/subjects-and-wildcards).
 
-## What is a Subject?
+## Что такое тема? {#what-is-a-subject}
 
-A subject is a string of characters that forms a name which publishers and subscribers use to find each other. It acts as the address for message routing within NATS. Subjects are case-sensitive and can contain any UTF-8 characters except whitespace, tabs and line breaks. It's a good practice to use alphanumeric characters along with `-` (dash) and `_` (underscore) for readability.
+Тема — строка символов, образующая имя, по которому издатели и подписчики находят друг друга. Она служит адресом для маршрутизации сообщений внутри NATS. Имена тем чувствительны к регистру и могут содержать любые символы UTF-8, кроме пробелов, табуляций и переводов строк. Для удобства чтения рекомендуется использовать буквы и цифры вместе с `-` (дефисом) и `_` (подчёркиванием).
 
 <div class="nats-flow" data-scenario="publishSubscribe" data-width="600" data-height="350"></div>
 
-In the animation above, `events.data` is the subject - it's the named channel that connects the publisher to all subscribers without any direct addressing.
+На анимации выше `events.data` — тема: именованный канал, связывающий издателя со всеми подписчиками без прямой адресации.
 
-## Subject Hierarchies
+## Иерархии тем {#subject-hierarchies}
 
-The `.` (dot) character creates a subject hierarchy, enabling logical grouping of related subjects. This hierarchical namespace helps organize your messaging architecture:
+Символ `.` (точка) создаёт иерархию тем, позволяя логически группировать связанные темы. Такое иерархическое пространство имён помогает организовать архитектуру обмена сообщениями:
 
 ```
 orders.retail.placed
@@ -32,33 +32,33 @@ orders.wholesale.shipped
 orders.wholesale.returned
 ```
 
-## Wildcards
+## Подстановочные символы {#wildcards}
 
-NATS provides two wildcards for flexible subscription patterns. While publishers always send to a fully specified subject, subscribers can use wildcards to receive messages from multiple subjects.
+NATS предоставляет два подстановочных символа для гибких шаблонов подписки. Издатели всегда отправляют сообщения в полностью заданную тему, а подписчики могут использовать подстановочные символы для получения сообщений из нескольких тем.
 
 <div class="nats-flow" data-scenario="subjectsWildcardAnimated" data-width="700" data-height="450"></div>
 
-The subscriber with pattern `orders.retail.*` receives messages from matching subjects (green and blue paths) but not from non-matching subjects (red path). The `*` wildcard matches exactly one token.
+Подписчик с шаблоном `orders.retail.*` получает сообщения из подходящих тем (зелёные и синие линии), но не из остальных (красная линия). Символ `*` соответствует ровно одному сегменту имени.
 
-### Single Token Wildcard (`*`)
+### Подстановка одного сегмента (`*`) {#single-token-wildcard-}
 
-The `*` wildcard matches exactly one token. For example:
+Символ `*` соответствует ровно одному сегменту. Например:
 
-- `orders.retail.*` matches:
+- `orders.retail.*` соответствует:
   - `orders.retail.placed`
   - `orders.retail.shipped`
   - `orders.retail.returned`
 
-- `orders.*.placed` matches:
+- `orders.*.placed` соответствует:
   - `orders.retail.placed`
   - `orders.wholesale.placed`
 
 <div class="nats-example" data-type="subjects-single-wildcard" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-### Multi-Token Wildcard (`>`)
+### Подстановка нескольких сегментов (`>`) {#multi-token-wildcard-}
 
-The `>` wildcard matches one or more tokens and can only appear at the end of a subject.
-If your domain is like this:
+Символ `>` соответствует одному или нескольким сегментам и может находиться только в конце темы.
+Пусть пространство имён выглядит так:
 
 ```
 sensor.alarm.smoke                   # unqualified
@@ -67,114 +67,114 @@ sensor.alarm.water
 sensor.alarm.water.critical
 ```
 
-The `>` wildcard matches one or more tokens and can only appear at the end of a subject. 
-For example, `sensor.>` matches all sensor subjects
+Символ `>` соответствует одному или нескольким сегментам и может находиться только в конце темы.
+Например, `sensor.>` соответствует всем темам датчиков.
 
 <div class="nats-example" data-type="subjects-multi-wildcard" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-### Wildcard Comparison
+### Сравнение подстановочных символов {#wildcard-comparison}
 
-You can combine wildcards for more complex patterns and compare how `*` and `>` wildcards behave differently:
+Подстановочные символы можно сочетать, создавая более сложные шаблоны. Сравните поведение `*` и `>`:
 
 <WildcardComparison width={800} height={500} />
 
-The visualization demonstrates:
-- **Single token wildcard** `*`: Matches exactly one token, as in `sensor.alarm.*` and `sensor.*.*.critical`
-- **Multi-token wildcard** `>`: Matches one or more tokens, as in `sensor.>`
+На визуализации показаны:
+- **Подстановка одного сегмента** `*`: соответствует ровно одному сегменту, как в `sensor.alarm.*` и `sensor.*.*.critical`
+- **Подстановка нескольких сегментов** `>`: соответствует одному или нескольким сегментам, как в `sensor.>`
 
-## Subject Naming Conventions
+## Правила именования тем {#subject-naming-conventions}
 
-### Recommended Characters
+### Рекомендуемые символы {#recommended-characters}
 
-- **Alphanumeric**: `a-z`, `A-Z`, `0-9`
-- **Special**: `-` (dash) and `_` (underscore)
-- **Delimiter**: `.` (dot) for hierarchy
+- **Буквы и цифры**: `a-z`, `A-Z`, `0-9`
+- **Специальные символы**: `-` (дефис) и `_` (подчёркивание)
+- **Разделитель**: `.` (точка) для иерархии
 
-### Reserved Characters
+### Зарезервированные символы {#reserved-characters}
 
-- `.` (dot) - Used for hierarchy, cannot be part of a token
-- `*` (asterisk) - Wildcard, cannot be in subject names
-- `>` (greater than) - Wildcard, cannot be in subject names
-- Whitespace - Not allowed in subjects
+- `.` (точка) — разделяет уровни иерархии и не может входить в сегмент
+- `*` (звёздочка) — подстановочный символ, недопустимый в обычных именах тем
+- `>` (знак «больше») — подстановочный символ, недопустимый в обычных именах тем
+- Пробельные символы — запрещены в темах
 
-### Reserved Prefixes
+### Зарезервированные префиксы {#reserved-prefixes}
 
-Subjects starting with `$` are reserved for system use:
-- `$SYS` - System subjects
-- `$JS` - JetStream API subjects
-- `$KV` - Key-Value store subjects
-- `$O` - Object Store subjects
-- `$SRV` - Service API subjects
-- `_INBOX` - Auto-generated reply subjects
+Темы, начинающиеся с `$`, зарезервированы для системного использования:
+- `$SYS` — системные темы
+- `$JS` — темы API JetStream
+- `$KV` — темы хранилища ключей и значений
+- `$O` — темы объектного хранилища
+- `$SRV` — темы API сервисов
+- `_INBOX` — автоматически создаваемые темы ответов
 
-## Best Practices
+## Рекомендации {#best-practices}
 
-### Subject Hierarchy Design
+### Проектирование иерархии тем {#subject-hierarchy-design}
 
-1. **Start general, get specific**: Use the first tokens for broad categorization
+1. **От общего к частному**: используйте первые сегменты для общих категорий
    ```
    app.region.service.entity.action
    myapp.us-east.users.profile.update
    ```
 
-2. **Keep it reasonable**: Limit to ~16 tokens and under 256 characters total
+2. **Соблюдайте разумные ограничения**: ориентируйтесь примерно на 16 сегментов и общую длину менее 256 символов
 
-3. **Be consistent**: Establish naming conventions early and stick to them
+3. **Будьте последовательны**: заранее установите правила именования и придерживайтесь их
 
-4. **Plan for wildcards**: Design hierarchies that work well with wildcard subscriptions
+4. **Учитывайте подстановочные символы**: проектируйте иерархии так, чтобы с ними было удобно работать через шаблоны подписки
 
-### Performance Considerations
+### Производительность {#performance-considerations}
 
-- **Subjects Interest graph is in-memory and dynamic**: NATS builds a routing table only for subjects with active subscribers, kept entirely in RAM for fast lookups
-- **Subjects are essentially free**: Creating new subjects has virtually no overhead - NATS efficiently handles millions of unique subjects.
-- **Wildcard matching is optimized**: Subscriptions with wildcards (`*` and `>`) use efficient trie-based matching.
+- **Граф интереса к темам динамичен и хранится в памяти**: NATS строит таблицу маршрутизации только для тем с активными подписчиками и держит её целиком в ОЗУ для быстрого поиска
+- **Темы практически бесплатны**: создание новых тем почти не даёт накладных расходов — NATS эффективно обрабатывает миллионы уникальных тем.
+- **Сопоставление шаблонов оптимизировано**: подписки с подстановочными символами (`*` и `>`) используют эффективный поиск по префиксному дереву (trie).
 
-### Security and Filtering
+### Безопасность и фильтрация {#security-and-filtering}
 
-Well-designed subject hierarchies enable:
-- Fine-grained access control per user/account
-- Efficient message filtering in JetStream streams
-- Clean import/export patterns between accounts
-- Logical organization for monitoring and debugging
+Продуманная иерархия тем позволяет:
+- Точно настраивать доступ для каждого пользователя и учётной записи
+- Эффективно фильтровать сообщения в потоках JetStream
+- Организовывать понятные схемы импорта и экспорта между учётными записями
+- Логически упорядочить мониторинг и отладку
 
-## Location Transparency
+## Прозрачность расположения {#location-transparency}
 
-One of NATS' key features is location transparency through subject-based addressing:
+Одна из ключевых возможностей NATS — прозрачность расположения благодаря адресации по темам:
 
-- Subscriptions automatically propagate across the NATS cluster
-- Messages route to all interested subscribers regardless of their location
-- No configuration needed for message routing between servers
-- Publishers and subscribers don't need to know about each other's location
+- Подписки автоматически распространяются по кластеру NATS
+- Сообщения направляются всем заинтересованным подписчикам независимо от их расположения
+- Для маршрутизации сообщений между серверами не нужна дополнительная настройка
+- Издателям и подписчикам не нужно знать, где находятся остальные участники
 
-## Wire Taps and Monitoring
+## Перехват сообщений и мониторинг {#wire-taps-and-monitoring}
 
-The `>` wildcard enables powerful monitoring capabilities:
+Символ `>` предоставляет широкие возможности мониторинга:
 
 <div class="nats-example" data-type="subjects-monitoring" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Related Concepts
+## Связанные понятия {#related-concepts}
 
-- [Publish-Subscribe Basics](./pub-sub-basics.md) - Core messaging patterns
-- [Request-Reply](./request-reply.md) - Synchronous communication using subjects
-- [Queue Groups](./queue-groups.md) - Load balancing with subject subscriptions
+- [Основы публикации и подписки](./pub-sub-basics.md) — базовые шаблоны обмена сообщениями
+- [Запрос-ответ](./request-reply.md) — синхронное взаимодействие с помощью тем
+- [Группы очередей](./queue-groups.md) — балансировка нагрузки при подписке на темы
 
-## Try It Yourself
+## Попробуйте сами {#try-it-yourself}
 
-Experiment with subjects using the NATS CLI:
+Поэкспериментируйте с темами с помощью NATS CLI:
 
 ```bash
-# Terminal 1: Subscribe with wildcards
+# Терминал 1: подпишитесь с подстановочными знаками
 nats sub "demo.>"
 
-# Terminal 2: Publish to various subjects
+# Терминал 2: опубликуйте сообщения в разных темах
 nats pub demo.test "Hello"
 nats pub demo.test.nested "Nested message"
 nats pub demo.another.topic "Another topic"
 ```
 
-Each message published in Terminal 2 will be received by the wildcard subscription in Terminal 1, demonstrating how subject hierarchies and wildcards work together.
+Каждое сообщение, опубликованное во втором терминале, будет получено подпиской с подстановочным символом в первом терминале. Это показывает совместную работу иерархий тем и подстановочных символов.
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Subjects and wildcards in the Core NATS deep dive](/learn/core-nats/subjects-and-wildcards) — runnable, step-by-step walkthrough
-- [Subject-based authorization](/learn/security/authorization) — control access by subject pattern
+- [Темы и подстановочные символы в углублённом курсе Core NATS](/learn/core-nats/subjects-and-wildcards) — пошаговое практическое руководство
+- [Авторизация по темам](/learn/security/authorization) — управление доступом по шаблонам тем

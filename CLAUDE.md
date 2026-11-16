@@ -1,12 +1,18 @@
-# NATS Documentation Style Guide
+<a id="nats-documentation-style-guide"></a>
 
-> AI-focused guide for maintaining NATS documentation consistency.
+# Руководство по стилю документации NATS
 
-## 🔴 MUST Rules (Non-Negotiable)
+> Руководство для ИИ-помощников по поддержанию единого стиля документации NATS.
 
-### Code Example Tabs
+<a id="must-rules-non-negotiable"></a>
 
-**Required structure:**
+## 🔴 Обязательные правила
+
+<a id="code-example-tabs"></a>
+
+### Вкладки примеров кода
+
+**Обязательная структура:**
 ```mdx
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -29,235 +35,255 @@ await nc.publish("hello", "Hello NATS!");
 </Tabs>
 ```
 
-**Rules:**
-1. CLI tab MUST be first with `default` attribute
-2. MUST use `groupId="lang"` for synchronized tabs
-3. MUST use `bash` language for CLI code blocks (not sh/shell/zsh)
-4. MUST import Tabs components at top of MDX files
-5. MUST follow language order: CLI, JavaScript/TypeScript, Go, Python, Java, Rust, C#/.NET
+**Правила:**
+1. Вкладка CLI ОБЯЗАТЕЛЬНО идёт первой и имеет атрибут `default`.
+2. ОБЯЗАТЕЛЬНО используйте `groupId="lang"` для синхронизации вкладок.
+3. Для блоков CLI ОБЯЗАТЕЛЬНО указывайте язык `bash`, а не sh/shell/zsh.
+4. ОБЯЗАТЕЛЬНО импортируйте компоненты Tabs в начале MDX-файла.
+5. ОБЯЗАТЕЛЬНО соблюдайте порядок языков: CLI, JavaScript/TypeScript, Go, Python, Java, Rust, C#/.NET.
 
-### Code Example Workflow
+<a id="code-example-workflow"></a>
 
-**MUST use `nats-example` tags for almost every code snippet:**
+### Работа с примерами кода
+
+**Для почти всех фрагментов кода ОБЯЗАТЕЛЬНО используйте теги `nats-example`:**
 ```mdx
 <div class="nats-example" data-type="basics-publish" data-languages="cli,js,go,python,java,rust,csharp"></div>
 ```
 
-**Only use inline `<Tabs groupId="lang">` when:**
-- The snippet is purely language-specific (e.g., a nats.js-only API)
-- The snippet is purely bash-specific (e.g., server configuration commands)
-- The example is trivial and doesn't warrant entries in client repos
+**Встроенные `<Tabs groupId="lang">` разрешены только в следующих случаях:**
+- Фрагмент относится только к конкретному языку, например API, доступному исключительно в nats.js.
+- Фрагмент относится только к bash, например команды настройки сервера.
+- Пример настолько прост, что отдельные записи в репозиториях клиентов не оправданы.
 
-In all other cases, use `nats-example` tags and add examples to the multi-repo system.
+Во всех остальных случаях используйте теги `nats-example` и добавляйте примеры в систему нескольких репозиториев.
 
-**Adding new examples:**
+**Добавление примеров:**
 
-1. **CLI**: Write in `static/examples/snippets/cli/[page]/[snippet].sh` (this repo)
-   - Example name auto-generated from path: `cli/basics/publish.sh` → `basics-publish`
-   - **IMPORTANT**: CLI examples must be committed to git
-   - Use: `git add static/examples/snippets/cli/[page]/[snippet].sh`
-   - See `static/examples/snippets/cli/README.md` for details
+1. **CLI:** создайте файл `static/examples/snippets/cli/[page]/[snippet].sh` в этом репозитории.
+   - Имя примера выводится из пути: `cli/basics/publish.sh` → `basics-publish`.
+   - **ВАЖНО:** примеры CLI должны быть добавлены в коммит git.
+   - Используйте `git add static/examples/snippets/cli/[page]/[snippet].sh`.
+   - Подробности — в `static/examples/snippets/cli/README.md`.
 
-2. **Go**: Write in your local `nats.go` clone (e.g. `../nats.go-docs`) at `examples/docs/[page]-[snippet]/main.go` (doc-examples branch)
-   - Commit and push to nats-io/nats.go doc-examples branch
-   - **IMPORTANT**: Add entry to `EXAMPLES_CONFIG` in `scripts/fetch-examples.js`:
+2. **Go:** создайте файл `examples/docs/[page]-[snippet]/main.go` в локальном клоне `nats.go`, например `../nats.go-docs`, в ветке doc-examples.
+   - Создайте коммит и отправьте его в ветку doc-examples репозитория nats-io/nats.go.
+   - **ВАЖНО:** добавьте запись в `EXAMPLES_CONFIG` файла `scripts/fetch-examples.js`:
      ```javascript
      "queue-groups-basic": "examples/docs/queue-groups-basic/main.go"
      ```
-   - Fetched during build via `npm run fetch-examples`
+   - Пример загружается при сборке командой `npm run fetch-examples`.
 
-3. **Rust**: Write in your local `nats.rs` clone (e.g. `../nats.rs-docs`) at `async-nats/examples/docs_[page]_[snippet].rs` (doc-examples branch)
-   - Commit and push to nats-io/nats.rs doc-examples branch
-   - **IMPORTANT**: Add entry to `EXAMPLES_CONFIG` in `scripts/fetch-examples.js`:
+3. **Rust:** создайте файл `async-nats/examples/docs_[page]_[snippet].rs` в локальном клоне `nats.rs`, например `../nats.rs-docs`, в ветке doc-examples.
+   - Создайте коммит и отправьте его в ветку doc-examples репозитория nats-io/nats.rs.
+   - **ВАЖНО:** добавьте запись в `EXAMPLES_CONFIG` файла `scripts/fetch-examples.js`:
      ```javascript
      "queue-groups-basic": "async-nats/examples/docs_queue_groups_basic.rs"
      ```
-   - Fetched during build via `npm run fetch-examples`
+   - Пример загружается при сборке командой `npm run fetch-examples`.
 
-4. **Fetch & metadata**: Run `npm run fetch-examples` to:
-   - Pull Go/Rust examples from GitHub (based on EXAMPLES_CONFIG entries)
-   - Auto-scan CLI examples from directory structure
-   - Auto-generate `metadata.json` with all example information
+4. **Загрузка и метаданные:** выполните `npm run fetch-examples`, чтобы:
+   - Загрузить примеры Go/Rust с GitHub по записям EXAMPLES_CONFIG
+   - Автоматически найти примеры CLI по структуре каталогов
+   - Создать `metadata.json` со сведениями обо всех примерах
 
-**Optional markers** (to exclude setup code):
+**Необязательные маркеры** для исключения подготовительного кода:
 ```go
 // NATS-DOC-START
 nc.Publish("subject", []byte("hello"))
 // NATS-DOC-END
 ```
 
-### Links Between Pages
+<a id="links-between-pages"></a>
 
-**MUST link to a page in the same docs folder by its file path, with the extension:**
+### Ссылки между страницами
+
+**На страницу в том же каталоге документации ОБЯЗАТЕЛЬНО ссылайтесь по пути файла с расширением:**
 ```md
 [Watching](./watching.md)
 [Subjects](../subjects.md)
 [Stream API](./stream/index.md)
 ```
 
-**NEVER use a relative URL such as `./watching` or `watching`.** The browser
-resolves a relative URL against the current address. The link then breaks when
-the trailing slash changes: `./watching` on `/learn/key-value` goes to
-`/learn/watching`. Docusaurus resolves a file path at build time, so the link
-works on both addresses.
+**НИКОГДА не используйте относительный URL вида `./watching` или `watching`.** Браузер разрешает его относительно текущего адреса, поэтому ссылка ломается при изменении завершающего слеша: `./watching` на странице `/learn/key-value` ведёт к `/learn/watching`. Docusaurus разрешает путь к файлу при сборке, поэтому такая ссылка работает с обоими вариантами адреса.
 
-For a page in a different docs instance (for example, from `learn/` to the
-reference), use an absolute URL such as `/reference/jetstream/api/stream/create`.
+Для страницы из другого раздела документации, например при переходе из `learn/` в справочник, используйте абсолютный URL вида `/reference/jetstream/api/stream/create`.
 
-## 🟡 SHOULD Rules (Best Practices)
+<a id="should-rules-best-practices"></a>
 
-### Code Examples
-- Include 3+ languages when possible (minimum: CLI, JS, Go)
-- Keep examples focused (under 20 lines)
-- Show complete, runnable code
-- Add comments for complex operations
-- Show expected output when helpful
-- Use realistic names (not foo/bar)
-- Include errors ONLY if they teach the concept
+## 🟡 Рекомендуемые правила
 
-**Decision tree:**
+<a id="code-examples"></a>
+
+### Примеры кода
+- По возможности включайте три языка или больше; минимальный набор: CLI, JS, Go.
+- Сосредоточьте пример на одной задаче и укладывайтесь в 20 строк.
+- Показывайте полный исполняемый код.
+- Комментируйте сложные операции.
+- При необходимости показывайте ожидаемый вывод.
+- Используйте реалистичные имена вместо foo/bar.
+- Включайте ошибки, ТОЛЬКО если они помогают объяснить понятие.
+
+**Дерево решений:**
 ```
 Basic operation (pub/sub/request)? → CLI, JS, Go minimum
 Language-specific feature? → Only relevant languages
 General feature? → All available languages
 ```
 
-### Writing Style
+<a id="writing-style"></a>
 
-Flat and plain. Explain the complex thing in everyday words and stop. The
-authority is the Synadia Content Style Guide (internal document, not in this
-repo — its rules are extracted below and in the writing workflows); its "Sage"
-voice means making complex things simple (Orwell's rules), not performing wit.
+### Стиль изложения
 
-- Active voice, present tense, second person, contractions.
-- State each fact once, directly. No setup, no payoff, no persona.
-- Everyday word over jargon; one technical idea per sentence; define a term
-  before using it.
-- Headings are plain and descriptive; doc page-title H1s use an action verb (p20).
-- Progressive complexity (simple → advanced); link to Reference for exhaustive details.
+Пишите просто и прямо. Объясните сложное обычными словами и остановитесь. Основной источник правил — внутреннее руководство Synadia Content Style Guide, которого нет в этом репозитории; его правила приведены ниже и в рабочих процессах написания текстов. Его голос «Sage» означает объяснять сложное простым языком по правилам Оруэлла.
 
-**Hard bans (the AI-style tics):**
-- "X is not Y. It's Z." / "It does not mean…" as a device — allowed only when the
-  contrast is the genuine technical point, then one plain sentence.
-- Metaphor, simile, or personification you'd commonly see ("surgery", "shouting
-  into the void").
-- Rule-of-three / triads for rhythm; dramatic one-line fragments for effect;
-  evocative or cute headings.
-- Filler ("it's important to note", "simply", "powerful", "leverage", "seamless").
-- Over-bolding — bold a term once, at its definition.
+- Используйте активный залог, настоящее время и обращение к читателю; в английском тексте допустимы сокращённые формы.
+- Излагайте каждый факт один раз и прямо, без вступительных подводок и игры в персонажа.
+- Предпочитайте обычные слова жаргону; одна техническая мысль на предложение; определяйте термин до его использования.
+- Заголовки должны быть простыми и описательными; заголовки страниц H1 должны содержать глагол действия (стр. 20).
+- Повышайте сложность постепенно, от простого к продвинутому; за исчерпывающими подробностями направляйте в справочник.
 
-### Interactive Animations
+**Строго запрещённые стилистические приёмы ИИ:**
+- Риторическое противопоставление «X — это не Y, а Z» или «Это не означает…». Допустимо только тогда, когда само противопоставление является технической сутью, и выражено одним простым предложением.
+- Расхожие метафоры, сравнения и олицетворения, например «хирургическая операция» или «крик в пустоту».
+- Ритмические тройки, драматичные отдельные фразы, образные или игривые заголовки.
+- Слова-паразиты и рекламные формулы: «важно отметить», «просто», «мощный», «задействовать потенциал», «бесшовный».
+- Избыток жирного выделения: выделяйте термин один раз, при определении.
 
-**Use NatsFlow for:**
-- Message flow patterns (pub/sub, request/reply)
-- Timing/sequencing
-- Fan-out, load balancing
-- JetStream operations
+<a id="interactive-animations"></a>
 
-**Don't use NatsFlow for:**
-- API syntax (use code examples)
-- Configuration (use code blocks)
-- Static architecture (use diagrams)
+### Интерактивные анимации
 
-**Usage:**
+**Используйте NatsFlow для:**
+- Схем обмена сообщениями: pub/sub, request/reply
+- Временных диаграмм и последовательностей
+- Рассылки и балансировки нагрузки
+- Операций JetStream
+
+**Не используйте NatsFlow для:**
+- Синтаксиса API — показывайте примеры кода
+- Конфигурации — используйте блоки кода
+- Статической архитектуры — используйте диаграммы
+
+**Использование:**
 ```mdx
 import { NatsFlow, publishSubscribeScenario } from '@site/src/components/NatsFlow';
 
 <NatsFlow scenario={publishSubscribeScenario} />
 ```
 
-Available scenarios: `publishSubscribeScenario`, `requestReplyScenario`, `fanOutScenario`, `queueGroupScenario`
+Доступные сценарии: `publishSubscribeScenario`, `requestReplyScenario`, `fanOutScenario`, `queueGroupScenario`.
 
-## 🟢 MAY Rules (Optional)
+<a id="may-rules-optional"></a>
 
-- Additional language examples beyond core set
-- Debug mode: `<NatsFlow scenario={x} debug={true} />`
-- "Under the Hood" sections revealing mechanisms
-- Language-specific notes in expandable sections
-- Error cases when they teach concepts
-- Links to related concepts
-- Troubleshooting sections
+## 🟢 Необязательные возможности
 
-## ⛔ NEVER Rules
+- Примеры на дополнительных языках сверх основного набора
+- Режим отладки: `<NatsFlow scenario={x} debug={true} />`
+- Разделы «Внутреннее устройство», объясняющие механизмы
+- Примечания для конкретных языков в раскрываемых разделах
+- Ошибочные ситуации, если они помогают обучению
+- Ссылки на связанные понятия
+- Разделы устранения неполадок
 
-- Create documentation without testing examples
-- Use images for code (must be copy-pasteable)
-- Skip language label in TabItem
-- Use relative imports (use `@site/` alias)
-- Introduce advanced concepts before foundations
-- Document every parameter (link to reference instead)
+<a id="never-rules"></a>
+
+## ⛔ Запреты
+
+- Создавать документацию без проверки примеров
+- Заменять код изображениями: код должен допускать копирование
+- Пропускать подпись языка в TabItem
+- Использовать относительные импорты вместо псевдонима `@site/`
+- Вводить сложные понятия раньше основ
+- Описывать каждый параметр вместо ссылки на справочник
 
 ---
 
-## Technical Reference
+<a id="technical-reference"></a>
 
-### Code Examples System
+## Техническая справка
 
-**How it works:**
-1. `scripts/fetch-examples.js` fetches from GitHub repos (nats.go, nats.rs)
-2. Extracts snippets using `NATS-DOC-START/END` markers
-3. Organizes by page/snippet
-4. Generates metadata.json
+<a id="code-examples-system"></a>
 
-**Output:** `static/examples/snippets/` (gitignored, regenerated on build)
+### Система примеров кода
 
-### NatsFlow Props
+**Как это работает:**
+1. `scripts/fetch-examples.js` загружает файлы из репозиториев GitHub (nats.go, nats.rs).
+2. Извлекает фрагменты по маркерам `NATS-DOC-START/END`.
+3. Распределяет их по страницам и фрагментам.
+4. Создаёт metadata.json.
+
+**Результат:** `static/examples/snippets/` (исключён из git, создаётся заново при сборке).
+
+<a id="natsflow-props"></a>
+
+### Свойства NatsFlow
 ```typescript
 interface NatsFlowProps {
-  scenario: Scenario;              // Required
-  customButtons?: ControlButton[]; // Optional
-  width?: number;                  // Default: 800
-  height?: number;                 // Default: 400
-  showDefaultControls?: boolean;   // Default: true
-  debug?: boolean;                 // Default: false
+  scenario: Scenario;              // Обязательно
+  customButtons?: ControlButton[]; // Необязательно
+  width?: number;                  // По умолчанию: 800
+  height?: number;                 // По умолчанию: 400
+  showDefaultControls?: boolean;   // По умолчанию: true
+  debug?: boolean;                 // По умолчанию: false
 }
 ```
 
-See `src/components/NatsFlow/README.md` for custom scenarios.
+Создание собственных сценариев описано в `src/components/NatsFlow/README.md`.
 
-### Common Commands
+<a id="common-commands"></a>
+
+### Часто используемые команды
 ```bash
-npm start              # Dev server (localhost:3000)
-npm run build          # Build site
-npm run typecheck      # Type checking
-npm run fetch-examples # Fetch code examples
+npm start              # Сервер разработки (localhost:3000)
+npm run build          # Собрать сайт
+npm run typecheck      # Проверка типов
+npm run fetch-examples # Загрузить примеры кода
 ```
 
-### Architecture
-- **docs/**: Documentation pages (Markdown/MDX) - served at root "/"
-- **src/components/**: React components (use `@site/` imports)
-- **static/**: Static assets
-- **docusaurus.config.ts**: Site configuration
+<a id="architecture"></a>
 
-### Brand Colors
-- Primary Blue: `#27AAE1`
-- Navy: `#375C93`
-- Green: `#34A574`
-- Lime: `#8DC63F`
+### Архитектура
+- **docs/**: страницы документации Markdown/MDX, доступные от корня `/`
+- **src/components/**: компоненты React; используйте импорты `@site/`
+- **static/**: статические ресурсы
+- **docusaurus.config.ts**: конфигурация сайта
 
----
+<a id="brand-colors"></a>
 
-## Pre-Commit Validation
-
-**Technical:**
-- [ ] CLI is default tab with `groupId="lang"`
-- [ ] Tabs imported at top of MDX
-- [ ] Code blocks specify language
-- [ ] Examples tested and working
-- [ ] Links are valid
-- [ ] Page links use file paths (`./page.md`), not relative URLs (`./page`)
-- [ ] `npm run typecheck` passes
-
-**Content:**
-- [ ] Flat, plain tone — no AI-style tics (antithesis-as-device, triads, metaphor, dramatic fragments, evocative headings)
-- [ ] Realistic names in examples
-- [ ] Expected output shown when helpful
-- [ ] Progressive complexity
-- [ ] Errors only if they teach
+### Фирменные цвета
+- Основной голубой: `#27AAE1`
+- Тёмно-синий: `#375C93`
+- Зелёный: `#34A574`
+- Лаймовый: `#8DC63F`
 
 ---
 
-## Formatting Standards
+<a id="pre-commit-validation"></a>
+
+## Проверка перед коммитом
+
+**Техническая проверка:**
+- [ ] CLI — вкладка по умолчанию, используется `groupId="lang"`
+- [ ] Tabs импортированы в начале MDX
+- [ ] Для блоков кода указан язык
+- [ ] Примеры проверены и работают
+- [ ] Ссылки корректны
+- [ ] Ссылки на страницы используют пути файлов (`./page.md`), а не относительные URL (`./page`)
+- [ ] `npm run typecheck` проходит
+
+**Содержание:**
+- [ ] Простой прямой тон без стилистических штампов ИИ: риторических противопоставлений, троек, метафор, драматичных обрывков и образных заголовков
+- [ ] Реалистичные имена в примерах
+- [ ] Ожидаемый вывод показан, где полезен
+- [ ] Сложность растёт постепенно
+- [ ] Ошибки показаны только ради объяснения
+
+---
+
+<a id="formatting-standards"></a>
+
+## Правила форматирования
 
 **Go:** `go fmt`
 **Rust:** `cargo +nightly fmt`

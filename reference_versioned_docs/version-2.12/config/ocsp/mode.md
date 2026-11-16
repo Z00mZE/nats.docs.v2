@@ -1,11 +1,11 @@
-# mode
+# mode {#mode}
 
 <Reloadable state="reloadable" />
-The OCSP stapling mode to adhere to.
+Режим OCSP Stapling.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `always`, `must`, `never`, `auto` |

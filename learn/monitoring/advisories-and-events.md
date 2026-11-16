@@ -1,64 +1,41 @@
 ---
 id: advisories-and-events
-title: "Advisories & events"
+title: "Уведомления и события"
 sidebar_position: 4
-description: Subscribe to JetStream advisories and system events to learn about things you never polled for
+description: "Подписка на уведомления JetStream и системные события, о которых нельзя узнать одним опросом"
 ---
 
-# Advisories & events
+# Уведомления и события {#advisories--events}
 
-The two pages before this one read state on demand. You `curl` the
-monitoring port `:8222` and it answers with the numbers as they are right
-now. That works when you know *which* number to ask about and *when* to
-ask. It does nothing for events that happen between two polls.
+Две предыдущие страницы читали состояние по запросу. Вы обращаетесь через `curl` к порту мониторинга `:8222` и получаете текущие показатели. Это работает, если известно, *что* и *когда* спросить. События между опросами таким способом не обнаружить.
 
-The `shipping` consumer falling behind is a number you can poll for: its
-lag climbs and you see it on the next scrape. But a poison order that
-exhausts its deliveries is a one-time event rather than a level you read.
-By the time your next scrape runs, the moment has passed and the counter
-that ticked is now part of an aggregate. You need NATS to tell you the
-instant it happens.
+Отставание `shipping` — показатель, который можно опрашивать: оно растёт, и очередной сбор это покажет. Но исчерпание попыток доставки проблемного заказа — разовое событие. К следующему опросу момент уже прошёл, а изменившийся счётчик стал частью общей суммы. Нужно, чтобы NATS сообщил о событии сразу.
 
-This page covers the two streams of events NATS publishes for exactly
-that: advisories on the `$JS.EVENT.ADVISORY.*` subjects, and system
-events on the `$SYS.*` subjects. Both arrive as ordinary messages you
-subscribe to. You don't request either one; the server pushes them to you.
+Для этого NATS публикует два вида событий: уведомления в темах `$JS.EVENT.ADVISORY.*` и системные события в `$SYS.*`. Оба приходят как обычные сообщения по подписке. Вы не запрашиваете их: сервер отправляет их сам.
 
-## Advisories
+## Уведомления {#advisories}
 
-An **advisory** is a transient JSON message that JetStream publishes once,
-the moment something noteworthy happens to a stream or a consumer. It's a
-normal NATS message on a well-known subject. You subscribe to it the same
-way you subscribe to any subject.
+**Уведомление** (advisory) — кратковременное JSON-сообщение, которое JetStream публикует один раз в момент значимого события потока или потребителя. Это обычное сообщение NATS в известной теме. Подпишитесь на неё так же, как на любую другую.
 
-Advisories live under one subject tree:
+Уведомления находятся в одном дереве тем:
 
 ```
 $JS.EVENT.ADVISORY.>
 ```
 
-Every JetStream advisory lands somewhere under that prefix. The leaf of
-the subject names the event and the entities it's about. When a message
-on the `shipping` consumer exhausts its delivery attempts, the server
-publishes one advisory here:
+Каждое уведомление JetStream публикуется под этим префиксом. Последняя часть темы указывает событие и связанные сущности. Когда сообщение потребителя `shipping` исчерпывает попытки доставки, сервер публикует уведомление здесь:
 
 ```
 $JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.ORDERS.shipping
 ```
 
-The stream name and consumer name are baked into the subject, so a
-subscriber can choose a wildcard that matches exactly the events it
-cares about: all advisories for `ORDERS`, or only max-delivery events
-for `shipping`.
+Имена потока и потребителя входят в тему, поэтому подписчик может выбрать фильтр только нужных событий: все уведомления `ORDERS` или только исчерпание доставок `shipping`.
 
-Subscribe to the whole advisory tree and receive these events from the
-deployment:
+Подпишитесь на всё дерево уведомлений, чтобы получать события системы:
 
 <div class="nats-example" data-type="learn-monitoring-advisories-and-events-subscribeAdvisories" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-When the poison order finally exceeds its delivery limit, one message
-arrives. Its body names the stream, the consumer, the sequence that
-failed, and how many times delivery was attempted:
+Когда проблемный заказ исчерпает лимит доставки, придёт одно сообщение. В теле указаны поток, потребитель, номер неудачного сообщения и число попыток доставки:
 
 ```json
 {
@@ -70,157 +47,70 @@ failed, and how many times delivery was attempted:
 }
 ```
 
-That is the whole event: stream sequence `987` was delivered five times,
-never acked, and JetStream stopped attempting delivery. The message itself
-stays in the `ORDERS` stream under its retention policy; what stops is
-delivery to `shipping`. The `max_deliver` advisory is the only built-in
-signal that this happened. There's no dead-letter queue, and the advisory
-is published once. If no one is subscribed when it fires, you never learn
-that order `987` stopped being delivered.
+Событие целиком таково: сообщение потока с номером `987` было доставлено пять раз, ни разу не подтверждено, и JetStream прекратил попытки. Само сообщение остаётся в `ORDERS` согласно политике хранения; прекращается только доставка в `shipping`. Уведомление `max_deliver` — единственный встроенный сигнал об этом. Очереди недоставленных сообщений нет, а уведомление публикуется один раз. Если в этот момент никто не подписан, вы не узнаете, что заказ `987` перестал доставляться.
 
-The `max_deliver` advisory is one type among several. JetStream also
-publishes a `consumer_action` advisory when a consumer is created or
-deleted, a `nak` advisory when a handler explicitly negative-acks a
-message, and a `terminated` advisory when a message is removed from
-delivery. Each is a different leaf under `$JS.EVENT.ADVISORY.>`, and each
-carries its own JSON body. The full set of advisory types and their
-schemas is documented in
-[Reference → JetStream advisories](/reference/jetstream/advisory). We only need the
-`max_deliver` advisory here, because it's the one that tells you an order
-slipped through.
+`max_deliver` — один из нескольких типов уведомлений. JetStream также публикует `consumer_action` при создании или удалении потребителя, `nak` при явном отрицательном подтверждении и `terminated` при прекращении доставки сообщения. У каждого своя тема под `$JS.EVENT.ADVISORY.>` и собственное JSON-тело. Все типы и схемы описаны в [Справочнике → уведомления JetStream](/reference/jetstream/advisory). Здесь нужен только `max_deliver`, сообщающий о заказе, который не удалось обработать.
 
-### The leader-elected advisory
+### Уведомление о выборе лидера {#the-leader-elected-advisory}
 
-One advisory is worth calling out separately. When the leader of a replicated
-stream or consumer changes, JetStream publishes a leader-elected advisory
-naming the new leader. You'll see it in the same `$JS.EVENT.ADVISORY.>`
-subscription, and a flapping leader showing up here is worth watching.
+Одно уведомление стоит выделить. При смене лидера реплицируемого потока или потребителя JetStream публикует сообщение с именем нового лидера. Оно приходит по той же подписке `$JS.EVENT.ADVISORY.>`. Частые смены лидера заслуживают внимания.
 
-This page covers *observing* that it happened. *Why* a leader
-changed (how the election ran, what quorum is, which peer won) is
-clustering mechanics rather than monitoring. When you want to understand the
-election behind the advisory, that lives in
-[Clustering → RAFT and leaders](/learn/clustering/raft-and-leaders). Here,
-the advisory is a fact you receive, and this page does not explain the process.
+Здесь мы *наблюдаем* факт смены. *Почему* она произошла — как прошли выборы, что такое кворум, какой узел победил — относится к устройству кластера. Это разобрано в [Кластеризация → RAFT и лидеры](/learn/clustering/raft-and-leaders). Здесь уведомление — полученный факт, без объяснения процесса.
 
-## System events
+## Системные события {#system-events}
 
-The second stream of events is broader than JetStream. A **system event**
-is a message the server publishes on the `$SYS.*` subjects to report
-server- and account-level activity: connections opening and closing, and
-a periodic server heartbeat.
+Второй поток событий шире JetStream. **Системное событие** — сообщение сервера в темах `$SYS.*` о работе сервера и учётных записей: открытии и закрытии соединений, а также периодический сигнал активности сервера.
 
-The two you'll reach for first are the connection events. Every time a
-client connects, the server publishes:
+Прежде всего полезны события соединений. При каждом подключении клиента сервер публикует:
 
 ```
 $SYS.ACCOUNT.ORDERS.CONNECT
 ```
 
-and the matching `$SYS.ACCOUNT.ORDERS.DISCONNECT` when it leaves. The
-account is baked into the subject, so `$SYS.ACCOUNT.ORDERS.CONNECT` watches
-`order-svc` in the `ORDERS` account. `analytics-reader` lives in the
-`ANALYTICS` account and publishes on `$SYS.ACCOUNT.ANALYTICS.CONNECT`
-instead. Subscribe to `$SYS.ACCOUNT.*.CONNECT` to watch clients across
-every account come and go without polling `/connz` on a timer.
+При отключении публикуется соответствующее `$SYS.ACCOUNT.ORDERS.DISCONNECT`. Учётная запись входит в тему: `$SYS.ACCOUNT.ORDERS.CONNECT` позволяет наблюдать `order-svc` в `ORDERS`. Пользователь `analytics-reader` находится в `ANALYTICS`, поэтому его событие приходит в `$SYS.ACCOUNT.ANALYTICS.CONNECT`. Подписка на `$SYS.ACCOUNT.*.CONNECT` позволяет видеть подключения клиентов всех учётных записей без регулярного опроса `/connz`.
 
-Alongside connections, each server publishes a `STATSZ` heartbeat on
-`$SYS.SERVER.<id>.STATSZ` on a fixed interval. It carries the same kind of
-summary numbers as `/varz`, pushed instead of pulled, so a listener has a
-steady pulse from every node in the `east` cluster.
+Кроме событий соединений, каждый сервер с фиксированным интервалом публикует сигнал `STATSZ` в `$SYS.SERVER.<id>.STATSZ`. Он содержит сводные показатели того же рода, что `/varz`, но сервер отправляет их сам. Так слушатель регулярно получает данные каждого узла `east`.
 
-System events are published into the **system account**, not your
-application account. To subscribe to `$SYS.*` you connect as a system
-user, which is a separate privilege from the `ORDERS` account `order-svc`
-uses. Setting that up is a security task, covered in
-[Security → Authorization](/learn/security/authorization). The full set of
-`$SYS.*` subjects is documented in
-[Reference → Advisories](/reference/system/advisory). We only need the
-connect and disconnect events here.
+Системные события публикуются в **системной учётной записи**, а не в учётной записи приложения. Для подписки на `$SYS.*` подключитесь как системный пользователь: это отдельные полномочия, отсутствующие у `order-svc` из `ORDERS`. Настройка разобрана в [Безопасность → Авторизация](/learn/security/authorization). Все темы `$SYS.*` перечислены в [Справочнике → Уведомления](/reference/system/advisory). Здесь нужны только события подключения и отключения.
 
 <div class="nats-flow" data-scenario="advisoryFlowAnimated" data-width="600" data-height="350"></div>
 
-The animation shows the property that makes advisories tricky. The
-JetStream layer publishes one advisory the instant the poison order hits
-its limit. A subscriber attached *before* that moment receives it. A
-subscriber that connects *after* receives nothing: the message was
-published once and is already gone.
+Анимация показывает особенность уведомлений. JetStream публикует одно сообщение в момент, когда проблемный заказ достигает лимита. Подписчик, подключённый *до* этого момента, получает его. Подписчик, подключившийся *после*, ничего не получает: сообщение было опубликовано один раз и уже исчезло.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-These pitfalls are scoped to this page's two concepts: advisories and system
-events. Each one comes down to the same property: these are messages that
-pass by, whereas the monitoring endpoints expose levels you read.
+Эти ошибки относятся к уведомлениям и системным событиям. Все они связаны с одним свойством: сообщения проходят мимо, тогда как конечные точки мониторинга возвращают текущее состояние.
 
-**Advisories are transient.** An advisory is published exactly once, the
-moment its event fires, and it is not stored in any stream. If you're not
-subscribed at that instant, you never learn the event happened. A live
-`nats subscribe '$JS.EVENT.ADVISORY.>'` in a terminal is fine for a demo,
-but it stops when the terminal closes, and every advisory after that is
-gone. Don't rely on a watching human or an ad-hoc subscription; capture
-advisories in a durable destination that is always subscribed.
+**Уведомления не сохраняются автоматически.** Каждое публикуется ровно один раз при событии и не записывается ни в один поток. Если в этот момент нет подписки, вы не узнаете о событии. Команда `nats subscribe '$JS.EVENT.ADVISORY.>'` в терминале подходит для демонстрации, но после закрытия терминала все последующие уведомления теряются. Не полагайтесь на наблюдающего человека или разовую подписку: направляйте уведомления в постоянно подписанное долговременное хранилище.
 
-The fix is to point a stream at the advisory subjects. A stream is always
-subscribed and stores what it captures, so you can read events back long
-after they fired:
+Решение — создать поток для тем уведомлений. Поток всегда подписан и сохраняет полученное, позволяя прочитать события значительно позже:
 
 <div class="nats-example" data-type="learn-monitoring-advisories-and-events-persistAdvisories" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**A `max_deliver` advisory is the only built-in signal a message was
-dropped.** JetStream has no dead-letter queue. When the `shipping`
-consumer exhausts its deliveries on a poison order, the order is removed
-from delivery and the only record is one advisory message. Subscribe to
-`$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>`, or capture it in the
-stream above; otherwise poison orders disappear silently. What to *do*
-with a dropped order, such as routing it to a parking subject, is an
-acknowledgment pattern covered in
-[JetStream → Acknowledgment](/learn/jetstream/acknowledgment).
+**Уведомление `max_deliver` — единственный встроенный сигнал прекращения доставки.** У JetStream нет очереди недоставленных сообщений. Когда `shipping` исчерпывает попытки обработки проблемного заказа, доставка прекращается, а единственная запись об этом — уведомление. Подпишитесь на `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>` или сохраняйте его в потоке выше; иначе проблемные заказы пропадут из обработки незаметно. Действия с таким заказом, например перенаправление в отдельную тему, описаны в [JetStream → Подтверждения](/learn/jetstream/acknowledgment).
 
-**A leader-elected advisory reports a flap, not its cause.** Seeing
-repeated leader-elected advisories for `ORDERS` tells you the cluster is
-unstable, and that's worth watching. It doesn't tell you why. Treat
-the advisory as a symptom to watch and take the *why* (election timing,
-quorum, peer health) to
-[Clustering → RAFT and leaders](/learn/clustering/raft-and-leaders).
-Don't try to diagnose the election from the advisory body alone.
+**Уведомление о выборе лидера сообщает смену, а не причину.** Повторяющиеся уведомления для `ORDERS` указывают на нестабильность кластера, за которой стоит следить, но не объясняют её. Вопросы времени выборов, кворума и состояния участников рассматриваются в [Кластеризация → RAFT и лидеры](/learn/clustering/raft-and-leaders). Не пытайтесь диагностировать выборы по одному телу уведомления.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You now have a second way to watch the `ORDERS` deployment, one that
-doesn't depend on polling. You can:
+Теперь у вас есть ещё один способ наблюдения за `ORDERS`, не зависящий от опросов. Вы умеете:
 
-- Subscribe to `$JS.EVENT.ADVISORY.>` and see a `max_deliver` advisory the
-  instant a poison order exhausts its deliveries on the `shipping`
-  consumer.
-- Read the advisory body (`stream`, `consumer`, `stream_seq`,
-  `deliveries`) to know exactly which order was dropped and how many
-  attempts it took.
-- Subscribe to `$SYS.ACCOUNT.ORDERS.CONNECT` and `DISCONNECT` to watch
-  clients come and go, and read the `STATSZ` heartbeat from each node.
-- Capture advisories in a durable stream so a transient event is never
-  missed.
+- Подписываться на `$JS.EVENT.ADVISORY.>` и получать `max_deliver` в момент исчерпания попыток доставки проблемного заказа потребителю `shipping`.
+- Читать тело уведомления (`stream`, `consumer`, `stream_seq`, `deliveries`), определяя заказ и число попыток.
+- Подписываться на `$SYS.ACCOUNT.ORDERS.CONNECT` и `DISCONNECT`, наблюдая подключения и отключения, а также читать `STATSZ` каждого узла.
+- Сохранять уведомления в долговременном потоке, чтобы не пропускать мимолётные события.
 
-You've read state on demand from the monitoring port, computed lag from
-consumer state, and now received events you never asked for. The last
-page turns all of it into stored history, charts, and threshold checks.
+Вы прочитали состояние через порт мониторинга, вычислили отставание по состоянию потребителя и получили события, которых не запрашивали. Следующая страница превращает всё это в историю, графики и пороговые проверки.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page wires the production loop: an **exporter** that scrapes
-`:8222`, **Prometheus** that stores the numbers as time series, **Grafana**
-that charts them, and `nats server check` that fires when lag crosses a
-threshold.
+Следующая страница собирает рабочую цепочку: **экспортёр** опрашивает `:8222`, **Prometheus** сохраняет временные ряды, **Grafana** строит графики, а `nats server check` срабатывает при превышении порога отставания.
 
-Continue to
-[Prometheus & dashboards](/learn/monitoring/prometheus-and-dashboards).
+Перейдите к [Prometheus и панелям](/learn/monitoring/prometheus-and-dashboards).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → JetStream advisories](/reference/jetstream/advisory) — every
-  JetStream advisory subject and its JSON schema.
-- [Reference → System events](/reference/system/advisory) — every `$SYS.*`
-  system-event subject and its JSON schema.
-- [JetStream → Acknowledgment](/learn/jetstream/acknowledgment) — what to
-  do with a message that hit `max_deliver`.
-- [Clustering → RAFT and leaders](/learn/clustering/raft-and-leaders) —
-  the election behind a leader-elected advisory.
+- [Справочник → уведомления JetStream](/reference/jetstream/advisory) — все темы уведомлений и их JSON-схемы.
+- [Справочник → системные события](/reference/system/advisory) — все темы событий `$SYS.*` и их JSON-схемы.
+- [JetStream → Подтверждения](/learn/jetstream/acknowledgment) — действия с сообщением, достигшим `max_deliver`.
+- [Кластеризация → RAFT и лидеры](/learn/clustering/raft-and-leaders) — выборы, о которых сообщает уведомление.

@@ -1,178 +1,87 @@
 ---
 id: ttl-and-limits
-title: "TTL and limits"
+title: "TTL и лимиты"
 sidebar_position: 5
-description: Expire a single key with a per-key TTL, bound the bucket with limits, and watch a value disappear on its own
+description: "Срок жизни отдельного ключа, ограничения бакета и наблюдение за автоматическим удалением значения"
 ---
 
-# TTL and limits
+# TTL и лимиты {#ttl-and-limits}
 
-Every key in `INVENTORY` so far lives until you overwrite or delete it.
-That's the right default for a stock count, but it's not the only thing
-a bucket holds. Some values should clean themselves up, such as a
-flash-sale price, a short-lived session token, or a "this SKU is locked
-for the next 30 minutes" flag.
+До сих пор ключи `INVENTORY` жили до перезаписи или удаления. Для остатка товара это разумно, но в бакете бывают и другие данные. Некоторые должны исчезать сами: цена краткой распродажи, временный токен сеанса или флаг блокировки артикула на 30 минут.
 
-This page adds two ways to bound the bucket by time. The first is the
-per-key TTL, a single key that expires on its own. The second is the
-set of bucket limits that bound the whole thing: total size, value
-size, history depth. When a key expires, the server leaves a marker so
-the warehouse dashboard learns the value is gone, the same way it learned
-about every other change.
+Здесь добавляются два вида ограничений. Первый — TTL отдельного ключа, удаляющий его по сроку. Второй — общие лимиты бакета: суммарный размер, размер значения, глубина истории. При истечении срока сервер оставляет маркер, чтобы складская панель узнала об исчезновении значения так же, как о любом другом изменении.
 
-You still have the `INVENTORY` bucket from the previous pages, with
-`widget-blue` decremented to 40 and the warehouse dashboard watching.
-You'll add a key with a TTL to it.
+Бакет `INVENTORY` остаётся с предыдущих страниц: `widget-blue` уменьшен до 40, складская панель наблюдает. Добавим ключ с TTL.
 
-## A per-key TTL expires a single value
+## TTL ключа удаляет отдельное значение по сроку {#a-per-key-ttl-expires-a-single-value}
 
-A **TTL** (time-to-live) is how long a value stays in the bucket before
-the server removes it. A **per-key TTL** attaches that clock to one key.
-The key lives for its TTL, then disappears on its own, with no service
-having to remember to delete it.
+**TTL** (time-to-live, время жизни) — срок хранения значения до удаления сервером. **TTL ключа** привязывает отсчёт к одному ключу. Тот живёт заданное время, затем исчезает сам: сервису не нужно помнить об удалении.
 
-Per-key TTL is set at **create** time, and only at create time. You hand
-the TTL to create alongside the value, and the key starts its countdown
-the moment it lands. This is a deliberate restriction: a TTL belongs to
-the value you're writing now, not to a value that might be put over it
-later.
+TTL ключа задаётся **только при create**. Вы передаёте срок вместе со значением, и отсчёт начинается с записи. Это намеренное ограничение: TTL принадлежит записываемому сейчас значению, а не тому, которое может позже заменить его через put.
 
-One setup step comes first. Per-key TTLs ride on a bucket feature called
-**limit markers**, the same mechanism that leaves a trace when a value
-expires. A bucket needs limit markers enabled before any key in it
-can carry a TTL. `INVENTORY` was created without them, so you turn them on
-once, then create the timed key:
+Сначала нужна одна настройка. TTL ключей использует возможность бакета **limit markers** — маркеры лимитов, оставляющие след при истечении срока. Прежде чем ключ сможет иметь TTL, эти маркеры нужно включить. `INVENTORY` создан без них, поэтому один раз включите их, затем создайте временный ключ:
 
 <div class="nats-example" data-type="learn-key-value-ttl-and-limits-perKeyTTL" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The `flash-sale` key now holds `99` and will remove itself 30 minutes
-later. Because the TTL is stored with the value, this happens without a
-cron job, a separate cleanup service, or a sweep.
+Теперь `flash-sale` содержит `99` и удалится через 30 минут. Поскольку TTL сохранён со значением, не нужны cron, отдельный сервис очистки или обход ключей.
 
-Per-key TTL needs **nats-server 2.11 or newer**; that's the release that
-added limit markers. On an older server, enabling markers on the bucket is
-rejected, and the timed create fails with it. If you're on 2.11, the
-feature is available.
+Для TTL ключей требуется **nats-server 2.11 или новее**: в этой версии появились маркеры лимитов. Старый сервер отклоняет их включение и создание ключа со сроком. В 2.11 возможность уже доступна.
 
-## Bucket limits bound the whole bucket
+## Лимиты ограничивают весь бакет {#bucket-limits-bound-the-whole-bucket}
 
-Where a per-key TTL bounds one value, **bucket limits** bound the whole
-bucket. They keep a key-value store from growing without end, and you set
-them when you create the bucket. Three of them matter most:
+Если TTL ключа ограничивает одно значение, **лимиты бакета** действуют на хранилище целиком. Они не дают ему расти бесконечно и задаются при создании. Важнее всего три:
 
-- **Max bucket size**: the total bytes the bucket may hold across every
-  key and every kept revision. The bucket won't grow past it.
-- **Max value size**: the largest a single value may be. A put of
-  something bigger is rejected. Key-value values are meant to be small;
-  large values belong in the [Object Store](/learn/object-store).
-- **History depth**: how many prior revisions each key keeps, which you
-  already met on the previous page. It caps at 64, and it doubles as a
-  per-key cap: it's the most messages any single key may hold.
+- **Максимальный размер бакета**: суммарное число байтов всех ключей и сохранённых ревизий. Бакет не вырастет сверх него.
+- **Максимальный размер значения**: предел одного значения. Put более крупного значения отклоняется. KV предназначено для небольших значений; крупным место в [хранилище объектов](/learn/object-store).
+- **Глубина истории**: число сохраняемых ревизий каждого ключа с предыдущей страницы. Максимум 64; это также предел числа сообщений одного ключа.
 
-Here those limits go on a throwaway `CACHE` bucket, so the numbers
-stand on their own and don't imply anything about `INVENTORY`:
+Здесь лимиты задаются отдельному временному бакету `CACHE`, поэтому числа не относятся к `INVENTORY`:
 
 <div class="nats-example" data-type="learn-key-value-ttl-and-limits-bucketWithLimits" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The `--ttl` on the bucket above is a different clock from the per-key TTL.
-A bucket TTL expires *every* value once it reaches that age; the per-key
-TTL expires *one* value. The bucket-wide form is the stream's `MaxAge`
-limit — one deadline applied to every value in the bucket — and it lives
-with the other [stream limits](/learn/jetstream/shaping-the-stream). The
-per-key form is the one built on JetStream's
-[per-message TTL](/learn/jetstream/message-ttl), and it's the form unique to
-key-value that this chapter teaches.
+Параметр `--ttl` бакета выше задаёт другой срок, чем TTL ключа. TTL бакета удаляет *каждое* значение по достижении возраста, TTL ключа — *одно*. Общий вариант — лимит потока `MaxAge`, единый срок для всех значений, описанный вместе с другими [лимитами потока](/learn/jetstream/shaping-the-stream). Вариант ключа построен на [TTL сообщений](/learn/jetstream/message-ttl) JetStream; именно его применение в KV рассматривает эта глава.
 
-The full set of bucket configuration options is documented in
-[Reference → Create Stream](/reference/jetstream/api/stream/create),
-because a bucket is created as a stream and these limits map onto stream
-fields. Here you only need the three above.
+Все параметры конфигурации бакета приведены в разделе [Справочник → Создание потока](/reference/jetstream/api/stream/create): бакет создаётся как поток, а лимиты отображаются на его поля. Здесь достаточно трёх перечисленных.
 
-## Expiry leaves a marker for watchers
+## Истечение срока оставляет маркер наблюдателям {#expiry-leaves-a-marker-for-watchers}
 
-When a per-key TTL fires, the server leaves a **marker** instead of
-silently dropping the value: a small message that records the key is gone and why.
-You may have heard the marker called a *tombstone* elsewhere; the term in
-key-value is marker, and a TTL expiry leaves one with the reason
-`MaxAge`: the value aged out.
+Когда TTL ключа истекает, сервер не просто молча отбрасывает значение, а оставляет **маркер**: небольшое сообщение о том, что ключ удалён и почему. В других системах такой маркер называют *tombstone*. В KV используем слово «маркер»; при истечении TTL он содержит причину `MaxAge`: значение устарело.
 
-The marker matters because of the warehouse dashboard. A watcher receives
-the marker as a purge on the key — the CLI prints `PURGE` — just as if
-someone had purged it by hand. Without the marker, a watcher that saw
-`flash-sale` appear would never learn it had vanished, and its view of the
-bucket would drift out of date. The marker is how live readers stay correct
-when a value expires on its own.
+Маркер нужен складской панели. Наблюдатель получает его как очистку ключа: CLI выводит `PURGE`, как при ручной очистке. Без маркера наблюдатель, увидевший появление `flash-sale`, никогда не узнал бы об исчезновении, и его состояние устарело бы. Маркер поддерживает актуальность наблюдателей при автоматическом удалении.
 
 <div class="nats-flow" data-scenario="kvTtlExpiryAnimated" data-width="600" data-height="350"></div>
 
-The animation walks the timeline: the inventory service creates
-`flash-sale` with a 30-minute TTL; the clock advances past it; the server
-places a marker on the key with reason `MaxAge`; and the warehouse
-dashboard receives that marker as a purge. The value expired without
-any service modifying it, and the watcher was still notified through the
-marker.
+Анимация показывает последовательность: inventory создаёт `flash-sale` с TTL 30 минут, время проходит, сервер ставит маркер с причиной `MaxAge`, а складская панель получает его как очистку. Значение исчезло без изменения со стороны сервисов, но наблюдатель всё равно уведомлён через маркер.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two mistakes are common the first time you add a TTL or a limit to a
-bucket. Both come from expecting a TTL or a limit to behave in a way it
-does not.
+При первом добавлении TTL или лимитов распространены две ошибки: от них ожидают поведения, которого нет.
 
-**A per-key TTL is set at create, and only at create.** Neither put nor
-update takes a `--ttl`; the CLI rejects the flag outright. And writing the
-key again doesn't extend its TTL: a put or an update appends a new latest
-value with no TTL of its own, so the key simply stops expiring — put and
-update behave the same way here. To give a key a different TTL, delete it
-and create it again with the new one. Use delete-then-create to change a
-TTL, not put or update.
+**TTL ключа задаётся только при create.** Put и update не принимают `--ttl`: CLI сразу отклоняет флаг. Повторная запись также не продлевает TTL: put или update добавляет новое текущее значение без собственного срока, и ключ просто перестаёт истекать. Обе операции ведут себя одинаково. Для другого TTL удалите ключ и создайте заново с новым сроком. Меняйте TTL удалением и созданием, а не put или update.
 
-The handling is in the create snippet above: after the timed create, it
-deletes `flash-sale` and creates it again with a shorter TTL, which is the
-only way to change one.
+Это показано в примере create выше: после создания со сроком `flash-sale` удаляется и создаётся снова с более коротким TTL. Это единственный способ изменить срок.
 
-**Limits reject, they do not make room for an oversized value.** A put of
-a value larger than the bucket's max value size is rejected outright, and
-so is a put that would push the bucket past its max size; the server
-returns an error and leaves every existing value in place. The inventory
-service sees that error on the put, not later on a get, so a `CACHE`
-bucket sized for the average load starts refusing writes the moment a
-burst pushes it to the cap. Size the bucket for the working set you
-actually need to hold, not the average, so a busy minute doesn't bounce
-writes you needed to land, and cap max value size above the largest value
-you legitimately store.
+**Лимиты отклоняют запись, а не освобождают место для слишком большого значения.** Put значения больше максимального размера сразу отклоняется, как и запись, которая превысила бы общий размер бакета. Сервер возвращает ошибку и сохраняет существующие значения. Inventory видит ошибку при put, а не позднее при get, поэтому `CACHE`, рассчитанный на среднюю нагрузку, начинает отказывать при первом всплеске до предела. Рассчитывайте бакет на реально нужный рабочий набор, а не среднее значение, чтобы напряжённая минута не отклоняла необходимые записи. Предел значения задавайте выше наибольшего допустимого значения.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- An `INVENTORY` bucket with limit markers enabled and a `flash-sale` key
-  that expires on its own after a per-key TTL.
-- A feel for the three bucket limits (max bucket size, max value size,
-  and history depth) that bound the whole bucket.
-- A working model of the expiry marker: when a value ages out, the server
-  leaves a marker with reason `MaxAge`, and the warehouse dashboard
-  receives it as a purge.
+- Бакет `INVENTORY` с включёнными маркерами лимитов и ключ `flash-sale`, автоматически истекающий по собственному TTL.
+- Понимание трёх общих лимитов: размер бакета, размер значения и глубина истории.
+- Модель маркера истечения: сервер оставляет причину `MaxAge`, а складская панель получает маркер как очистку ключа.
 
-The bucket is now complete. It holds keys with values, keeps history,
-supports safe concurrent writes, and has values that remove themselves
-on a TTL.
+Бакет теперь полностью настроен: хранит ключи и значения, сохраняет историю, поддерживает безопасные одновременные записи и автоматическое удаление по TTL.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page shows the internals. It covers the `KV_INVENTORY` stream
-that's been under the bucket the whole time, the direct read path, and the
-difference between delete and purge.
+Следующая страница раскрывает поток `KV_INVENTORY`, всё время лежавший под бакетом, прямое чтение и различие удаления и очистки.
 
-Continue to [Under the hood](/learn/key-value/under-the-hood).
+Переходите к странице [Внутреннее устройство](/learn/key-value/under-the-hood).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Create Stream](/reference/jetstream/api/stream/create) —
-  every bucket limit and its valid range.
-- [JetStream → Message TTL](/learn/jetstream/message-ttl) — the
-  per-message expiry mechanism the per-key TTL is built on.
-- [JetStream → Shaping the stream](/learn/jetstream/shaping-the-stream) —
-  `MaxAge` and the other stream limits the bucket-wide TTL and size caps
-  map onto.
-- [Object Store](/learn/object-store) — where large values belong when
-  they outgrow a key-value bucket.
+- [Справочник → Создание потока](/reference/jetstream/api/stream/create) — все лимиты бакета и допустимые диапазоны.
+- [JetStream → TTL сообщений](/learn/jetstream/message-ttl) — механизм истечения сообщений, на котором построен TTL ключей.
+- [JetStream → Настройка потока](/learn/jetstream/shaping-the-stream) — `MaxAge` и другие лимиты, соответствующие общему TTL и размеру бакета.
+- [Хранилище объектов](/learn/object-store) — место для значений, выросших за пределы KV.

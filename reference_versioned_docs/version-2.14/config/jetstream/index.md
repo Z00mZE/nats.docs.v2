@@ -1,39 +1,39 @@
-# jetstream
+# jetstream {#jetstream}
 
 <Reloadable state="reloadable" note="Enabling or disabling JetStream reloads. Changing `store_dir`, `domain`, `unique_tag` or the encryption settings while JetStream is enabled fails the reload." />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |
-| `string` | Indicates the capability is enabled or disabled. | `enabled`, `enable`, `disabled`, `disable` |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `string` | Указывает, включена ли возможность. | `enabled`, `enable`, `disabled`, `disable` |
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`enabled`](./enabled.md) | If true, enables the JetStream subsystem. | `boolean` | `true` | Yes\* |
-| [`store_dir`](./store_dir.md) | Directory to use for file-based storage. | `string` | `/tmp/nats/jetstream` | Yes\* |
-| [`max_memory_store`](./max_memory_store.md) | Maximum size of the *memory* storage. Defaults to 75% of available memory. | `storage` | - | Yes\* |
-| [`max_file_store`](./max_file_store.md) | Maximum size of the *file* storage. Defaults to up to 1TB if available. | `storage` | - | Yes\* |
-| [`domain`](./domain.md) | The JetStream domain the server is part of. | `string` | - | No |
-| [`encryption_key`](./encryption_key.md) | If defined, enables JetStream filestore encryption using the value as the encryption key. A key length of at least 32 bytes is recommended. Note, this key is HMAC-256 hashed on startup which reduces the byte length to 64. | `string` | - | No |
-| [`cipher`](./cipher.md) | Defines the encryption algorithm to use if an encryption key is defined. | `string` | - | No |
-| [`extension_hint`](./extension_hint.md) |  | `string` | - | No |
-| [`prev_encryption_key`](./prev_encryption_key.md) | Previous encryption key, kept so existing filestore data can be read and re-encrypted after `encryption_key` changes. | `string` | - | No |
-| [`strict`](./strict.md) | Reject API requests containing unknown fields instead of ignoring them. | `boolean` | `true` | No |
-| [`max_buffered_msgs`](./max_buffered_msgs.md) | Messages the server buffers for a stream whose storage is temporarily unavailable, before it starts discarding. | `integer` | `10000` | No |
-| [`max_buffered_size`](./max_buffered_size.md) | Byte ceiling for that same buffer. | `storage` | `128MB` | No |
-| [`request_queue_limit`](./request_queue_limit.md) | Queued JetStream API requests allowed before new ones are rejected. | `integer` | `10000` | No |
-| [`info_queue_limit`](./info_queue_limit.md) | Queued stream-info requests allowed before new ones are rejected. | `integer` | `100000` | No |
-| [`meta_compact`](./meta_compact.md) | Metalayer Raft entries to accumulate before the log is compacted. | `integer` | - | Yes |
-| [`meta_compact_size`](./meta_compact_size.md) | Metalayer Raft log size that triggers compaction. | `storage` | - | Yes |
-| [`meta_compact_sync`](./meta_compact_sync.md) | Compact the metalayer Raft log synchronously rather than in the background. | `boolean` | `false` | Yes |
-| [`tpm`](./tpm/index.md) | Seal the filestore encryption key in the machine's TPM, so it cannot be read off disk. | `object` | - | No |
-| [`limits`](./limits/index.md) | Default cross-account JetStream limits. | `object` | - | No\* |
-| [`unique_tag`](./unique_tag.md) | Defines a tag prefix as a constraint for placement of assets across a JetStream domain. For example, if the value is `az:` then replicas of an assets will be required to be placed on servers having different `az:` tags. | `string` | - | No |
-| [`max_outstanding_catchup`](./max_outstanding_catchup.md) | Max in-flight bytes for stream catch-up. This was introduced to control how much bandwidth should be dedicated during catch-up to guard against saturating and degrading performance of the network. | `storage` | `32M` | No |
-| [`sync_interval`](./sync_interval.md) | Defines the internal to force sync file-based stream and consumer data to disk. The filestore relies on the operating system's filesystem buffers to periodically sync to disk. However, the server will still periodically force sync files based on this interval.  For use cases where unclean shutdowns are common, this can provide more control over how frequently to force sync data when written.  If a value `always` is used, a explicit sync will occur on every write. Do note that this will degrade the max throughput due to the additional I/O calls. | `(multiple)` | `2m` | No |
+| [`enabled`](./enabled.md) | Если true, включает подсистему JetStream. | `boolean` | `true` | Да\* |
+| [`store_dir`](./store_dir.md) | Каталог файлового хранилища. | `string` | `/tmp/nats/jetstream` | Да\* |
+| [`max_memory_store`](./max_memory_store.md) | Максимальный размер хранилища *в памяти*. По умолчанию 75% доступной памяти. | `storage` | - | Да\* |
+| [`max_file_store`](./max_file_store.md) | Максимальный размер *файлового* хранилища. По умолчанию до 1 ТБ при наличии места. | `storage` | - | Да\* |
+| [`domain`](./domain.md) | Домен JetStream, к которому принадлежит сервер. | `string` | - | Нет |
+| [`encryption_key`](./encryption_key.md) | Если задано, включает шифрование файлового хранилища JetStream, используя значение как ключ. Рекомендуется ключ длиной не менее 32 байт. При запуске ключ хешируется HMAC-256, что приводит длину к 64 байтам. | `string` | - | Нет |
+| [`cipher`](./cipher.md) | Задаёт алгоритм шифрования, если указан ключ шифрования. | `string` | - | Нет |
+| [`extension_hint`](./extension_hint.md) |  | `string` | - | Нет |
+| [`prev_encryption_key`](./prev_encryption_key.md) | Предыдущий ключ шифрования, сохраняемый для чтения и повторного шифрования существующих данных файлового хранилища после изменения `encryption_key`. | `string` | - | Нет |
+| [`strict`](./strict.md) | Отклонять запросы API с неизвестными полями вместо их игнорирования. | `boolean` | `true` | Нет |
+| [`max_buffered_msgs`](./max_buffered_msgs.md) | Число сообщений, буферизуемых сервером для потока с временно недоступным хранилищем до начала отбрасывания. | `integer` | `10000` | Нет |
+| [`max_buffered_size`](./max_buffered_size.md) | Предельный размер того же буфера в байтах. | `storage` | `128MB` | Нет |
+| [`request_queue_limit`](./request_queue_limit.md) | Допустимое число запросов JetStream API в очереди до начала отклонения новых. | `integer` | `10000` | Нет |
+| [`info_queue_limit`](./info_queue_limit.md) | Допустимое число запросов информации о потоке в очереди до начала отклонения новых. | `integer` | `100000` | Нет |
+| [`meta_compact`](./meta_compact.md) | Число записей Raft метаслоя, накапливаемых до уплотнения журнала. | `integer` | - | Да |
+| [`meta_compact_size`](./meta_compact_size.md) | Размер журнала Raft метаслоя, при котором запускается уплотнение. | `storage` | - | Да |
+| [`meta_compact_sync`](./meta_compact_sync.md) | Выполнять уплотнение журнала Raft метаслоя синхронно, а не в фоне. | `boolean` | `false` | Да |
+| [`tpm`](./tpm/index.md) | Запечатать ключ шифрования файлового хранилища в TPM машины, чтобы его нельзя было прочитать с диска. | `object` | - | Нет |
+| [`limits`](./limits/index.md) | Лимиты JetStream по умолчанию для аккаунтов. | `object` | - | Нет\* |
+| [`unique_tag`](./unique_tag.md) | Задаёт префикс тега как ограничение размещения ресурсов в домене JetStream. Например, при значении `az:` реплики ресурса должны размещаться на серверах с разными тегами `az:`. | `string` | - | Нет |
+| [`max_outstanding_catchup`](./max_outstanding_catchup.md) | Максимальное число байтов в передаче при синхронизации отставшего потока. Позволяет ограничить выделяемую на синхронизацию полосу пропускания, чтобы избежать перегрузки и снижения производительности сети. | `storage` | `32M` | Нет |
+| [`sync_interval`](./sync_interval.md) | Задаёт интервал принудительной синхронизации файловых данных потоков и потребителей с диском. Файловое хранилище полагается на периодическую запись буферов файловой системы операционной системой. Однако сервер также принудительно синхронизирует файлы с этим интервалом. Это позволяет точнее управлять частотой сохранения данных при частых аварийных завершениях работы. При значении `always` синхронизация выполняется при каждой записи. Дополнительные операции ввода-вывода снижают максимальную пропускную способность. | `(multiple)` | `2m` | Нет |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

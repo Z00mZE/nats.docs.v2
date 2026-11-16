@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // leaderFailoverAnimated
@@ -66,7 +67,7 @@ function ServerBox({
                 transition: "border-color 0.25s, background 0.25s",
             }}
         >
-            <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: dead ? RED : "#374151" }}>{name}</span>
+            <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: dead ? RED : "#374151" }}>{localizeDiagramContent(name)}</span>
             <span
                 style={{
                     marginTop: 4,
@@ -78,7 +79,7 @@ function ServerBox({
                     letterSpacing: 0.5,
                 }}
             >
-                {dead ? "down" : role}
+                {localizeDiagramContent(dead ? "down" : role)}
             </span>
             {/* the replicated write */}
             <span
@@ -94,9 +95,9 @@ function ServerBox({
                     opacity: dead ? 0.5 : landing ? 0.3 + 0.7 * p : 1,
                 }}
             >
-                {hasWrite ? "order #7" : "—"}
+                {localizeDiagramContent(hasWrite ? "order #7" : "—")}
             </span>
-            {dead && <span style={{ position: "absolute", top: 2, right: 5, fontSize: 13, color: RED, fontWeight: 800 }}>✕</span>}
+            {localizeDiagramContent(dead && <span style={{ position: "absolute", top: 2, right: 5, fontSize: 13, color: RED, fontWeight: 800 }}>✕</span>)}
         </div>
     );
 }
@@ -159,9 +160,8 @@ function LeaderFailoverAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>The leader, and what happens when it dies.</strong> Every write goes
-                through the leader and is acked only once a{" "}
-                <span style={{ color: GREEN, fontWeight: 600 }}>majority</span> holds it.
+                <strong>Лидер и последствия его отказа.</strong> Каждая запись проходит через лидера и подтверждается, только когда{localizeDiagramContent(" ")}
+                <span style={{ color: GREEN, fontWeight: 600 }}>большинство</span> сохраняет сообщение.
             </div>
 
             <div
@@ -193,7 +193,7 @@ function LeaderFailoverAnimatedInner() {
                         order-svc
                     </div>
                     <span style={{ fontSize: 9, fontFamily: "monospace", fontWeight: 700, color: pubAck.color, background: `${pubAck.color}14`, border: `1px solid ${pubAck.color}`, borderRadius: 4, padding: "2px 5px", textAlign: "center" }}>
-                        {pubAck.text}
+                        {localizeDiagramContent(pubAck.text)}
                     </span>
                 </div>
 
@@ -220,9 +220,9 @@ function LeaderFailoverAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

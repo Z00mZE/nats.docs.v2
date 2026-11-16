@@ -1,9 +1,9 @@
-# no_tls
+# no_tls {#no_tls}
 
 <Reloadable state="not-reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

@@ -1,18 +1,13 @@
-# url
+# url {#url}
 
 <Aliases aliases="urls" />
 <Reloadable state="not-reloadable" />
-URL or list of URLs of a remote server accepting leaf
-node connections.
-If username/password or token authentication is required
-on the remote, this should be encoded in the URL itself,
-e.g. `nats-leaf://username:password@localhost:7422`.
-Note, the URL scheme should be `nats-leaf` or `ws`.
+URL или список URL удалённого сервера, принимающего соединения листовых узлов. Если удалённая сторона требует аутентификацию по имени пользователя и паролю или токену, включите их в URL, например `nats-leaf://username:password@localhost:7422`. Схема URL должна быть `nats-leaf` или `ws`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` |  | - |
 | `[ string ]` |  | - |

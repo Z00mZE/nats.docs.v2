@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // consumerServerSideAnimated
@@ -47,11 +48,9 @@ function ConsumerServerSideAnimatedInner() {
                     fontStyle: "italic",
                 }}
             >
-                The <strong>stream</strong> and the <strong>consumer</strong>{" "}
-                both live inside the NATS server. The{" "}
-                <strong>client</strong> is your application: it asks the
-                consumer for messages and receives them, but it holds no stored
-                messages and no read position of its own.
+                   <strong>поток</strong> и <strong>потребитель</strong>{localizeDiagramContent(" ")}
+                оба находятся внутри сервера NATS.{localizeDiagramContent(" ")}
+                <strong>клиент</strong> — ваше приложение: оно запрашивает сообщения у потребителя и получает их, но само не хранит сообщения и не имеет собственной позиции чтения.
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
@@ -75,7 +74,7 @@ function ConsumerServerSideAnimatedInner() {
                             marginBottom: 8,
                         }}
                     >
-                        NATS server
+                        Сервер NATS
                     </div>
 
                     {/* Stream entity */}
@@ -97,10 +96,10 @@ function ConsumerServerSideAnimatedInner() {
                                 marginBottom: 6,
                             }}
                         >
-                            Stream · ORDERS
+                            Поток · ORDERS
                         </div>
                         <div style={{ display: "flex", gap: SLOT_GAP }}>
-                            {Array.from({ length: N_SLOTS }, (_, i) => {
+                            {localizeDiagramContent(Array.from({ length: N_SLOTS }, (_, i) => {
                                 const read = i < cursor;
                                 return (
                                     <div
@@ -121,10 +120,10 @@ function ConsumerServerSideAnimatedInner() {
                                             transition: "background .25s, color .25s",
                                         }}
                                     >
-                                        #{i + 1}
+                                        #{localizeDiagramContent(i + 1)}
                                     </div>
                                 );
-                            })}
+                            }))}
                         </div>
                     </div>
 
@@ -138,7 +137,7 @@ function ConsumerServerSideAnimatedInner() {
                             color: "#9ca3af",
                         }}
                     >
-                        ↓ reads
+                        ↓ чтение
                     </div>
 
                     {/* Consumer entity */}
@@ -157,7 +156,7 @@ function ConsumerServerSideAnimatedInner() {
                                 fontWeight: 600,
                             }}
                         >
-                            Consumer · billing
+                            Потребитель · billing
                         </div>
                         <div
                             style={{
@@ -167,10 +166,10 @@ function ConsumerServerSideAnimatedInner() {
                                 marginTop: 3,
                             }}
                         >
-                            cursor:{" "}
-                            {cursor >= N_SLOTS
+                            курсор:{localizeDiagramContent(" ")}
+                            {localizeDiagramContent(cursor >= N_SLOTS
                                 ? "caught up"
-                                : `next #${cursor + 1}`}
+                                : `next #${cursor + 1}`)}
                         </div>
                     </div>
                 </div>
@@ -197,7 +196,7 @@ function ConsumerServerSideAnimatedInner() {
                             transition: "color .2s",
                         }}
                     >
-                        ← pull
+                        ← pull-запрос
                     </div>
                     {/* deliver (consumer -> client) */}
                     <div
@@ -212,10 +211,10 @@ function ConsumerServerSideAnimatedInner() {
                             transition: "color .2s",
                         }}
                     >
-                        messages →
+                        сообщения →
                     </div>
                     {/* moving message token */}
-                    {delivering && (
+                    {localizeDiagramContent(delivering && (
                         <div
                             style={{
                                 position: "absolute",
@@ -234,9 +233,9 @@ function ConsumerServerSideAnimatedInner() {
                                 justifyContent: "center",
                             }}
                         >
-                            #{cursor}
+                            #{localizeDiagramContent(cursor)}
                         </div>
-                    )}
+                    ))}
                 </div>
 
                 {/* Client (outside the server) */}
@@ -256,10 +255,10 @@ function ConsumerServerSideAnimatedInner() {
                     }}
                 >
                     <div style={{ fontSize: 12, fontWeight: 700, color: GREEN }}>
-                        Client
+                        Клиент
                     </div>
                     <div style={{ fontSize: 10, color: "#6b7280" }}>
-                        your app
+                        ваше приложение
                     </div>
                 </div>
             </div>

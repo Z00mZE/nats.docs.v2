@@ -2,108 +2,58 @@
 id: scatter-gather
 title: "Scatter-gather"
 sidebar_position: 7
-description: Fan one request to many responders and gather every reply by count or deadline
+description: "Разошлите один запрос нескольким сервисам и соберите ответы по числу или сроку"
 ---
 
-# Scatter-gather
+# Scatter-gather {#scatter-gather}
 
-The inventory service answered one request with one reply, which is the
-common case of a single question producing a single answer.
+Сервис наличия товаров отвечал на запрос одним ответом — обычный случай, когда на один вопрос нужен один ответ.
 
-Some questions have several answers. "What would it cost to ship this
-order?" is one of them. Acme works with three carriers, and each one
-quotes a different price. The order service wants all three quotes, then
-picks the cheapest.
+У некоторых вопросов несколько ответов. Например: «Сколько стоит доставить заказ?» Acme работает с тремя перевозчиками, и каждый предлагает свою цену. Сервис заказов хочет получить все три предложения и выбрать самое дешёвое.
 
-That's **scatter-gather**: fan one request out to every responder, then
-gather the replies that come back. This page builds it on `shipping.quote`
-with three quote providers.
+Это **scatter-gather**: отправить один запрос всем отвечающим сервисам и собрать ответы. На этой странице мы построим такой обмен через `shipping.quote` с тремя поставщиками тарифов.
 
 <div class="nats-flow" data-scenario="requestReplyScatterGather" data-width="800" data-height="450"></div>
 
-## Why one request can produce many replies
+## Почему один запрос даёт несколько ответов {#why-one-request-can-produce-many-replies}
 
-Recall how request-reply works: the client subscribes to a unique
-`_INBOX` subject and publishes the request carrying that inbox as its
-reply subject. Nothing in that mechanism limits the number of responders.
-If three providers subscribe to `shipping.quote`, all three receive the
-request (plain publish-subscribe) and all three can reply to the inbox.
-The single reply you saw earlier was just one responder plus a client
-that stopped after the first answer.
+Вспомните запрос-ответ: клиент подписывается на уникальную тему `_INBOX` и публикует запрос с этим inbox как темой ответа. Механизм не ограничивает число отвечающих. Если три поставщика подписаны на `shipping.quote`, все получают запрос через обычную публикацию и подписку и все могут ответить в inbox. Ранее единственный ответ был результатом одного отвечающего сервиса и клиента, остановившегося после первого ответа.
 
-This works only when the responders are not in a queue group — a queue
-group hands each request to one member, which is load balancing, not
-scatter-gather. Every responder must subscribe plainly. The CLI demo below
-makes that explicit, because the CLI's default does the opposite.
+Это работает, только если сервисы не состоят в общей группе очереди: группа передаёт запрос одному участнику, обеспечивая балансировку, а не scatter-gather. Каждый сервис должен иметь независимую подписку. CLI-пример ниже явно задаёт такое поведение, поскольку по умолчанию CLI делает обратное.
 
-## Set up three quote providers
+## Создание трёх поставщиков тарифов {#set-up-three-quote-providers}
 
-A provider subscribes to `shipping.quote`, reads the order, and replies
-with a price. Run three of them, each quoting a different number.
+Поставщик подписывается на `shipping.quote`, читает заказ и отвечает ценой. Запустите три экземпляра с разными ценами.
 
 <div class="nats-example"
      data-type="learn-core-nats-scatter-gather-provider"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-There's one trap to know about with `nats reply`. By default, the CLI
-subscribes inside a queue group named `NATS-RPLY-22`. Three
-`nats reply` instances left on that default would form one queue group,
-and only one of them would ever answer. That's the load-balancing
-behavior from the previous page, not what we want here.
+У `nats reply` есть особенность: по умолчанию CLI подписывается в группе очереди `NATS-RPLY-22`. Три экземпляра `nats reply` с настройками по умолчанию образуют одну группу, и отвечает лишь один из них. Это балансировка с предыдущей страницы, а здесь нужно другое.
 
-To make each provider an independent responder, give each one its own
-queue group name with `--queue`. A queue group of one member behaves like
-a plain subscriber: it receives every matching request. The CLI source
-for the snippet above runs the three providers with distinct names
-(`carrier-a`, `carrier-b`, `carrier-c`), so all three see each request.
+Чтобы поставщики отвечали независимо, задайте каждому своё имя группы через `--queue`. Группа из одного участника ведёт себя как обычный подписчик: получает каждый подходящий запрос. CLI-пример выше запускает поставщиков с разными именами (`carrier-a`, `carrier-b`, `carrier-c`), поэтому все трое видят каждый запрос.
 
-The client library form has no such trap. A library subscribes plainly
-unless you ask for a queue group, so three plain subscribers on
-`shipping.quote` already scatter correctly.
+В библиотеках такой особенности нет. Без явного запроса группы создаётся обычная подписка, поэтому три обычных подписчика `shipping.quote` уже получают каждый запрос.
 
-## Gather by count
+## Сбор по числу ответов {#gather-by-count}
 
-Now the gather side. The client sends one request to `shipping.quote` and
-collects replies until it's heard from every provider.
+Теперь сбор. Клиент отправляет один запрос в `shipping.quote` и собирает ответы всех поставщиков.
 
 <div class="nats-example"
      data-type="learn-core-nats-scatter-gather-gather"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The CLI uses `--replies 3`: read from the inbox until three replies
-arrive, then stop — or until replies stop arriving, whichever comes
-first. With the three providers running, the output shows three quotes,
-one per carrier. The client compares the prices and keeps the lowest.
+CLI использует `--replies 3`: читать inbox до трёх ответов либо до прекращения их поступления — что случится раньше. При трёх работающих поставщиках вывод содержит три предложения, по одному от перевозчика. Клиент сравнивает цены и сохраняет минимальную.
 
-A library does the same thing, and how much you hand-roll depends on the
-client. A plain `request()` returns only the first reply — on its own it
-never returns a list, because the client can't know how many responders
-exist.
-Some clients ship a gather helper that returns many: nats.js has
-`requestMany` and orbit.go has `RequestMany` (both follow ADR-47,
-"Request Many", with count, stall, and sentinel stop conditions), and the
-.NET client has `RequestManyAsync`. Where no helper exists, you build the
-loop yourself: subscribe to a fresh inbox, publish the request with that
-inbox as the reply subject, then read from the subscription and append
-each reply to a list until your count or deadline is reached, then
-unsubscribe.
+Библиотека делает то же; объём ручного кода зависит от клиента. Обычный `request()` возвращает только первый ответ и сам по себе не возвращает список: клиент не знает, сколько сервисов ответят. Некоторые клиенты имеют готовые средства сбора: в nats.js это `requestMany`, в orbit.go — `RequestMany` (оба следуют ADR-47 «Request Many» с остановкой по числу, паузе или завершающему сигналу), в .NET — `RequestManyAsync`. Если помощника нет, напишите цикл: подпишитесь на новый inbox, опубликуйте запрос с этим inbox как темой ответа, читайте подписку и добавляйте ответы в список до нужного числа или срока, затем отпишитесь.
 
-## Gather by deadline
+## Сбор по сроку {#gather-by-deadline}
 
-Counting replies assumes you know how many providers there are. Often you
-don't. Carriers come and go; one might be down. Write that gather yourself
-with no read deadline, and waiting for a fixed count of three blocks
-forever if only two answer — the read for the third reply never returns.
+Подсчёт предполагает известное число поставщиков. Часто оно неизвестно: перевозчики подключаются и отключаются, один может быть недоступен. Ручной сбор без срока чтения навсегда застрянет в ожидании третьего ответа, если ответят только двое.
 
-The safer approach gathers by **deadline** instead. Collect every reply
-that arrives within a time budget, then act on whatever you have.
+Надёжнее собирать по **сроку**: принимать все ответы в пределах заданного времени и затем использовать полученный набор.
 
-From the CLI, `--replies 0` switches to deadline mode: `--timeout` becomes
-the whole collection window. The command reads replies for the full window
-and returns when it closes, so `--replies 0 --timeout 2s` gathers everything
-that arrives in those two seconds. It's a fixed, predictable budget, and
-`--reply-timeout` has no effect in this mode — it only bounds the gap
-between replies when you gather by count.
+В CLI `--replies 0` включает сбор по сроку: `--timeout` становится общим окном сбора. Команда читает ответы всё окно и возвращает результат после его закрытия. Поэтому `--replies 0 --timeout 2s` собирает всё пришедшее за две секунды. Время фиксировано и предсказуемо. `--reply-timeout` здесь не действует: он ограничивает паузу между ответами только при сборе по числу.
 
 ```bash
 nats request shipping.quote \
@@ -111,92 +61,46 @@ nats request shipping.quote \
   --replies 0 --timeout 2s
 ```
 
-With three providers up, all three quotes arrive within milliseconds, but the
-command still holds open for the full two seconds before returning the set.
-With one provider down, you get the two quotes that answered and wait out the
-same two-second window. If no provider is subscribed at all, the command
-returns right away with a no responders signal instead of waiting — though a
-provider that's subscribed but slow to answer still costs the full `--timeout`.
-Either way the wait is bounded; it never blocks forever.
+При трёх работающих поставщиках ответы приходят за миллисекунды, но команда всё равно ждёт полные две секунды. При одном недоступном вы получите два ответа после того же окна. Если подписанных поставщиков нет вообще, команда сразу возвращает no responders; однако подписанный, но медленный сервис требует полного ожидания `--timeout`. В любом случае ожидание ограничено.
 
-A deadline changes the rule from waiting for every responder to waiting
-only for whoever answers in time, which is the only safe assumption when
-the responder set isn't fixed.
+Срок меняет правило: ждать не всех, а только успевших ответить. При непостоянном составе сервисов это единственное безопасное предположение.
 
-There's a third way to end a gather: a **sentinel**. With
-`--wait-for-empty`, the command keeps collecting until a reply arrives with
-an empty payload, which a responder sends to mark the end of the set. This
-counts replies rather than watching a single deadline, so if the sentinel
-never comes the `--reply-timeout` bounds the gap between replies and the
-wait still ends.
+Третий способ завершить сбор — **завершающий сигнал (sentinel)**. С `--wait-for-empty` команда собирает ответы до сообщения с пустой полезной нагрузкой, которым сервис обозначает конец набора. Здесь учитывается поток ответов, а не одно общее окно. Если сигнал не придёт, `--reply-timeout` ограничит паузу между ответами, и ожидание всё равно закончится.
 
-## Delivery guarantees
+## Гарантии доставки {#delivery-guarantees}
 
-Scatter-gather is [at-most-once](/learn/core-nats/publish-subscribe#at-most-once-delivery)
-like everything else: a reply dropped in transit is just absent from the
-gathered set, nothing redelivers it, and arrival order carries no meaning.
-Treat the set as whatever answers happened to arrive, not a ranked list.
-That's fine for a shipping quote — re-asking is cheap. When each reply must
-survive a crash, that's [JetStream](/learn/jetstream), not a core gather.
+Как и всё остальное, scatter-gather использует [доставку не более одного раза](/learn/core-nats/publish-subscribe#at-most-once-delivery): потерянный ответ отсутствует в наборе, повторной доставки нет, порядок прихода не несёт смысла. Рассматривайте результат как набор пришедших ответов, а не рейтинг. Для тарифов это подходит: повторить вопрос недорого. Если каждый ответ должен переживать сбой, нужен [JetStream](/learn/jetstream), а не базовый сбор.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-**Taking only the first reply.** A plain `nats request` stops after one
-reply, because its `--replies` flag defaults to `1`. Point it at three
-providers and you get whichever carrier answered first; the other two
-quotes are discarded and you never learn there were more. A plain
-`request()` in a client library does the same. When you mean to gather,
-use `--replies 0` from the CLI, reach for your client's gather helper
-where it has one (nats.js `requestMany`, orbit.go `RequestMany`), or
-subscribe to the inbox yourself and read in a loop.
+**Получение только первого ответа.** Обычный `nats request` останавливается после одного ответа: `--replies` по умолчанию равен `1`. Среди трёх поставщиков вы получите первого ответившего, а остальные предложения будут отброшены без уведомления. Обычный библиотечный `request()` делает то же. Для сбора используйте CLI `--replies 0`, помощник клиента (nats.js `requestMany`, orbit.go `RequestMany`) или собственную подписку на inbox с циклом чтения.
 
 <div class="nats-example"
      data-type="learn-core-nats-scatter-gather-first-reply-trap"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**No deadline, so you wait for replies that never come.** A hand-rolled
-gather that reads with no deadline blocks forever if a provider is down —
-the read for the missing reply never returns. Bound the wait: gather by
-deadline (`--replies 0 --timeout 2s`) so a missing carrier just leaves its
-quote out of the set.
+**Ожидание ответов без срока.** Ручной сбор без ограничения чтения зависает при недоступном поставщике. Задайте срок (`--replies 0 --timeout 2s`), чтобы отсутствующий перевозчик просто не вошёл в набор предложений.
 
-**Reading the gathered set as ranked.** Arrival order isn't priority and a
-short set isn't an error. Compare every reply on its merits (here, the
-lowest `quote_cents`).
+**Восприятие результата как рейтинга.** Порядок прихода не означает приоритет, а неполный набор не обязательно является ошибкой. Оценивайте содержание каждого ответа: здесь минимальный `quote_cents`.
 
-## Where you are
+## Что уже сделано {#where-you-are}
 
-The Acme ORDERS world now talks in four shapes over one local
-`nats-server`:
+Теперь Acme ORDERS использует четыре схемы взаимодействия через один локальный `nats-server`:
 
-- `notifications` and `analytics` each receive their own copy of every
-  `orders.created` message (publish-subscribe).
-- Regional analytics spans `orders.us.created` and `orders.eu.created`
-  with `orders.*.created`, and an audit service reads the whole hierarchy
-  on `orders.>`.
-- The `inventory` service answers single requests on
-  `orders.inventory.check` (request-reply).
-- A `packers` queue group shares the work on `orders.created`, one packer
-  per order.
-- Three providers answer one `shipping.quote` request, and the client
-  gathers every reply within a deadline and picks the cheapest.
+- `notifications` и `analytics` получают собственные копии всех сообщений `orders.created` (публикация и подписка).
+- Региональная аналитика охватывает `orders.us.created` и `orders.eu.created` через `orders.*.created`, а аудит читает иерархию через `orders.>`.
+- Сервис `inventory` отвечает на отдельные запросы `orders.inventory.check` (запрос-ответ).
+- Группа `packers` распределяет работу на `orders.created`: один упаковщик на заказ.
+- Три поставщика отвечают на один запрос `shipping.quote`, а клиент собирает ответы в пределах срока и выбирает самый дешёвый.
 
-That's the whole of core NATS: subjects, interest, reply inboxes, and
-queue groups. Everything is ephemeral and at-most-once, and nothing is
-remembered after it's delivered.
+Это основа Core NATS: темы, интерес, inbox ответов и группы очередей. Всё работает без хранения, с доставкой не более одного раза; после доставки ничего не запоминается.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page adds a third piece to every message, beside its subject
-and payload: headers, a set of key/value metadata. You'll put a
-request id and a trace id on the orders flow and read the status header
-the server uses to signal no responders. Continue to [Message
-headers](/learn/core-nats/headers).
+Следующая страница добавляет к теме и полезной нагрузке сообщения третью часть: заголовки с метаданными «ключ — значение». Вы добавите идентификатор запроса и трассировки в поток заказов и прочитаете статус, которым сервер сообщает об отсутствии отвечающих сервисов. Перейдите к [Заголовкам сообщений](/learn/core-nats/headers).
 
-## See also
+## См. также {#see-also}
 
-- [Concepts → Request-reply](/concepts/request-reply) — the five-minute
-  overview of the pattern this page extends.
-- [Learn → Services](/learn/services) — when many responders become a
-  managed service that aggregates results for you.
-- [Reference](/reference/) — gather helper signatures per client library.
+- [Основные понятия → Запрос-ответ](/concepts/request-reply) — пятиминутный обзор базового шаблона.
+- [Изучение → Сервисы](/learn/services) — переход от нескольких отвечающих процессов к управляемому сервису с агрегацией результатов.
+- [Справочник](/reference/) — сигнатуры средств сбора для клиентских библиотек.

@@ -23,15 +23,6 @@ import rehypeStripHeadingAnchors from "./scripts/rehype-strip-heading-anchors.mj
 // instances; module-level caches inside the plugins are shared too.
 const SHARED_REHYPE_PLUGINS = [rehypeNatsExample, rehypeNatsFlow];
 
-// GA4 measurement ID for the nats.io property. docs.nats.io shares it with
-// nats.io so visits across both count as one user and session; filter by
-// hostname in GA to see docs traffic alone.
-const GA_MEASUREMENT_ID = "G-6242VH03CH";
-
-// Reo client ID. Docusaurus has no Reo plugin, so the script Reo provides is
-// added through headTags.
-const REO_CLIENT_ID = "35b4aa21c04d729";
-
 // Base for "Edit this page" links. Docusaurus appends the instance's content
 // dir (docs/, learn/, tutorials/) plus the doc path, so one base serves all
 // instances. The versioned 'reference' instance deliberately has no editUrl:
@@ -42,7 +33,7 @@ const referenceVersions: DocsOptions["versions"] = Object.fromEntries(
   docVersions.versions.map((v) => [
     v.name,
     {
-      label: v.status === "latest" ? `${v.name} (latest)` : v.name,
+      label: v.status === "latest" ? `${v.name} (последняя)` : v.name,
       path: v.status === "latest" ? "" : v.name,
       // Docusaurus defaults every version below lastVersion to the
       // 'unmaintained' banner, so 'maintained' must opt out explicitly.
@@ -54,8 +45,8 @@ const referenceVersions: DocsOptions["versions"] = Object.fromEntries(
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: "NATS Documentation",
-  tagline: "Connective Technology for Adaptive Edge & Distributed Systems",
+  title: "Документация NATS",
+  tagline: "Технология связи для адаптивных периферийных и распределённых систем",
   favicon: "favicon.ico",
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -72,26 +63,14 @@ const config: Config = {
     }
   ],
 
-  // Reo. Only production Vercel deploys report, the same as GA4 below.
-  headTags:
-    process.env.VERCEL_ENV === "production"
-      ? [
-          {
-            tagName: "script",
-            attributes: { type: "text/javascript" },
-            innerHTML: `!function(){var e,t,n;e="${REO_CLIENT_ID}",t=function(){Reo.init({clientID:"${REO_CLIENT_ID}", enableThirdPartyTracking: true})},(n=document.createElement("script")).src="https://static.reo.dev/"+e+"/reo.js",n.defer=!0,n.onload=t,document.head.appendChild(n)}();`,
-          },
-        ]
-      : [],
-
   plugins: [
     [
       "@signalwire/docusaurus-plugin-llms-txt",
       {
         depth: 5,
-        siteTitle: "NATS Documentation",
+        siteTitle: "Документация NATS",
         siteDescription:
-          "Connective Technology for Adaptive Edge & Distributed Systems — official NATS messaging documentation.",
+          "Технология связи для адаптивных периферийных и распределённых систем — документация по обмену сообщениями NATS.",
         includeOrder: [
           "concepts/**",
           "tutorials/**",
@@ -113,6 +92,7 @@ const config: Config = {
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {
         hashed: true,
+        language: ["en", "ru"],
         indexBlog: false,
         docsRouteBasePath: ["/", "reference"],
         docsDir: ["docs", "docs-reference"],
@@ -199,8 +179,8 @@ const config: Config = {
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: "en",
-    locales: ["en"],
+    defaultLocale: "ru",
+    locales: ["ru"],
   },
 
   presets: [
@@ -217,15 +197,6 @@ const config: Config = {
         theme: {
           customCss: "./src/css/custom.css",
         },
-        // GA4, same setup as nats.io (layouts/partials/meta.html in
-        // nats-site). Only production Vercel deploys report, so preview
-        // and local builds stay out of the data.
-        ...(process.env.VERCEL_ENV === "production" && {
-          gtag: {
-            trackingID: GA_MEASUREMENT_ID,
-            anonymizeIP: true,
-          },
-        }),
       } satisfies Preset.Options,
     ],
   ],
@@ -245,7 +216,7 @@ const config: Config = {
     navbar: {
       title: "",
       logo: {
-        alt: "NATS Logo",
+        alt: "Логотип NATS",
         src: "img/nats-logo.svg",
         srcDark: "img/nats-logo-dark.svg",
         width: 100,
@@ -256,35 +227,35 @@ const config: Config = {
           type: "custom-docSidebar",
           sidebarId: "docsSidebar",
           position: "left",
-          label: "Concepts",
+          label: "Основные понятия",
           href: "/concepts/intro/",
         },
         {
           type: "custom-docSidebar",
           sidebarId: "learnSidebar",
           position: "left",
-          label: "Learn",
+          label: "Изучение",
           href: "/learn/",
         },
         {
           type: "custom-docSidebar",
           sidebarId: "tutorialsSidebar",
           position: "left",
-          label: "Tutorials",
+          label: "Практические руководства",
           href: "/tutorials/",
         },
         {
           type: "custom-docSidebar",
           sidebarId: "referenceSidebar",
           position: "left",
-          label: "Reference",
+          label: "Справочник",
           href: "/reference/",
         },
         {
           type: "custom-docSidebar",
           sidebarId: "releaseNotesSidebar",
           position: "left",
-          label: "Release Notes",
+          label: "Выпуски",
           href: "/release-notes/",
         },
         {
@@ -295,7 +266,7 @@ const config: Config = {
           // reference routes). Versions come from scripts/doc-versions.json;
           // labels from referenceVersions above.
           dropdownItemsBefore: [
-            { to: "/release-notes/", label: "Release notes" },
+            { to: "/release-notes/", label: "Выпуски" },
           ],
         },
         {
@@ -314,32 +285,32 @@ const config: Config = {
       style: "dark",
       links: [
         {
-          title: "Documentation",
+          title: "Документация",
           items: [
             {
-              label: "Concepts",
+              label: "Основные понятия",
               to: "/concepts/intro",
             },
             {
-              label: "Learn",
+              label: "Изучение",
               to: "/learn/",
             },
             {
-              label: "Tutorials",
+              label: "Практические руководства",
               to: "/tutorials",
             },
             {
-              label: "Reference",
+              label: "Справочник",
               to: "/reference/",
             },
             {
-              label: "Release Notes",
+              label: "Выпуски",
               to: "/release-notes/",
             },
           ],
         },
         {
-          title: "Community",
+          title: "Сообщество",
           items: [
             {
               label: "Slack",
@@ -356,14 +327,14 @@ const config: Config = {
           ],
         },
         {
-          title: "More",
+          title: "Дополнительно",
           items: [
             {
               label: "GitHub",
               href: "https://github.com/nats-io",
             },
             {
-              label: "Contribute to these docs",
+              label: "Участие в переводе и развитии документации",
               href: "https://github.com/nats-io/nats.docs.v2",
             },
             {
@@ -377,7 +348,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} NATS Authors. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} NATS Authors. Создано с помощью Docusaurus.`,
     },
     prism: {
       theme: prismThemes.oneLight,

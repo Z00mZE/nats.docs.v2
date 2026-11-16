@@ -1,12 +1,12 @@
-# meta_compact
+# meta_compact {#meta_compact}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" />
-Metalayer Raft entries to accumulate before the log is compacted.
+Число записей Raft метаслоя, накапливаемых до уплотнения журнала.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

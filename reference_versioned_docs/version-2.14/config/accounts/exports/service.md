@@ -1,16 +1,15 @@
-# service
+# service {#service}
 
 <Reloadable state="reloadable" />
-A subject or subject with wildcards that the account will subscribe to.
-Exclusive of `stream`.
+Субъект или шаблон субъекта, на который аккаунт будет подписываться. Не используется одновременно со `stream`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |
-## Examples
+## Examples {#examples}
 
 ```
 bar.>

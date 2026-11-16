@@ -1,21 +1,21 @@
-# Update Stream
+# Обновление потока {#update-stream}
 
-Updates an existing stream configuration.
+Обновление конфигурации существующего потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamUpdateRequest from '@site/src/schemas/vendor/v2.12/jsm/jetstream/api/v1/stream_update_request.json';
 import streamUpdateResponse from '@site/src/schemas/vendor/v2.12/jsm/jetstream/api/v1/stream_update_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.UPDATE.{stream}`
 
-Where `{stream}` is the name of the stream to update.
+Где `{stream}` — имя обновляемого потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamUpdateRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamUpdateResponse} />

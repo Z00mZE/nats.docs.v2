@@ -1,73 +1,47 @@
 ---
 id: disaster-recovery
-title: Disaster recovery
+title: "Аварийное восстановление"
 sidebar_position: 4
-description: A runbook that picks restore-from-snapshot or promote-the-mirror per failure class, then promotes ORDERS_DR cleanly
+description: "Выбор восстановления снимка или повышения зеркала для разных отказов и корректное переключение на ORDERS_DR"
 ---
 
-# Disaster recovery
+# Аварийное восстановление {#disaster-recovery}
 
-You now have two tools. A **snapshot** of `ORDERS` sits off-site under
-`./backups/orders/`, and a live **mirror**, `ORDERS_DR`, runs at `site2`.
-Each protects against a different failure, and reaching for the
-wrong one during an outage costs you either data or hours.
+Теперь у вас два инструмента: **снимок** `ORDERS` вне основной площадки под `./backups/orders/` и живое **зеркало** `ORDERS_DR` на `site2`. Они защищают от разных отказов. Неверный выбор во время аварии обойдётся потерянными данными или часами простоя.
 
-This page is the **runbook**: an ordered procedure that names the failure,
-picks the right tool, and carries out the recovery against the real `ORDERS`
-deployment. It also covers the one operation the earlier pages set up but never
-performed: **promotion**, turning the read-only `ORDERS_DR` into a
-writable primary.
+Эта страница — **инструкция восстановления**: последовательная процедура определения отказа, выбора инструмента и восстановления реальной системы `ORDERS`. Здесь также выполняется подготовленная ранее операция **повышения**: зеркало `ORDERS_DR` только для чтения становится основным потоком с поддержкой записи.
 
-## Match the failure to the tool
+## Подберите инструмент к отказу {#match-the-failure-to-the-tool}
 
-A runbook starts before the outage. The decision you don't want to make
-under pressure during an outage is *which tool*. Decide it ahead of time, per failure class.
+Инструкция начинается до аварии. Во время неё не стоит под давлением решать, *какой инструмент* использовать. Заранее определите выбор для каждого класса отказов.
 
-| What happened | Reach for | Why |
+| Что произошло | Что использовать | Почему |
 |---|---|---|
-| The whole `east` cluster is gone | promote `ORDERS_DR` | The mirror already holds the data; promotion is minutes, a restore is hours. |
-| Someone deleted or purged `ORDERS` by mistake | recover from `ORDERS_DR`, or restore the snapshot | The mirror survives an upstream delete: it keeps every message it had copied and just stops updating, so it's usually the freshest intact copy. The snapshot is the older fallback. |
-| Messages on `ORDERS` are corrupt or wrong (a bad publisher) | restore a known-good snapshot, or purge the bad range | The bad data replicated to the mirror as well. The snapshot predates the corruption. |
-| A consumer lost its position (`shipping` redelivering from zero) | restore a `--consumers` snapshot | Only the snapshot captured the consumer's saved delivery position. |
-| Enough `east` servers are permanently gone that the meta group has no leader | rescue the meta group, then remove the dead peers | Nothing can be created, moved, or restored while the metadata layer has no quorum. |
+| Весь кластер `east` недоступен | повысить `ORDERS_DR` | Данные уже в зеркале: переключение занимает минуты, восстановление — часы. |
+| `ORDERS` случайно удалён или очищен | восстановиться из `ORDERS_DR` или снимка | Зеркало переживает удаление источника: сохраняет скопированное и лишь перестаёт обновляться, поэтому обычно это самая свежая целая копия. Снимок — более старый запасной вариант. |
+| Сообщения `ORDERS` повреждены или неверны из-за издателя | восстановить заведомо исправный снимок или очистить плохой диапазон | Ошибочные данные попали и в зеркало. Снимок сделан до повреждения. |
+| Потребитель потерял позицию (`shipping` снова читает с начала) | восстановить снимок с `--consumers` | Только снимок сохранил позицию доставки потребителя. |
+| Столько серверов `east` утрачено навсегда, что у группы метаданных нет лидера | аварийно восстановить группу метаданных, затем удалить недоступных участников | Без кворума метаданных невозможно создавать, перемещать или восстанавливать потоки. |
 
-One principle runs through the whole table: a snapshot is the only copy
-that predates a mistake. A mirror follows the upstream's live writes, so
-a corrupt write replicates into it; it survives an upstream delete but
-only as a copy frozen at the break, never an earlier point you chose.
-That's why the chapter built both, and why
-[R3 replication](/learn/clustering) is on neither row: replicating a bad
-write three times doesn't undo it.
+Общий принцип: только снимок гарантированно предшествует ошибке. Зеркало следует текущим записям и копирует повреждение; удаление источника оно переживает, но как копия, замершая в момент разрыва. Поэтому нужны оба инструмента. [Репликация R3](/learn/clustering) не решает ни одну из этих задач: трижды скопированная ошибка не исчезает.
 
-## Failover: promote the mirror
+## Переключение: сделайте зеркало основным {#failover-promote-the-mirror}
 
-When the `east` cluster is gone, the goal is to make `ORDERS_DR` start accepting
-writes so `order-svc` and the consumers can carry on at `site2`. That's
-promotion, and it's a short, ordered sequence. The animation below
-shows it end to end.
+При потере `east` нужно разрешить запись в `ORDERS_DR`, чтобы `order-svc` и потребители продолжили работу на `site2`. Повышение выполняется короткой последовательностью шагов. Анимация показывает её целиком.
 
 <div class="nats-flow" data-scenario="mirrorFailoverAnimated" data-width="600" data-height="350"></div>
 
-### Step 1 — verify the lag is zero
+### Шаг 1 — проверьте нулевое отставание {#step-1--verify-the-lag-is-zero}
 
-A mirror trails its upstream by some **lag**: the count of messages it
-hasn't copied yet. Promote it while lag is non-zero and you start publishing on
-top of a stream that's still missing its tail. So the first runbook step is
-always the same: read the lag.
+**Отставание** зеркала — число ещё не скопированных сообщений. Если повысить его при ненулевом отставании, новые публикации начнут поступать в поток с отсутствующим концом. Поэтому первый шаг всегда один: прочитать отставание.
 
 <div class="nats-example" data-type="learn-backup-recovery-disaster-recovery-checkLag" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-If the `east` site is fully unreachable, the mirror can't reach its upstream and the lag
-stops at whatever it was when contact dropped. That stalled number is your
-real recovery point: the messages written to `ORDERS` after the last
-successful copy are lost. Note it, then proceed. Waiting for a lag that will
-never move to zero only extends the outage.
+Если `east` полностью недоступен, зеркало теряет источник, а отставание замирает на последнем известном значении. Оно определяет фактическую точку восстановления: записи в `ORDERS` после последнего успешного копирования потеряны. Зафиксируйте это и продолжайте. Ожидание нуля, который уже не наступит, лишь продлит простой.
 
-### Step 2 — drop the mirror config
+### Шаг 2 — удалите конфигурацию зеркала {#step-2--drop-the-mirror-config}
 
-A mirror is **read-only** by design: it rejects direct publishes because its
-only job is to follow its upstream. To make `ORDERS_DR` writable, you remove
-the mirror relationship from its configuration.
+Зеркало по определению работает **только для чтения**: прямые публикации отклоняются, поскольку оно следует источнику. Чтобы разрешить запись в `ORDERS_DR`, удалите связь зеркала из конфигурации.
 
 ```bash
 # At site2: edit ORDERS_DR so it is no longer a mirror.
@@ -75,47 +49,33 @@ the mirror relationship from its configuration.
 nats --server nats://site2:4222 stream edit ORDERS_DR --no-mirror
 ```
 
-Once the mirror config is gone, the stream stops following `east`. It still
-holds every message it had copied. Promotion doesn't touch the data, only
-the relationship.
+После этого поток перестаёт следовать `east`, сохраняя все уже скопированные сообщения. Повышение меняет только связь, не данные.
 
-### Step 3 — clear the lost stream's assignment
+### Шаг 3 — удалите назначение потерянного потока {#step-3--clear-the-lost-streams-assignment}
 
-The subject bind in the next step fails if the old `ORDERS` assignment is
-still in the JetStream metadata. The server checks the subjects you're
-adding against every stream in the account, and losing the site doesn't
-remove the dead `ORDERS` on its own, so the edit comes back with
-`subjects overlap with an existing stream (10065)`. Clear the stale entry
-first:
+Привязка тем на следующем шаге не сработает, если старое назначение `ORDERS` осталось в метаданных JetStream. Сервер проверяет добавляемые темы на пересечение со всеми потоками учётной записи. Потеря площадки не удаляет недоступный `ORDERS` автоматически, поэтому редактирование вернёт `subjects overlap with an existing stream (10065)`. Сначала удалите устаревшую запись:
 
 ```bash
 # Remove the assignment for the lost ORDERS so its subjects are free.
 nats --server nats://site2:4222 stream rm ORDERS --force
 ```
 
-This is the official promotion order: free the mirrored stream's
-subjects, drop the mirror config (step 2), then bind those subjects to
-the promoted stream (step 4).
+Официальный порядок повышения таков: освободить темы исходного потока, удалить конфигурацию зеркала (шаг 2), затем привязать темы к повышенному потоку (шаг 4).
 
-### Step 4 — add the subjects so it accepts writes
+### Шаг 4 — добавьте темы для приёма записей {#step-4--add-the-subjects-so-it-accepts-writes}
 
-A mirror has no subjects of its own; it receives messages through the mirror
-mechanism, not by listening on `orders.>`. A writable primary needs to *bind*
-those subjects so publishers can reach it. Add them:
+У зеркала нет собственных тем: оно получает сообщения механизмом репликации, а не подпиской на `orders.>`. Основному потоку с записью нужно *привязать* эти темы, чтобы издатели могли к нему обратиться. Добавьте их:
 
 ```bash
 # Give the promoted stream the subjects ORDERS used to own.
 nats --server nats://site2:4222 stream edit ORDERS_DR --subjects "orders.>"
 ```
 
-`ORDERS_DR` now captures `orders.created`, `orders.shipped`,
-`orders.canceled` — the same subjects the lost primary held. It now functions
-as a full primary.
+Теперь `ORDERS_DR` захватывает `orders.created`, `orders.shipped` и `orders.canceled` — те же темы, что потерянный основной поток. Он стал полноценным основным потоком.
 
-### Step 5 — redirect publishers and consumers
+### Шаг 5 — перенаправьте издателей и потребителей {#step-5--redirect-publishers-and-consumers}
 
-The last step redirects traffic. Point `order-svc` and the consumers at `site2` and
-they resume against the promoted stream:
+Последний шаг — перенаправление трафика. Настройте `order-svc` и потребителей на `site2`, чтобы продолжить работу с повышенным потоком:
 
 ```bash
 # Publishers and consumers now connect to site2.
@@ -123,69 +83,33 @@ nats --server nats://site2:4222 pub orders.created \
   '{"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}'
 ```
 
-The order JSON is byte-for-byte what `order-svc` always sent; only the server
-address changed. Failover is complete: the platform writes and reads at
-`site2`, and the data loss is exactly the stalled lag you noted in step 1.
+JSON заказа в точности тот же, что всегда отправлял `order-svc`; изменился лишь адрес сервера. Переключение завершено: платформа читает и пишет на `site2`, а потеря данных соответствует отставанию, отмеченному на шаге 1.
 
-Two deployment preconditions sit under this whole sequence. First, every
-`stream rm` and `stream edit` here goes through the JetStream metadata
-group, so that group has to keep quorum after the site is lost — if the
-failed site held the meta majority, no edit succeeds until the cluster
-recovers. Second, the promoted stream must live where that quorum
-survives. That's why a DR mirror is normally placed in its own JetStream
-domain (a leaf node) or an independent cluster, rather than sharing one
-meta group that spans both sites.
+У всей последовательности два предварительных условия. Во-первых, каждая команда `stream rm` и `stream edit` проходит через группу метаданных JetStream. После потери площадки у неё должен сохраняться кворум. Если отказавшая площадка содержала большинство, правки невозможны до восстановления кластера. Во-вторых, повышаемый поток должен находиться там, где кворум сохранился. Поэтому резервное зеркало обычно размещают в собственном домене JetStream на листовом узле либо в независимом кластере, а не в общей группе метаданных двух площадок.
 
-How the mirror replicated those messages in the first place (the config,
-the filters, the start position) is the JetStream chapter's job, covered in
-[Mirrors and sources](/learn/jetstream/mirrors-and-sources). The runbook only
-reads the lag and changes the relationship.
+Как зеркало изначально реплицировало сообщения — конфигурация, фильтры, начальная позиция — объясняет [JetStream → Зеркала и источники](/learn/jetstream/mirrors-and-sources). Здесь мы лишь читаем отставание и меняем связь.
 
-## Recovery from a mistake: restore the snapshot
+## Восстановление после ошибки: верните снимок {#recovery-from-a-mistake-restore-the-snapshot}
 
-The other rows of the table roll back rather than fail over. When
-corrupt messages were written to `ORDERS`, the mirror is no help, because
-it copied the bad writes; the snapshot is the intact copy, taken before
-the bad event. An accidental delete or purge is the exception: the mirror
-keeps everything it had already replicated, so it's often the freshest
-surviving copy — recover from it when it holds more than the last
-snapshot, and fall back to the snapshot otherwise.
+Другие строки таблицы требуют отката вместо переключения. При записи повреждённых сообщений зеркало бесполезно: оно скопировало их; целой копией остаётся снимок до ошибки. Исключение — случайное удаление или очистка: зеркало сохраняет всё уже реплицированное и часто является самой свежей копией. Используйте его, если оно содержит больше последнего снимка; иначе восстанавливайте снимок.
 
 <div class="nats-example" data-type="learn-backup-recovery-disaster-recovery-restoreStream" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-For an accidental delete, restore straight from the snapshot. Don't
-recreate an empty `ORDERS` first, because restore creates the stream itself
-and an existing stream of the same name makes it fail. For logical
-corruption, stop the publishers first so no new bad data races in, then
-either purge the corrupt sequence range or restore a known-good snapshot
-that predates it. For a lost consumer position, a snapshot taken with
-`--consumers` brings the durable consumer config and its delivery position
-back together.
+После случайного удаления сразу восстанавливайте снимок. Не создавайте заранее пустой `ORDERS`: восстановление само создаёт поток и завершится ошибкой при совпадении имени с существующим. При логическом повреждении сначала остановите издателей, затем очистите плохой диапазон номеров или восстановите заведомо исправный снимок до ошибки. Если потеряна позиция потребителя, снимок с `--consumers` вернёт и конфигурацию долговременного потребителя, и позицию доставки.
 
-The mechanics of the snapshot itself (chunking, the `backup.json`, the
-restore name rule) live one page back on
-[Stream backup and restore](/learn/backup-recovery/stream-backup-restore).
-Here it's one step in a larger procedure.
+Устройство снимка — фрагменты, `backup.json`, правило имени — разобрано на странице [Резервное копирование и восстановление потока](/learn/backup-recovery/stream-backup-restore). Здесь это один шаг общей процедуры.
 
-## Last resort: rescue the meta group
+## Крайняя мера: аварийное восстановление группы метаданных {#last-resort-rescue-the-meta-group}
 
-Every recovery above assumes the metadata layer still works. Streams are
-created, restored, and moved by the meta group, and it needs a majority of
-its peers to agree. Lose enough servers permanently — three of five gone
-with their disks — and the survivors can't form that majority. There's no
-leader, so `peer-remove` can't run, because removing a peer is itself a
-change the meta group has to agree on.
+Все предыдущие действия предполагают работоспособный слой метаданных. Группа создаёт, восстанавливает и перемещает потоки, для чего требуется согласие большинства участников. Если навсегда потеряны, например, три из пяти серверов вместе с дисками, оставшиеся не образуют большинства. Лидера нет, а `peer-remove` выполнить нельзя: удаление участника само требует согласования группы.
 
-From NATS 2.15 there's a supported way out. **Rescue** temporarily lowers
-the number of peers the meta group needs, so the survivors can agree again
-and you can remove the dead ones:
+Начиная с NATS 2.15 предусмотрена операция **rescue**. Она временно уменьшает необходимое число участников группы метаданных, позволяя оставшимся согласовать изменения и удалить потерянных:
 
 ```bash
 nats server cluster rescue
 ```
 
-The command asks every server for its view first and prints what it found,
-so you can see how many are actually reachable before changing anything:
+Сначала команда запрашивает представление каждого сервера и выводит результат: до изменений видно, сколько узлов реально доступно.
 
 ```
 Current Cluster State
@@ -195,118 +119,62 @@ Current Cluster State
    n2-east  east     5     2 online / 5 peers  3                false
 ```
 
-Two servers online where quorum needs three is the situation rescue exists
-for. It then asks how many peers to require, defaulting to the number still
-online, broadcasts the change, and reports back per server:
+Два доступных сервера при необходимом кворуме из трёх — случай для rescue. Затем команда спрашивает требуемое число участников, по умолчанию равное числу доступных, рассылает изменение и сообщает результат каждого сервера:
 
 ```
 Server "n1-east" now requires 2 quorum size (was 3)
 Server "n2-east" now requires 2 quorum size (was 3)
 ```
 
-The meta group elects a leader again, and you finish the job by removing
-the servers that aren't coming back:
+Группа метаданных снова выбирает лидера. Завершите процедуру удалением серверов, которые уже не вернутся:
 
 ```bash
 nats server cluster peer-remove n3-east
 ```
 
-Only ever peer-remove a server that is stopped. In this example, these servers
-are already gone, which is why you're rescuing at all, but the rule holds
-everywhere: a running server that gets peer-removed disables JetStream on
-itself. If one of the "dead" servers turns out to be reachable, shut it down
-before removing its peer.
+Удалять участника можно только после остановки сервера. Здесь потерянные серверы уже отсутствуют, но правило общее: работающий сервер после удаления из участников отключает у себя JetStream. Если один из считавшихся потерянными узлов оказался доступен, остановите его перед удалением.
 
-Once only live servers remain in the meta group, normal operation resumes
-and the recoveries earlier on this page become possible again.
+Когда в группе останутся только работающие серверы, нормальная работа возобновится, и предыдущие способы восстановления снова станут доступны.
 
-Where more than one JetStream domain is present, you must specify the domain
-in the rescue command. Each domain runs its own meta group, with its own peers
-and its own quorum. A rescue lowers the quorum of exactly one of them, so on a
-topology with several domains — a hub and its leaf domains, say — the command
-has to be told which meta group it is rescuing. Left to guess, it stops with
-`multiple domains found, pick one from ...` and lists what answered. Name the domain:
+При нескольких доменах JetStream явно укажите домен в команде rescue. У каждого домена своя группа метаданных, участники и кворум. Rescue уменьшает кворум ровно одной группы. Поэтому в топологии с центральным узлом и листовыми доменами нужно назвать восстанавливаемую группу. Иначе команда остановится с `multiple domains found, pick one from ...` и перечислит ответившие домены. Укажите нужный:
 
 ```bash
 nats server cluster rescue --js-domain hub
 ```
 
-This command only works when the system is unable to elect a leader, printing
-`Cluster is healthy with a leader, no rescue needed`. In this case, revisit
-the earlier sections of this guide to restore stream or consumer operations.
-It also skips servers older than 2.15.0, naming each one, so a half-upgraded
-cluster tells you which nodes it ignored.
+Команда работает только при невозможности выбрать лидера. Если лидер есть, она выводит `Cluster is healthy with a leader, no rescue needed`; в таком случае вернитесь к предыдущим разделам восстановления потоков и потребителей. Серверы старше 2.15.0 пропускаются с указанием имён, поэтому в частично обновлённом кластере видно, какие узлы не участвовали.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-The runbook fails most often on the order of the steps and the
-assumptions around them rather than on the commands themselves. Five common mistakes happen mid-outage.
+Чаще ошибаются в порядке действий и предположениях, а не в самих командах. Во время аварии распространены пять ошибок.
 
-**Never promote a mirror before lag reaches zero.** Promotion makes the
-mirror writable. If you do it while messages are still in flight from the
-upstream, those tail messages are lost and new writes land on top of the
-gap. Always run the lag check first, and only proceed at `Lag: 0` or with a
-stalled lag you've consciously accepted as your recovery point. Read the lag
-and don't skip step 1.
+**Не повышайте зеркало до проверки отставания.** Если сообщения ещё идут от источника, после разрешения записи недостающий конец потеряется, а новые записи попадут поверх разрыва. Сначала проверяйте `Lag`; продолжайте при `Lag: 0` либо при остановившемся значении, которое осознанно принято как точка восстановления. Не пропускайте шаг 1.
 
-You can make that check a gate. Run the lag check from
-[step 1 above](#step-1--verify-the-lag-is-zero), decide on the number, then
-promote, never the reverse.
+Сделайте эту проверку обязательным условием. Прочитайте отставание из [шага 1 выше](#step-1--verify-the-lag-is-zero), оцените значение и только затем выполняйте повышение.
 
-**R3 replication will not save you from a mistake.** A three-replica stream
-survives a node loss, but an accidental delete or a bad publish replicates to
-all three copies at once. R3 is availability, not a backup. Don't put it on
-the mistake rows of the table; that's what snapshots are for.
+**R3 не спасает от ошибки.** Поток с тремя репликами переживает потерю узла, но случайное удаление или ошибочная публикация применяются ко всем копиям. Это доступность, а не резервное копирование. Для отката после ошибок нужны снимки.
 
-**Stop publishers before purging corrupted messages.** Purging a bad
-sequence range while `order-svc` is still writing lets new corrupt data arrive
-behind you, so you keep purging against a tail that keeps growing. Stop the
-publishers, purge or restore, then resume.
+**Остановите издателей перед очисткой повреждённых сообщений.** Пока `order-svc` продолжает писать, новые плохие данные поступают следом за удаляемыми. Сначала остановите публикацию, затем очистите или восстановите данные и возобновите работу.
 
-**Rescue is not peer management.** Lowering the quorum makes a smaller set
-of servers authoritative over the cluster's metadata which, if not used carefully,
-can cause a split-brain condition. Therefore, it is important that the servers
-are genuinely never going to return. Retiring a node in the normal course is
-`nats server cluster evacuate` and `nats server cluster peer-remove` while the
-meta group still has a leader — never rescue.
+**Rescue не предназначен для обычного управления участниками.** Уменьшение кворума делает меньшую группу серверов полномочной над метаданными и при неосторожном использовании может привести к разделению кластера на независимые части. Убедитесь, что потерянные серверы действительно никогда не вернутся. Плановый вывод узла выполняется через `nats server cluster evacuate` и `nats server cluster peer-remove`, пока у группы метаданных есть лидер.
 
-**An untested snapshot is unverified.** A healthy `nats stream info` on the live
-stream tells you the live stream is healthy; it proves nothing about the
-archive in `./backups/orders/`. Rehearse the restore on a schedule
-(quarterly is a reasonable minimum) into a throwaway stream or server, so the first
-time you run it isn't during the outage.
+**Непроверенный снимок остаётся неподтверждённым.** Успешный `nats stream info` говорит о рабочем потоке, но ничего не доказывает об архиве `./backups/orders/`. Регулярно репетируйте восстановление во временной среде — хотя бы раз в квартал, — чтобы первый запуск не пришёлся на аварию.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You can now name a NATS failure and reach for the right tool quickly.
-A lost site means promote `ORDERS_DR`: verify lag, drop the mirror
-config, add the subjects, redirect traffic. A mistake (delete, corruption,
-or a lost consumer position) means restore the snapshot, the copy that
-predates the mistake — a mirror copies a corrupt write and only freezes
-at an upstream delete. R3 is on neither path; it's availability, not
-recovery.
+Теперь вы можете быстро определить отказ NATS и выбрать инструмент. Потеря площадки требует повышения `ORDERS_DR`: проверить отставание, удалить конфигурацию зеркала, добавить темы и перенаправить трафик. Ошибка — удаление, повреждение, потеря позиции потребителя — требует подходящей сохранившейся копии, прежде всего снимка до ошибки. Зеркало копирует повреждённые записи и лишь замирает при удалении источника. R3 обеспечивает доступность, а не откат.
 
-The data plane is now fully covered: a snapshot you can restore to, and a site
-where you can promote the mirror.
+Уровень данных теперь защищён: есть снимок для восстановления и площадка с зеркалом для переключения.
 
-## What's next
+## Что дальше {#whats-next}
 
-One layer is still unprotected. If a laptop full of keys is lost, or the
-servers are rebuilt clean, the data is recoverable but no one can prove who
-they are: the operator JWT, the account JWTs, the nkeys, and the creds are
-gone. The next page backs up the **identity** plane.
+Один уровень ещё не защищён. При потере ноутбука с ключами или создании серверов с нуля данные можно вернуть, но никто не сможет подтвердить свою личность: JWT оператора и учётных записей, nkey и файлы учётных данных утрачены. Следующая страница сохраняет **данные идентификации**.
 
-Continue to
-[Config and JWT backup](/learn/backup-recovery/config-and-jwt-backup).
+Перейдите к [резервным копиям конфигурации и JWT](/learn/backup-recovery/config-and-jwt-backup).
 
-## See also
+## См. также {#see-also}
 
-- [Mirrors and sources](/learn/jetstream/mirrors-and-sources) — how a mirror
-  replicates, the mechanism the runbook only reads the lag of.
-- [Stream backup and restore](/learn/backup-recovery/stream-backup-restore)
-  — the snapshot internals the restore step depends on.
-- [Clustering](/learn/clustering) — R3 leader election, the availability
-  story that is not a recovery story.
-- [Clustering → Desired state and evacuation](/learn/clustering/desired-state)
-  — the ordinary way to take a server out, and what to do instead of a
-  rescue while the meta group still has a leader.
+- [Зеркала и источники](/learn/jetstream/mirrors-and-sources) — механизм репликации, отставание которого читает инструкция.
+- [Резервное копирование и восстановление потока](/learn/backup-recovery/stream-backup-restore) — устройство снимков для шага восстановления.
+- [Кластеризация](/learn/clustering) — выборы лидера R3 и обеспечение доступности.
+- [Кластеризация → Желаемое состояние и эвакуация](/learn/clustering/desired-state) — обычный вывод сервера и действия вместо rescue при работающем лидере метаданных.

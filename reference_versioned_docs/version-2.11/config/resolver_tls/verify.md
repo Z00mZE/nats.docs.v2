@@ -1,11 +1,11 @@
-# verify
+# verify {#verify}
 
 <Reloadable state="noop" note="Reload succeeds and the value is stored, but ClientAuth is ignored on an outbound client connection, so nothing changes." />
-If true, require and verify client certificates. Does not apply to monitoring.
+Если true, требует и проверяет сертификаты клиентов. К мониторингу не применяется.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

@@ -1,13 +1,12 @@
-# system_account
+# system_account {#system_account}
 
 <Aliases aliases="system" />
 <Reloadable state="not-reloadable" />
-Name or public key of the account that will be deemed the
-*system* account.
+Имя или открытый ключ аккаунта, который будет считаться *системным*.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

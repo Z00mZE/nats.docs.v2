@@ -1,14 +1,11 @@
-# handshake_timeout
+# handshake_timeout {#handshake_timeout}
 
 <Reloadable state="not-reloadable" />
-This is the total time allowed for the server to
-read the client request and write the response back
-to the client. This includes the time needed for the
-TLS handshake.
+Общее время, отведённое серверу на чтение клиентского запроса и отправку ответа клиенту, включая рукопожатие TLS.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

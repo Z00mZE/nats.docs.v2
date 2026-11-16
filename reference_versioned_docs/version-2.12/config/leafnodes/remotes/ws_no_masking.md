@@ -1,14 +1,12 @@
-# ws_no_masking
+# ws_no_masking {#ws_no_masking}
 
 <Aliases aliases="websocket_no_masking" />
 <Reloadable state="not-reloadable" />
-If true and connecting with the WebSocket protocol,
-the connection will indicate to the remote that it
-wishes *not* to mask outbound WebSocket frames.
+Если true и используется протокол WebSocket, соединение сообщает удалённой стороне, что *не* желает маскировать исходящие кадры WebSocket.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

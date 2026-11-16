@@ -1,14 +1,13 @@
-# isolate_leafnode_interest
+# isolate_leafnode_interest {#isolate_leafnode_interest}
 
 <Aliases aliases="isolate" />
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-Do not propagate subscription interest learned from one leaf
-node to the others attached to this server.
+Не передавать интерес подписок, полученный от одного листового узла, другим узлам, подключённым к этому серверу.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

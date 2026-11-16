@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // workQueueRetentionAnimated
@@ -81,8 +82,8 @@ function WorkQueueRetentionAnimatedInner() {
         const tagColor = justAcked ? CONSUMER_GREEN : has ? STREAM_BLUE : "#9ca3af";
         return (
             <div style={{ position: "absolute", left: WK_L, top, width: WK_W, height: 48, borderRadius: 9, border: `2px solid ${border}`, background: justAcked ? "#ecfdf5" : "white", padding: "0 11px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color 0.3s, background 0.3s, box-shadow 0.3s", boxShadow: justAcked ? `0 0 0 4px ${CONSUMER_GREEN}22` : "none" }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>worker-{idx + 1}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "monospace", color: tagColor, transition: "color 0.3s" }}>{tag}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>worker-{localizeDiagramContent(idx + 1)}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "monospace", color: tagColor, transition: "color 0.3s" }}>{localizeDiagramContent(tag)}</span>
             </div>
         );
     };
@@ -90,8 +91,7 @@ function WorkQueueRetentionAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 14, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>WorkQueue.</strong> Each order goes to <strong>one</strong> worker. The first ack
-                removes it for everyone, so the stream drains to empty.
+                <strong>Рабочая очередь.</strong> Каждый заказ поступает <strong>одному</strong> обработчику. Первое подтверждение удаляет сообщение для всех, поэтому поток опустошается.
             </div>
 
             <div style={{ position: "relative", width: W, height: H, border: "1px solid #e5e7eb", borderRadius: 10, background: "#fafafa" }}>
@@ -103,14 +103,14 @@ function WorkQueueRetentionAnimatedInner() {
 
                 {/* publisher */}
                 <div style={{ position: "absolute", left: PUB_L, top: MIDY - 25, width: PUB_W, height: 50, borderRadius: 9, border: `2px solid ${WORKER_NAVY}`, background: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: WORKER_NAVY }}>
-                    publisher
+                    издатель
                 </div>
 
                 {/* stream */}
                 <div style={{ position: "absolute", left: STREAM_L, top: STREAM_T, width: STREAM_W, height: STREAM_H, borderRadius: 10, border: `2px solid ${STREAM_BLUE}`, background: "white", boxShadow: `0 1px 3px ${STREAM_BLUE}22` }}>
                     <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px 0", fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace", color: count ? STREAM_BLUE : "#9ca3af", transition: "color 0.3s" }}>{count} msg</span>
+                        <span style={{ fontFamily: "monospace", color: count ? STREAM_BLUE : "#9ca3af", transition: "color 0.3s" }}>{localizeDiagramContent(count)} msg</span>
                     </div>
                 </div>
 
@@ -136,14 +136,14 @@ function WorkQueueRetentionAnimatedInner() {
                         boxShadow: `0 1px 2px rgba(0,0,0,0.08)`,
                     }}
                 >
-                    #{n}
+                    #{localizeDiagramContent(n)}
                 </div>
 
-                {worker(0)}
-                {worker(1)}
+                {localizeDiagramContent(worker(0))}
+                {localizeDiagramContent(worker(1))}
             </div>
 
-            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

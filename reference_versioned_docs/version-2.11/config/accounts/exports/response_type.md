@@ -1,12 +1,11 @@
-# response_type
+# response_type {#response_type}
 
 <Reloadable state="reloadable" />
-Indicates if a response to a service request consists of a single
-or a stream of messages. Possible values are `single` or `stream`.
+Определяет, состоит ли ответ на запрос сервиса из одного сообщения или потока сообщений. Допустимые значения: `single` и `stream`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

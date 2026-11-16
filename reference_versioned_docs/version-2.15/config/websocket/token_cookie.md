@@ -1,11 +1,11 @@
-# token_cookie
+# token_cookie {#token_cookie}
 
 <Reloadable state="not-reloadable" />
-Name of the HTTP cookie holding the auth token.
+Имя HTTP-cookie с токеном аутентификации.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,13 +1,12 @@
-# credentials
+# credentials {#credentials}
 
 <Aliases aliases="creds" />
 <Reloadable state="reloadable" />
-Path to a credentials file. This is application when
-decentralized auth is used on the remote.
+Путь к файлу учётных данных. Применяется при децентрализованной аутентификации на удалённой стороне.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

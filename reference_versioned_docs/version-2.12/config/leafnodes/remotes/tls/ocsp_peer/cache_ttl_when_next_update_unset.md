@@ -1,11 +1,11 @@
-# cache_ttl_when_next_update_unset
+# cache_ttl_when_next_update_unset {#cache_ttl_when_next_update_unset}
 
 <Reloadable state="reloadable" />
-How long to cache a response that carries no next-update time.
+Время кэширования ответа без времени следующего обновления.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

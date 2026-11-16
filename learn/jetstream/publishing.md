@@ -1,53 +1,40 @@
 ---
 id: publishing
-title: Publishing
+title: "Публикация"
 sidebar_position: 3
-description: Publish into a stream and understand the PubAck contract
+description: "Публикация в поток и гарантии PubAck"
 ---
 
-# Publishing
+# Публикация {#publishing}
 
-The `ORDERS` stream is empty. This page puts messages into it. Publishing
-into a stream works like a normal NATS publish, with one difference: the
-server sends back a confirmation that it stored the message. This page
-covers that confirmation, called a `PubAck`, and how to make a publish
-safe to retry.
+Поток `ORDERS` пуст. Заполним его. Публикация похожа на Core NATS, но сервер подтверждает сохранение сообщения. Разберём подтверждение `PubAck` и безопасные повторные попытки.
 
 <div class="nats-flow" data-scenario="publishAckAnimated" data-width="600" data-height="320"></div>
 
-## Publish from the CLI
+## Публикация через CLI {#publish-from-the-cli}
 
-Start in the terminal. A plain `nats pub` is a core NATS publish: the
-client sends the message and the server returns nothing. When you publish
-into a stream you usually want a confirmation, so add the `--jetstream`
-flag:
+Обычный `nats pub` отправляет сообщение без ответа. Для подтверждения записи добавьте `--jetstream`:
 
 ```bash
 nats pub --jetstream orders.created '{"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}'
 ```
 
-The server appends the message to `ORDERS` (the stream captures
-`orders.>`) and replies on the same call:
+Сервер добавляет сообщение в `ORDERS`, захватывающий `orders.>`, и отвечает в том же вызове:
 
 ```text
 Stored in Stream: ORDERS Sequence: 1
 ```
 
-That reply is the `PubAck`. It contains the name of the stream that
-stored the message and the sequence number the stream gave it. Sequence
-numbers start at `1` and only increase. The server gives each new message
-the next number and never reuses one.
+Это `PubAck`: имя потока и присвоенный порядковый номер. Номера начинаются с `1`, только растут и не используются повторно.
 
-Publish two more messages so the stream has some content. Each one is
-acknowledged with the next sequence number, `2` and then `3`:
+Опубликуйте ещё два сообщения. Подтверждения получат номера `2` и `3`:
 
 ```bash
 nats pub --jetstream orders.created '{"order_id":"ord_2zr9","customer":"globex","total_cents":7800,"ts":"2026-05-22T10:14:25Z"}'
 nats pub --jetstream orders.shipped '{"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:31Z"}'
 ```
 
-You can check the whole stream with `nats stream info ORDERS`. It now
-reports three messages:
+`nats stream info ORDERS` теперь показывает три сообщения:
 
 ```text
 State:
@@ -60,93 +47,54 @@ State:
            Number of Subjects: 2
 ```
 
-You didn't have to run that command to know the writes succeeded. Each
-publish already reported its sequence number when it returned.
+Для проверки успеха эта команда не обязательна: каждая публикация уже вернула свой номер.
 
-## Publish from a client library
+## Публикация через клиентскую библиотеку {#publish-from-a-client-library}
 
-On the CLI, the `PubAck` is printed to the screen. In application code it
-is a return value: the same confirmation from the server, as an object
-your program can read. The `PubAck` is the main thing you work with when
-publishing to JetStream, and the next section covers what it contains.
+CLI печатает `PubAck`, а библиотека возвращает его объектом. Это основное значение, с которым работает код публикации JetStream. Далее рассмотрены его поля.
 
-Here are the same three publishes from a client library:
+Те же три публикации через библиотеку:
 
 <div class="nats-example"
      data-type="learn-jetstream-publishing-sync"
      data-languages="js,go,python,java,rust,csharp,c"></div>
 
-Two details show up in every one of these snippets:
+Во всех примерах два общих свойства:
 
-1. You publish to a subject, not to a stream. The server finds the stream
-   that captures the subject and stores the message there. Your code
-   doesn't need to know which stream is bound to which subject.
-2. The publish call returns a `PubAck` instead of nothing. That return
-   value is how you know the message reached a stream. The next section
-   reads it.
+1. Публикация идёт в тему; сервер сам находит захватывающий её поток. Код не обязан знать привязки.
+2. Вызов возвращает `PubAck`: доказательство достижения потока. Далее прочитаем его.
 
-## What a PubAck contains
+## Содержимое PubAck {#what-a-puback-contains}
 
-A `PubAck` has three fields you use regularly:
+Три часто используемых поля:
 
-- **stream**: the stream that stored the message. Useful in tests and
-  logs; in normal code you already know it.
-- **sequence**: the sequence number the stream gave the message. It's the
-  number shown by `nats stream info`. If you save it next to your business
-  record, you can replay the stream from that point later.
-- **duplicate**: `false` for a new message, `true` if the server
-  recognized the message as a repeat. Duplicate detection is covered in
-  [Avoiding duplicate writes](#avoiding-duplicate-writes) below.
+- **stream** — сохранивший поток; полезен в тестах и журналах.
+- **sequence** — порядковый номер сообщения, видимый и в `nats stream info`. Сохранив его с бизнес-записью, можно позже начать воспроизведение отсюда.
+- **duplicate** — `false` для нового, `true` для распознанного повтора; см. [Предотвращение повторной записи](#avoiding-duplicate-writes).
 
-A `PubAck` can also include a few situational fields, such as a `domain`
-for multi-tenant or leaf-node setups. The full list is in
-[Reference](/reference/jetstream/api/stream/pub-ack). The
-three above are the ones day-to-day publishing code reads.
+Возможны дополнительные поля, например `domain` для нескольких арендаторов или листовых узлов. Полный список — в [справочнике](/reference/jetstream/api/stream/pub-ack); обычно нужны три перечисленных.
 
-The snippets in the previous section already return this object; reading
-its fields is all there is to it.
+Предыдущие примеры уже возвращают этот объект: остаётся прочитать поля.
 
-The rule: the `PubAck` is your only proof that the message was stored.
-When a publish fails, what you know depends on how it failed. A subject
-that no stream captures fails immediately (a "no responders" error), and
-nothing was stored. But a network timeout means no confirmation, not no
-write: the server may have stored the message and the ack got lost on the
-way back. So handle a failed publish by retrying it or reporting the
-failure — and make the retry safe with the `Nats-Msg-Id` header covered
-in [Avoiding duplicate writes](#avoiding-duplicate-writes) below.
+Правило: только `PubAck` доказывает сохранение. Ошибка «нет отвечающих» для темы без потока означает отсутствие записи. Но сетевой тайм-аут означает отсутствие подтверждения: сообщение могло сохраниться, а ответ — потеряться. Повторите попытку или сообщите об ошибке; для безопасного повтора задайте `Nats-Msg-Id`, как показано [ниже](#avoiding-duplicate-writes).
 
-## Stored versus delivered
+## Сохранение и доставка {#stored-versus-delivered}
 
-A `PubAck` confirms that the server stored the message. It does not
-confirm that any consumer has received it. Storage and delivery are
-separate.
+`PubAck` подтверждает сохранение, но не получение потребителем. Это отдельные операции.
 
-In core NATS, a message is delivered at almost the same moment the
-publish completes, so the two are easy to treat as one thing. In
-JetStream they happen at different times:
+В Core NATS доставка и завершение публикации почти совпадают. В JetStream:
 
-1. The publisher publishes. The server stores the message and returns a
-   `PubAck`.
-2. Later (possibly minutes, hours, or days) a client reads the message
-   through a consumer.
-3. After processing it, the client acknowledges it. Only then is the
-   message considered handled.
+1. Издатель публикует; сервер сохраняет и возвращает `PubAck`.
+2. Позже — через минуты, часы или дни — клиент читает через потребителя.
+3. После обработки клиент подтверждает. Только тогда сообщение считается обработанным.
 
-The rest of this chapter covers steps 2 and 3. This page has done step 1.
+Здесь выполнен первый шаг, остальные рассматриваются далее.
 
-## Avoiding duplicate writes
+## Предотвращение повторной записи {#avoiding-duplicate-writes}
 
-A real publisher retries when a publish fails. But a failed publish
-doesn't mean the message wasn't stored: a timeout can fire after the
-server stored the message, with only the ack lost. A plain retry then
-stores the same message twice. To prevent that, tag the publish with a
-`Nats-Msg-Id` header. The server refuses to store the same ID twice
-within the stream's duplicate-tracking window (the two-minute setting
-from the previous page's config). A blocked duplicate is the
-`duplicate: true` case in the `PubAck`.
+Тайм-аут может наступить после сохранения при потерянном ответе. Простой повтор создаст вторую копию. Заголовок `Nats-Msg-Id` позволяет серверу не сохранять тот же идентификатор повторно в пределах окна дедупликации, по умолчанию двух минут. Для подавленного повтора `PubAck` содержит `duplicate: true`.
 
-On the CLI, set the header with `--header` and publish with
-`nats pub --jetstream` so the `PubAck` is shown:
+В CLI используйте `--header` вместе с `nats pub --jetstream`:
 
 ```bash
 nats pub --jetstream orders.created \
@@ -154,91 +102,46 @@ nats pub --jetstream orders.created \
   '{"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}'
 ```
 
-Run that command twice. The first call stores the message and prints its
-sequence number (`Stored in Stream: ORDERS Sequence: …`). The second call
-prints the same sequence number with `Duplicate: true`, and nothing new
-is stored. The same header from a client library:
+Выполните дважды. Первый вызов сохраняет сообщение и выводит `Stored in Stream: ORDERS Sequence: …`. Второй возвращает тот же номер с `Duplicate: true`, ничего не добавляя. Через библиотеку:
 
 <div class="nats-example"
      data-type="learn-jetstream-publishing-dedup"
      data-languages="js,go,python,java,rust,csharp,c"></div>
 
-Give every publish you might retry a stable `Nats-Msg-Id` that the
-producer can recompute, such as an order ID, a request ID, or a hash of
-the payload. The full set of publish headers is in
-[Reference → JetStream Headers](/reference/jetstream/api/headers). The
-tracking window is a stream setting, not a header: it's the
-`Duplicate Window` covered on the
-[stream page](/learn/jetstream/your-first-stream). This page uses only
-`Nats-Msg-Id`.
+Каждой повторяемой публикации задавайте стабильный `Nats-Msg-Id`, воспроизводимый издателем: номер заказа, запроса или хеш содержимого. Все заголовки описаны в [Справочнике → Заголовки JetStream](/reference/jetstream/api/headers). Окно задаётся потоком, не заголовком: это `Duplicate Window` со [страницы потока](/learn/jetstream/your-first-stream). Здесь нужен только `Nats-Msg-Id`.
 
-## What we've skipped
+## Что осталось за рамками {#what-weve-skipped}
 
-A few things this page leaves out. The other publishing modes get their
-own page later in the chapter; the rest is in Reference:
+Другие режимы будут разобраны отдельно; остальное находится в справочнике:
 
-- **Async publish** — fire many publishes and collect the `PubAcks` later,
-  for higher throughput. See [Advanced
-  publishing](/learn/jetstream/advanced-publishing).
-- **Atomic batch publish** — store a group of messages all-or-nothing
-  (server 2.12+). See [Advanced publishing](/learn/jetstream/advanced-publishing).
-- **Fast-ingest batch publish** — flow-controlled, high-throughput ingest
-  without atomicity (server 2.14+). See [Advanced
-  publishing](/learn/jetstream/advanced-publishing).
-- **Expected-stream and expected-sequence headers** — fail a publish unless
-  the stream is in a specific state, for optimistic concurrency. See
-  [Reference → JetStream Headers](/reference/jetstream/api/headers).
+- **Асинхронная публикация** — несколько отправок с последующим сбором `PubAcks`; см. [Расширенная публикация](/learn/jetstream/advanced-publishing).
+- **Атомарная пакетная публикация** — вся группа или ничего, сервер 2.12+; см. [Расширенная публикация](/learn/jetstream/advanced-publishing).
+- **Скоростная пакетная публикация** — высокая пропускная способность с управлением потоком, без атомарности, сервер 2.14+; см. [Расширенная публикация](/learn/jetstream/advanced-publishing).
+- **Заголовки ожидаемого потока и номера** — оптимистическая конкуренция: отказ при несовпадении состояния; см. [Заголовки JetStream](/reference/jetstream/api/headers).
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Three mistakes are common on a first publish into a stream. Each follows
-from something above.
+При первой публикации часто встречаются три ошибки.
 
-**Ignoring the `PubAck`.** A publish returns a `PubAck`, and code that
-discards it can't tell a stored message from a lost one. This is easy to
-miss on the CLI: a plain `nats pub` is a core publish, so it prints
-`Published N bytes` whether or not a stream captured the subject. That
-line doesn't prove the message was stored. Read the `PubAck` instead: in
-code, check the return value; on the CLI, publish with
-`nats pub --jetstream`, which reports the stream and sequence number.
+**Игнорирование `PubAck`.** Без него нельзя отличить сохранение от потери. Обычный CLI `nats pub` печатает `Published N bytes`, даже если поток не захватывает тему. Это не доказательство записи. В коде проверяйте результат, в CLI используйте `nats pub --jetstream` с именем потока и номером.
 
 <div class="nats-example"
      data-type="learn-jetstream-publishing-confirmStored"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The plain publish reports `Published` even on a subject no stream
-captures. The `--jetstream` version surfaces the miss as a "no
-responders" error, and confirms a real write with
-`Stored in Stream … Sequence …`.
+Обычная публикация выводит `Published` даже для темы без потока. `--jetstream` выявляет это ошибкой «нет отвечающих», а успешную запись подтверждает `Stored in Stream … Sequence …`.
 
-**Retrying without a `Nats-Msg-Id`.** A publisher that retries after a
-timeout (which any well-built publisher does) can store the message twice:
-the timed-out publish may have been stored with only its ack lost, and the
-retry adds a second copy unless it carries the same `Nats-Msg-Id`. The
-duplicate-tracking window is two minutes by default, so a retry that
-arrives after that also stores a second copy. Don't retry a bare publish. Give every retryable
-publish a stable `Nats-Msg-Id`, as shown in
-[Avoiding duplicate writes](#avoiding-duplicate-writes) above.
+**Повторы без `Nats-Msg-Id`.** После тайм-аута сообщение могло сохраниться. Повтор без того же идентификатора создаёт дубликат. Даже с ним повтор позже стандартных двух минут окна даст новую копию. Каждой повторяемой публикации нужен стабильный идентификатор; см. [Предотвращение повторной записи](#avoiding-duplicate-writes).
 
-**Treating "published" as "delivered".** A `PubAck` means the stream
-stored the message, not that a consumer processed it. Code that marks an
-order shipped as soon as the `PubAck` returns is acting on a write that no
-shipping logic has seen. Keep business outcomes separate from the publish.
-The delivery-and-ack half of the story is on the
-[next page](/learn/jetstream/reading-back) and in
-[delivery and acknowledgment](/learn/jetstream/delivery-and-acknowledgment).
+**Приравнивание публикации к доставке.** `PubAck` не означает обработку потребителем. Помечать заказ отправленным сразу после него неверно: логика отправки ещё могла его не видеть. Бизнес-результат отделяйте от записи. Доставка и подтверждение рассмотрены на [следующей странице](/learn/jetstream/reading-back) и в [доставке и подтверждении](/learn/jetstream/delivery-and-acknowledgment).
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The `ORDERS` stream now holds three messages, each confirmed by a
-`PubAck`, and a repeated publish no longer stores a second copy.
+`ORDERS` содержит три сообщения с `PubAck`, а повторная публикация больше не создаёт вторую копию.
 
-No consumer has read these messages yet. The next page,
-[Reading back the stream](/learn/jetstream/reading-back), reads them back.
+Потребители их пока не читали. [Чтение потока](/learn/jetstream/reading-back) займётся этим.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → JetStream Headers](/reference/jetstream/api/headers) —
-  every publish-side header, including dedup, expected state, and batch.
-- [Reference → Publish Acknowledgement](/reference/jetstream/api/stream/pub-ack)
-  — the exact fields returned by a publish.
+- [Справочник → Заголовки JetStream](/reference/jetstream/api/headers) — дедупликация, ожидаемое состояние, пакеты.
+- [Справочник → Подтверждение публикации](/reference/jetstream/api/stream/pub-ack) — точные поля ответа.

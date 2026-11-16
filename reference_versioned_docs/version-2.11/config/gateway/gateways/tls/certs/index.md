@@ -1,14 +1,12 @@
-# certs
+# certs {#certs}
 
 <Reloadable state="reloadable" />
-Multiple certificate/key pairs to serve, so one listener can
-present different certificates to different clients. Use this
-instead of `cert_file` and `key_file`.
+Несколько пар сертификат/ключ, позволяющих одному слушателю предъявлять разные сертификаты разным клиентам. Используйте вместо `cert_file` и `key_file`.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`cert_file`](./cert_file.md) | Certificate file for this pair. | `string` | - | Yes |
-| [`key_file`](./key_file.md) | Key file for this pair. | `string` | - | Yes |
+| [`cert_file`](./cert_file.md) | Файл сертификата для этой пары. | `string` | - | Да |
+| [`key_file`](./key_file.md) | Файл ключа для этой пары. | `string` | - | Да |

@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { BaseNode, nodeLabel, nodeSubLabel } from './BaseNode';
@@ -22,11 +23,11 @@ export function BoxNode({ data, selected }: NodeProps) {
       style={nodeData.accent ? { borderColor: nodeData.accent } : undefined}
     >
       <div style={nodeData.accent ? { ...nodeLabel, color: nodeData.accent } : nodeLabel}>
-        {nodeData.label}
+        {localizeDiagramContent(nodeData.label)}
       </div>
-      {nodeData.subtitle && (
-        <div style={nodeSubLabel}>{nodeData.subtitle}</div>
-      )}
+      {localizeDiagramContent(nodeData.subtitle && (
+        <div style={nodeSubLabel}>{localizeDiagramContent(nodeData.subtitle)}</div>
+      ))}
 
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />

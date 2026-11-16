@@ -1,45 +1,25 @@
 ---
 id: prometheus-and-dashboards
-title: "Prometheus & dashboards"
+title: "Prometheus и панели"
 sidebar_position: 5
-description: Scrape the monitoring port into Prometheus time series, chart them in Grafana, and alert with nats server check thresholds
+description: "Сбор показателей порта мониторинга во временные ряды Prometheus, графики Grafana и оповещения с порогами nats server check"
 ---
 
-# Prometheus & dashboards
+# Prometheus и панели {#prometheus--dashboards}
 
-Every number so far is a snapshot. When you `curl` the monitoring port you
-see "now," and when you read the `shipping` consumer's state you learn it's
-20 orders behind *at this instant*. None of it is stored. If you refresh the
-query a minute later the old value is gone, with no record of whether
-the lag is climbing or shrinking.
+До сих пор каждый показатель был снимком. Запрос `curl` к порту мониторинга показывает «сейчас», а состояние `shipping` говорит об отставании на 20 заказов *в этот момент*. Ничего не сохраняется. Через минуту старое значение исчезнет, и нельзя будет узнать, растёт отставание или сокращается.
 
-This page closes that gap. It takes the same numbers you already know how
-to read (the lag, the in-flight count, the redeliveries) and
-turns them into a production loop: an exporter that scrapes the
-monitoring port, Prometheus that stores the result as time series, Grafana
-that charts it, and a check that alerts before a person has to look.
+Эта страница устраняет пробел. Уже знакомые показатели — отставание, число неподтверждённых и повторных доставок — включаются в рабочую цепочку: экспортёр опрашивает порт мониторинга, Prometheus хранит результаты как временные ряды, Grafana строит графики, а проверка предупреждает о проблеме автоматически.
 
-We add no new entities. The `east` cluster, the `ORDERS` stream, and the
-`shipping` consumer are all from the earlier chapters. We attach one new
-piece of plumbing, the exporter, outside NATS, and watch the orders
-deployment from one more angle.
+Новых сущностей NATS не появится: кластер `east`, поток `ORDERS` и потребитель `shipping` созданы ранее. Мы добавим внешний экспортёр и посмотрим на систему заказов ещё с одной стороны.
 
-## The exporter converts JSON to time series
+## Экспортёр преобразует JSON во временные ряды {#the-exporter-converts-json-to-time-series}
 
-The monitoring port serves JSON when you ask for it. Prometheus doesn't
-read NATS JSON; it reads its own metrics format, and it pulls that
-format on a schedule. **prometheus-nats-exporter** is the program that
-connects the two: it scrapes the
-monitoring port and re-exposes the numbers as Prometheus metrics.
+Порт мониторинга выдаёт JSON по запросу. Prometheus не читает JSON NATS: он использует свой формат метрик и запрашивает его по расписанию. Программа **prometheus-nats-exporter** связывает эти стороны: опрашивает порт мониторинга и предоставляет те же показатели как метрики Prometheus.
 
-A **time series** is a single named number recorded repeatedly over
-time, and it's what Prometheus stores. Where `/jsz` gave you `num_pending` once,
-the time series `nats_consumer_num_pending` is that same lag value
-sampled every scrape, so you can see it rise.
+**Временной ряд** — именованный показатель, многократно записываемый во времени; именно это хранит Prometheus. `/jsz` вернул `num_pending` один раз, а временной ряд `nats_consumer_num_pending` содержит то же отставание при каждом сборе, позволяя видеть рост.
 
-The exporter runs *outside* NATS. You point it at a node's monitoring
-port `:8222`, tell it which collectors to enable, and it serves its own
-`/metrics` endpoint on `:7777`:
+Экспортёр работает *вне* NATS. Укажите порт мониторинга узла `:8222`, включите нужные сборщики, и экспортёр предоставит собственную конечную точку `/metrics` на `:7777`:
 
 ```bash
 # The exporter runs outside NATS. -jsz turns on the JetStream collector
@@ -49,21 +29,9 @@ port `:8222`, tell it which collectors to enable, and it serves its own
 prometheus-nats-exporter -jsz=all -prefix nats -port 7777 http://localhost:8222
 ```
 
-A **scrape** is one request to an endpoint that fetches its current
-numbers. When Prometheus scrapes the
-exporter's `:7777`, the exporter scrapes the NATS node's `:8222`,
-transforms the JSON into metrics, and hands them back. The exporter holds
-no history of its own; it answers each scrape from a fresh read of the
-monitoring port.
+**Сбор** (scrape) — один запрос текущих показателей конечной точки. Когда Prometheus опрашивает `:7777` экспортёра, тот запрашивает `:8222` узла NATS, преобразует JSON в метрики и возвращает их. Собственной истории у экспортёра нет: каждый ответ основан на свежем чтении порта мониторинга.
 
-The JetStream collector turns the consumer state you already know into
-named time series. The lag field `num_pending` becomes
-`nats_consumer_num_pending`; redeliveries become
-`nats_consumer_num_redelivered`; the stream message count becomes
-`nats_stream_total_messages`. The names follow the wire fields you read on the
-last page. By default the exporter prefixes JetStream metrics with
-`jetstream_`; the `-prefix nats` flag renames them to the `nats_` prefix
-used here, matching what NATS Helm deployments set.
+Сборщик JetStream превращает знакомое состояние потребителя в именованные временные ряды. `num_pending` становится `nats_consumer_num_pending`, повторные доставки — `nats_consumer_num_redelivered`, число сообщений потока — `nats_stream_total_messages`. Имена следуют полям протокола с предыдущей страницы. По умолчанию экспортёр добавляет к метрикам JetStream префикс `jetstream_`; флаг `-prefix nats` меняет его на используемый здесь `nats_`, как в развёртываниях NATS через Helm.
 
 ```
 # /metrics on :7777 — the shipping consumer's lag as a Prometheus series
@@ -73,27 +41,15 @@ nats_consumer_num_redelivered{account="ORDERS",stream_name="ORDERS",consumer_nam
 nats_stream_total_messages{account="ORDERS",stream_name="ORDERS"} 1000
 ```
 
-The pairs in braces are **labels**, the dimensions that tell one
-series from another. Each metric is tagged with `account`, `stream_name`,
-and `consumer_name`, so Prometheus can keep the `ORDERS` account's
-`shipping` lag separate from the `analytics` lag, and from any other
-account's. The pinned snapshot's 20 waiting, 5 in-flight, and 3
-redelivered survive the round trip exactly, now as labeled series.
+Пары в фигурных скобках — **метки**, то есть измерения, различающие ряды. Каждая метрика снабжена `account`, `stream_name` и `consumer_name`, поэтому Prometheus разделяет отставание `shipping` и `analytics` в `ORDERS`, а также показатели других учётных записей. Двадцать ожидающих, пять неподтверждённых и три повторно доставленных сообщения из снимка сохраняют значения, теперь уже как ряды с метками.
 
-The full set of exporter metrics and labels is documented in
-[Reference](/reference/). We only need the consumer-lag series here.
+Полный набор метрик и меток экспортёра описан в [справочнике](/reference/). Здесь нужен только ряд отставания потребителя.
 
-## Prometheus, Grafana, and the check
+## Prometheus, Grafana и проверка {#prometheus-grafana-and-the-check}
 
-The exporter exposes "now." Prometheus, Grafana, and the check sit behind
-it and turn "now" into something you can act on.
+Экспортёр показывает «сейчас». Prometheus, Grafana и проверка превращают это состояние в основу действий.
 
-**Prometheus** scrapes the exporter's `:7777` on its own interval and
-appends each value to its time series store. This is where the time
-series live: once Prometheus has been scraping for an hour, the
-`shipping` consumer's
-`num_pending` is no longer a single number but a line you can plot. You
-point Prometheus at the exporter with a scrape target in its config:
+**Prometheus** с собственным интервалом опрашивает `:7777` экспортёра и добавляет каждое значение в хранилище временных рядов. После часа сбора `num_pending` потребителя `shipping` становится линией, которую можно построить, а не одним числом. Укажите экспортёр как цель сбора в конфигурации Prometheus:
 
 ```yaml
 # prometheus.yml — scrape the exporter every 15 seconds
@@ -104,56 +60,25 @@ scrape_configs:
       - targets: ["localhost:7777"]
 ```
 
-**Grafana** reads Prometheus and draws it. A **dashboard** is a Grafana
-view; one chart on it is a panel. A dashboard for the orders deployment
-puts the `shipping` consumer's `nats_consumer_num_pending` on a panel,
-so when the consumer falls behind, the line climbs on screen.
-Grafana publishes community dashboards for NATS that read a Prometheus
-data source out of the box; you import one and point it at your
-Prometheus.
+**Grafana** читает Prometheus и отображает данные. **Панель мониторинга** — представление Grafana, а отдельный график на нём — виджет. Для системы заказов выведите `nats_consumer_num_pending` потребителя `shipping` в виджет: при отставании линия пойдёт вверх. Для NATS доступны панели сообщества Grafana, готовые к источнику данных Prometheus: импортируйте подходящую и укажите свой Prometheus.
 
-Watch the whole loop run: the exporter scrapes the node, Prometheus
-stores the rising lag, Grafana charts it, and the check fires when the
-series crosses its threshold.
+Посмотрите на всю цепочку: экспортёр опрашивает узел, Prometheus хранит растущее отставание, Grafana строит график, а проверка срабатывает при пересечении порога.
 
 <div class="nats-flow" data-scenario="metricsScrapeAnimated" data-width="600" data-height="350"></div>
 
-**`nats server check`** is the alerting side. Where a dashboard needs a person
-watching it, a check fires on its own. The CLI runs a check against a
-consumer, compares a metric to a threshold you set, and returns an
-OK / WARNING / CRITICAL verdict in a format Prometheus, Nagios, or a
-plain script can read. Pointed at the `shipping` consumer with a lag
-threshold, it turns the 20-pending number into an alert when it crosses
-the line:
+**`nats server check`** обеспечивает оповещение. Графику нужен наблюдающий человек, а проверка срабатывает самостоятельно. CLI проверяет потребителя, сравнивает метрику с заданным порогом и возвращает OK / WARNING / CRITICAL в формате, понятном Prometheus, Nagios или обычному скрипту. Для `shipping` с порогом отставания число ожидающих заказов превращается в сигнал тревоги при превышении границы:
 
 <div class="nats-example" data-type="learn-monitoring-prometheus-and-dashboards-checkConsumer" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**nats-surveyor** is a separate service that covers the whole deployment
-at once. It connects to the system account, polls every server for its
-`Statz` (the same summary data `nats server report` reads), and exposes
-the combined metrics on one `/metrics` endpoint for Prometheus to scrape.
-It needs a system-account credential, and it's an alternative to running
-the exporter against one node at a time.
+**nats-surveyor** — отдельный сервис, охватывающий всю систему сразу. Он подключается к системной учётной записи, запрашивает `Statz` каждого сервера — те же сводные данные, что читает `nats server report`, — и предоставляет объединённые метрики через одну конечную точку `/metrics` для Prometheus. Ему нужны учётные данные системной записи; это альтернатива отдельному экспортёру для каждого узла.
 
-The full set of metric names, check flags, and surveyor options is
-documented in [Reference](/reference/). The service-latency metrics that
-let you chart request/reply timing belong with services, in
-[Services → observability](/learn/services/observability).
+Полные списки метрик, флагов проверки и параметров surveyor приведены в [справочнике](/reference/). Метрики задержки сервисов для графиков запросов и ответов описаны в [Сервисы → Наблюдаемость](/learn/services/observability).
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Teams hit three common problems the first time they wire NATS into Prometheus and
-Grafana. Each stays within this page's two concepts: the exporter, and
-the alert-and-chart layer behind it.
+При первом подключении NATS к Prometheus и Grafana часто возникают три проблемы. Все относятся к экспортёру и следующему за ним уровню графиков и оповещений.
 
-**A node-local health check passes even with no quorum.** A
-`/healthz?js-enabled-only=true` query asks only whether *this* node's
-JetStream subsystem is running. It returns `200` even when the cluster has
-lost the quorum that keeps the `ORDERS` stream writable, because it never
-looks past the local server. Do not wire a node-local check as your only
-JetStream alert. Add a meta-cluster check with `?js-meta-only=true`,
-which reports whether the JetStream meta layer across the `east` cluster
-is healthy:
+**Локальная проверка проходит даже без кворума.** Запрос `/healthz?js-enabled-only=true` проверяет лишь работу подсистемы JetStream *текущего* узла. Он возвращает `200`, даже если кластер потерял кворум, необходимый для записи в `ORDERS`, поскольку не смотрит дальше локального сервера. Не используйте такую проверку как единственное оповещение JetStream. Добавьте проверку кластера метаданных через `?js-meta-only=true`, сообщающую о состоянии слоя метаданных JetStream в `east`:
 
 ```bash
 # Node-local: is THIS node's JetStream subsystem running? 200 even with no quorum.
@@ -166,58 +91,26 @@ curl -s -o /dev/null -w "%{http_code}\n" \
   "http://localhost:8222/healthz?js-meta-only=true"
 ```
 
-*Why* the cluster lost quorum isn't a monitoring question; the health
-check only reports the symptom. The mechanics live in
-[Clustering → raft and leaders](/learn/clustering/raft-and-leaders).
+*Почему* кластер потерял кворум, проверка не объясняет: она сообщает симптом. Механизм рассмотрен в [Кластеризация → RAFT и лидеры](/learn/clustering/raft-and-leaders).
 
-**A check with no threshold never fires.** `nats server check consumer`
-has defaults, but the defaults don't know your SLA. A check run without
-`--unprocessed-critical` will sit at OK while the `shipping` consumer's lag
-climbs past anything you'd care about, because nothing told it where
-the line is. Always set explicit thresholds that match what the orders
-deployment can tolerate; the `checkConsumer` example above pins
-`--unprocessed-critical 100` for this reason. A silent check looks like
-coverage while providing none, which makes it worse than having no check.
+**Проверка без порога не сработает тогда, когда нужно.** У `nats server check consumer` есть значения по умолчанию, но они не знают вашего SLA. Без `--unprocessed-critical` проверка может оставаться OK, пока отставание `shipping` превышает все приемлемые значения. Всегда задавайте явные пороги, соответствующие возможностям системы заказов; поэтому пример `checkConsumer` выше устанавливает `--unprocessed-critical 100`. Молчащая проверка создаёт ложное ощущение контроля.
 
-**The exporter keeps no time series.** The exporter is stateless: every
-scrape is a fresh read of `:8222`, and the moment you stop scraping, the
-past is gone. Without Prometheus behind it, `nats_consumer_num_pending`
-is the same one-shot "now" you started this page trying to escape: you
-gain a metrics format, not a record. Do not treat the exporter alone as
-monitoring. The exporter only converts the format, and Prometheus is what
-stores the history, so run both. Without Prometheus you're back to refreshing
-a query by hand.
+**Экспортёр не хранит временные ряды.** Он не имеет состояния: каждый сбор заново читает `:8222`, а без внешнего хранения история исчезает. Без Prometheus метрика `nats_consumer_num_pending` остаётся тем же одноразовым «сейчас»: меняется формат, но запись не появляется. Экспортёр только преобразует данные, а Prometheus хранит историю — запускайте оба. Иначе придётся снова обновлять запрос вручную.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You now have the full production loop around the orders deployment. The
-exporter scrapes the monitoring port `:8222` and re-exposes the
-`shipping` consumer's lag as the time series `nats_consumer_num_pending`,
-labeled by `account`, `stream_name`, and `consumer_name`. Prometheus
-scrapes the exporter on its own interval and stores that time series.
-Grafana charts it, so a climbing lag shows as a rising line. And
-`nats server check` raises a CRITICAL on its own when the lag crosses a
-threshold you set.
+Теперь вокруг системы заказов работает полная цепочка мониторинга. Экспортёр опрашивает `:8222` и предоставляет отставание `shipping` как `nats_consumer_num_pending` с метками `account`, `stream_name` и `consumer_name`. Prometheus с собственным интервалом собирает и хранит этот ряд. Grafana отображает растущее отставание восходящей линией, а `nats server check` самостоятельно возвращает CRITICAL при превышении вашего порога.
 
-You've watched the `shipping` consumer fall behind four ways now: as
-`num_pending` on `/jsz`, as lag computed from the consumer's state, as a
-`max_deliver` advisory, and as a rising time series on a Grafana panel.
-That's the focus of this chapter: the same symptom, observed from every
-angle a running deployment offers.
+Вы рассмотрели проблему `shipping` четырьмя способами: как `num_pending` в `/jsz`, как отставание по состоянию потребителя, как уведомление `max_deliver` и как растущий временной ряд Grafana. Именно этому посвящена глава: наблюдению за работающей системой со всех доступных сторон.
 
-## What's next
+## Что дальше {#whats-next}
 
-The four lenses tell you a node is unhealthy. The next page covers what
-to do when they don't tell you why: taking a CPU or memory profile from
-a running server.
+Четыре способа показывают, что узел нездоров. Следующая страница объясняет, что делать, если причина остаётся неизвестной: снять профиль CPU или памяти работающего сервера.
 
-Continue to [Profiling the server](/learn/monitoring/profiling).
+Перейдите к [профилированию сервера](/learn/monitoring/profiling).
 
-## See also
+## См. также {#see-also}
 
-- [JetStream health](/learn/monitoring/jetstream-health) — the raw
-  consumer state these time series are built from
-- [Services → observability](/learn/services/observability) — the
-  service-latency metrics for request/reply timing
-- [Reference](/reference/) — the exhaustive list of exporter metric
-  names, labels, and check flags
+- [Состояние JetStream](/learn/monitoring/jetstream-health) — исходное состояние потребителя для этих временных рядов.
+- [Сервисы → Наблюдаемость](/learn/services/observability) — метрики задержки запросов и ответов.
+- [Справочник](/reference/) — полные списки имён метрик, меток и флагов проверок.

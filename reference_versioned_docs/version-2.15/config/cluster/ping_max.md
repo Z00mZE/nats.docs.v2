@@ -1,11 +1,11 @@
-# ping_max
+# ping_max {#ping_max}
 
 <Reloadable state="reloadable" />
-Unanswered pings before the route is closed.
+Число ping без ответа до закрытия маршрута.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

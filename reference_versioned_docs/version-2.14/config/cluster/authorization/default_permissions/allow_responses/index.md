@@ -1,16 +1,16 @@
-# allow_responses
+# allow_responses {#allow_responses}
 
 <Reloadable state="noop" note="Silently discarded — no warning, no error, no runtime effect." />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`max`](./max.md) | The maximum number of response messages that can be published. | `integer` | - | Ignored |
-| [`expires`](./expires.md) | The amount of time the permission is valid. Values such as 1s, 1m, 1h (1 second, minute, hour) etc can be specified. Default doesn't have a time limit. | `duration` | - | Ignored |
+| [`max`](./max.md) | Максимальное число сообщений ответа, которое можно опубликовать. | `integer` | - | Игнорируется |
+| [`expires`](./expires.md) | Срок действия разрешения. Можно указать, например, 1s, 1m, 1h (секунда, минута, час). По умолчанию срок не ограничен. | `duration` | - | Игнорируется |

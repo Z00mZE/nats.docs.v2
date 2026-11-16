@@ -105,7 +105,7 @@ function buildTabsReplacement(type, languages) {
         type: 'element',
         tagName: 'p',
         properties: {},
-        children: [{ type: 'text', value: `_No code examples available for "${type}"._` }],
+        children: [{ type: 'text', value: `_Для «${type}» нет доступных примеров кода._` }],
       },
     ];
   }
@@ -148,7 +148,7 @@ function buildFlatReplacement(type, languages) {
         type: 'element',
         tagName: 'p',
         properties: {},
-        children: [{ type: 'text', value: `_No code examples available for "${type}"._` }],
+        children: [{ type: 'text', value: `_Для «${type}» нет доступных примеров кода._` }],
       },
     ];
   }

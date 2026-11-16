@@ -1,12 +1,11 @@
-# trace_verbose
+# trace_verbose {#trace_verbose}
 
 <Reloadable state="reloadable" note="Also enables `trace`. Ignored if `-VV` or `-DVV` was passed at startup." />
-If true, enables protocol trace log messages,
-including the system account.
+Если true, включает трассировку протокола в журнале, включая системный аккаунт.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

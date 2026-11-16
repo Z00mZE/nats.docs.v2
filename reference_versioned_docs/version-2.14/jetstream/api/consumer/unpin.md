@@ -1,21 +1,21 @@
-# Unpin Consumer
+# Открепление потребителя {#unpin-consumer}
 
-Unpins a consumer group.
+Открепление группы потребителей.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerUnpinRequest from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/consumer_unpin_request.json';
 import consumerUnpinResponse from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/consumer_unpin_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.UNPIN.{stream}.{consumer}`
 
-Where `{stream}` is the stream name and `{consumer}` is the consumer name.
+Где `{stream}` — имя потока, а `{consumer}` — имя потребителя.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={consumerUnpinRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={consumerUnpinResponse} />

@@ -1,114 +1,114 @@
 ---
-description: The NATS gateway protocol is used to connect multiple NATS clusters together.
+description: "Протокол шлюзов NATS соединяет несколько кластеров NATS."
 mdx:
   format: md
 ---
 
-# Gateway
+# Шлюзы {#gateway}
 
-Gateway connections enable NATS super-clusters by connecting multiple clusters together. The gateway protocol extends the [route protocol](./route.md) with account-aware routing and interest-based optimizations. In the context of a super-cluster, gateways act as intelligent bridges that route messages between clusters based on account and subject interest.
+Шлюзовые соединения объединяют кластеры NATS в суперкластеры. Протокол расширяет [протокол маршрутов](./route.md) маршрутизацией с учётом учётных записей и оптимизациями по интересу. В суперкластере шлюзы выступают интеллектуальными мостами, передающими сообщения между кластерами по интересу к учётным записям и темам.
 
-## Overview
+## Обзор {#overview}
 
-The following table lists the gateway protocol messages. Gateway protocol operations are case insensitive, thus `A+ foo\r\n` and `a+ foo\r\n` are equivalent.
+Таблица перечисляет сообщения протокола шлюзов. Имена операций не чувствительны к регистру: `A+ foo\r\n` и `a+ foo\r\n` эквивалентны.
 
-| Message               | Sent By         | Description                                                                        |
+| Сообщение | Отправитель | Описание |
 | --------------------- | --------------- | ---------------------------------------------------------------------------------- |
-| [`INFO`](#info)       | All Gateways    | Sent after initial connection with gateway-specific extensions                    |
-| [`CONNECT`](#connect) | All Gateways    | Sent to establish a gateway connection                                            |
-| [`A+`](#a)            | All Gateways    | Subscribes to all subjects for a given account                                    |
-| [`A-`](#a-1)          | All Gateways    | Unsubscribes from all subjects for a given account                                |
-| [`RS+`](#rs)          | All Gateways    | Subscribes to a subject for a given account on behalf of interested clients       |
-| [`RS-`](#rs-1)        | All Gateways    | Unsubscribes from subject for a given account (or indicates no interest)          |
-| [`RMSG`](#rmsg)       | Origin Gateway  | Delivers a message for a given subject and account to another gateway             |
-| [`HMSG`](#hmsg)       | Origin Gateway  | Delivers a message with headers for a given subject and account                   |
-| [`PING`](#ping-pong)  | All Gateways    | PING keep-alive message                                                           |
-| [`PONG`](#ping-pong)  | All Gateways    | PONG keep-alive response                                                          |
-| [`-ERR`](#err)        | All Gateways    | Indicates a protocol error. May cause the remote gateway to disconnect.           |
+| [`INFO`](#info) | Все шлюзы | После подключения передаёт расширения шлюзов |
+| [`CONNECT`](#connect) | Все шлюзы | Устанавливает шлюзовое соединение |
+| [`A+`](#a) | Все шлюзы | Подписывает на все темы учётной записи |
+| [`A-`](#a-1) | Все шлюзы | Отменяет подписку на все темы учётной записи |
+| [`RS+`](#rs) | Все шлюзы | Подписывает на тему учётной записи от имени заинтересованных клиентов |
+| [`RS-`](#rs-1) | Все шлюзы | Отменяет подписку или сообщает об отсутствии интереса |
+| [`RMSG`](#rmsg) | Исходный шлюз | Передаёт сообщение темы и учётной записи другому шлюзу |
+| [`HMSG`](#hmsg) | Исходный шлюз | Передаёт сообщение с заголовками для темы и учётной записи |
+| [`PING`](#ping-pong) | Все шлюзы | Проверка активности PING |
+| [`PONG`](#ping-pong) | Все шлюзы | Ответ проверки активности PONG |
+| [`-ERR`](#err) | Все шлюзы | Ошибка протокола, которая может вызвать отключение шлюза |
 
-## INFO
+## INFO {#info}
 
-The `INFO` message for gateways extends the standard INFO protocol with gateway-specific fields. When a gateway accepts a connection, it sends information about itself, its cluster, and gateway-specific configuration.
+`INFO` расширяет стандартное сообщение полями шлюза. Приняв соединение, шлюз передаёт сведения о себе, кластере и своей конфигурации.
 
-### Syntax
+### Синтаксис {#syntax}
 
 ```
 INFO {<key>:<value>,...}
 ```
 
-Gateway-specific fields include:
+Поля шлюза:
 
-- `gateway`: The name of the gateway
-- `gateway_urls`: URLs of other gateways in the cluster
-- `gateway_url`: The URL of this gateway
-- `gateway_cmd`: Optional command code for gateway coordination
-- `gateway_cmd_payload`: Optional payload for gateway commands
-- `server_id`: The unique identifier of the NATS server
-- `version`: The version of the NATS server
-- `go`: The version of golang the NATS server was built with
-- `host`: The host specified in the gateway parameter/options
-- `port`: The port number specified in the gateway parameter/options
-- `auth_required`: If set, the gateway should authenticate upon connect
-- `tls_required`: If set, the gateway must authenticate using TLS
-- `max_payload`: Maximum payload size that the gateway will accept
-- `connect_urls`: A list of server URLs that a client can connect to
-- `ip`: Optional gateway connection address, `nats-gw://<hostname>:<port>`
+- `gateway`: имя шлюза
+- `gateway_urls`: URL других шлюзов кластера
+- `gateway_url`: URL этого шлюза
+- `gateway_cmd`: необязательный код команды координации
+- `gateway_cmd_payload`: необязательные данные команды
+- `server_id`: уникальный идентификатор сервера NATS
+- `version`: версия сервера NATS
+- `go`: версия Go, которой собран сервер
+- `host`: хост из параметров шлюза
+- `port`: порт из параметров шлюза
+- `auth_required`: необходимость аутентификации при подключении
+- `tls_required`: необходимость аутентификации через TLS
+- `max_payload`: максимальный размер принимаемой нагрузки
+- `connect_urls`: список URL серверов для подключения клиентов
+- `ip`: необязательный адрес шлюзового соединения, `nats-gw://<hostname>:<port>`
 
-### Gateway Commands
+### Команды шлюза {#gateway-commands}
 
-The `gateway_cmd` field supports the following command codes:
+Поле `gateway_cmd` поддерживает коды:
 
-- `1` (Gossip): Gossip gateway topology information
-- `2` (All Subs Start): Begin sending all subscriptions for an account
-- `3` (All Subs Complete): Complete sending all subscriptions for an account
+- `1` (Gossip): распространение топологии шлюзов
+- `2` (All Subs Start): начало передачи всех подписок учётной записи
+- `3` (All Subs Complete): окончание передачи всех подписок учётной записи
 
-### Example
+### Пример {#example}
 
 ```
 INFO {"server_id":"NCDU7ZKDF2XTYQUA","version":"2.10.0","go":"go1.21","host":"hub.nats.io","port":7222,"gateway":"hub","gateway_urls":["hub.nats.io:7222"],"gateway_url":"nats-gw://hub.nats.io:7222","auth_required":false,"tls_required":true,"max_payload":1048576}
 ```
 
-## CONNECT
+## CONNECT {#connect}
 
-The `CONNECT` message establishes a gateway connection after the `INFO` exchange. It provides authentication and connection details.
+`CONNECT` устанавливает шлюзовое соединение после обмена `INFO` и передаёт данные аутентификации и параметры соединения.
 
-### Syntax
+### Синтаксис {#syntax-1}
 
 ```
 CONNECT {<key>:<value>,...}
 ```
 
-Valid options include:
+Допустимые параметры:
 
-- `tls_required`: Indicates whether the gateway requires an SSL connection
-- `auth_token`: Authorization token
-- `user`: Connection username (if `auth_required` is set)
-- `pass`: Connection password (if `auth_required` is set)
-- `name`: Generated gateway name
-- `lang`: The implementation language of the gateway (go)
-- `version`: The version of the gateway
+- `tls_required`: требуется ли шлюзу соединение SSL
+- `auth_token`: токен авторизации
+- `user`: имя пользователя при заданном `auth_required`
+- `pass`: пароль при заданном `auth_required`
+- `name`: созданное имя шлюза
+- `lang`: язык реализации шлюза (go)
+- `version`: версия шлюза
 
-### Example
+### Пример {#example-1}
 
 ```
 CONNECT {"tls_required":true,"name":"hub-gateway-us-east","lang":"go","version":"2.10.0"}\r\n
 ```
 
-## A+
+## A+ {#a}
 
-`A+` subscribes to all subjects for a specific account. This is used for account-level interest propagation between gateways.
+`A+` подписывает на все темы определённой учётной записи. Используется для распространения интереса на уровне учётной записи между шлюзами.
 
-### Syntax
+### Синтаксис {#syntax-2}
 
 ```
 A+ <account>\r\n
 ```
 
-where:
+где:
 
-- `account`: The account name to subscribe to
+- `account`: имя учётной записи для подписки
 
-### Example
+### Пример {#example-2}
 
 ```
 A+ SYS\r\n
@@ -116,50 +116,50 @@ A+ SYS\r\n
 
 ## A- {#a-1}
 
-`A-` unsubscribes from all subjects for a specific account. Sent when a gateway no longer has any interest in an account.
+`A-` отменяет подписку на все темы учётной записи. Отправляется, когда у шлюза больше нет интереса к ней.
 
-### Syntax
+### Синтаксис {#syntax-3}
 
 ```
 A- <account>\r\n
 ```
 
-where:
+где:
 
-- `account`: The account name to unsubscribe from
+- `account`: имя учётной записи отменяемой подписки
 
-### Example
+### Пример {#example-3}
 
 ```
 A- SYS\r\n
 ```
 
-## RS+
+## RS+ {#rs}
 
-`RS+` initiates a subscription to a subject on a given account, optionally with a distributed queue group name and weighting factor. This is used for fine-grained subject interest propagation.
+`RS+` создаёт подписку на тему учётной записи, при необходимости с именем распределённой группы очереди и весом. Это точное распространение интереса к темам.
 
-### Syntax
+### Синтаксис {#syntax-4}
 
-**Subscription**
+**Подписка**
 
 ```
 RS+ <account> <subject>\r\n
 ```
 
-**Queue Subscription**
+**Подписка группы очереди**
 
 ```
 RS+ <account> <subject> <queue> <weight>\r\n
 ```
 
-where:
+где:
 
-- `account`: The account associated with the subject interest
-- `subject`: The subject
-- `queue`: Optional queue group name
-- `weight`: Optional queue group weight representing subscriber count
+- `account`: учётная запись интереса
+- `subject`: тема
+- `queue`: необязательное имя группы очереди
+- `weight`: необязательный вес группы, представляющий число подписчиков
 
-### Examples
+### Примеры {#examples}
 
 ```
 RS+ ACC1 orders.new\r\n
@@ -168,110 +168,110 @@ RS+ ACC1 orders.> fulfillment 5\r\n
 
 ## RS- {#rs-1}
 
-`RS-` unsubscribes from the specified subject on the given account or indicates no interest. In optimistic mode, this prevents future message delivery for this subject.
+`RS-` отменяет подписку на тему учётной записи или сообщает об отсутствии интереса. В оптимистичном режиме предотвращает последующую доставку этой темы.
 
-### Syntax
+### Синтаксис {#syntax-5}
 
-**Unsubscription**
+**Отписка**
 
 ```
 RS- <account> <subject>\r\n
 ```
 
-**Queue Unsubscription**
+**Отписка группы очереди**
 
 ```
 RS- <account> <subject> <queue>\r\n
 ```
 
-where:
+где:
 
-- `account`: The account associated with the subject
-- `subject`: The subject
-- `queue`: Optional queue group name
+- `account`: учётная запись темы
+- `subject`: тема
+- `queue`: необязательное имя группы очереди
 
-### Examples
+### Примеры {#examples-1}
 
 ```
 RS- ACC1 orders.old\r\n
 RS- ACC1 orders.processed fulfillment\r\n
 ```
 
-## RMSG
+## RMSG {#rmsg}
 
-The `RMSG` protocol message delivers a message to another gateway for a specific account and subject.
+`RMSG` доставляет сообщение другому шлюзу для определённой учётной записи и темы.
 
-### Syntax
+### Синтаксис {#syntax-6}
 
 ```
 RMSG <account> <subject> [reply-to] <bytes>\r\n[payload]\r\n
 ```
 
-where:
+где:
 
-- `account`: The account associated with the message
-- `subject`: Subject name this message was received on
-- `reply-to`: The optional reply subject
-- `bytes`: Size of the payload in bytes
-- `payload`: The message payload data
+- `account`: учётная запись сообщения
+- `subject`: тема получения сообщения
+- `reply-to`: необязательная тема ответа
+- `bytes`: размер нагрузки в байтах
+- `payload`: полезная нагрузка сообщения
 
-### Example
+### Пример {#example-4}
 
 ```
 RMSG ACC1 orders.new 11\r\nHello World\r\n
 ```
 
-## HMSG
+## HMSG {#hmsg}
 
-The `HMSG` protocol message delivers a message with headers to another gateway. This extends `RMSG` with header support.
+`HMSG` доставляет другому шлюзу сообщение с заголовками, расширяя `RMSG` их поддержкой.
 
-### Syntax
+### Синтаксис {#syntax-7}
 
 ```
 HMSG <account> <subject> [reply-to] <header-bytes> <total-bytes>\r\n[headers]\r\n[payload]\r\n
 ```
 
-where:
+где:
 
-- `account`: The account associated with the message
-- `subject`: Subject name this message was received on
-- `reply-to`: The optional reply subject
-- `header-bytes`: Size of the headers in bytes
-- `total-bytes`: Total size of headers plus payload in bytes
-- `headers`: The message headers in NATS header format
-- `payload`: The message payload data
+- `account`: учётная запись сообщения
+- `subject`: тема получения сообщения
+- `reply-to`: необязательная тема ответа
+- `header-bytes`: размер заголовков в байтах
+- `total-bytes`: общий размер заголовков и нагрузки в байтах
+- `headers`: заголовки сообщения в формате NATS
+- `payload`: полезная нагрузка сообщения
 
-### Example
+### Пример {#example-5}
 
 ```
 HMSG ACC1 orders.new _INBOX.123 22 33\r\nNATS/1.0\r\nFoo: Bar\r\n\r\nHello World\r\n
 ```
 
-## Interest Management
+## Управление интересом {#interest-management}
 
-Gateways use sophisticated interest management to minimize cross-cluster traffic:
+Шлюзы управляют интересом для уменьшения межкластерного трафика:
 
-### Optimistic Mode
-Initially, gateways operate in optimistic mode, assuming interest exists and forwarding messages. They track `RS-` responses to build a "no interest" list.
+### Оптимистичный режим {#optimistic-mode}
+Изначально шлюзы предполагают наличие интереса и пересылают сообщения. По ответам `RS-` они строят список отсутствующего интереса.
 
-### Interest-Only Mode
-When too many `RS-` messages are received (indicating low interest overlap), the gateway switches to interest-only mode. In this mode:
-- Only subjects with explicit `RS+` subscriptions receive messages
-- Full subscription state is maintained via `A+` and `RS+` messages
-- Reduces unnecessary cross-cluster traffic
+### Режим только по интересу {#interest-only-mode}
+При большом числе `RS-`, означающем слабое пересечение интересов, шлюз переходит в режим только по интересу:
+- Сообщения получают только темы с явными подписками `RS+`
+- Полное состояние подписок поддерживается через `A+` и `RS+`
+- Сокращается ненужный трафик между кластерами
 
-### Transition Protocol
-The transition uses gateway commands in the INFO message:
-1. Gateway sends `gateway_cmd: 2` (All Subs Start) 
-2. Gateway sends all `RS+` messages for known subscriptions
-3. Gateway sends `gateway_cmd: 3` (All Subs Complete)
-4. Remote gateway switches to interest-only mode for that account
+### Протокол перехода {#transition-protocol}
+Для перехода используются команды в INFO:
+1. Шлюз отправляет `gateway_cmd: 2` (All Subs Start)
+2. Шлюз отправляет все `RS+` известных подписок
+3. Шлюз отправляет `gateway_cmd: 3` (All Subs Complete)
+4. Удалённый шлюз переводит учётную запись в режим только по интересу
 
 ## PING/PONG {#ping-pong}
 
-`PING` and `PONG` implement keep-alive between gateways. Gateways continuously send `PING` messages at a configurable interval. Failure to respond with `PONG` within the configured timeout results in connection termination.
+`PING` и `PONG` проверяют доступность шлюзов. Шлюзы регулярно отправляют `PING` с настраиваемым интервалом. Если `PONG` не приходит за тайм-аут, соединение закрывается.
 
-### Syntax
+### Синтаксис {#syntax-8}
 
 ```
 PING\r\n
@@ -283,17 +283,17 @@ PONG\r\n
 
 ## -ERR {#err}
 
-The `-ERR` message indicates a protocol, authorization, or runtime error. Most errors result in the gateway closing the connection.
+`-ERR` сообщает об ошибке протокола, авторизации или выполнения. Большинство ошибок закрывает шлюзовое соединение.
 
-### Syntax
+### Синтаксис {#syntax-9}
 
 ```
 -ERR <error message>
 ```
 
-### Common Gateway Errors
+### Распространённые ошибки шлюзов {#common-gateway-errors}
 
-- `-ERR 'Invalid Account'`: Unknown or unauthorized account
-- `-ERR 'Gateway Protocol Error'`: Malformed gateway protocol message
-- `-ERR 'Authorization Violation'`: Gateway authorization failure
-- `-ERR 'Maximum Payload Exceeded'`: Message exceeds max_payload setting
+- `-ERR 'Invalid Account'`: неизвестная или недоступная учётная запись
+- `-ERR 'Gateway Protocol Error'`: некорректное сообщение протокола шлюзов
+- `-ERR 'Authorization Violation'`: ошибка авторизации шлюза
+- `-ERR 'Maximum Payload Exceeded'`: сообщение превышает max_payload

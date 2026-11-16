@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React from "react";
 import {
     Background,
@@ -43,7 +44,7 @@ function RegionNode({ data }: NodeProps) {
                     color: d.labelColor,
                 }}
             >
-                {d.label}
+                {localizeDiagramContent(d.label)}
             </div>
         </div>
     );
@@ -110,7 +111,7 @@ function MassiveScaleAnimatedInner({ width = 820, height = 470 }: { width?: numb
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -131,12 +132,11 @@ function MassiveScaleAnimatedInner({ width = 820, height = 470 }: { width?: numb
                 </ReactFlow>
             </div>
             <div style={{ marginTop: "8px", fontSize: "13px", color: "#6b7280" }}>
-                The whole Acme deployment, composed: two clusters meshed by{" "}
-                <strong style={{ color: ROUTE }}>routes</strong>, joined by a{" "}
-                <strong style={{ color: "#b45309" }}>gateway</strong>, with a{" "}
-                <strong style={{ color: "#047857" }}>leaf</strong> bridging{" "}
-                <code>factory-1</code> in from the edge. Same ORDERS workload on
-                all of it.
+                Всё развёртывание Acme вместе: два кластера, соединённые{localizeDiagramContent(" ")}
+                <strong style={{ color: ROUTE }}>маршруты</strong>, соединённые через{localizeDiagramContent(" ")}
+                <strong style={{ color: "#b45309" }}>шлюз</strong>, с{localizeDiagramContent(" ")}
+                <strong style={{ color: "#047857" }}>листовой узел</strong> мост{localizeDiagramContent(" ")}
+                <code>factory-1</code> с периферии. Везде работает та же нагрузка ORDERS.
             </div>
         </div>
     );

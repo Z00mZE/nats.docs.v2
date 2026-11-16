@@ -1,11 +1,11 @@
-# ping_interval
+# ping_interval {#ping_interval}
 
 <Reloadable state="reloadable" />
-How often the server pings an idle route.
+Интервал отправки ping неактивному маршруту.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

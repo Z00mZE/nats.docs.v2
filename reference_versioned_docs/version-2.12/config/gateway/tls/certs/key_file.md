@@ -1,11 +1,11 @@
-# key_file
+# key_file {#key_file}
 
 <Reloadable state="reloadable" />
-Key file for this pair.
+Файл ключа для этой пары.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

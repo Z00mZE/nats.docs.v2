@@ -1,12 +1,11 @@
-# reject_qos2_publish
+# reject_qos2_publish {#reject_qos2_publish}
 
 <Reloadable state="not-reloadable" />
-Reject QoS 2 publishes instead of accepting them, for clients that
-must not silently get weaker delivery guarantees.
+Отклонять публикации QoS 2 вместо их принятия для клиентов, которым нельзя незаметно ослаблять гарантии доставки.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

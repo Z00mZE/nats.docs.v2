@@ -1,15 +1,7 @@
-# auth-callout snippets
+<a id="auth-callout-snippets"></a>
 
-The page's token-publish success/failure demo stays inline in
-`learn/security/auth-callout.md` instead of living here: it only works
-with a live `auth-svc` answering requests on `$SYS.REQ.USER.AUTH`, and
-writing that handler is a programming task (see the page's See also
-links for callout.go / callout.net). A stand-alone CLI snippet can't
-run it.
+# Фрагменты примеров auth-callout
 
-The snippets here (`callout-timeout.sh`, `auth-users-scope.sh`,
-`observe-request.sh`) deliberately run *without* an auth service
-answering. For the two pitfalls, that absence is what each one
-demonstrates. `observe-request.sh` only reads the authorization request
-the server publishes to `$SYS.REQ.USER.AUTH` and never replies, so no
-handler is needed to show the plaintext credential on the subject.
+Демонстрация успешной и неудачной публикации с токеном остаётся непосредственно в `learn/security/auth-callout.md`: ей нужен работающий `auth-svc`, отвечающий на запросы `$SYS.REQ.USER.AUTH`. Написание такого обработчика требует программирования; ссылки на callout.go и callout.net находятся в разделе «См. также» этой страницы. Отдельный фрагмент CLI не сможет выполнить этот пример.
+
+Примеры в этом каталоге (`callout-timeout.sh`, `auth-users-scope.sh`, `observe-request.sh`) намеренно запускаются без отвечающего сервиса аутентификации. Первые два примера демонстрируют проблемы, вызванные его отсутствием. `observe-request.sh` только читает запрос авторизации, который сервер публикует в `$SYS.REQ.USER.AUTH`, и не отвечает на него. Поэтому обработчик не нужен, чтобы увидеть переданные в открытом виде учётные данные.

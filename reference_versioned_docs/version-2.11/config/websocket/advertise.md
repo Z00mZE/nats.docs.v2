@@ -1,12 +1,11 @@
-# advertise
+# advertise {#advertise}
 
 <Reloadable state="not-reloadable" />
-Advertised client `<host>:<port>`. Useful for cluster setups
-behind a NAT.
+Объявляемый клиентский адрес `<host>:<port>`. Полезен для кластеров за NAT.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `string` | This is an alternate to setting the `host` and `port` separately. | - |
+| `string` | Альтернатива раздельному заданию `host` и `port`. | - |

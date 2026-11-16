@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -180,15 +181,15 @@ function WsLeafNodeAnimatedInner({
                     flexWrap: "wrap",
                 }}
             >
-                {STAGE_ORDER.map((s, i) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s, i) => (
                     <button
                         key={s}
                         onClick={() => setStageIndex(i)}
                         style={buttonStyle(stage === s)}
                     >
-                        {STEP_LABELS[s]}
+                        {localizeDiagramContent(STEP_LABELS[s])}
                     </button>
-                ))}
+                )))}
             </div>
 
             <div
@@ -201,7 +202,7 @@ function WsLeafNodeAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -233,7 +234,7 @@ function WsLeafNodeAnimatedInner({
                         fontWeight: 600,
                     }}
                 >
-                    same listener the browser dashboard uses
+                    тот же слушатель, что у панели в браузере
                 </div>
             </div>
 
@@ -246,9 +247,9 @@ function WsLeafNodeAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageIndex + 1}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageIndex + 1)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

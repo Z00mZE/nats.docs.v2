@@ -1,24 +1,16 @@
-# max_ack_pending
+# max_ack_pending {#max_ack_pending}
 
 <Aliases aliases="max_pending, max_inflight" />
 <Reloadable state="reloadable" note="Existing sessions pick up the new value, but each subscription captures its own limit when it is created, so only subscriptions made after the reload are governed by it." />
-This is the amount of QoS 1 messages the server can send to
-a subscription without receiving any `PUBACK` for those messages.
-The valid range is [0..65535].
+Число сообщений QoS 1, которое сервер может отправить подписке, не получив для них ни одного `PUBACK`. Допустимый диапазон: [0..65535].
 
-The total of subscriptions' max_ack_pending on a given session cannot
-exceed 65535. Attempting to create a subscription that would bring
-the total above the limit would result in the server returning `0x80`
-in the `SUBACK` for this subscription.
+Сумма max_ack_pending подписок одного сеанса не может превышать 65535. При попытке создать подписку, превышающую общий лимит, сервер возвращает для неё `0x80` в `SUBACK`.
 
-Due to how the NATS Server handles the MQTT `#` wildcard, each
-subscription ending with `#` will use 2 times the `max_ack_pending`
-value. Note that changes to this option is applied only to new
-subscriptions.
+Из-за особенностей обработки подстановки MQTT `#` сервером NATS каждая подписка, оканчивающаяся на `#`, использует удвоенное значение `max_ack_pending`. Изменения этого параметра применяются только к новым подпискам.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

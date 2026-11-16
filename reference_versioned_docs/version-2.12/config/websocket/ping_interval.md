@@ -1,12 +1,12 @@
-# ping_interval
+# ping_interval {#ping_interval}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-How often the server sends a WebSocket ping. Set `0` to disable.
+Интервал отправки ping WebSocket сервером. Значение `0` отключает отправку.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

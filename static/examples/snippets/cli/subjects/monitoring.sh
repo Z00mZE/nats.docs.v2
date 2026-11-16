@@ -1,8 +1,8 @@
-# Monitor all messages in the system (subject to permissions)
+# Отслеживать все сообщения системы в пределах предоставленных прав
 nats sub ">"
 
-# Monitor all orders
+# Отслеживать все заказы
 nats sub "orders.>"
 
-# Monitor specific service communications
+# Отслеживать обмен сообщениями конкретного сервиса
 nats sub "myservice.>"

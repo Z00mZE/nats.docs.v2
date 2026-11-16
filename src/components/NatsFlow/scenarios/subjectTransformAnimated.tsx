@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // subjectTransformAnimated
@@ -144,8 +145,7 @@ function SubjectTransformInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 10, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                A <strong>subject transform</strong> rewrites the subject a message is stored under — here it hashes each
-                customer into a fixed bucket.
+                A <strong>преобразование темы</strong> меняет тему, под которой хранится сообщение: здесь каждый клиент хешируется в фиксированную секцию.
             </div>
 
             <div style={{ position: "relative", width: 640, height: 240, margin: "0 auto" }}>
@@ -166,9 +166,9 @@ function SubjectTransformInner() {
                         justifyContent: "center",
                     }}
                 >
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Publisher</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Издатель</span>
                     <span style={{ fontSize: 10, fontFamily: "monospace", color: BLUE, minHeight: 13 }}>
-                        {cur ? `ingest.${cur.customer}` : "4 stored"}
+                        {localizeDiagramContent(cur ? `ingest.${cur.customer}` : "4 stored")}
                     </span>
                 </div>
 
@@ -194,12 +194,12 @@ function SubjectTransformInner() {
                     }}
                 >
                     <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9ca3af" }}>
-                        transform
+                        преобразование
                     </span>
                     <span style={{ fontSize: 10, fontFamily: "monospace", color: NAVY, textAlign: "center", lineHeight: 1.25 }}>
                         orders.
                         <br />
-                        {"{{partition(3,1)}}.{{wildcard(1)}}"}
+                        {localizeDiagramContent("{{partition(3,1)}}.{{wildcard(1)}}")}
                     </span>
                 </div>
 
@@ -217,7 +217,7 @@ function SubjectTransformInner() {
                 >
                     ORDERS-SHARDED
                 </div>
-                {BUCKET_Y.map((by, i) => {
+                {localizeDiagramContent(BUCKET_Y.map((by, i) => {
                     const lit = bucketLit && bucket === i;
                     return (
                         <div
@@ -238,18 +238,18 @@ function SubjectTransformInner() {
                             }}
                         >
                             <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace", color: NAVY }}>
-                                orders.{i}.&gt;
+                                orders.{localizeDiagramContent(i)}.&gt;
                             </div>
                             <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>
-                                bucket {i} · stored{" "}
-                                <strong style={{ color: counts[i] > 0 ? GREEN : "#9ca3af" }}>{counts[i]}</strong>
+                                бакет {localizeDiagramContent(i)} · сохранено{localizeDiagramContent(" ")}
+                                <strong style={{ color: counts[i] > 0 ? GREEN : "#9ca3af" }}>{localizeDiagramContent(counts[i])}</strong>
                             </div>
                         </div>
                     );
-                })}
+                }))}
 
                 {/* the travelling message token (into the gate, out to a bucket) */}
-                {showToken && cur && (
+                {localizeDiagramContent(showToken && cur && (
                     <div
                         style={{
                             position: "absolute",
@@ -264,10 +264,10 @@ function SubjectTransformInner() {
                             transition: "background 0.15s",
                         }}
                     />
-                )}
+                ))}
 
                 {/* the subject label, floating above the gate as it is rewritten */}
-                {showPill && cur && (
+                {localizeDiagramContent(showPill && cur && (
                     <span
                         style={{
                             position: "absolute",
@@ -283,9 +283,9 @@ function SubjectTransformInner() {
                             transition: "color 0.15s",
                         }}
                     >
-                        {subject}
+                        {localizeDiagramContent(subject)}
                     </span>
-                )}
+                ))}
             </div>
 
             <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 14 }}>
@@ -293,9 +293,9 @@ function SubjectTransformInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

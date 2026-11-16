@@ -1,14 +1,13 @@
-# interval
+# interval {#interval}
 
 <Reloadable state="reloadable" note="Handled only as part of the whole `resolver` block; the replacement resolver is never Start()ed so the running sync loop keeps the old interval." />
-Defines the interval the resolver will randomly contact another server
-to reconcile JWTs, such as receiving new ones and deleting old ones.
+Задаёт интервал, с которым резолвер обращается к случайному другому серверу для сверки JWT: получения новых и удаления старых.
 
-Applies to `full` mode only.
+Применяется только в режиме `full`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

@@ -1,6 +1,6 @@
-# Account
+# Учётная запись {#account}
 
-| Name            | Subject                  | System Account |
+| Название | Тема | Системная учётная запись |
 | --------------- | ------------------------ | -------------- |
-| [Account info](./info.md) | `$JS.API.INFO`           | No             |
-| [Account purge](./purge.md) | `$JS.API.ACCOUNT.PURGE`  | No             |
+| [Информация об учётной записи](./info.md) | `$JS.API.INFO` | Нет |
+| [Очистка учётной записи](./purge.md) | `$JS.API.ACCOUNT.PURGE` | Нет |

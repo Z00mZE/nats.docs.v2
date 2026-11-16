@@ -1,45 +1,45 @@
-# JetStream
+# JetStream {#jetstream}
 
-JetStream is the persistence layer of NATS, providing message streaming, replay, and at-least-once delivery semantics.
+JetStream — слой долговременного хранения NATS, обеспечивающий потоковую передачу сообщений, повторное чтение и доставку как минимум один раз.
 
-## Components
+## Компоненты {#components}
 
-### [API](./api/index.md)
-Programmatic interface for managing JetStream resources:
-- [Account](./api/account/index.md) - Account-level management
-- [Stream](./api/stream/index.md) - Stream operations and data management
-- [Consumer](./api/consumer/index.md) - Consumer configuration and control
-- [Meta](./api/meta/index.md) - Cluster metadata operations
+### [API](./api/index.md) {#api}
+Программный интерфейс управления ресурсами JetStream:
+- [Учётная запись](./api/account/index.md) — управление на уровне учётной записи
+- [Поток](./api/stream/index.md) — операции с потоками и управление данными
+- [Потребитель](./api/consumer/index.md) — настройка и управление потребителями
+- [Метаданные](./api/meta/index.md) — операции с метаданными кластера
 
-### [Advisory](./advisory/index.md)
-System events for monitoring and observability:
-- Stream lifecycle events (created, updated, deleted)
-- Consumer state changes and leadership elections
-- Cluster quorum and storage notifications
-- API audit trails and rate limiting
+### [Уведомления](./advisory/index.md) {#advisory}
+Системные события для мониторинга и наблюдаемости:
+- Жизненный цикл потоков: создание, обновление и удаление
+- Изменения состояния потребителей и выборы лидеров
+- Уведомления о кворуме кластера и хранилище
+- Аудит API и ограничение частоты запросов
 
-### [Metrics](./metric/index.md)
-Performance and usage measurements:
-- [Consumer Acknowledgement](./metric/consumer-ack.md) - Message acknowledgement latency
+### [Метрики](./metric/index.md) {#metrics}
+Показатели производительности и использования:
+- [Подтверждение потребителя](./metric/consumer-ack.md) — задержка подтверждения сообщения
 
-### [Errors](./errors.md)
-Comprehensive error reference:
-- Error codes and HTTP status mappings
-- Detailed error descriptions
-- Troubleshooting guidance
+### [Ошибки](./errors.md) {#errors}
+Полный справочник ошибок:
+- Коды ошибок и соответствующие статусы HTTP
+- Подробные описания ошибок
+- Рекомендации по устранению неполадок
 
-### [Cross-account subjects](./cross-account-subjects.md)
-Subjects that cross an account or domain boundary:
-- Exports and imports for sourcing and mirroring with ephemeral and durable consumers
-- Acknowledgement and delivery subjects for consumers driven from another account
-- Leafnode subject permissions in both directions
-- The v1 and v2 formats of `$JS.ACK`, `$JS.FC`, and `$JSC.R`
+### [Темы между учётными записями](./cross-account-subjects.md) {#cross-account-subjects}
+Темы, пересекающие границу учётной записи или домена:
+- Экспорт и импорт для источников и зеркал с временными и долговременными потребителями
+- Темы подтверждений и доставки для потребителей, управляемых из другой учётной записи
+- Разрешения листовых узлов на темы в обоих направлениях
+- Форматы v1 и v2 для `$JS.ACK`, `$JS.FC` и `$JSC.R`
 
-## Key Concepts
+## Основные понятия {#key-concepts}
 
-JetStream extends NATS with:
-- Streams - Message storage and replay
-- Consumers - Subscription state and delivery management
-- Persistence - File or memory-based storage
-- Replication - Multi-node redundancy
-- Exactly-once - Message delivery guarantees
+JetStream дополняет NATS следующими возможностями:
+- Потоки — хранение и повторное чтение сообщений
+- Потребители — состояние подписки и управление доставкой
+- Долговременное хранение — на диске или в памяти
+- Репликация — избыточность на нескольких узлах
+- Доставка ровно один раз — гарантии доставки сообщений

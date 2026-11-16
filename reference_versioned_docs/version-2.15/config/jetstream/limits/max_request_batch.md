@@ -1,12 +1,11 @@
-# max_request_batch
+# max_request_batch {#max_request_batch}
 
 <Reloadable state="reloadable" note="Enforced when a pull consumer is created or updated, so an already-existing consumer keeps the value that applied when it was made." />
-The maximum request batch size allowed to be configured on pull
-consumers.
+Максимальный размер запрашиваемого пакета, который можно настроить для pull-потребителей.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

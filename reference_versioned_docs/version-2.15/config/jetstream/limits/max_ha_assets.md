@@ -1,12 +1,11 @@
-# max_ha_assets
+# max_ha_assets {#max_ha_assets}
 
 <Reloadable state="not-reloadable" />
-The maximum number of JetStream assets that can exist at any given
-time having more than one replica.
+Максимальное число одновременно существующих ресурсов JetStream с более чем одной репликой.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

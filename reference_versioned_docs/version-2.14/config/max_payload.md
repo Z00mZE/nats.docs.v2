@@ -1,11 +1,11 @@
-# max_payload
+# max_payload {#max_payload}
 
 <Reloadable state="reloadable" />
-Maximum number of bytes in a message payload. Reducing this size may force you to implement chunking in your clients. Applies to client and leafnode payloads. It is not recommended to use values over 8MB but `max_payload` can be set up to 64MB. The max payload must be equal or smaller to the `max_pending` value.
+Максимальное число байтов полезной нагрузки сообщения. Уменьшение размера может потребовать реализации разбиения сообщений в клиентах. Применяется к полезной нагрузке клиентов и листовых узлов. Значения больше 8 МБ не рекомендуются, однако `max_payload` можно увеличить до 64 МБ. Максимальная полезная нагрузка не должна превышать `max_pending`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

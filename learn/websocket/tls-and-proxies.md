@@ -1,34 +1,21 @@
 ---
 id: tls-and-proxies
-title: "TLS and proxies"
+title: TLS и прокси
 sidebar_position: 4
-description: Put a certificate on the listener or terminate TLS at an ingress, and configure a proxy that won't break a long-lived upgraded connection
+description: Сертификат на слушателе или завершение TLS на ingress и настройка долгоживущего соединения через прокси
 ---
 
-# TLS and proxies
+# TLS и прокси {#tls-and-proxies}
 
-The dashboard has run on `no_tls: true` so far. Acme now serves it from
-`https://ops.acme.example`, behind the ingress that already fronts the
-rest of its web estate, and the cookie carrying each user's JWT must not
-cross the network in the clear.
+Пока панель работала с `no_tls: true`. Теперь Acme размещает её на `https://ops.acme.example` за общим ingress, а cookie с JWT пользователя нельзя передавать по сети открыто.
 
-There are two ways to get there. Put the certificate on the NATS
-listener, or terminate TLS in front of it. Both are normal; which one
-you want depends on whether NATS sits behind the same edge as your web
-traffic.
+Есть два обычных варианта: сертификат на слушателе NATS или завершение TLS перед ним. Выбор зависит от того, находится ли NATS за той же входной инфраструктурой, что и веб-трафик.
 
-## TLS on the listener
+## TLS на слушателе {#tls-on-the-listener}
 
-The listener requires TLS by default. Give it a certificate and the
-`no_tls` flag goes away.
+По умолчанию слушатель требует TLS. Задайте сертификат и уберите `no_tls`.
 
-The certificate is an ordinary server certificate — the `websocket {}`
-block takes the same `tls {}` fields as every other listener. If you
-need to create one, [Security →
-Encryption](/learn/security/encryption#server-side-tls) walks through
-generating a CA and a server certificate with `openssl` and covers what
-each field does. This page assumes you have `cert_file` and `key_file`
-already.
+Это обычный серверный сертификат: `websocket {}` принимает те же поля `tls {}`, что и другие слушатели. Создание CA и сертификата через `openssl` и назначение полей описаны в разделе [Безопасность → Шифрование](/learn/security/encryption#server-side-tls). Здесь предполагается наличие `cert_file` и `key_file`.
 
 ```conf
 websocket {
@@ -45,32 +32,23 @@ websocket {
 }
 ```
 
-Clients now use `wss://`:
+Клиенты теперь используют `wss://`:
 
 ```bash
 nats -s wss://nats.acme.example:443 sub "orders.>"
 ```
 
-The startup warning about running without TLS is gone, and the log line
-names the scheme it's actually serving:
+Предупреждение об отсутствии TLS исчезает, журнал показывает фактическую схему:
 
 ```
 [INF] Listening for websocket clients on wss://0.0.0.0:443
 ```
 
-Certificate material is the only part of the `websocket {}` block that
-reloads. Changing `cert_file` or `key_file` and sending the server a
-reload picks up the new certificate for connections made afterwards;
-existing connections keep the one they negotiated. Any other change in
-the block — `verify_and_map`, `pinned_certs`, `allowed_origins`, the
-timeouts — is rejected, and a rejected field aborts the entire reload,
-including changes in the same edit that would have been accepted.
+В блоке `websocket {}` перезагружаются только сертификаты. После изменения `cert_file` или `key_file` и перезагрузки конфигурации новые соединения используют новый сертификат, существующие сохраняют прежний сеанс. Изменение других полей — `verify_and_map`, `pinned_certs`, `allowed_origins`, тайм-аутов — отклоняется и прерывает всю перезагрузку, включая допустимые изменения из той же правки.
 
-## TLS terminated in front
+## Завершение TLS перед сервером {#tls-terminated-in-front}
 
-The more common shape when NATS lives behind an existing edge is to let
-the ingress or load balancer hold the certificate and run the NATS
-listener plaintext on an internal network.
+Если NATS уже расположен за внешним входным узлом, сертификат обычно держит ingress или балансировщик, а слушатель NATS работает открыто во внутренней сети.
 
 ```conf
 websocket {
@@ -86,32 +64,21 @@ websocket {
 }
 ```
 
-Two things matter here.
+Здесь важны две настройки.
 
-`no_tls: true` is correct only in this shape. The hop between the proxy
-and the server carries unencrypted traffic, so that hop has to be a
-network you trust — a private subnet, a service mesh, or the same host.
+`no_tls: true` уместен только в такой конфигурации. Между прокси и сервером трафик не зашифрован, поэтому участок должен быть доверенным: частная подсеть, service mesh или тот же хост.
 
-`advertise` is what the server tells clients about itself. Without it a
-server behind NAT or a proxy hands out the address it sees locally,
-which clients can't reach. Set it to the address the outside world uses.
+`advertise` задаёт адрес, сообщаемый клиентам. Без него сервер за NAT или прокси объявляет локально видимый адрес, недоступный снаружи. Укажите внешний адрес.
 
-`no_tls` and the client's URL scheme are separate questions. The client
-connects with `wss://` because the *proxy* is presenting a certificate.
-Whether the NATS listener itself uses TLS is decided by its own
-configuration, not by what the client typed.
+`no_tls` и схема клиентского URL независимы. Клиент использует `wss://`, потому что сертификат предъявляет *прокси*. TLS самого слушателя определяется серверной конфигурацией, а не строкой клиента.
 
-The `jwt_cookie` and `allowed_origins` settings carry over unchanged from
-[Browsers and origins](/learn/websocket/browsers-and-origins) — moving
-TLS to the edge doesn't change how the browser authenticates.
+`jwt_cookie` и `allowed_origins` сохраняются со страницы [Браузеры и источники](/learn/websocket/browsers-and-origins): перенос TLS не меняет аутентификацию браузера.
 
-## What the proxy has to do
+## Требования к прокси {#what-the-proxy-has-to-do}
 
-A WebSocket connection starts as an HTTP request that asks to change
-protocols, and then stays open. Proxies configured for ordinary
-request/response traffic break both halves of that.
+WebSocket начинается HTTP-запросом на смену протокола и затем остаётся открытым. Прокси для обычных запросов и ответов может нарушить оба этапа.
 
-The upgrade needs the `Upgrade` and `Connection` headers passed through:
+Для смены протокола нужно передавать заголовки `Upgrade` и `Connection`:
 
 ```conf
 location / {
@@ -128,28 +95,13 @@ location / {
 }
 ```
 
-A proxy that strips those headers doesn't fail loudly. The client sends
-a handshake and gets an ordinary HTTP response back, so the error
-surfaces as a connection that never establishes rather than anything
-naming the proxy.
+Если прокси их удаляет, явной ошибки прокси нет: клиент получает обычный HTTP-ответ на рукопожатие и сообщает лишь о невозможности соединения.
 
-The timeout is the second half. A NATS connection is idle between
-messages, and a proxy that closes idle connections after 60 seconds will
-close a working subscription that has nothing to deliver. Set the
-proxy's idle timeout longer than the interval at which the server pings
-its WebSocket clients — `ping_interval` in the `websocket {}` block from
-2.12, and the server-wide ping interval before that.
+Второе требование — тайм-аут. Между сообщениями соединение NATS простаивает; прокси с отключением после 60 секунд разорвёт исправную подписку без новых данных. Его тайм-аут должен превышать интервал ping WebSocket: `ping_interval` блока `websocket {}` начиная с 2.12, а в более ранних версиях — общий интервал сервера.
 
-The rule above matches `/`, which keeps every client URL in this chapter
-path-less. If you publish NATS under a prefix instead, the prefix has to
-appear in the client URL too — `wss://nats.acme.example:443/nats` against
-a `location /nats` rule. Leaf nodes need care here: the server appends
-`/leafnode` to whatever path the remote URL carries, so a `location /nats`
-rule has to match `/nats/leafnode` as well. [Leaf nodes over
-WebSocket](/learn/websocket/leaf-nodes-over-websocket) covers that.
+Правило выше обслуживает `/`, поэтому URL главы не содержат пути. При публикации под префиксом укажите его и в URL: `wss://nats.acme.example:443/nats` для `location /nats`. Сервер добавляет `/leafnode` к пути удалённого адреса листового узла, поэтому правило `location /nats` должно также обслуживать `/nats/leafnode`. Подробнее — [Листовые узлы через WebSocket](/learn/websocket/leaf-nodes-over-websocket).
 
-On Kubernetes the same two timeouts are ingress annotations rather than
-config-file directives:
+В Kubernetes те же тайм-ауты задаются аннотациями ingress:
 
 ```yaml
 metadata:
@@ -158,74 +110,45 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 ```
 
-[Deployment → Kubernetes](/learn/deployment/kubernetes) covers the Helm
-chart and the StatefulSet it renders.
+Helm chart и создаваемый им StatefulSet описаны в разделе [Развёртывание → Kubernetes](/learn/deployment/kubernetes).
 
-## Timeouts on the server side
+## Серверные тайм-ауты {#timeouts-on-the-server-side}
 
-`handshake_timeout` bounds the whole setup: reading the client's
-request, running the TLS handshake, and writing the response. It's a
-guard against a client that opens a connection and stalls.
+`handshake_timeout` ограничивает всю установку: чтение запроса, TLS-рукопожатие и запись ответа. Он защищает от клиента, открывшего соединение и прекратившего обмен.
 
-Behind a slow or overloaded proxy the handshake takes longer than it
-does on a direct connection, and a value tuned on a laptop can start
-rejecting real clients under load. If connections fail during the
-handshake only when the system is busy, this is the setting to look at.
+За медленным или перегруженным прокси установка длится дольше прямой. Значение, подобранное локально, может отклонять настоящих клиентов под нагрузкой. Если рукопожатия срываются только при занятости системы, проверьте этот параметр.
 
-## Extra headers on the upgrade response
+## Дополнительные заголовки ответа {#extra-headers-on-the-upgrade-response}
 
-`headers` adds fixed HTTP headers to the upgrade response, which is how
-you attach something like `Strict-Transport-Security` at the NATS
-listener when there's no proxy in front to add it.
+`headers` добавляет фиксированные HTTP-заголовки к ответу смены протокола. Так можно задать `Strict-Transport-Security` на слушателе NATS без внешнего прокси.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-**A proxy that drops `Upgrade` and `Connection`.** The handshake fails
-and the client reports a connection error, not a protocol error. If
-`ws://` works against the server directly and fails through the proxy,
-this is the first thing to check.
+**Прокси удаляет `Upgrade` и `Connection`.** Клиент сообщает ошибку соединения, а не протокола. Если прямой `ws://` работает, а через прокси нет, сначала проверьте эти заголовки.
 
-**A proxy idle timeout shorter than the ping interval.** Connections
-drop on a timer with no error on either side. The pattern to look for is
-disconnects at a suspiciously round interval.
+**Тайм-аут простоя короче интервала ping.** Соединения обрываются по таймеру без ошибок на обеих сторонах. Характерный признак — подозрительно ровный интервал отключения.
 
-**`no_tls: true` on a hop that isn't private.** It's correct behind a
-terminating proxy on a trusted network and wrong the moment that traffic
-crosses anything else. There's no warning distinguishing the two.
+**`no_tls: true` на недоверенном участке.** Он подходит за завершающим TLS прокси в доверенной сети, но не за её пределами. Различающего эти случаи предупреждения нет.
 
-**Forgetting `advertise` behind NAT.** The server hands clients an
-address it can see and they can't. Connections succeed and then fail on
-a later reconnect to an advertised URL.
+**Отсутствие `advertise` за NAT.** Клиентам сообщается адрес, видимый серверу, но недоступный им. Первое подключение проходит, последующее к объявленному URL — нет.
 
-**Expecting `wss://` to configure the server.** The scheme in the client
-URL says what the client will do. The `tls {}` block says what the
-server will do. They're set independently, and a mismatch fails at the
-handshake.
+**Ожидание настройки сервера через `wss://`.** Схема определяет поведение клиента, `tls {}` — сервера. Они задаются независимо; несовпадение срывает рукопожатие.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-The dashboard now runs over TLS:
+Панель работает через TLS:
 
-- either a certificate on the `websocket {}` listener, serving `wss://`
-  directly
-- or plaintext behind an ingress that terminates TLS, with `advertise`
-  giving clients the external address
-- a proxy that forwards the upgrade headers and doesn't time out an idle
-  connection
-- `handshake_timeout` set with the proxy's latency in mind
+- Сертификат находится на слушателе `websocket {}`, напрямую обслуживающем `wss://`.
+- Либо NATS работает открыто за завершающим TLS ingress, а `advertise` сообщает внешний адрес.
+- Прокси передаёт заголовки смены протокола и сохраняет простаивающее соединение.
+- `handshake_timeout` учитывает задержку прокси.
 
-## What's next
+## Что дальше {#whats-next}
 
-Everything so far has been a client reaching NATS. The same transport
-carries a server-to-server link: [Leaf nodes over
-WebSocket](/learn/websocket/leaf-nodes-over-websocket) attaches Acme's
-retail branch to the `east` cluster through the same endpoint.
+Тот же транспорт обслуживает связь между серверами. На странице [Листовые узлы через WebSocket](/learn/websocket/leaf-nodes-over-websocket) филиал Acme подключится к `east` через тот же вход.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → websocket](/reference/config/websocket/) — `tls`,
-  `no_tls`, `advertise`, `handshake_timeout`, `headers`
-- [Security → Encryption](/learn/security/encryption) — TLS across every
-  listener the server has
-- [Deployment → Kubernetes](/learn/deployment/kubernetes) — ingress in
-  front of a NATS deployment
+- [Справочник → websocket](/reference/config/websocket/) — `tls`, `no_tls`, `advertise`, `handshake_timeout`, `headers`.
+- [Безопасность → Шифрование](/learn/security/encryption) — TLS на слушателях сервера.
+- [Развёртывание → Kubernetes](/learn/deployment/kubernetes) — ingress перед NATS.

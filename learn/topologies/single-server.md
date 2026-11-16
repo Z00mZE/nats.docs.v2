@@ -1,45 +1,31 @@
 ---
 id: single-server
-title: "Single server"
+title: "Отдельный сервер"
 sidebar_position: 2
-description: One nats-server process clients connect to directly — when it's enough and where its ceiling is
+description: "Один процесс nats-server с прямым подключением клиентов: когда его достаточно и где проходит предел"
 ---
 
-# Single server
+# Отдельный сервер {#single-server}
 
-Every topology in this chapter is built from a set of `nats-server`
-processes connected to each other. Before connecting anything, it's
-worth looking at the building block on its own: one server.
+Любая топология главы состоит из соединённых процессов `nats-server`. Прежде чем их соединять, рассмотрим один строительный блок.
 
-A **server** is one `nats-server` process. It accepts client connections, routes
-messages between subjects, and, if you turn JetStream on, can store them in
-streams. One process is all you need to run the entire ORDERS workload while you
-build it.
+**Сервер** — один процесс `nats-server`. Он принимает соединения, маршрутизирует сообщения и при включённом JetStream хранит их в потоках. На этапе разработки одного процесса достаточно для всей ORDERS.
 
-This page stands up a development server, `n1`, on your machine. Then it
-covers when one server is enough and the limits that eventually lead Acme to
-add more servers.
+Здесь мы запустим локальный сервер разработки `n1`, затем рассмотрим, когда его достаточно и какие ограничения заставят Acme добавить другие.
 
-## The simplest deployment
+## Простейшее развёртывание {#the-simplest-deployment}
 
-There's no wiring to draw yet. There is one server in the middle, and each
-client opens a connection straight to it. Here that's two: `order-svc`, which
-publishes orders, and the `warehouse` service, which subscribes to them.
+Связей между серверами пока нет: в центре один сервер, к нему напрямую подключены издатель заказов `order-svc` и подписчик `warehouse`.
 
 <div class="nats-flow" data-scenario="topologiesSingleServer" data-width="600" data-height="300"></div>
 
-The clients don't know about each other. They know one address. A
-publisher sends `orders.created` to the server; the server hands it to
-whoever subscribed to a matching subject, and that is the whole topology.
+Клиенты не знают друг друга, только один адрес. Издатель отправляет `orders.created`, сервер передаёт сообщение подходящим подписчикам. Это вся топология.
 
-This is the deployment you've been using throughout the JetStream and
-Security chapters without naming it. It's the
-single-server topology, and it's a real, valid way to run NATS.
+Именно так вы работали в главах JetStream и безопасности. Это полноценный допустимый способ запуска NATS.
 
-## Start the dev server
+## Запустите сервер разработки {#start-the-dev-server}
 
-Give the server a config file. A single server needs almost nothing in
-it, but a few settings earn their place from day one.
+Создайте конфигурационный файл. Настроек почти не нужно, но несколько полезны с самого начала.
 
 ```conf
 # n1.conf — the development server
@@ -52,169 +38,105 @@ jetstream {
 }
 ```
 
-`server_name` is a human-readable name for this server. Set it to `n1`,
-so that the logs and monitoring endpoints identify it clearly.
+`server_name` — понятное человеку имя. Задайте `n1`, чтобы узнавать сервер в журналах и мониторинге.
 
-`port` is where clients connect. `4222` is the NATS default; it's written
-out here so the client address is explicit. Clients use
-`nats://localhost:4222`.
+`port` — клиентский порт. Стандартный `4222` указан явно; адрес клиента — `nats://localhost:4222`.
 
-`http_port` turns on the monitoring endpoint, as it's
-off by default. Enable it at `8222` from the start so `n1` is
-observable; the [Monitoring deep dive](/learn/monitoring) covers what to
-watch on it.
+`http_port` включает выключенный по умолчанию мониторинг. Сразу задайте `8222`; показатели рассмотрены в [Мониторинге](/learn/monitoring).
 
-[`jetstream`](/reference/config/jetstream) turns JetStream on and gives it a `store_dir` to
-write to. Enable it so `n1` can hold the same ORDERS stream it
-carried through the JetStream chapter.
+[`jetstream`](/reference/config/jetstream) включает JetStream и задаёт `store_dir`. Так `n1` сможет хранить ORDERS из предыдущей главы.
 
-Start `n1` with the config:
+Запустите `n1` с этой конфигурацией:
 
 ```bash
 nats-server -c n1.conf
 ```
 
-The server logs that it's listening on `4222` for clients and `8222`
-for monitoring. `n1` is up. Nothing else is deployed; this one process
-is the entire system.
+В журнале появятся слушатели клиентов `4222` и мониторинга `8222`. Один процесс составляет всю систему.
 
-Confirm it's reachable:
+Проверьте доступность:
 
 ```bash
 nats server check connection --server nats://localhost:4222
 ```
 
-A healthy server answers, and the check reports OK.
+Исправный сервер отвечает, проверка показывает OK.
 
-## Connect and publish an order
+## Подключитесь и опубликуйте заказ {#connect-and-publish-an-order}
 
-With `n1` running, subscribe to `orders.>` in one terminal:
+При работающем `n1` подпишитесь на `orders.>` в одном терминале:
 
 ```bash
 nats sub "orders.>" --server nats://localhost:4222
 ```
 
-In another, connect and publish an ORDERS order:
+В другом подключитесь и опубликуйте заказ ORDERS:
 
 ```bash
 nats pub orders.created '{"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}' --server nats://localhost:4222
 ```
 
-The subscriber prints the order:
+Подписчик выводит заказ:
 
 ```
 [#1] Received on "orders.created"
 {"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}
 ```
 
-There's nothing topology-specific here. The client names one server URL and
-publishes; the same kind of publish runs unchanged against the cluster, the
-super-cluster, and the leaf node in the pages ahead.
+Здесь нет особого кода топологии. Клиент задаёт URL и публикует; та же публикация работает с кластером, суперкластером и листовым узлом.
 
-For the wire-level detail of how a client connects and authenticates,
-see [Reference → Client protocol](/reference/protocols/client).
-We only need the connect URL here.
+Установление соединения и аутентификация на уровне протокола описаны в [Справочнике → Клиентский протокол](/reference/protocols/client). Здесь нужен только URL.
 
-## When one server is enough
+## Когда достаточно одного сервера {#when-one-server-is-enough}
 
-A single server is the right tool for a real set of
-jobs.
+Для ряда задач отдельный сервер — правильный выбор.
 
-Reach for one server in **development**: a laptop or a CI run. There's
-nothing to coordinate and nothing to wait for.
+Прежде всего **разработка** на ноутбуке или в CI: ничего не нужно согласовывать и ждать.
 
-One server also fits when NATS runs **on the device itself**. The
-`nats-server` binary is one small, self-contained process, so it can run
-on edge hardware — a car, a factory machine, a point-of-sale terminal —
-or embedded in-process inside another application. Each gets a full local
-NATS with no fleet to operate. A device server like this often later dials
-out to a central system as a [leaf node](/learn/topologies/leaf-nodes),
-but on its own it's still a single server.
+Также NATS может работать **на самом устройстве**. Небольшой самостоятельный процесс подходит автомобилю, станку, кассовому терминалу или встраивается в другое приложение. Устройство получает полноценный локальный NATS. Позже сервер можно подключить к центру как [листовой узел](/learn/topologies/leaf-nodes), но сам по себе он остаётся отдельным.
 
-A **small, single-instance service** is the third fit — an internal
-dashboard or a nightly job that already runs as one process.
-That service is the least available part of the feature, so clustering
-NATS behind it raises the broker's uptime but not the feature's: the
-service still fails first. Lifting the feature's availability means a second copy of
-the service too, which a small feature rarely earns.
+Третий случай — **небольшой сервис в одном экземпляре**, например внутренняя панель или ночное задание. Если сам сервис — самая уязвимая часть функции, кластеризация брокера не повысит доступность функции без второго экземпляра приложения.
 
-In all of these, one server is the correct amount of infrastructure
-rather than a compromise.
+В этих случаях один сервер — соразмерная инфраструктура.
 
-## The limits of one server
+## Ограничения одного сервера {#the-limits-of-one-server}
 
-Two limits eventually push Acme past `n1`. The first is **availability**:
-a single server can fail. The second is **capacity**: a single server can
-only grow so far.
+Acme перерастает `n1` из-за **доступности** и **вместимости**: единственный сервер может отказать и имеет предел ресурсов.
 
-A single server is a **single point of failure**. If that process dies,
-or the machine it runs on reboots, every client loses its connection at
-once. There's no server to fail over to, because there is no
-second server. Message routing stops until `n1` comes back.
+Это **единая точка отказа**. При завершении процесса или перезапуске машины отключаются все клиенты. Переключаться некуда; маршрутизация ждёт возвращения `n1`.
 
-That's fine for the use-cases described above. It isn't fine for production
-deployments, where a reboot during a deploy would drop every order in flight.
+Для перечисленных задач это допустимо, но не для системы, где перезапуск при развёртывании не должен прерывать все заказы.
 
-Durability is a separate question with the same answer. Because `n1`
-has JetStream enabled, it stores the ORDERS stream on disk so messages
-survive a restart of the process, but they still live on one machine.
-Lose that disk and you lose the stream. One server gives you durability against a
-crash, never against the loss of the server itself.
+Надёжность хранения — отдельный вопрос. JetStream сохраняет ORDERS на диске и переживает перезапуск процесса, но данные всё ещё на одной машине. Потеря диска означает потерю потока.
 
-Capacity is the second limit. A single server scales **vertically** — a
-bigger CPU, more RAM, a faster disk — which is sometimes the right fix,
-but every machine has a ceiling. Past it, the way forward is more servers,
-not a bigger one.
+Второй предел — ресурсы. **Вертикальное** масштабирование даёт более мощный CPU, больше RAM и быстрый диск, но предел есть у любой машины. Дальше нужны дополнительные серверы.
 
-The fix for both limits is a **cluster**: more than one server, so a
-client can fail over and a stream can keep copies on more than one machine.
-The next page stands up Acme's first cluster, `east`, and shows how it
-lifts both limits at once.
+Оба ограничения снимает **кластер**: клиент может перейти на другой сервер, а поток хранит копии на нескольких машинах. Следующая страница создаёт первый кластер Acme `east`.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A single server has one trap worth seeing up close — the one that turns
-the availability limit above from theory into an error message.
+Одна ловушка превращает теоретический предел доступности в конкретную ошибку.
 
-**Reaching for redundancy too late.** It's tempting to assume durability
-is something you switch on when you need it. But a single server can't
-hold a replicated stream. Ask the ORDERS stream for three replicas
-on `n1` and the server refuses, because three replicas need three servers
-to live on:
+**Слишком поздно задуматься об избыточности.** Репликацию нельзя просто включить на одном сервере. Запрос трёх реплик ORDERS на `n1` отклоняется, поскольку им нужны три сервера:
 
 ```bash
 nats stream add ORDERS --subjects 'orders.*' --storage file --replicas 3 --defaults
 ```
 
-The server answers `replicas > 1 not supported in non-clustered mode`.
-Don't treat that error as a config typo to override. It reflects how the
-topology works: redundancy is a cluster's job. On one server, ask
-for `--replicas 1` and accept that R1 survives a process restart but
-never the loss of `n1`. When orders must survive that, grow to [Your
-first cluster](/learn/topologies/your-first-cluster). The quorum and
-replication mechanics behind R3 live in
-[Clustering & Replication](/learn/clustering).
+Ответ — `replicas > 1 not supported in non-clustered mode`. Это ограничение топологии, не опечатка. На одном сервере задавайте `--replicas 1`, понимая, что R1 переживает перезапуск процесса, но не потерю `n1`. Когда нужно больше, переходите к [первому кластеру](/learn/topologies/your-first-cluster). Механика R3 описана в [Кластеризации и репликации](/learn/clustering).
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Acme's deployment right now:
+Текущее развёртывание Acme:
 
-- One development server, `n1`, listening on `4222` with monitoring on
-  `8222`.
-- The ORDERS workload running against it directly: `order-svc` publishing
-  `orders.*`, with the `ORDERS` stream stored on `n1` now that JetStream
-  is enabled.
+- Один сервер разработки `n1` на `4222`, мониторинг на `8222`.
+- `order-svc` публикует `orders.*` напрямую, а включённый JetStream хранит `ORDERS` на `n1`.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page joins three servers (`n1-east`, `n2-east`, `n3-east`)
-into Acme's first cluster, so a client whose server dies reconnects
-to another and keeps working: [Your first
-cluster](/learn/topologies/your-first-cluster).
+Объединим `n1-east`, `n2-east`, `n3-east`, чтобы при отказе сервера клиент переподключался и продолжал работу: [Ваш первый кластер](/learn/topologies/your-first-cluster).
 
-## See also
+## См. также {#see-also}
 
-- [Core Concepts → Topologies](/concepts/topologies) — the
-  five-minute overview of all four shapes.
-- [Reference → Client protocol](/reference/protocols/client) — how a
-  client connects, the connect URL, and the full set of options.
+- [Основные понятия → Топологии](/concepts/topologies) — краткий обзор.
+- [Справочник → Клиентский протокол](/reference/protocols/client) — подключение, URL и параметры.

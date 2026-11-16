@@ -1,21 +1,21 @@
-# Evacuate Peer
+# Эвакуация участника {#evacuate-peer}
 
-Moves a single consumer off one peer. The consumer keeps its replica count and the server picks the replacement peer. If no peer qualifies, the request fails with a peer remap error rather than leaving the group under-replicated.
+Перемещение одного потребителя с участника группы. Число реплик потребителя сохраняется, а сервер выбирает замену. Если подходящего участника нет, запрос завершается ошибкой переназначения вместо работы группы с недостаточным числом реплик.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerEvacuatePeerRequest from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/consumer_evacuate_peer_request.json';
 import consumerEvacuatePeerResponse from '@site/src/schemas/vendor/v2.15/jsm/jetstream/api/v1/consumer_evacuate_peer_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.PEER.EVACUATE.{stream}.{consumer}`
 
-Where `{stream}` is the stream name and `{consumer}` is the consumer name.
+Где `{stream}` — имя потока, а `{consumer}` — имя потребителя.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={consumerEvacuatePeerRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={consumerEvacuatePeerResponse} />

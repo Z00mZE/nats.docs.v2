@@ -1,66 +1,37 @@
 ---
 id: your-first-cluster
-title: "Your first cluster"
+title: "Ваш первый кластер"
 sidebar_position: 3
-description: Join three servers into a cluster with routes, then watch a client survive a server loss
+description: "Объединение трёх серверов маршрутами и проверка работы клиента после отказа узла"
 ---
 
-# Your first cluster
+# Ваш первый кластер {#your-first-cluster}
 
-The [previous page](/learn/topologies/single-server) left Acme running on one
-server, `n1`. That server publishes `orders.*` and holds the `ORDERS` stream. It
-also has one critical limitation: if it stops, the whole ORDERS system stops
-with it.
+После [предыдущей страницы](/learn/topologies/single-server) Acme использует `n1` для `orders.*` и хранения `ORDERS`. При остановке этого сервера останавливается вся система.
 
-This page fixes that. You'll stand up the production cluster `east`
-(three servers: `n1-east`, `n2-east`, and `n3-east`) and watch a client
-continue working through the loss of one of them.
+Создадим рабочий кластер `east` из `n1-east`, `n2-east`, `n3-east` и проверим продолжение работы клиента при отказе одного узла.
 
-Publishing doesn't change: the same publish to `orders.created`, the same
-`ORDERS` stream, the same payload. The deployment underneath is what
-changes.
+Публикация прежняя: `orders.created`, тот же `ORDERS`, та же нагрузка. Меняется инфраструктура.
 
-This page introduces two ideas: a cluster is a set of servers joined by
-routes, and a client connects to any one of those servers and fails
-over to another when its server dies.
+Здесь два понятия: кластер соединяется маршрутами, а клиент подключается к одному серверу и переключается при его отказе.
 
-## What a cluster is
+## Что такое кластер {#what-a-cluster-is}
 
-A **cluster** is a set of `nats-server` processes that know about each
-other and act as one logical NATS system. A client connected to any server
-in the cluster can reach a subscriber connected to any one of the servers in the
-cluster.
+**Кластер** — процессы `nats-server`, знающие друг друга и работающие как единая логическая система. Клиент любого сервера достигает подписчика на любом другом.
 
-The servers talk to each other over **routes**. A route is a
-server-to-server connection, distinct from the client connections you've
-used so far. Clients connect on the client port (`4222`, the NATS
-default); servers connect to each other on a separate cluster port
-(`6222` in the configs below).
+Серверы связаны **маршрутами** — отдельными межсерверными соединениями. Клиенты используют `4222`, серверы — кластерный `6222` в примерах ниже.
 
-Every server holds a route to every other server, so each is one hop from
-all the rest. With three servers that's three routes. There's no central
-coordinator and no single server the others depend on; each is a peer. A
-message a server receives over a route is delivered to that server's own
-clients and forwarded no further, because one hop is always enough to reach
-anyone.
+Каждый сервер имеет маршрут ко всем остальным. Для трёх узлов это три связи, один переход до любого соседа. Центрального координатора нет. Сообщение с маршрута доставляется местным клиентам и дальше не пересылается: одного перехода достаточно.
 
 <div class="nats-flow" data-scenario="topologiesClusterMesh" data-width="720" data-height="360"></div>
 
-The wire-level detail of how two servers open a route, exchange
-subscriptions, and forward messages is documented in
-[Reference → Route protocol](/reference/protocols/route). We only need the
-config and the shape here.
+Установление маршрутов, обмен подписками и пересылка описаны в [Справочнике → Протокол маршрутов](/reference/protocols/route). Здесь важны форма и конфигурация.
 
-## Configure three servers
+## Настройте три сервера {#configure-three-servers}
 
-Each server in `east` needs the same cluster name and its own pair of ports.
-Routes connect the servers, but the cluster name has to match for them to join:
-a mismatched name (a typo like `eats`) gets that server's route refused —
-the log contains `cluster name "eats" does not match "east"` — and it ends up a
-cluster of its own.
+Всем нужен одинаковый идентификатор кластера и собственные порты. Опечатка вроде `eats` отклоняет маршрут с `cluster name "eats" does not match "east"`; сервер остаётся в отдельном кластере.
 
-Here's `n1-east`. It carries one `routes` entry, pointing at `n2-east`; the
-other two point back at `n1-east`.
+У `n1-east` один `routes` к `n2-east`; два остальных указывают на `n1-east`.
 
 ```conf title="n1-east.conf"
 server_name: n1-east
@@ -79,8 +50,7 @@ cluster {
 }
 ```
 
-`n2-east` has its own ports and name, and its `routes` entry points back at
-`n1-east`.
+У `n2-east` свои имя и порты, маршрут к `n1-east`.
 
 ```conf title="n2-east.conf"
 server_name: n2-east
@@ -99,8 +69,7 @@ cluster {
 }
 ```
 
-`n3-east` is the same pattern again, one port higher, pointing at the same
-server.
+У `n3-east` тот же шаблон с портами на единицу выше.
 
 ```conf title="n3-east.conf"
 server_name: n3-east
@@ -119,54 +88,30 @@ cluster {
 }
 ```
 
-Three fields do the work in each `cluster {}` block.
+В каждом `cluster {}` работают три поля.
 
-`name` is the cluster identifier. It must be `east` on all three servers,
-or they won't join.
+`name` должен быть `east` на всех узлах.
 
-`listen` is the address and port this server accepts routes on. It's the
-cluster port (`6222`, `6223`, `6224`), separate from the client
-port in `listen` at the top of the file.
+`listen` — адрес и порт приёма маршрутов (`6222`, `6223`, `6224`), отдельный от клиентского `listen` верхнего уровня.
 
-`routes` is the list of peers to actively connect to — one per server.
-`n2-east` and `n3-east` point at `n1-east` on `6222`; `n1-east` points at
-`n2-east` on `6223`. None lists every peer.
+`routes` — адреса активного подключения. `n2-east` и `n3-east` обращаются к `n1-east:6222`, а `n1-east` — к `n2-east:6223`. Полный список не нужен.
 
-Each config also carries a `jetstream` block with its own `store_dir`, so
-the cluster can hold the `ORDERS` stream the workload has been using. It's
-only switched on here — what JetStream actually does once it runs across a
-cluster is the [next page](/learn/topologies/jetstream-in-a-cluster). This
-page is about the routes.
+У каждого также собственный `jetstream` и `store_dir` для будущего ORDERS. Работа JetStream в кластере разобрана на [следующей странице](/learn/topologies/jetstream-in-a-cluster); здесь рассматриваются маршруты.
 
-## How the remaining routes are formed
+## Как появляются остальные маршруты {#how-the-remaining-routes-are-formed}
 
-Look again at the configs: each server lists a single route to one peer —
-`n2-east` and `n3-east` at `n1-east`, and `n1-east` back at `n2-east`.
-That's one route apiece, not the full mesh from above where every server
-holds a route to every other. The obvious move is to finish it by hand —
-give every config a route to both of its peers.
+В конфигурации по одной связи, хотя схема полносвязная. Можно было бы вручную перечислить обоих соседей каждого сервера.
 
-You can, and it's a valid cluster: the servers simply notice the
-redundant connections and drop the extras (the log notes a `Duplicate
-Route` close). But you don't need to, because they complete the mesh on
-their own.
+Это допустимо: лишние соединения распознаются и закрываются как `Duplicate
+Route`. Но серверы способны достроить сеть сами.
 
-When a server connects to a route you wrote, it learns about every other
-server that peer already knows, and dials those too. So `n2-east` connects
-to `n1-east`, discovers the rest of the cluster, and connects to them
-directly; when `n3-east` joins, the others learn about it and connect back.
-The routes you didn't write appear on their own.
+При подключении по заданному маршруту сервер узнаёт остальных известных соседу участников и соединяется с ними напрямую. Когда приходит `n3-east`, остальные тоже обнаруживают его. Неуказанные маршруты появляются автоматически.
 
-This is why each server only needs one route, not the full list:
-`n2-east`, `n3-east`, and any server you add later point at `n1-east`,
-`n1-east` points back at one of them, and gossip fills in the rest. The
-by-hand mesh is the other end of the trade-off — no server depends on a
-single seed being up first, but every new server then means editing every
-config.
+Поэтому достаточно одного начального адреса, остальное даёт gossip. Полностью ручная сеть уменьшает зависимость от одного доступного начального узла, но требует правки всех конфигураций при добавлении сервера.
 
-## Start the cluster
+## Запустите кластер {#start-the-cluster}
 
-Start all three servers, each with its own config file:
+Запустите три сервера с отдельными файлами:
 
 ```bash
 nats-server -c n1-east.conf &
@@ -174,78 +119,56 @@ nats-server -c n2-east.conf &
 nats-server -c n3-east.conf &
 ```
 
-`n1-east` comes up first and waits. As `n2-east` and `n3-east` start, they
-dial it, discover the rest, and within a moment all three hold routes to
-each other.
+`n1-east` стартует первым. Остальные подключаются, обнаруживают соседей и вскоре устанавливают все маршруты.
 
-The `&` runs each in the background of one terminal. Stop the cluster with
-`kill %1 %2 %3` (or `pkill nats-server`). If you'd rather watch each
-server's log on its own — handy in a moment when you kill one to test
-failover — drop the `&` and run each `nats-server -c …` in its own
-terminal instead.
+`&` запускает процессы в фоне одного терминала. Остановить можно через `kill %1 %2 %3` или `pkill nats-server`. Для отдельных журналов уберите `&` и выполняйте каждый `nats-server -c …` в своём терминале; это удобно для проверки отказа.
 
-## Confirm the routes
+## Проверьте маршруты {#confirm-the-routes}
 
-Confirm a message crosses the cluster: subscribe on one server, publish on
-another, and watch it arrive.
+Подпишитесь на одном сервере, опубликуйте на другом и убедитесь в доставке.
 
-Subscribe to `orders.>` on `n3-east`, in its own terminal:
+В отдельном терминале подпишитесь на `orders.>` через `n3-east`:
 
 ```bash
 nats sub "orders.>" --server nats://localhost:4224
 ```
 
-In another terminal, publish to `n1-east`:
+В другом опубликуйте через `n1-east`:
 
 ```bash
 nats pub orders.created '{"order_id":"ord_8w2k"}' --server nats://localhost:4222
 ```
 
-The subscriber on `n3-east` prints the order:
+Подписчик `n3-east` выводит заказ:
 
 ```
 [#1] Received on "orders.created"
 {"order_id":"ord_8w2k"}
 ```
 
-It was published on `n1-east`, crossed a route to `n3-east`, and arrived —
-without any client ever naming two servers. If the two hadn't joined (a
-mismatched cluster name, say), nothing would show up.
+Сообщение прошло по маршруту, хотя каждый клиент знал лишь свой сервер. При несовпавшем имени кластера оно бы не пришло.
 
-## A client connects to any server
+## Клиент подключается к любому серверу {#a-client-connects-to-any-server}
 
-Your application connects to a server, not to "the cluster." But it can be
-handed several servers and treat them as interchangeable.
+Приложение подключается к серверу, но может получить несколько взаимозаменяемых адресов.
 
-A client connects to one of the servers it's given. From that one
-connection it can publish `orders.created` and have a consumer on any
-server in `east` receive it, because the routes carry the message to
-wherever the interest is.
+Одно соединение позволяет публиковать `orders.created` для потребителей на любом узле `east`: маршруты доведут сообщение туда, где есть интерес.
 
-The server also tells the client about its peers. On connect, a server
-sends an INFO message that includes the other servers' client URLs. The
-client now knows about all three even if you only configured one.
+При подключении сервер также отправляет INFO с клиентскими URL соседей. Теперь клиент знает все три адреса, даже если настроен один.
 
-This discovery is what makes the next part work. The client doesn't need
-the full server list written into its config; it gets the rest from the
-server it reached.
+Это обнаружение обеспечивает переключение: полный список не обязательно задавать вручную.
 
-## Survive a server loss
+## Переживите отказ сервера {#survive-a-server-loss}
 
-Next, test failover. Point a publisher at one specific server — `n1-east`
-— send a steady stream of orders, then kill `n1-east` out from under it.
+Направьте издателя на `n1-east`, публикуйте заказы непрерывно, затем остановите этот узел.
 
-In its own terminal, publish an order a second to `n1-east`:
+В отдельном терминале отправляйте по заказу в секунду:
 
 ```bash
 nats pub orders.created "order {{Count}}" --count 100 --sleep 1s --trace --server nats://localhost:4222
 ```
 
-Let a few go by, then kill `n1-east`: `kill %1` in the terminal where you
-started the servers, or `Ctrl+C` its window if you gave it one. The
-publisher doesn't stop. With `--trace` it logs each connection event, so you
-can watch it drop `n1-east` and reconnect (a couple of discovery lines are
-trimmed below):
+После нескольких публикаций завершите `n1-east` через `kill %1` или Ctrl-C. Издатель продолжит работу. `--trace` выводит события соединения и переподключение; несколько строк обнаружения ниже опущены:
 
 ```
 12:00:22 >>> Connected to nats://localhost:4222 (127.0.0.1:4222)
@@ -257,78 +180,34 @@ trimmed below):
 12:00:27 Published 7 bytes to "orders.created"
 ```
 
-Look at where it reconnected: `4223` is `n2-east` — a server you never
-named. You pointed the publisher at `n1-east` and nothing else, but on
-connect `n1-east` handed it the rest of the cluster (the discovery from
-[the section above](#a-client-connects-to-any-server)). So when `n1-east`
-died, the publisher had somewhere to go, and the orders kept flowing.
-That's what the cluster buys: the loss of one server is a reconnect, not an
-outage.
+Новый порт `4223` принадлежит `n2-east`, которого вы не указывали. Его адрес пришёл от `n1-east` при [обнаружении выше](#a-client-connects-to-any-server). При отказе клиенту было куда перейти. Потеря сервера стала переподключением вместо простоя.
 
-One control governs this. If a server sets `no_advertise: true`, it stops
-advertising its peers, and a client only knows the URLs you gave it by
-hand. Leave it off (the default) and failover spans the whole cluster.
+Настройка `no_advertise: true` запрещает серверу объявлять соседей: клиент знает только явно заданные URL. По умолчанию она выключена, и доступны все узлы.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A cluster is easy to set up, but a handful of details cause problems if you
-get them wrong. These three come up most often when standing up `east`.
+При создании `east` чаще всего встречаются три ошибки.
 
-**Misspell a cluster name.** A typo in `name` doesn't raise an error.
-The server with the odd name forms its own cluster and never
-joins `east`, leaving you with two clusters that look like one until a
-message fails to cross. (On the wire the server rejects the route with
-`cluster name does not match`.) Set the same `name` on all three. To catch
-a stray one, look for that rejection line in its log, or rerun the
-cross-server publish from [Confirm the routes](#confirm-the-routes): if a
-message published on one server never reaches a subscriber on another, they
-never joined.
+**Опечатка в имени кластера.** Сервер с другим `name` работает отдельно; в журнале есть `cluster name does not match`. Убедитесь в одинаковом имени. Повторите [публикацию между узлами](#confirm-the-routes): отсутствие доставки может означать, что серверы не объединились.
 
-**Expose the cluster port to the world.** The cluster `listen` port (6222)
-accepts routes from other servers, not clients — and a route is a *trusted*
-link: it carries every account's traffic plus the system account, far more
-than any one client connection sees. Leave it reachable with no
-authorization (these configs have none) and anyone who connects with the
-cluster name `east` can join as a server and read or inject messages across
-your accounts. Bind it to a private interface and firewall it — and in
-production require route credentials or TLS. The configs above bind it to
-`127.0.0.1`, off the network entirely.
+**Открытый внешнему миру кластерный порт.** Маршрут — *доверенная* связь, несущая трафик всех учётных записей и системной записи. Без авторизации любой, знающий `east`, сможет присоединиться сервером, читать и подставлять сообщения. Привяжите порт к частному интерфейсу, ограничьте межсетевым экраном и включите учётные данные маршрутов или TLS. Примеры используют `127.0.0.1` и недоступны из сети.
 
-**Plan for an even server count.** A cluster of two or four servers works
-fine for plain `orders.*` traffic, but the moment you replicate the
-`ORDERS` stream you want an *odd* count. A two-server set loses its majority
-as soon as one server is down, and a four-server set tolerates only one loss
-— the same as three — so the extra server adds cost without buying more
-failure tolerance. That's a JetStream
-concern, covered on the [next page](/learn/topologies/jetstream-in-a-cluster);
-the consensus math behind it lives in
-[Clustering & Replication](/learn/clustering). For a pure routing cluster,
-any count is fine.
+**Чётное число серверов для репликации.** Для обычного `orders.*` подходят два или четыре, но JetStream требует большинства: два узла не переживут одного отказа, четыре выдержат лишь один, как и три. Поэтому для реплицируемого потока выбирают нечётное число. Это рассмотрено на [следующей странице](/learn/topologies/jetstream-in-a-cluster), математика — в [Кластеризации](/learn/clustering). Для чистой маршрутизации число любое.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Acme has grown from one dev server to a three-server production cluster:
+Acme выросла от сервера разработки до трёхузлового кластера:
 
-- The cluster `east` runs `n1-east`, `n2-east`, and `n3-east` locally, on
-  client ports 4222/4223/4224 and cluster ports 6222/6223/6224.
-- The three servers are joined by routes: every server holds a route to
-  every other, built from pointing each one at `n1-east`.
-- A client connects to any server, discovers the rest, and fails over to a
-  survivor when its server dies.
+- `east` работает на `n1-east`, `n2-east`, `n3-east` с клиентскими 4222/4223/4224 и кластерными 6222/6223/6224.
+- Маршруты образуют полносвязную сеть из начальных подключений.
+- Клиент обнаруживает соседей и переходит к доступному при отказе.
 
-## What's next
+## Что дальше {#whats-next}
 
-What you watched cross the cluster was plain pub/sub — the durable `ORDERS`
-stream isn't on `east` yet. The next page creates it on the cluster,
-replicated across the three servers so it survives a server loss the way the
-cluster already does:
-[JetStream in a cluster](/learn/topologies/jetstream-in-a-cluster).
+Пока вы проверили обычный pub/sub: долговременного `ORDERS` в `east` ещё нет. Теперь создадим реплики на трёх серверах для сохранения потока при отказе: [JetStream в кластере](/learn/topologies/jetstream-in-a-cluster).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Route protocol](/reference/protocols/route) — the
-  wire-level detail of how servers form routes and forward messages.
-- [Operate → Clustering & Replication](/learn/clustering) — Raft, leader
-  election, and replica placement inside a cluster.
-- [Core Concepts → Topologies](/concepts/topologies) — the five-minute
-  overview of every shape.
+- [Справочник → Протокол маршрутов](/reference/protocols/route) — межсерверные соединения и пересылка.
+- [Эксплуатация → Кластеризация и репликация](/learn/clustering) — Raft, выборы и размещение.
+- [Основные понятия → Топологии](/concepts/topologies) — краткий обзор.

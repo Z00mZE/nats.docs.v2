@@ -1,12 +1,11 @@
-# no_advertise
+# no_advertise {#no_advertise}
 
 <Reloadable state="reloadable" />
-If true, the server will not send or gossip its client URLs to other servers in the cluster, nor
-will it tell its clients about other servers' client URLs.
+Если true, сервер не отправляет и не распространяет свои клиентские URL другим серверам кластера и не сообщает клиентам клиентские URL других серверов.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

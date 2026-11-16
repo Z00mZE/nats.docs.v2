@@ -1,143 +1,83 @@
 ---
 id: altering-stream-state
-title: "Altering stream state"
+title: "Изменение состояния потока"
 sidebar_position: 15
-description: Delete a single message or purge the stream by hand, and what removal does to sequence numbers
+description: "Ручное удаление сообщения или очистка и влияние на порядковые номера"
 ---
 
-# Altering stream state
+# Изменение состояния потока {#altering-stream-state}
 
-Retention limits remove messages for you, on a schedule the server runs. Sometimes you need to remove something by hand:
-one bad message a buggy producer wrote, or every message in a stream
-you're clearing out for a fresh test run.
+Пределы удаляют автоматически, но иногда нужно убрать ошибочную запись издателя или очистить данные перед новым тестом вручную.
 
-JetStream gives you two manual tools for that. You can delete a single
-message, or purge many at once. Both change what the stream holds without
-touching its config or its consumers, and both leave the sequence
-numbers alone. How the numbers behave is worth understanding before you
-use either tool.
+Есть удаление одного сообщения и массовая очистка. Оба сохраняют конфигурацию, потребителей и нумерацию. Разберём поведение номеров.
 
-## Delete one message
+## Удаление одного сообщения {#delete-one-message}
 
-Every stored message has a sequence number, the one the `PubAck` gave
-back when you published it. To remove a specific message, give the server
-that number:
+Укажите номер, полученный в PubAck:
 
 <div class="nats-example"
      data-type="learn-jetstream-altering-stream-state-deleteMessage"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-`rmm` is "remove message." It takes the stream and the sequence to drop,
-and it asks for confirmation first (`Really remove message 2 from Stream
-ORDERS`). Add `--force` to skip the prompt in a script.
+`rmm` означает remove message. Команда спрашивает `Really remove message 2 from Stream
+ORDERS`; `--force` пропускает вопрос в скрипте.
 
-`nats stream rmm` securely removes the message: the server overwrites the
-stored bytes so the old contents can't be read back. That's the right
-default for a message that held data it shouldn't have, such as a card
-number a producer logged by mistake.
+CLI безопасно перезаписывает байты, чтобы прежнее содержимое, например случайно сохранённый номер карты, нельзя было прочитать.
 
 <div class="nats-flow" data-scenario="deleteMessageAnimated" data-width="780" data-height="270"></div>
 
-From a client library you choose that cost yourself. `DeleteMsg(seq)`
-marks the message erased but leaves its bytes in place until they're
-later overwritten, which is cheap. `SecureDeleteMsg(seq)` overwrites them
-right away the way the CLI does, and is slower for it. The only difference
-the server sees is a single `no_erase` flag on the delete request; the
-full request is in [Reference](/reference/jetstream/api/stream/msg-delete).
+Библиотеки дают выбор: `DeleteMsg(seq)` дёшево помечает удаление, оставляя байты до перезаписи; `SecureDeleteMsg(seq)` сразу перезаписывает и медленнее. Различие — `no_erase` запроса; см. [справочник](/reference/jetstream/api/stream/msg-delete).
 
-## Purge the stream
+## Очистка потока {#purge-the-stream}
 
-To clear a whole stream at once, purge it:
+Для всех сообщений:
 
 <div class="nats-example"
      data-type="learn-jetstream-altering-stream-state-purge"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-That removes every message in `ORDERS` and reports how many it dropped
-(`Purged N messages from ORDERS`, for whatever the stream held). Like
-`rmm`, it asks for confirmation first; add `--force` to skip the prompt in
-a script. The stream itself stays: same config, same consumers, same
-name — only the messages are removed. (Don't confuse it with
-`nats stream rm ORDERS`, which deletes the whole stream, config and
-consumers included.)
+Вывод `Purged N messages from ORDERS` сообщает количество. Есть подтверждение и `--force`. Имя, конфигурация и потребители остаются. `nats stream rm ORDERS`, напротив, удаляет весь объект вместе с ними.
 
 <div class="nats-flow" data-scenario="purgeStreamAnimated" data-width="780" data-height="270"></div>
 
-A bare purge removes everything. Three optional flags narrow it:
+Три флага сужают очистку:
 
 <div class="nats-example"
      data-type="learn-jetstream-altering-stream-state-purgeFiltered"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-`--subject` limits the purge to one subject. `--seq` counts from the
-bottom (drop everything older than a sequence); `--keep` counts from the
-top (retain a number of the newest). You can't use `--seq` and `--keep`
-together, since one works from each end, but either one can pair with
-`--subject` to count within a single subject.
+`--subject` выбирает тему, `--seq` удаляет старше номера, `--keep` сохраняет заданное число последних. Последние два несовместимы друг с другом, но каждый сочетается с темой.
 
-## Sequence numbers never backfill
+## Номера не заполняют пробелы {#sequence-numbers-never-backfill}
 
-Delete a message or purge a range and you leave a hole. Sequence `2` is
-gone; `1` and `3` stay exactly where they were. The server does not
-renumber `3` down to close the gap, and it never hands `2` out again to a
-future message.
+Удалённый 2 оставляет 1 и 3 прежними. Перенумерации и повторного использования нет.
 
-This is the rule the [publishing page](/learn/jetstream/publishing)
-promised: sequence numbers only ever climb. After a full purge of
-`ORDERS`, the next message you publish doesn't start over at `1`. It gets
-the number after the last one the stream ever held, because purge sets the
-stream's first sequence to one past its last.
+Как обещала [публикация](/learn/jetstream/publishing), номера только растут. После полной очистки следующий не 1, а прежний последний плюс один: первый номер пустого потока устанавливается за последним.
 
 <div class="nats-flow" data-scenario="sequenceGapAnimated" data-width="780" data-height="270"></div>
 
-Consumers handle the gaps without trouble. A consumer reading `ORDERS`
-skips the sequences that are gone; it never blocks waiting for a deleted
-message, and a missing `2` is not redelivered.
+Потребители пропускают отсутствующие записи, не ждут и не повторяют удалённый 2.
 
-This means a stored sequence is a stable address. If you saved "order
-`ord_8w2k` is at sequence 2" alongside your business record, that pointer
-either still points at the same message or points at nothing. It never
-points at a different message, because `2` never gets reused.
+Сохранённая ссылка «ord_8w2k по номеру 2» всегда указывает либо на тот же заказ, либо ни на что, но не на другой.
 
-## Manual removal versus automatic
+## Ручное и автоматическое удаление {#manual-removal-versus-automatic}
 
-Everything on this page is manual: you ran a command to remove something
-deliberately. The server also removes messages on its own, and that lives
-on two other pages:
+Здесь действия намеренно выполняет человек. Автоматические механизмы:
 
-- [Shaping the stream](/learn/jetstream/shaping-the-stream) — `MaxAge`,
-  `MaxBytes`, `MaxMsgs`, and discard policy trim the stream to stay within
-  its limits.
-- [Per-message TTL](/learn/jetstream/message-ttl) — a single message
-  expires on its own clock.
+- [Настройка потока](/learn/jetstream/shaping-the-stream) — MaxAge, MaxBytes, MaxMsgs, Discard.
+- [TTL сообщений](/learn/jetstream/message-ttl) — индивидуальный срок.
 
-Use delete and purge for one-off removals. Use limits and TTL for the
-steady state.
+Delete и purge — разовые операции; ограничения и TTL — постоянная политика.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Some ways manual removal goes wrong.
+Ошибки ручных действий:
 
-**`purge` empties the stream; `rm` destroys it.** The two commands look
-similar but do different things. `nats stream purge ORDERS` removes the
-messages and leaves the stream ready for more. `nats stream rm ORDERS`
-deletes the stream itself, including its config and every consumer. Use
-`purge` when you only mean to clear messages; don't type `rm` for that,
-and read the confirmation prompt before answering it.
+**Purge очищает, rm уничтожает.** Первая оставляет готовый поток, вторая удаляет конфигурацию и всех потребителей. Проверяйте вопрос подтверждения.
 
-**A deleted sequence is gone, not renumbered.** Code that assumes messages
-run `1..N` with no holes breaks the first time anyone removes one. Do
-treat a sequence as a stable address that may or may not still hold a
-message; don't work out "the next message" as `count + 1`, and don't read
-a message count as the highest sequence.
+**Удаление не перенумеровывает.** Не предполагайте непрерывные `1..N`, не вычисляйте следующий как `count + 1` и не приравнивайте количество к максимальному номеру. Номер — стабильный адрес с возможным отсутствием данных.
 
-**A purge can't be undone.** The messages are gone the moment the command
-returns. On a stream that matters, set `DenyPurge` in its config so a
-stray call can't wipe it, and keep a
-[mirror](/learn/jetstream/mirrors-and-sources) if the data is worth
-recovering. Setting `DenyPurge` is permanent: the server refuses any later
-update that turns it off, so the only way to purge that stream again is to
-delete and recreate it. Try it on a throwaway stream, not `ORDERS`.
+**Очистку нельзя отменить.** Для важных данных включите DenyPurge и сохраняйте [зеркало](/learn/jetstream/mirrors-and-sources). DenyPurge необратим: отключение отвергается, для очистки потребуется пересоздание. Проверяйте на временном потоке, не ORDERS.
 
 ```bash
 # Guard a stream so purge requests are refused
@@ -148,33 +88,18 @@ nats stream edit GUARDED --deny-purge
 nats stream purge GUARDED
 ```
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You can now remove messages from `ORDERS` by hand: one at a time with
-`nats stream rmm`, or many at once with `nats stream purge` and its
-`--subject`, `--seq`, and `--keep` flags. You saw that removal leaves gaps
-the server never fills back in, and that the sequence counter only ever
-climbs.
+Вы умеете удалять через `nats stream rmm` и `nats stream purge` с `--subject`, `--seq`, `--keep`. Номера растут, пробелы не заполняются.
 
-If you ran a full `nats stream purge ORDERS` above, the stream is empty
-now; republish the orders from the [publishing
-page](/learn/jetstream/publishing) to repopulate `ORDERS` for the next
-page. The new orders get fresh, higher sequence numbers, not `1`, `2`,
-`3` — purge left the counter where it was, so publishing continues from
-one past the stream's last sequence. Everything else about the stream, its
-config and its consumers, is exactly as the previous page left it.
+После полной очистки заново [опубликуйте заказы](/learn/jetstream/publishing) для следующей страницы. Они получат новые большие номера вместо 1, 2, 3. Конфигурация и потребители прежние.
 
-## What's next
+## Что дальше {#whats-next}
 
-Manual and automatic removal are both covered, so the stream's contents
-are fully in your hands on a single server. The next page asks what
-happens to all of it when the server itself goes away.
+Содержимым одного сервера вы управляете. Теперь рассмотрим потерю самого сервера.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Stream Purge](/reference/jetstream/api/stream/purge) — the
-  exact purge request, `filter`, `seq`, and `keep`.
-- [Reference → Delete Message](/reference/jetstream/api/stream/msg-delete)
-  — the delete request and the `no_erase` flag.
-- [Shaping the stream](/learn/jetstream/shaping-the-stream) — the limits
-  that remove messages without you asking.
+- [Очистка потока](/reference/jetstream/api/stream/purge) — filter, seq, keep.
+- [Удаление сообщения](/reference/jetstream/api/stream/msg-delete) — no_erase.
+- [Настройка потока](/learn/jetstream/shaping-the-stream) — автоматические пределы.

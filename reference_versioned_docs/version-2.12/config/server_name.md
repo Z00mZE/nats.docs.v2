@@ -1,17 +1,15 @@
-# server_name
+# server_name {#server_name}
 
 <Reloadable state="not-reloadable" />
-The servers name, shows up in logging. Defaults to the generated
-server ID. When JetStream is used, within a domain, all server
-names need to be unique.
+Имя сервера, отображаемое в журнале. По умолчанию используется сгенерированный идентификатор сервера. При использовании JetStream имена всех серверов в пределах домена должны быть уникальными.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |
-## Examples
+## Examples {#examples}
 
 ```
 gcp-us-west1-3

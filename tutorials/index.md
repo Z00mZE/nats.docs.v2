@@ -1,47 +1,34 @@
 ---
 id: index
-title: Tutorials
+title: "Практические руководства"
 sidebar_position: 1
-description: Hand-held, start-to-finish tutorials that get you a working NATS result fast
+description: "Пошаговые руководства от начала до готового результата, позволяющие быстро освоить NATS на практике"
 ---
 
-# Tutorials
+# Практические руководства {#tutorials}
 
-Tutorials take you by the hand and get you a small, complete, working result. Each
-one is a short happy path: run the commands, see the output you're told to expect,
-and you're done. No detours, no edge cases, no "it depends" — just steps that work.
+Эти руководства последовательно ведут вас к небольшому, законченному и работающему результату. Каждое проходит по простому успешному сценарию: выполните команды, проверьте ожидаемый вывод — и готово. Без отступлений, разбора крайних случаев и оговорок «это зависит от условий»: только рабочие шаги.
 
-That's the difference from the rest of the docs:
+Этим они отличаются от остальных разделов документации:
 
-- **Tutorials** (you are here) show you *that* it works. Follow the steps and
-  you'll be done in 10–20 minutes.
-- **[Learn](/learn/)** deep dives explain *why* it works: the mechanisms, the
-  trade-offs, and the judgment to use NATS well.
-- **[Concepts](/concepts/intro)** give the big-picture overview of what NATS is.
+- **Практические руководства** (этот раздел) показывают, *что* всё работает. Выполните шаги, и через 10–20 минут получите результат.
+- Углублённые курсы раздела **[Изучение](/learn/)** объясняют, *почему* всё работает: механизмы, компромиссы и подходы к эффективному использованию NATS.
+- **[Основные понятия](/concepts/intro)** дают общее представление о NATS.
 
-Each tutorial is self-contained. Start anywhere, but if you're brand new, the
-order below builds up naturally.
+Каждое руководство самостоятельно. Начать можно с любого, но новичкам удобнее следовать порядку ниже.
 
-## Start here
+## Начните здесь {#start-here}
 
-Work through these in order, or jump to whatever you need:
+Проходите руководства по порядку или выберите нужное:
 
-1. **[Hello NATS](/tutorials/hello-nats)**: install a server, publish your first
-   message, and watch a subscriber receive it.
-2. **[Request/reply](/tutorials/request-reply)**: stand up a responder and call it
-   to get an answer back.
-3. **[Work queue](/tutorials/work-queue)**: split a stream of jobs across two
-   workers so each job goes to exactly one of them.
-4. **[Your first stream](/tutorials/first-stream)**: turn on JetStream and create a
-   stream that keeps your messages so you can replay them.
-5. **[Stream consumer](/tutorials/stream-consumer)**: read a stream with a durable
-   consumer that acknowledges messages and resumes where it left off.
-6. **[Key-value](/tutorials/key-value)**: use a tiny state store. Put a value, get
-   it back, and watch it change live.
-7. **[Build an app](/tutorials/build-an-app)**: combine pub/sub, request/reply, and
-   a stream into one small running program.
+1. **[Привет, NATS](/tutorials/hello-nats)**: установите сервер, опубликуйте первое сообщение и посмотрите, как его получит подписчик.
+2. **[Запрос и ответ](/tutorials/request-reply)**: запустите отвечающий сервис, обратитесь к нему и получите ответ.
+3. **[Очередь заданий](/tutorials/work-queue)**: распределите поток заданий между двумя обработчиками так, чтобы каждое получал только один из них.
+4. **[Первый поток](/tutorials/first-stream)**: включите JetStream и создайте поток, который сохраняет сообщения для повторного чтения.
+5. **[Потребитель потока](/tutorials/stream-consumer)**: читайте поток через долговременного потребителя, который подтверждает сообщения и продолжает с места остановки.
+6. **[Ключи и значения](/tutorials/key-value)**: используйте небольшое хранилище состояния. Запишите значение, прочитайте его и наблюдайте за изменениями в реальном времени.
+7. **[Создание приложения](/tutorials/build-an-app)**: объедините публикацию и подписку, запрос и ответ и поток в одной небольшой работающей программе.
 
-## Already comfortable?
+## Уже освоились? {#already-comfortable}
 
-Want the *why* behind any of this? Jump straight to the [Learn deep dives](/learn/)
-for the mechanisms, the design choices, and how to use NATS well.
+Хотите узнать, *почему* всё устроено именно так? Перейдите к [углублённым курсам](/learn/): там разобраны механизмы, проектные решения и эффективное использование NATS.

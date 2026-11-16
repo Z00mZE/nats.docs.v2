@@ -1,17 +1,15 @@
-# accounts
+# accounts {#accounts}
 
 <Reloadable state="reloadable" />
-A list of account names that can import the stream or service.
-If not specified, the service or stream is public and any account
-can import it.
+Список имён аккаунтов, которым разрешено импортировать поток или сервис. Если список не задан, сервис или поток является общедоступным и может быть импортирован любым аккаунтом.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |
-## Examples
+## Examples {#examples}
 
 ```
 [B, C]

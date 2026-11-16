@@ -1,13 +1,13 @@
-# Accstatz
+# Accstatz {#accstatz}
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import accstatzRequest from '@site/src/schemas/vendor/v2.12/server/monitor/v1/accstatz_request.json';
 import accstatzResponse from '@site/src/schemas/vendor/v2.12/server/monitor/v1/accstatz_response.json';
 
-## Request Schema
+## Схема запроса {#request-schema}
 
 <JSONSchema schema={accstatzRequest} />
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={accstatzResponse} />

@@ -1,16 +1,15 @@
-# nkey
+# nkey {#nkey}
 
 <Reloadable state="reloadable" />
-Public NKey identifying the user. The value begins with a `U`
-character. Exclusive with `username` and `password`.
+Открытый NKey пользователя. Значение начинается с символа `U`. Не используется одновременно с `username` и `password`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |
-## Examples
+## Examples {#examples}
 
 ```
 UDXU4RCSJNZOIQHZNWXHXORDPRTGNJAHAHFRGZNEEJCPQTT2M7NLCNF4

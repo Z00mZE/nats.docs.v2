@@ -1,12 +1,12 @@
-# destination
+# destination {#destination}
 
 <Aliases aliases="dest" />
 <Reloadable state="reloadable" />
-The subject mapping destination for the source subject.
+Назначение отображения для исходного субъекта.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

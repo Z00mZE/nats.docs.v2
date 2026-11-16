@@ -1,145 +1,76 @@
 ---
 id: index
-title: "Backup & Recovery Deep Dive"
+title: "Подробно о резервном копировании и восстановлении"
 sidebar_position: 1
-description: Keep a built NATS platform alive across a node loss, a fat-fingered delete, or a lost laptop full of keys
+description: "Сохранение платформы NATS при потере узла, случайном удалении данных или утрате ноутбука с ключами"
 ---
 
-# Backup & Recovery Deep Dive
+# Подробно о резервном копировании и восстановлении {#backup--recovery-deep-dive}
 
-The earlier chapters built things. JetStream gave you an `ORDERS` stream
-full of order events. Security gave you the `ACME` operator and the
-`ORDERS` and `ANALYTICS` accounts that decide who may touch it.
-Topologies spread it across the `east` cluster. This chapter doesn't
-build anything new. It keeps all of that alive when something goes
-wrong.
+Предыдущие главы создавали систему. JetStream дал поток `ORDERS` с событиями заказов. Безопасность — оператора `ACME` и учётные записи `ORDERS` и `ANALYTICS`, определяющие доступ. Топологии распределили систему по кластеру `east`. Эта глава помогает сохранить всё созданное, когда что-нибудь пойдёт не так.
 
-Something will go wrong. A disk fills, a region drops off the network, a
-script deletes the wrong stream, a laptop holding the operator key is
-left in a taxi. Each of those is a different kind of loss, and each one
-needs a different kind of copy made ahead of time. This chapter is about
-making those copies and putting them back.
+Что-нибудь обязательно случится: заполнится диск, регион потеряет связь, скрипт удалит не тот поток, ноутбук с ключом оператора останется в такси. Это разные виды потерь; для каждого нужна заранее сделанная копия своего типа. Здесь мы создаём эти копии и восстанавливаем их.
 
-## The three things to protect
+## Три объекта защиты {#the-three-things-to-protect}
 
-Protecting a NATS platform means protecting three things, and none of
-them protects the others. Keep this in mind for the whole chapter:
+Защита платформы NATS состоит из трёх частей, и ни одна не заменяет другие. Помните об этом на протяжении главы:
 
-- **A snapshot** is a point-in-time copy of a stream (its messages, its
-  config, and optionally its consumer state) written off-site. It's
-  the point you can return to after a delete or a corruption. It answers
-  "how much data can I afford to lose," your **recovery point**.
-- **A mirror** is a live, read-only copy of a stream running at a second
-  site, kept current by replication. It's the failover destination when
-  the first one dies. It answers "how long can recovery take," your
-  **recovery time**.
-- **Identity** is the set of files that *are* your security layer: the
-  operator and account JWTs, the nkeys that sign them, the user creds,
-  and the server config. Without these, a restored stream is data nobody
-  is allowed to read. They're the keys that prove who you are.
+- **Снимок** — копия потока на определённый момент: сообщения, конфигурация и при необходимости состояние потребителей, сохранённые вне основной площадки. К этому моменту можно вернуться после удаления или повреждения данных. Он отвечает на вопрос «сколько данных допустимо потерять», то есть задаёт **точку восстановления**.
+- **Зеркало** — живая копия потока только для чтения на второй площадке, обновляемая репликацией. На неё переключаются при отказе первой. Она отвечает на вопрос «сколько может длиться восстановление», то есть определяет **время восстановления**.
+- **Данные идентификации** — файлы, составляющие уровень безопасности: JWT оператора и учётных записей, подписывающие их nkey, учётные данные пользователей и конфигурация сервера. Без них восстановленный поток содержит данные, которые никто не имеет права читать. Эти ключи подтверждают вашу личность.
 
-A snapshot won't bring a dead site back quickly, a mirror won't save you
-from bad data (a corrupt write replicates to the mirror, and a mirror
-keeps no earlier state to rewind to), and neither one matters if you've
-lost the keys. You need all three, and this chapter takes them one at a
-time.
+Снимок не вернёт отказавшую площадку в работу быстро. Зеркало не спасёт от плохих данных: ошибочная запись реплицируется, а прежнее состояние для отката не хранится. Оба бесполезны при утрате ключей. Нужны все три составляющие; мы рассмотрим их по очереди.
 
-### Why R3 is not on the list
+### Почему в списке нет R3 {#why-r3-is-not-on-the-list}
 
-You might expect replication to be the fourth item. A stream with three
-replicas (R3) survives a node dying without losing a message, so it's
-tempting to call it a backup, but it isn't. R3 is high availability:
-several copies of the same live stream, kept identical at all times.
-Being kept identical is the problem. When a bad write lands (an
-accidental delete, a logic error that corrupts a message), every replica
-applies it. The mistake is replicated the same way the good data is.
+Возможно, вы ожидали увидеть четвёртым пунктом репликацию. Поток с тремя репликами (R3) переживает отказ узла без потери сообщений, и его легко принять за резервную копию. Однако R3 обеспечивает высокую доступность: несколько копий одного текущего потока постоянно поддерживаются одинаковыми. Именно в этом проблема: случайное удаление или ошибка приложения, повреждающая сообщение, применяются ко всем репликам. Ошибка реплицируется так же, как корректные данные.
 
-R3 keeps the stream *available*; only a snapshot lets you go *back* to
-before the mistake. We treat R3 as availability throughout this chapter
-and never as a backup. The replication and leader-election mechanics
-live in the [Clustering & Replication](/learn/clustering) deep dive.
+R3 сохраняет *доступность* потока; только снимок позволяет вернуться *назад*, до ошибки. В этой главе R3 рассматривается как механизм доступности. Репликация и выборы лидера описаны в разделе [Кластеризация и репликация](/learn/clustering).
 
-## By the end you'll have
+## Что вы получите {#by-the-end-youll-have}
 
-- A dated, off-site snapshot of the `ORDERS` stream under
-  `./backups/orders/`, plus a verified restore procedure that rebuilds
-  it with matching message counts.
-- An `ORDERS_DR` mirror of `ORDERS` running at a second site, whose
-  lag you can read before trusting it.
-- A runbook that picks the right recovery for each class of failure
-  (restore the snapshot or promote the mirror), walked against the
-  real objects.
-- An off-site, encrypted copy of the platform's identity (the
-  `ACME` operator and the `ORDERS` and `ANALYTICS` accounts with every
-  JWT and private seed, plus the server config), and a procedure that
-  puts it all back in a clean-room rebuild and re-mints any lost creds
-  files.
+- Датированный снимок `ORDERS` вне основной площадки в `./backups/orders/` и проверенную процедуру восстановления с совпадающим числом сообщений.
+- Зеркало `ORDERS_DR` на второй площадке, отставание которого вы умеете проверять.
+- Инструкцию, выбирающую восстановление снимка или переключение на зеркало для каждого класса отказа, проверенную на реальных объектах.
+- Зашифрованную внешнюю копию данных идентификации: оператор `ACME`, учётные записи `ORDERS` и `ANALYTICS`, все JWT и закрытые seed, конфигурация сервера. А также процедуру восстановления в чистой среде и повторного выпуска потерянных файлов учётных данных.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You've worked through the [JetStream deep dive](/learn/jetstream), so
-you know what a stream and a consumer are. You've worked through the
-[Security deep dive](/learn/security), so you know what an operator, an
-account, and a user are. Ideally you have the
-[Topologies deep dive](/learn/topologies) behind you too, so the `east`
-cluster and a second site are familiar shapes.
+Вы прошли [главу JetStream](/learn/jetstream) и знаете потоки и потребителей. Вы прошли [главу безопасности](/learn/security) и знаете операторов, учётные записи и пользователей. Желательно также изучить [топологии](/learn/topologies), чтобы кластер `east` и вторая площадка были знакомы.
 
-This chapter assumes you now run NATS for someone else. You're past
-whether it works and into what happens when it stops in production. It
-doesn't re-teach how a stream stores messages, how a mirror replicates
-them, or how an account trust chain validates. Instead, it links to the
-chapter that owns each of those and builds the operational layer on top.
+Предполагается, что теперь вы эксплуатируете NATS для других. Вопрос уже не в том, работает ли система, а в том, что произойдёт при её остановке. Здесь не повторяются устройство хранения потока, репликация зеркала и проверка цепочки доверия. Мы ссылаемся на соответствующие главы и строим поверх них эксплуатационные процедуры.
 
-## How to read it
+## Как читать главу {#how-to-read-it}
 
-Each page introduces at most two new concepts and carries the same Acme
-ORDERS world forward. You keep the `east` cluster and the `ORDERS`
-stream running, take a snapshot of them, stand up `ORDERS_DR` beside
-them, and then walk the runbook against those exact objects, with no
-fresh example per page.
+Каждая страница вводит не больше двух понятий и продолжает сценарий Acme ORDERS. Вы оставляете работающими `east` и `ORDERS`, делаете снимок, создаёте рядом `ORDERS_DR`, затем проверяете инструкцию на тех же объектах.
 
-Where a feature has a long list of knobs, error codes, or advisory
-subjects, the page covers only what you need to run the procedure and
-links to [Reference](/reference/) for the exhaustive detail.
+Если возможность имеет длинный список настроек, кодов ошибок или тем уведомлений, здесь разбирается необходимое для процедуры, а полный список находится в [справочнике](/reference/).
 
-Two boundaries are deliberate, because another chapter already owns
-them. *How* a mirror replicates lives in
-[JetStream → Mirrors and sources](/learn/jetstream/mirrors-and-sources);
-here we only apply a mirror to disaster recovery and read its lag.
-*What* an operator or account is lives in
-[Security → Operator mode](/learn/security/operator-mode); here we only
-copy those files off-site and put them back.
+Две границы проведены намеренно. *Как* реплицируется зеркало, объясняет [JetStream → Зеркала и источники](/learn/jetstream/mirrors-and-sources); здесь оно применяется для аварийного восстановления и измерения отставания. *Что* такое оператор и учётная запись, объясняет [Безопасность → Режим оператора](/learn/security/operator-mode); здесь мы копируем соответствующие файлы на другую площадку и возвращаем их.
 
-## Map
+## Карта главы {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Stream backup and restore](/learn/backup-recovery/stream-backup-restore) | Take a point-in-time snapshot of `ORDERS`, restore it, and verify the counts match |
-| [Mirrors as a DR tool](/learn/backup-recovery/mirrors-and-sources) | Stand up `ORDERS_DR` at a second site, read its lag, and see why a mirror is not a backup |
-| [Disaster recovery](/learn/backup-recovery/disaster-recovery) | A runbook that picks restore or promotion per failure class, and how to promote a mirror |
-| [Config and JWT backup](/learn/backup-recovery/config-and-jwt-backup) | Back up and restore the operator, accounts, keys, and server config off-site |
-| [Where to go next](/learn/backup-recovery/where-next) | The whole game recapped, plus a single production checklist |
+| [Резервное копирование и восстановление потока](/learn/backup-recovery/stream-backup-restore) | Снимок `ORDERS` на определённый момент, восстановление и проверка числа сообщений |
+| [Зеркала для аварийного восстановления](/learn/backup-recovery/mirrors-and-sources) | Создание `ORDERS_DR` на второй площадке, проверка отставания и отличие зеркала от резервной копии |
+| [Аварийное восстановление](/learn/backup-recovery/disaster-recovery) | Выбор восстановления или повышения зеркала в зависимости от отказа |
+| [Резервные копии конфигурации и JWT](/learn/backup-recovery/config-and-jwt-backup) | Копирование и восстановление оператора, учётных записей, ключей и конфигурации сервера |
+| [Куда двигаться дальше](/learn/backup-recovery/where-next) | Итоги и единый контрольный список перед эксплуатацией |
 
-## Prerequisites
+## Предварительные условия {#prerequisites}
 
-You'll need the world the earlier chapters built, running locally:
+Вам нужна локально работающая система из предыдущих глав:
 
-- A `nats-server` with **file** storage and JetStream enabled, holding
-  the `ORDERS` stream. Memory streams can't be snapshotted, so file
-  storage isn't optional here.
-- The `nats` CLI installed and pointed at that server.
-- The `nats auth` store from the Security chapter (the tree under
-  `$XDG_DATA_HOME/nats`), holding the `ACME` operator and the `ORDERS`
-  and `ANALYTICS` accounts.
-- A second place to put copies: a second site for the mirror, and any
-  off-site location (another disk, a bucket) for snapshots and identity.
+- `nats-server` с **файловым** хранилищем и включённым JetStream, содержащий поток `ORDERS`. Для версий, не поддерживающих снимки потоков в памяти, файловое хранение обязательно.
+- Установленный CLI `nats`, настроенный на этот сервер.
+- Хранилище `nats auth` из главы безопасности — дерево в `$XDG_DATA_HOME/nats` с оператором `ACME` и учётными записями `ORDERS` и `ANALYTICS`.
+- Второе место для копий: отдельная площадка для зеркала и внешнее хранилище (другой диск или бакет) для снимков и данных идентификации.
 
-Open a terminal, confirm `nats stream info ORDERS` returns your stream,
-and turn to
-[Stream backup and restore](/learn/backup-recovery/stream-backup-restore).
+Откройте терминал, убедитесь, что `nats stream info ORDERS` возвращает ваш поток, и перейдите к [резервному копированию и восстановлению потока](/learn/backup-recovery/stream-backup-restore).
 
-## See also
+## См. также {#see-also}
 
-- [JetStream → Mirrors and sources](/learn/jetstream/mirrors-and-sources) — how a mirror actually replicates, which this chapter applies but doesn't re-teach.
-- [Security → Operator mode](/learn/security/operator-mode) — what the operator, accounts, and users are, the identity this chapter backs up.
-- [Clustering & Replication](/learn/clustering) — the R3 mechanics this chapter deliberately leaves out.
+- [JetStream → Зеркала и источники](/learn/jetstream/mirrors-and-sources) — устройство репликации зеркала, применяемое в этой главе.
+- [Безопасность → Режим оператора](/learn/security/operator-mode) — оператор, учётные записи и пользователи, чьи данные мы сохраняем.
+- [Кластеризация и репликация](/learn/clustering) — механика R3, оставленная за рамками этой главы.

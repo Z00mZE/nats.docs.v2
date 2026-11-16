@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { NatsNodeData } from '../types';
@@ -14,7 +15,7 @@ export function ClientNode({ data, selected }: NodeProps) {
         color: '#6b7280',
       }}
     >
-      {nodeData.label}
+      {localizeDiagramContent(nodeData.label)}
       <Handle
         type="source"
         position={Position.Right}

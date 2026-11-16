@@ -1,13 +1,13 @@
-# JSz
+# JSz {#jsz}
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import jszRequest from '@site/src/schemas/vendor/v2.15/server/monitor/v1/jsz_request.json';
 import jszResponse from '@site/src/schemas/vendor/v2.15/server/monitor/v1/jsz_response.json';
 
-## Request Schema
+## Схема запроса {#request-schema}
 
 <JSONSchema schema={jszRequest} />
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={jszResponse} />

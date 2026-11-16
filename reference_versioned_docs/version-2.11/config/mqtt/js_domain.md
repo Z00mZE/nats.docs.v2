@@ -1,11 +1,11 @@
-# js_domain
+# js_domain {#js_domain}
 
 <Reloadable state="not-reloadable" />
-If specified, sets an explicit JetStream domain to be used by MQTT.
+Если задано, явно указывает домен JetStream для MQTT.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

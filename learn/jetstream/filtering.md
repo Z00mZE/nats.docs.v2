@@ -1,55 +1,41 @@
 ---
 id: filtering
-title: "Filtering what you consume"
+title: "Фильтрация сообщений"
 sidebar_position: 5
-description: Add a second consumer that reads only orders.shipped, and see consumers as independent views
+description: "Второй потребитель только для orders.shipped и независимые представления потока"
 ---
 
-# Filtering what you consume
+# Фильтрация сообщений {#filtering-what-you-consume}
 
-The `billing` consumer from the previous page reads every message in
-the `ORDERS` stream — no filter, the whole log.
+`billing` читает весь `ORDERS` без фильтра.
 
-A reporting job needs only one thing: when an order ships. It has no use for
-`orders.created` or `orders.canceled`, so delivering those messages to it
-would be wasted work on both sides.
+Отчётности нужны лишь отправленные заказы. Доставка `orders.created` и `orders.canceled` была бы лишней работой обеим сторонам.
 
-This page adds a second consumer that reads only `orders.shipped`, and shows
-why one consumer doesn't interfere with another.
+Добавим потребителя только для `orders.shipped` и покажем независимость читателей.
 
-## What a filter does
+## Действие фильтра {#what-a-filter-does}
 
-A **filter** is a subject pattern attached to a consumer. The consumer
-receives only the messages whose subject matches the filter; the rest of
-the stream is skipped.
+**Фильтр** — шаблон темы потребителя. Он получает лишь соответствующие сообщения, пропуская остальные.
 
-The pattern can be a literal subject like `orders.shipped`, or a wildcard: a
-filter of `orders.*` matches every order event, while `orders.shipped` matches
-only the ships. The `*` and `>` wildcards behave exactly as they do for a
-[core subscription](/learn/core-nats/subjects-and-wildcards).
+Допустимы точное имя `orders.shipped` и подстановочные знаки: `orders.*` охватывает все события. `*` и `>` работают как в [Core-подписке](/learn/core-nats/subjects-and-wildcards).
 
-The stream still captures all of `orders.>`; nothing about the stream
-changes. The filter lives on the consumer and decides which of the
-stored messages this consumer receives.
+Поток по-прежнему захватывает `orders.>`. Фильтр относится к потребителю и выбирает из уже сохранённого.
 
-Create the `analytics` consumer with a filter of `orders.shipped`:
+Создайте `analytics` с `orders.shipped`:
 
 <div class="nats-example"
      data-type="learn-jetstream-filtering-createFiltered"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The new flag is `--filter`. It ties the consumer to a single filter subject.
-A message on `orders.shipped` reaches `analytics`; a message on
-`orders.created` or `orders.canceled` does not.
+Новый `--filter` задаёт одну тему фильтра: `analytics` получает `orders.shipped`, но не `orders.created` и `orders.canceled`.
 
-Ask the server to describe the consumer:
+Запросите описание:
 
 ```bash
 nats consumer info ORDERS analytics
 ```
 
-The configuration block now carries a line the `billing` consumer
-didn't have:
+Появилась новая строка конфигурации:
 
 ```
 Configuration:
@@ -65,138 +51,76 @@ Configuration:
    Max Waiting Pulls: 512
 ```
 
-`Filter Subject: orders.shipped` is the line that matters. The
-`billing` consumer has no filter, so its info output omits this line.
-No filter line means every subject in the stream.
+`Filter Subject: orders.shipped` определяет выборку. У `billing` этой строки нет — он читает все темы.
 
-## Two consumers with separate positions
+## Два потребителя с разными позициями {#two-consumers-with-separate-positions}
 
-The `analytics` consumer and the `billing` consumer read the same
-stream, but each tracks its own position in it.
+`analytics` и `billing` читают один поток с независимыми позициями.
 
-From the previous page, a consumer keeps a cursor: the sequence number
-of the last message it delivered and saw acknowledged. That cursor
-belongs to the consumer, not to the stream. Two consumers on one stream
-have two separate cursors.
+Курсор отслеживает доставленные и подтверждённые номера. Он принадлежит потребителю; два потребителя имеют два курсора.
 
-The server stores the cursor alongside the consumer's config and ack
-state, separate from the stream's messages. When `analytics` advances
-its cursor past sequence `3`, `billing`'s position does not change.
-Both consumers read the same stored messages from their own cursor.
+Сервер хранит курсор с конфигурацией и подтверждениями отдельно от сообщений. Продвижение `analytics` за номер `3` не двигает `billing`.
 
 <div class="nats-flow" data-scenario="twoConsumersAnimated" data-width="640" data-height="300"></div>
 
-`billing` reads every order and advances through all of them; `analytics`
-delivers only the `orders.shipped` messages and skips the rest, so the two
-cursors come to rest at different positions. Neither one moves the other.
+`billing` проходит все заказы, `analytics` — только отправленные. Позиции могут различаться и не влияют друг на друга.
 
-Pull from `analytics` and see what comes back:
+Запросите сообщения `analytics`:
 
 ```bash
 nats consumer next ORDERS analytics --count 5
 ```
 
-`analytics` sees only the `orders.shipped` message stored on the
-publishing page, sequence `3`. The `orders.created` messages at
-sequences `1` and `2` don't appear for this consumer. They're still in the
-stream; the filter just hides them from `analytics`.
+Придёт лишь `orders.shipped` с номером `3` со страницы публикации. `orders.created` под `1` и `2` остаются в потоке, но скрыты фильтром.
 
-`billing` stays wherever you left it. Reading from `analytics` did not
-move `billing`'s cursor, and it did not consume or delete any message
-from the stream.
+`billing` остался на прежнем месте. Чтение `analytics` не сдвинуло его и не удалило данные.
 
-## A consumer is a view
+## Потребитель — представление {#a-consumer-is-a-view}
 
-A consumer is an independent **view** over the stored messages, with its
-own filter, cursor, and ack state. The stream holds the one shared copy
-of every message, and each consumer reads it from its own position.
+Это независимое **представление** сохранённых сообщений со своими фильтром, курсором и подтверждениями. Общая копия данных одна.
 
-Because consumers are independent, a filter is a cheap way to send the
-same messages to more than one reader. Adding `analytics` cost one
-command. It did not copy any data, it did not slow down `billing`, and
-it can start, stop, or fall behind without affecting any other consumer.
-The server keeps one copy of each message and serves every consumer from
-it.
+Добавление `analytics` требует одной команды, не копирует данные и не замедляет `billing`. Потребитель может запускаться, останавливаться и отставать независимо. Сервер обслуживает все представления из одних сообщений.
 
-This differs from the core NATS [queue group](/learn/core-nats/queue-groups)
-you met in core NATS. A queue group splits one subject's live traffic across
-workers that share the load. Here, each consumer gets its own full view of the
-stored stream, filtered to what it asked for. Sharing load within one consumer
-— the [worker-pool pattern](/learn/jetstream/worker-pool) — comes later in the
-chapter.
+В [группе очереди Core NATS](/learn/core-nats/queue-groups) обработчики делят живой трафик. Здесь каждый потребитель получает собственное полное представление по фильтру. Деление работы *внутри* одного потребителя — [пул обработчиков](/learn/jetstream/worker-pool) далее.
 
-## Other filtering options
+## Другие варианты фильтрации {#other-filtering-options}
 
-The `analytics` consumer filters on a single subject. A consumer can also
-filter on several subjects at once. That goes beyond what this scenario
-needs.
+Потребитель может иметь несколько фильтров одновременно, но сценарию достаточно одного.
 
-For the full set of consumer filtering options, including multiple filter
-subjects, see
-[Reference → Create Consumer](/reference/jetstream/api/consumer/create). We
-use only a single `Filter Subject` here.
+Все варианты описаны в [Создании потребителя](/reference/jetstream/api/consumer/create). Здесь используется один `Filter Subject`.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A filter is a small piece of config, but a wrong one fails quietly.
+Неверный фильтр может отказать незаметно.
 
-**A filter that matches nothing.** The server accepts any filter subject,
-even one that matches no message in the stream. A typo like
-`orders.shiped` creates a valid consumer that never receives anything.
-There's no error and no warning, just an empty pull. Don't assume an
-empty pull means the stream is empty; first confirm the filter matches a
-subject the stream actually stores.
+**Фильтр без совпадений.** Опечатка `orders.shiped` создаёт допустимого, но ничего не получающего потребителя без предупреждений. Пустой ответ не доказывает пустоту потока. Проверьте фактически сохраняемые темы.
 
 <div class="nats-example"
      data-type="learn-jetstream-filtering-filterMatchesNothing"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-When a pull comes back empty, run `nats consumer info` and check the
-`Filter Subject` line against the stream's subjects. A filter outside
-`orders.>` can never match.
+При пустом запросе сравните `Filter Subject` в `nats consumer info` с темами потока. За пределами `orders.>` совпадений не будет.
 
-**Expecting a filter to delete from the stream.** A filter narrows one
-consumer's view; it never removes messages. After `analytics` reads
-`orders.shipped`, every `orders.created` and `orders.canceled` message is
-still stored and still readable by `billing`. Don't use a filter to
-prune a stream. What stays and what ages out is controlled by the
-stream's limits, covered in [Shaping the stream](/learn/jetstream/shaping-the-stream),
-not by any consumer.
+**Ожидание удаления данных фильтром.** Он сужает одно представление, не очищает поток. После чтения `analytics` все события доступны `billing`. Хранение задают ограничения потока из [Настройки потока](/learn/jetstream/shaping-the-stream).
 
-**Overlapping filters within one consumer.** Overlap _between_ consumers
-is fine on limits and interest streams: two separate consumers whose
-filters match the same subject each get their own full copy of those
-messages. That's the kind of sharing this page relies on. The exception
-is work-queue retention, where consumers' filters must not overlap each
-other. See [Retention policies](/learn/jetstream/retention-policies).
+**Пересечения фильтров.** *Между* потребителями Limits и Interest они допустимы: каждый получает свою полную выборку. Исключение — WorkQueue, где фильтры потребителей не пересекаются; см. [Политики хранения](/learn/jetstream/retention-policies).
 
-Overlap _inside_ one consumer is different. You can give a single
-consumer several filter subjects, but if one of those subjects already
-covers another, like `orders.>` next to `orders.shipped`, the create call
-fails with `consumer subject filters cannot overlap`. Filters that only
-partly overlap, where neither covers the other, are accepted.
+*Внутри* одного потребителя несколько фильтров допустимы, но полное покрытие одного другим — `orders.>` и `orders.shipped` — вызывает `consumer subject filters cannot overlap`. Частичное пересечение без покрытия принимается.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The `ORDERS` stream now has two consumers reading it:
+Теперь ORDERS читают:
 
-- `billing`: no filter, reads every order; the reader from the previous
-  page
-- `analytics`: filtered to `orders.shipped`, sees only ships
+- `billing` — все события без фильтра.
+- `analytics` — только `orders.shipped`.
 
-Both read the same stored messages. Neither consumer's progress affects
-the other, and the stream itself is untouched by either read.
+Они используют одни сообщения, не влияют на позиции друг друга и не меняют поток чтением.
 
-## What's next
+## Что дальше {#whats-next}
 
-Both `billing` and `analytics` read on the happy path: pull a message,
-ack it, move on. The next page is about what that acknowledgment actually
-does — how a message is held in flight until it's confirmed, what a double
-ack adds, and how an unacked message is redelivered.
+Пока всё успешно: запрос, обработка, ack. Далее рассмотрим неподтверждённые сообщения, двойное подтверждение и повторную доставку.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Create Consumer](/reference/jetstream/api/consumer/create) —
-  every consumer config field, including multiple filter subjects.
-- [Reading back the stream](/learn/jetstream/reading-back) — where you met
-  the consumer cursor this page builds on.
+- [Справочник → Создание потребителя](/reference/jetstream/api/consumer/create) — настройки, включая несколько фильтров.
+- [Чтение потока](/learn/jetstream/reading-back) — серверный курсор.

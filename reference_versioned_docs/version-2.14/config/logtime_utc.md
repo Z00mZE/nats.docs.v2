@@ -1,11 +1,11 @@
-# logtime_utc
+# logtime_utc {#logtime_utc}
 
 <Reloadable state="reloadable" />
-If true, log timestamps with be in UTC rather than the local timezone.
+Если true, временные метки журнала используют UTC вместо местного часового пояса.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

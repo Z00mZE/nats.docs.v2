@@ -1,8 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { visit } from 'unist-util-visit';
 
-const SCENARIO_DIR = path.resolve('src/components/NatsFlow/scenarios');
+const SCENARIO_DIR = fileURLToPath(new URL('../src/components/NatsFlow/scenarios', import.meta.url));
+const messages = JSON.parse(fs.readFileSync(new URL('../i18n/ru/diagram-messages.json', import.meta.url), 'utf8'));
+const localize = (text) => {
+  const key = text.replace(/\s+/g, ' ').trim();
+  return Object.hasOwn(messages, key) ? messages[key] : text;
+};
 
 const FALLBACKS = {
   asyncOrderingAnimated:
@@ -327,7 +333,7 @@ function parseScenario(name) {
 }
 
 function buildReplacement(scenarioName) {
-  const title = TITLES[scenarioName] ?? scenarioName;
+  const title = localize(TITLES[scenarioName] ?? scenarioName);
   const parsed = parseScenario(scenarioName);
 
   const children = [];
@@ -336,19 +342,19 @@ function buildReplacement(scenarioName) {
     tagName: 'p',
     properties: {},
     children: [
-      { type: 'element', tagName: 'strong', properties: {}, children: [{ type: 'text', value: `Message flow — ${title}:` }] },
-      { type: 'text', value: ' ' + (parsed.description ?? 'Interactive NATS flow diagram.') },
+      { type: 'element', tagName: 'strong', properties: {}, children: [{ type: 'text', value: `Движение сообщений — ${title}:` }] },
+      { type: 'text', value: ' ' + (parsed.description ? localize(parsed.description) : 'Интерактивная диаграмма NATS.') },
     ],
   });
 
   if (parsed.edges.length > 0) {
     const items = parsed.edges.map((e) => {
-      const label = e.label ? ` (subject: ${e.label})` : '';
+      const label = e.label ? ` (тема: ${localize(e.label)})` : '';
       return {
         type: 'element',
         tagName: 'li',
         properties: {},
-        children: [{ type: 'text', value: `${e.source} → ${e.target}${label}` }],
+        children: [{ type: 'text', value: `${localize(e.source)} → ${localize(e.target)}${label}` }],
       };
     });
     children.push({ type: 'element', tagName: 'ul', properties: {}, children: items });

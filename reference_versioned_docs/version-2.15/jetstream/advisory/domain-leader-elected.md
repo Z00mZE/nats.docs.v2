@@ -1,16 +1,16 @@
-# Domain Leader Elected
+# Выбран лидер домена {#domain-leader-elected}
 
-New domain leader elected.
+Выбран новый лидер домена.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import domainLeaderElected from '@site/src/schemas/vendor/v2.15/jsm/jetstream/advisory/v1/domain_leader_elected.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.DOMAIN.LEADER_ELECTED`
 
-The subject has no domain token. When configured, the domain name appears in the `domain` field of the event; otherwise, the field is omitted.
+В теме нет сегмента домена. Если домен настроен, его имя появляется в поле события `domain`; в противном случае поле отсутствует.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={domainLeaderElected} />

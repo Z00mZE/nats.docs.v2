@@ -1,12 +1,11 @@
-# type
+# type {#type}
 
 <Reloadable state="reloadable" />
-Where stapled responses are cached. `local` writes them under the
-server's store directory.
+Место кэширования прикрепляемых ответов. `local` сохраняет их в каталоге хранения сервера.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `none`, `local` |

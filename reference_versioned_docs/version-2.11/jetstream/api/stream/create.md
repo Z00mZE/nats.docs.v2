@@ -1,21 +1,21 @@
-# Create Stream
+# Создание потока {#create-stream}
 
-Creates a new stream with the specified configuration.
+Создание нового потока с указанной конфигурацией.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamCreateRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_create_request.json';
 import streamCreateResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_create_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.CREATE.{stream}`
 
-Where `{stream}` is the name of the stream to create.
+Где `{stream}` — имя создаваемого потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamCreateRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamCreateResponse} />

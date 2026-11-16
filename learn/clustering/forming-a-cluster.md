@@ -1,102 +1,49 @@
 ---
 id: forming-a-cluster
-title: "Forming a cluster"
+title: "Формирование кластера"
 sidebar_position: 2
-description: How servers find each other — explicit seed routes and the gossip that grows one seed into a full mesh
+description: "Как серверы находят друг друга: явные начальные маршруты и распространение INFO до полносвязной сети"
 ---
 
-# Forming a cluster
+# Формирование кластера {#forming-a-cluster}
 
-The [Topologies chapter](/learn/topologies/your-first-cluster) wired three
-servers into the cluster `east` and showed a client surviving a server
-loss. It covered the `cluster {}` block and the shape it produces. It did
-not cover the *how*: how a server you pointed at one peer
-ends up holding a route to every peer.
+[Глава топологий](/learn/topologies/your-first-cluster) объединила три сервера в `east` и показала, как клиент переживает потерю узла. Там рассмотрены `cluster {}` и итоговая форма, но не то, *как* сервер с адресом одного соседа в итоге устанавливает маршруты ко всем.
 
-This page covers that. It's the first mechanism of the chapter, the
-one every later page builds on. Before servers can elect a leader or
-replicate a write, they have to find each other. Two ideas do that work:
-a route, the connection one server opens to another, and gossip,
-the way servers tell each other who else is in the cluster.
+Это первый механизм главы, основа дальнейшего материала. До выборов лидера и репликации серверы должны найти друг друга. Для этого нужны маршрут — соединение серверов — и gossip, то есть обмен сведениями о других участниках.
 
-We use the same `east` cluster the whole way: `n1-east`, `n2-east`, and
-`n3-east`, client ports 4222/4223/4224, route ports 6222/6223/6224. By
-the end of the page they're running and have discovered themselves from
-a single seed.
+Везде используется `east`: `n1-east`, `n2-east`, `n3-east`, клиентские порты 4222/4223/4224 и маршрутные 6222/6223/6224. К концу страницы серверы обнаружат друг друга через один начальный узел.
 
-## A route is a server-to-server connection
+## Маршрут — соединение между серверами {#a-route-is-a-server-to-server-connection}
 
-A **route** is the connection one `nats-server` opens to another so the
-two act as one cluster. It isn't a client connection. A client connects
-on the client port (4222); a route connects on a separate route port
-(6222). The two never share a port, and that distinction has practical
-consequences: half of cluster-formation bugs are a route pointed at the
-client port.
+**Маршрут** — соединение одного `nats-server` с другим для работы единым кластером. Оно отличается от клиентского: клиент приходит на 4222, маршрут — на отдельный 6222. Порты не совпадают; ошибка выбора порта — частая причина проблем формирования кластера.
 
-A route is bidirectional once open. Whichever server dialed, both ends
-afterward send and receive over the same link: subscription interest in
-one direction, the messages that match it in the other. With three
-servers fully connected, every server holds a route to the other two, so
-each is exactly one hop from all the rest.
+Установленный маршрут двунаправленный независимо от инициатора. Обе стороны передают интерес подписчиков и подходящие сообщения по одному каналу. В полносвязном кластере каждый сервер связан с двумя другими, поэтому любой находится в одном переходе от остальных.
 
-Routes come in two kinds, and this page covers how to tell them apart.
+Есть два вида маршрутов.
 
-An **explicit route** is one you configured. You wrote its address into
-the `routes` list in `nats.conf`, and the server dials it on startup.
-This is the seed: the address a fresh server uses to find the cluster at
-all.
+**Явный маршрут** задан вами в `routes` файла `nats.conf` и открывается при запуске. Это начальный адрес, через который новый сервер находит кластер.
 
-An **implicit route** is one the server opened on its own, to a peer it
-was *not* configured to know. The server learned that peer existed and
-dialed it without you writing its address anywhere. Implicit routes are
-how a cluster fills in the connections you didn't configure, and they
-come from gossip.
+**Неявный маршрут** сервер открывает сам к соседу, адрес которого не был настроен. Он узнаёт о нём через gossip и заполняет недостающие связи без ручной конфигурации.
 
-## Gossip turns one seed into a full mesh
+## Gossip превращает начальную связь в полносвязную сеть {#gossip-turns-one-seed-into-a-full-mesh}
 
-You configured `n2-east` and `n3-east` with a single explicit route each,
-both pointing at `n1-east`. Yet the running cluster has every server
-connected to every other. The connections you never wrote appear on their
-own through **gossip**.
+У `n2-east` и `n3-east` настроено по одному явному маршруту к `n1-east`, но в работающем кластере каждый связан с каждым. Остальные соединения появляются благодаря **gossip**.
 
-Gossip is route discovery by INFO redistribution. When two servers form a
-route, each sends the other an **INFO** message, a small protocol frame
-carrying its own address. The receiver learns that peer exists and dials
-it. A server then forwards that INFO to the other peers
-it already holds routes to, so each of them learns the new peer and dials
-it too. Those self-opened connections are implicit routes.
+Gossip — обнаружение маршрутов через распространение INFO. При установлении маршрута серверы обмениваются **INFO**, небольшими сообщениями протокола с собственными адресами. Получатель узнаёт соседа и подключается. Затем INFO пересылается другим уже связанным узлам, которые тоже узнают адрес и открывают соединения. Это и есть неявные маршруты.
 
-Trace it on `east`. `n1-east` boots and waits. `n2-east` boots, dials its
-explicit route to `n1-east`, and the two exchange INFO. `n3-east` boots,
-dials *its* explicit route to `n1-east`, and now `n1-east` knows about
-both newcomers. On the next INFO exchange, `n1-east` tells `n2-east` about
-`n3-east`. `n2-east` has no route to `n3-east`, so it opens one — an
-implicit route that completes the mesh.
+Проследим `east`. `n1-east` запускается и ждёт. `n2-east` подключается по явному маршруту, обменивается INFO. Затем так же приходит `n3-east`; теперь `n1-east` знает обоих. Следующий обмен сообщает `n2-east` о `n3-east`, и тот открывает недостающий неявный маршрут, завершая сеть.
 
 <div class="nats-flow" data-scenario="clusterGossipAnimated" data-width="600" data-height="350"></div>
 
-This is why each server only needs one seed address. You point them all at
-`n1-east`; gossip discovers the rest. Adding a fourth server later means
-giving it one route, to `n1-east`, and nothing else.
+Поэтому каждому серверу достаточно одного начального адреса `n1-east`: остальные находятся через gossip. Четвёртому серверу тоже достаточно одного маршрута.
 
-The wire-level detail of the INFO frame and the route handshake (every
-field a server advertises, the protocol verbs) lives in
-[Reference → Route protocol](/reference/protocols/route). We only need the
-behavior here: each INFO announces one peer's address, and a server
-forwards a new peer's INFO to the routes it already holds so they dial it
-too.
+Поля INFO, команды и установление маршрута описаны в [Справочнике → Протокол маршрутов](/reference/protocols/route). Здесь важно поведение: INFO объявляет адрес участника и распространяется по существующим маршрутам.
 
-## Stand up the seed and two joiners
+## Запустите начальный узел и двух участников {#stand-up-the-seed-and-two-joiners}
 
-These are the `east` configs from Topologies, with JetStream still enabled
-— the later pages replicate a stream on it. We read them here for what
-they tell us about routes, not as a shape to choose; that choice belongs to
-[Topologies → Your first cluster](/learn/topologies/your-first-cluster).
-One detail differs from that page: here `n1-east` carries no `routes` of
-its own, so the pure seed pattern stands out.
+Используем конфигурации `east` из топологий с включённым JetStream для дальнейшей репликации. Здесь нас интересуют маршруты; выбор формы разобран в [Топологии → Ваш первый кластер](/learn/topologies/your-first-cluster). Отличие одно: у `n1-east` нет собственного `routes`, чтобы явно показать роль начального узла.
 
-`n1-east` is the seed. It carries no `routes` of its own; the others find
-it.
+`n1-east` — начальный узел без `routes`: остальные находят его.
 
 ```conf title="n1-east.conf"
 server_name: n1-east
@@ -112,24 +59,15 @@ cluster {
 }
 ```
 
-Three things in the `cluster {}` block control formation.
+Формирование определяют три параметра `cluster {}`.
 
-`name` is the cluster identifier, `east`. Every server that should join
-must set the exact same name. A route to a server whose name differs is
-rejected the moment the names are compared: the server logs
-`Rejecting connection, cluster name ... does not match ...` and closes the
-route, so the odd server forms a separate cluster of its own. See
-[Pitfalls](#pitfalls) for how to catch it in the log.
+`name` — идентификатор `east`, одинаковый на всех серверах. При несовпадении маршрут отклоняется с `Rejecting connection, cluster name ... does not match ...`, а отличающийся узел образует отдельный кластер. Поиск этой ошибки разобран в [типичных ошибках](#pitfalls).
 
-`listen` is the route port this server accepts routes on: `6222`, one
-above the client port and never the same as it. This is the port peers
-dial, not clients.
+`listen` — порт приёма маршрутов, здесь `6222`, отдельный от клиентского. К нему подключаются серверы, не клиенты.
 
-`routes` is the list of seed addresses to dial on startup. `n1-east` has
-none, so it only waits. The joiners carry one each.
+`routes` — начальные адреса для подключения при запуске. У `n1-east` их нет, у присоединяющихся серверов — по одному.
 
-`n2-east` is the same pattern with its own ports and a single explicit
-route back to the seed:
+У `n2-east` свои порты и один явный маршрут к начальному узлу:
 
 ```conf title="n2-east.conf"
 server_name: n2-east
@@ -148,9 +86,7 @@ cluster {
 }
 ```
 
-`n3-east` repeats it, one port higher, pointing at the same seed. It
-does **not** list `n2-east`, and it doesn't need to: gossip will supply
-that route.
+`n3-east` повторяет настройку с портами на единицу выше и тем же начальным адресом. `n2-east` указывать **не нужно**: его найдёт gossip.
 
 ```conf title="n3-east.conf"
 server_name: n3-east
@@ -169,7 +105,7 @@ cluster {
 }
 ```
 
-Start all three, each with its own config file:
+Запустите все три с отдельными конфигурациями:
 
 ```bash
 nats-server -c n1-east.conf &
@@ -177,27 +113,19 @@ nats-server -c n2-east.conf &
 nats-server -c n3-east.conf &
 ```
 
-`n1-east` comes up first. As the joiners dial their explicit route to it,
-they exchange INFO, learn about each other, and open the implicit routes
-that complete the mesh, all within a moment of the last server starting.
+Сначала поднимается `n1-east`. Остальные подключаются, обмениваются INFO, узнают друг друга и открывают неявные маршруты. Сеть завершается вскоре после запуска последнего сервера.
 
-The full set of `cluster {}` fields (`pool_size`, `compression`,
-`authorization`, the per-link `tls {}` block) is documented in
-[Reference → Cluster config](/reference/config/cluster). We only need
-`name`, `listen`, and `routes` to form the cluster.
+Все поля `cluster {}`, включая `pool_size`, `compression`, `authorization` и `tls {}`, описаны в [Справочнике → Конфигурация кластера](/reference/config/cluster). Для формирования нужны `name`, `listen`, `routes`.
 
-## Confirm the mesh formed
+## Убедитесь, что сеть сформирована {#confirm-the-mesh-formed}
 
-Check the cluster's state from the outside. The `nats server` commands here
-query the system account (`$SYS`), which these configs don't set up; add one
-(the [Security deep dive](/learn/security) covers it) and connect with its
-credentials before you run them.
+Проверьте кластер снаружи. Команды `nats server` обращаются к системной учётной записи `$SYS`, не настроенной в примерах. Добавьте её по [главе безопасности](/learn/security) и подключитесь с соответствующими данными.
 
 ```bash
 nats server list
 ```
 
-The list shows all three servers as one cluster, each with its route count:
+Список показывает три сервера одного кластера и число маршрутов:
 
 ```
 ╭─────────────────────────────────────────────────────────────────────────╮
@@ -211,60 +139,31 @@ The list shows all three servers as one cluster, each with its route count:
 ╰─────────┴─────────┴──────┴─────────┴─────┴───────┴──────┴────────┴────────╯
 ```
 
-Every row's `Cluster` column reads `east`, so the three joined one cluster
-and not three separate ones. The `Routes` column counts route connections,
-not peers: each link to a peer is a small pool of connections (three by
-default) plus a dedicated system-account route, so a three-server cluster
-shows several per server. What confirms the mesh is that the count is the
-same on every row and non-zero. You configured one explicit route per
-joiner; gossip supplied the rest.
+У всех строк `Cluster` равен `east`. `Routes` считает соединения, а не соседей: на каждого соседа приходится небольшой пул, по умолчанию три соединения, плюс отдельный маршрут системной учётной записи. Поэтому записей несколько. Признак сформированной сети — одинаковое ненулевое число у всех. Ручные начальные маршруты были дополнены gossip.
 
-For one server's own view of its routes, query it directly:
+Для представления одного сервера запросите его напрямую:
 
 ```bash
 nats server info n1-east
 ```
 
-This prints `n1-east`'s perspective: its client port, the routes it
-holds, and the cluster name it belongs to. The route list there is the
-explicit seed plus every implicit route gossip added.
+Вы увидите клиентский порт `n1-east`, маршруты и имя кластера. Список включает настроенные и автоматически обнаруженные связи.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A cluster is straightforward to form, but three details have to be correct.
-Each one leaves you with a running server that isn't in the cluster you
-meant — sometimes with nothing but a line in the server log to tell you.
+Три детали должны быть верны. Иначе сервер работает, но находится не в нужном кластере; иногда единственная подсказка — строка журнала.
 
-**A mismatched `cluster.name` forms two clusters.** The name is
-what binds servers together. Set `name: east` on two servers and
-`name: eest` on the third, and the third's route is rejected: its log reads
-`Rejecting connection, cluster name "east" does not match "eest"` and it
-forms its own one-server cluster that never merges. Unless you read that
-line, you're left with two clusters that look like one until a message
-fails to cross. Set the identical `name` on every server, then confirm they
-joined as one before trusting the cluster:
+**Несовпадающий `cluster.name` создаёт два кластера.** Если два узла имеют `name: east`, а третий `name: eest`, его маршрут отклоняется с `Rejecting connection, cluster name "east" does not match "eest"`. Он образует отдельный кластер и не объединится с остальными. Задайте одинаковое имя и проверьте объединение:
 
 ```bash
 nats server list
 ```
 
-If every row shows `east`, the mesh is complete. A stray name, or a server
-missing from the list, means it formed a separate cluster. Fix the `name`
-and restart it.
+Все строки должны показывать `east`. Другое имя или отсутствующий сервер указывают на отдельный кластер. Исправьте `name` и перезапустите узел.
 
-**Pointing `routes` at the client port (4222) never forms the mesh.** The
-route port (6222) and the client port (4222) are different listeners. A
-`routes` entry of `nats://127.0.0.1:4222` aims at the client listener,
-which speaks the client protocol, not the route protocol. The route never
-establishes and the server runs alone. Always point `routes` at a peer's
-route port: `6222`, not `4222`.
+**Маршрут на клиентский порт 4222 не работает.** `nats://127.0.0.1:4222` направляет сервер к клиентскому протоколу вместо маршрутного. Соединение не устанавливается, узел остаётся один. В `routes` нужен маршрутный порт соседа — `6222`.
 
-**One seed is enough, but list two or three anyway.** Gossip means a
-single seed route is sufficient to discover the whole cluster. The risk is
-boot ordering: if every joiner seeds off `n1-east` alone and `n1-east`
-happens to be down when they start, none of them can find the cluster.
-Listing two or three seed routes lets formation survive any one seed being
-unavailable at boot. Don't rely on a single seed in production:
+**Одного начального адреса достаточно, но при эксплуатации задавайте два-три.** Gossip обнаружит весь кластер, однако при недоступном `n1-east` во время запуска остальные с единственным адресом не найдут друг друга. Несколько начальных маршрутов устраняют эту зависимость:
 
 ```conf
 cluster {
@@ -277,36 +176,24 @@ cluster {
 }
 ```
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The `east` cluster is running and has discovered itself from one seed:
+Кластер `east` запущен и обнаружил участников через один начальный адрес:
 
-- `n1-east`, `n2-east`, and `n3-east` are up on client ports
-  4222/4223/4224 and route ports 6222/6223/6224.
-- Each joiner carried one explicit route to `n1-east`; gossip opened the
-  implicit routes that complete the mesh, so every server holds a route to
-  the other two.
-- `nats server list` shows all three under cluster `east`, each with the
-  same non-zero route count.
+- `n1-east`, `n2-east`, `n3-east` слушают клиентские 4222/4223/4224 и маршрутные 6222/6223/6224.
+- По одному явному маршруту к `n1-east` дополнены неявными связями: каждый сервер связан с двумя другими.
+- `nats server list` показывает всех в `east` с одинаковым ненулевым числом маршрутов.
 
-The servers can now reach each other. What they can't yet do is *agree*:
-decide together which server owns a stream, and keep that decision when one
-of them fails. RAFT handles that, and it's the subject of the next page.
+Серверы связаны, но ещё нужно *согласование*: совместно решать, где находится поток, и сохранять решение при отказе. Это задача RAFT.
 
-## What's next
+## Что дальше {#whats-next}
 
-A cluster whose servers can reach each other still can't reach agreement.
-The next page introduces **RAFT groups** and **leader election**: how the
-servers in `east` pick a leader for the cluster and for each stream, and how
-they pick a new one when a leader is lost.
+Следующая страница вводит **группы RAFT** и **выборы лидера**: как `east` выбирает лидеров кластера и потоков и заменяет потерянного лидера.
 
-Continue to [Raft and leaders](/learn/clustering/raft-and-leaders).
+Перейдите к [RAFT и лидерам](/learn/clustering/raft-and-leaders).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Cluster config](/reference/config/cluster) — every field of
-  the `cluster {}` block.
-- [Reference → Route protocol](/reference/protocols/route) — the wire-level
-  route handshake and the INFO frame gossip uses.
-- [Topologies → Your first cluster](/learn/topologies/your-first-cluster) —
-  the same `east` cluster as a deployment shape.
+- [Справочник → Конфигурация кластера](/reference/config/cluster) — все поля `cluster {}`.
+- [Справочник → Протокол маршрутов](/reference/protocols/route) — установление маршрута и INFO для gossip.
+- [Топологии → Ваш первый кластер](/learn/topologies/your-first-cluster) — тот же `east` как форма развёртывания.

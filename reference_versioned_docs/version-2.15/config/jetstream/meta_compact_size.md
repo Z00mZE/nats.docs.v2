@@ -1,12 +1,12 @@
-# meta_compact_size
+# meta_compact_size {#meta_compact_size}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" />
-Metalayer Raft log size that triggers compaction.
+Размер журнала Raft метаслоя, при котором запускается уплотнение.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `storage` | Size in bytes or string with a metric unit such as 100K, 50M, 3G, or 1T. | - |
+| `storage` | Размер в байтах или строка с метрической единицей, например 100K, 50M, 3G или 1T. | - |

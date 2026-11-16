@@ -1,11 +1,11 @@
-# downgrade_qos2_subscribe
+# downgrade_qos2_subscribe {#downgrade_qos2_subscribe}
 
 <Reloadable state="not-reloadable" />
-Accept a QoS 2 subscription but serve it at QoS 1.
+Принимать подписку QoS 2, но обслуживать её с QoS 1.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

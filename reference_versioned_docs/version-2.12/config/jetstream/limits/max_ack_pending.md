@@ -1,12 +1,11 @@
-# max_ack_pending
+# max_ack_pending {#max_ack_pending}
 
 <Reloadable state="not-reloadable" />
-Defines the maximum number of in-flight messages allowed to be
-configured on consumers.
+Задаёт максимальное число сообщений в обработке, которое можно настроить для потребителей.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

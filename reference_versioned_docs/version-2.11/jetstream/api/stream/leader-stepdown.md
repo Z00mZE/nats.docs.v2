@@ -1,21 +1,21 @@
-# Leader Stepdown
+# Сложение полномочий лидера {#leader-stepdown}
 
-Initiates leader stepdown for a stream.
+Запуск сложения полномочий лидера потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamLeaderStepdownRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_leader_stepdown_request.json';
 import streamLeaderStepdownResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/stream_leader_stepdown_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.LEADER.STEPDOWN.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamLeaderStepdownRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamLeaderStepdownResponse} />

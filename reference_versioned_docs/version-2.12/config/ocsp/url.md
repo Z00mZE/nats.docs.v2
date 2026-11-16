@@ -1,11 +1,11 @@
-# url
+# url {#url}
 
 <Reloadable state="reloadable" />
-An explicit override URL to request staples.
+Явный альтернативный URL для запроса прикрепляемых ответов OCSP.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // jetStreamPipelineAnimated
@@ -76,17 +77,16 @@ function JetStreamPipelineAnimatedInner() {
                     fontStyle: "italic",
                 }}
             >
-                A producer publishes into the <strong>ORDERS</strong>{" "}
-                stream; one consumer reads the stored messages in order and
-                hands each to a client. Watch the two counters: the{" "}
+                Издатель публикует в <strong>ORDERS</strong>{localizeDiagramContent(" ")}
+                поток; один потребитель по порядку читает сохранённые сообщения и передаёт каждое клиенту. Следите за двумя счётчиками:{localizeDiagramContent(" ")}
                 <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>
-                    stream sequence
-                </span>{" "}
-                is the message's fixed slot, the{" "}
+                    номер потока
+                </span>{localizeDiagramContent(" ")}
+                — фиксированная позиция сообщения, а{localizeDiagramContent(" ")}
                 <span style={{ color: CONSUMER_GREEN, fontWeight: 600 }}>
-                    consumer sequence
-                </span>{" "}
-                is how many this consumer has read.
+                    номер потребителя
+                </span>{localizeDiagramContent(" ")}
+                показывает, сколько сообщений прочитал этот потребитель.
             </div>
 
             <div
@@ -123,12 +123,12 @@ function JetStreamPipelineAnimatedInner() {
                             marginBottom: 6,
                         }}
                     >
-                        ORDERS stream
+                        поток ORDERS
                     </div>
 
                     {/* Slot row */}
                     <div style={{ display: "flex", gap: SLOT_GAP }}>
-                        {Array.from({ length: N_SLOTS }, (_, i) => {
+                        {localizeDiagramContent(Array.from({ length: N_SLOTS }, (_, i) => {
                             const present = i < stored;
                             const read = consumeIndex >= 0 && i < consumeIndex;
                             const current = i === consumeIndex && consuming;
@@ -167,10 +167,10 @@ function JetStreamPipelineAnimatedInner() {
                                             "background 0.25s, color 0.25s, border-color 0.25s, opacity 0.25s",
                                     }}
                                 >
-                                    {present ? `#${i + 1}` : ""}
+                                    {localizeDiagramContent(present ? `#${i + 1}` : "")}
                                 </div>
                             );
-                        })}
+                        }))}
                     </div>
 
                     {/* Consumer cursor */}
@@ -182,7 +182,7 @@ function JetStreamPipelineAnimatedInner() {
                             marginTop: 2,
                         }}
                     >
-                        {consumeIndex >= 0 && (
+                        {localizeDiagramContent(consumeIndex >= 0 && (
                             <div
                                 key={cycleIndex}
                                 style={{
@@ -233,16 +233,16 @@ function JetStreamPipelineAnimatedInner() {
                                     </div>
                                     <div style={{ fontFamily: "monospace" }}>
                                         <span style={{ color: CONSUMER_GREEN }}>
-                                            consumer #{consumerSeq}
-                                        </span>{" "}
-                                        ·{" "}
+                                            потребитель #{localizeDiagramContent(consumerSeq)}
+                                        </span>{localizeDiagramContent(" ")}
+                                        ·{localizeDiagramContent(" ")}
                                         <span style={{ color: STREAM_BLUE }}>
-                                            stream #{streamSeq}
+                                            поток #{localizeDiagramContent(streamSeq)}
                                         </span>
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        ))}
                     </div>
                 </div>
 
@@ -290,7 +290,7 @@ function Node(
                 transition: "box-shadow 0.2s",
             }}
         >
-            <div style={{ fontSize: 12, fontWeight: 700, color }}>{label}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color }}>{localizeDiagramContent(label)}</div>
             <div
                 style={{
                     fontSize: 10,
@@ -299,7 +299,7 @@ function Node(
                     marginTop: 2,
                 }}
             >
-                {sub}
+                {localizeDiagramContent(sub)}
             </div>
         </div>
     );

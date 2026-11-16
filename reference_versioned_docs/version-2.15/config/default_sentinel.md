@@ -1,12 +1,11 @@
-# default_sentinel
+# default_sentinel {#default_sentinel}
 
 <Reloadable state="reloadable" />
-User name applied to connections that authenticate with a sentinel
-JWT, which carries no permissions of its own.
+Имя пользователя для соединений, аутентифицирующихся с помощью sentinel JWT, который сам по себе не содержит разрешений.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

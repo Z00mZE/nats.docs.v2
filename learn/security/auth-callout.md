@@ -1,84 +1,45 @@
 ---
 id: auth-callout
-title: "Auth callout"
+title: "Внешняя аутентификация (Auth callout)"
 sidebar_position: 8
-description: Delegate the authentication decision to an external service over $SYS.REQ.USER.AUTH, protected by a signed request and response
+description: "Внешнее решение аутентификации через $SYS.REQ.USER.AUTH с подписанными запросом и ответом"
 ---
 
-# Auth callout
+# Внешняя аутентификация (Auth callout) {#auth-callout}
 
-Every page so far decided authentication inside the server. Centralized
-mode checked a user list in the config. Decentralized mode, the ACME
-chain you built and ran over the last two pages, verified a signature
-chain back to the operator. Either way, the server held everything it
-needed to say yes or no.
+Ранее сервер решал по списку пользователей либо цепочке ACME. Всё нужное находилось у него.
 
-Sometimes the server can't have that information. The real source of truth
-for "who is this?" lives in an OIDC provider, an LDAP directory, or a custom
-service that mints short-lived credentials. You don't want to copy that
-directory into NATS config, and you can't make the server query
-LDAP directly. Auth callout handles this: the server asks an external
-service instead.
+Если источник личности — OIDC, LDAP или сервис коротких токенов, не нужно копировать каталог в NATS. Сервер может спросить внешний сервис.
 
-## What auth callout is
+## Что такое auth callout {#what-auth-callout-is}
 
-**Auth callout** delegates the authentication decision to an external
-NATS service. When a client connects, the server doesn't make the
-authentication decisions about the client itself.
-The server packages up what the client presented and some details about the
-connection, and sends that to a service you run, then waits for a verdict.
+**Auth callout** передаёт решение сервису NATS: сервер упаковывает предъявленные данные и сведения соединения, отправляет и ждёт.
 
-That service is the **auth service**: in our scenario, `auth-svc`. It
-receives each connection attempt, applies its own logic, and replies
-with either a user identity or a rejection.
+**Auth-сервис** auth-svc применяет свою логику и возвращает личность или отказ.
 
-The hand-off happens over one well-known subject:
-`$SYS.REQ.USER.AUTH`. The server publishes the connection request there,
-and `auth-svc` subscribes there, so authentication becomes a request/reply
-exchange over NATS itself.
+Обмен request/reply идёт через `$SYS.REQ.USER.AUTH`: сервер публикует, auth-svc подписан.
 
-The protocol between the server and `auth-svc` is fixed; what
-`auth-svc` does in the middle is yours. That's how NATS authenticates
-against any external identity system.
+Протокол фиксирован, проверка внутри сервиса ваша: так подключается любая внешняя система.
 
-This whole mechanism is defined in ADR-26, which specifies the
-request and response shape, the signing rules, and the optional
-encryption we point to at the end.
+ADR-26 определяет поля, подписи и необязательное шифрование.
 
-## The flow
+## Последовательность {#the-flow}
 
 <div class="nats-flow" data-scenario="authCalloutAnimated" data-width="600" data-height="380"></div>
 
-Follow one connection through.
+Проследим соединение.
 
-A client connects, presenting a token, say `ord-token-123`. The client
-isn't in `auth_users`, so the server doesn't consult its own user list
-at all. It builds a request describing the attempt.
+Клиент предъявляет ord-token-123 и не входит в auth_users. Сервер создаёт запрос вместо проверки своего списка.
 
-The server publishes that request to `$SYS.REQ.USER.AUTH`. `auth-svc` is
-subscribed, so it receives the request, reads the token, and decides the
-token maps to the `order-svc` user in `ORDERS`.
+Auth-svc получает его и связывает токен с order-svc в ORDERS.
 
-`auth-svc` replies with a user identity for `order-svc`. The server
-reads the reply, admits the client as `order-svc`, and the publish
-succeeds, exactly as if `order-svc` had logged in directly.
+Ответ даёт серверу личность, вход разрешён, публикация проходит.
 
-The client has no indication that a callout happened. It connected with a
-token and got a working connection. The directory lookup, the mapping, and
-the verdict all happened in `auth-svc`, separate from the client.
+Клиент не видит callout: проверка каталога и отображение выполнены отдельно.
 
-## Configure it
+## Конфигурация {#configure-it}
 
-Auth callout lives in the `authorization` block, the same block that
-held the config user list on the
-[Authentication basics](/learn/security/authentication-basics) page. So
-for this page the server leaves operator mode and goes back to a
-config-mode `nats.conf` — auth callout works in either mode, but the
-operator-mode variant needs JWT changes covered at the end. The config
-below is deliberately minimal: it declares `ORDERS` and `ANALYTICS` as
-empty accounts so the callout has somewhere to place clients, without
-the users, permissions, and export the earlier pages built. You
-add an `auth_callout` section to the `authorization` block:
+Вернёмся из operator в config mode к authorization из [Основ аутентификации](/learn/security/authentication-basics). Callout возможен в обоих, но JWT-вариант ниже. Минимальный пример создаёт пустые ORDERS и ANALYTICS без прежних пользователей, прав и экспорта, затем auth_callout:
 
 ```conf
 accounts {
@@ -99,36 +60,20 @@ authorization {
 }
 ```
 
-The account `auth-svc` places a client into must exist in the config —
-here the empty `ORDERS` and `ANALYTICS` declarations above.
+Целевая запись должна существовать в конфигурации.
 
-Three fields in the `authorization` block do the work here.
+В блоке важны поля:
 
-`issuer` is the public account NKey allowed to sign the response. The
-server admits a client only if the reply was signed by this key. It
-starts with `A` because it's an account key, the same prefix you read
-on the [Decentralized authentication](/learn/security/decentralized-auth)
-page. Generate the pair with `nats auth nkey gen account --output
-issuer.nk`; `nats auth nkey show issuer.nk` prints the public half for
-this config, and `auth-svc` keeps the seed file so it can sign.
+Issuer — открытый account NKey подписи ответа, с префиксом A. `nats auth nkey gen account --output
+issuer.nk` создаёт seed, show печатает открытый. Seed хранит auth-svc.
 
-`auth_users` lists the users that skip the callout. `auth-svc` itself
-connects to NATS to receive requests, so it must authenticate the
-ordinary way. Listing it here exempts that user from the callout.
-Without that exemption, the service that answers callouts could
-never connect to receive them.
+Auth_users обходит callout: самому auth-svc нужен обычный вход для приёма запросов, иначе он никогда не подключится.
 
-The `users` entry above defines those bypass credentials: `auth-svc`
-connects with user `auth-svc` and password `c4llout`.
+Users задаёт обходные данные auth-svc / c4llout.
 
-A fourth field, `account`, names which account `auth-svc` runs in and
-where `$SYS.REQ.USER.AUTH` is protected. We leave it unset here, so it
-defaults to the global account `$G`. The next section explains why
-production setups override it.
+Account определяет запись сервиса и защищённой темы. Здесь не задан и равен $G; при эксплуатации нужна отдельная.
 
-With the server running this config and `auth-svc` answering requests,
-the flow from the animation works end to end. Our `auth-svc` maps the
-token `ord-token-123` to `order-svc` in `ORDERS`:
+С запущенным сервисом ord-token-123 отображается в order-svc/ORDERS:
 
 ```bash
 nats --token "ord-token-123" pub orders.created \
@@ -139,8 +84,7 @@ nats --token "ord-token-123" pub orders.created \
 14:20:43 Published 91 bytes to "orders.created"
 ```
 
-The client presented a token the server config knows nothing about, and
-the publish went through. A wrong token gets the opposite verdict:
+Сервер не знает токен, но публикация проходит. Неверный даёт:
 
 ```bash
 nats --token "wrong-token" pub orders.created 'x'
@@ -150,23 +94,15 @@ nats --token "wrong-token" pub orders.created 'x'
 nats: error: nats: Authorization Violation
 ```
 
-`Authorization Violation` is all the client learns. Why the token was
-rejected appears only in the server log; the next sections cover both
-that and what protects the exchange itself.
+Клиент узнаёт только Authorization Violation, причина остаётся в журнале.
 
-Auth callout requires NATS Server 2.10.0 or later. It's also disabled
-in FIPS-140 mode and can't be configured there.
+Нужен NATS Server 2.10.0+. В FIPS-140 механизм отключён.
 
-## Why the auth service runs in its own account
+## Отдельная запись auth-сервиса {#why-the-auth-service-runs-in-its-own-account}
 
-`$SYS.REQ.USER.AUTH` carries every connection attempt on the server.
-Each request includes whatever the client presented: its token, its
-password, its NKey. Anything that can read this subject can harvest
-other clients' credentials.
+Каждый запрос несёт предъявленный токен, пароль или NKey. Чтение темы раскрывает данные чужих соединений.
 
-You can watch that happen. The bypass user subscribes to the subject, a
-second client connects with a test credential, and the request the server
-publishes there decodes straight back to readable JSON:
+Обходной пользователь может подписаться и декодировать запрос тестового клиента в JSON:
 
 <div class="nats-example" data-type="learn-security-auth-callout-observe-request" data-languages="cli"></div>
 
@@ -185,163 +121,75 @@ publishes there decodes straight back to readable JSON:
 }
 ```
 
-The hand-off subject is real: the attempt lands on `$SYS.REQ.USER.AUTH`
-exactly as the flow describes, and each attempt carries its own fresh
-`user_nkey`. The `auth_token` is the client's credential in plaintext:
-base64 is encoding, not encryption, so any subscriber decodes it in one
-line. The server redacts `client_info.user`, but the raw token the client
-presented rides along readable, and a password or NKey seed would sit
-there the same way. That's what account isolation below, and the `xkey`
-option this page covers at the end, are there to protect.
+Свежий user_nkey индивидуален, но auth_token читаем: base64 не шифрует. Client_info.user скрыт, исходный секрет нет. От этого защищают изоляция записи и xkey.
 
-The server adds one protection automatically. On the account where auth
-callout runs, publishing to `$SYS.REQ.USER.AUTH` is denied for every
-user — including `auth-svc` itself, which only needs to subscribe and
-reply. No ordinary user can inject a fake request or a fake verdict
-onto the subject.
+На записи callout сервер автоматически запрещает всем публикацию в `$SYS.REQ.USER.AUTH`, включая auth-svc, которому нужны подписка и ответ. Это исключает подделку обычным пользователем.
 
-That deny stops forgery, not eavesdropping, which is why ADR-26
-recommends one step further: run `auth-svc` in its own dedicated
-account. With nothing else in that account, no other user can subscribe
-to the request traffic. And since the auth service can bind a client to
-any authorized account, a service with that much capability should be
-isolated anyway: a compromise of some other tenant can't reach it, and a
-bug in `auth-svc` can't leak into a tenant's subject space.
+Запрет не защищает от чтения. ADR-26 рекомендует выделенную запись только для auth-svc, изолированную от арендаторов. Сервис имеет широкие полномочия назначения клиентов и заслуживает отдельной границы.
 
-This is the `account` field from the config above. Point it at a small
-account that holds nothing but `auth-svc`, and the callout setup
-stays isolated from `ORDERS`, `ANALYTICS`, and everything else.
+Задайте account на такую запись.
 
-## The signed request and response
+## Подписанные запрос и ответ {#the-signed-request-and-response}
 
-The request/reply over `$SYS.REQ.USER.AUTH` is the obvious attack
-surface. If anything could publish a fake reply, it could forge any
-user. Signatures and a one-time key protect against that.
+Подделанный ответ позволил бы выдать любую личность. Защищают подписи и одноразовый ключ.
 
-The server signs the request. Every request it sends to
-`$SYS.REQ.USER.AUTH` is a JWT signed by an NKey the server generated
-fresh at startup, carrying the server's own ID as issuer and the fixed
-string `nats-authorization-request` as audience. `auth-svc` can check
-the request is self-consistent and unmodified, but the key isn't an
-identity the service was told to trust in advance. What actually stops
-another client from provoking a verdict is the publish deny from the
-previous section: only the server can get a request onto the subject.
+Запрос — JWT, подписанный созданным при запуске серверным NKey, issuer — ID сервера, audience — nats-authorization-request. Сервис проверяет целостность, но ключ не является заранее доверенной личностью. От поддельных запросов защищает серверный publish deny.
 
-The request also pins a one-time identity. The server generates a fresh
-public user NKey for this connection and places it in the request, in a
-field called `user_nkey`. The reply is only valid if it names that exact
-NKey as its subject. A captured old reply can't be replayed against a
-new connection, because each connection carries its own NKey.
+В user_nkey помещён свежий открытый ключ соединения. Ответ должен иметь точно его subject, поэтому старый ответ нельзя воспроизвести для нового входа.
 
-`auth-svc` signs the response, and the response is two JWTs, one inside
-the other. The outer one is the verdict. Its subject is the connection's
-one-time `user_nkey`, and its audience is the ID of the server that
-asked, so a verdict produced for one server is useless at another.
+Ответ auth-svc — два вложенных JWT. Внешний вердикт имеет subject user_nkey и audience запрашивающего сервера, не подходит другому.
 
-Inside it is a user JWT, the same kind of signed identity document
-from the [Decentralized authentication](/learn/security/decentralized-auth)
-page. Its subject is again the `user_nkey`. Its audience is the name of
-the target account, `"ORDERS"` in our scenario, and that audience is
-what places the client in `ORDERS`: `auth-svc` writes the account name
-into the user JWT, and the server binds the connection there. Both JWTs
-must be signed by the `issuer` account key from the config; in config
-mode the server rejects a user JWT that names an `issuer_account`.
+Внутренний пользовательский JWT также имеет user_nkey, audience — имя ORDERS, определяющее размещение. Оба подписаны issuer из конфигурации. В config mode issuer_account во внутреннем JWT запрещён.
 
-The placement shows up in the server log. Here the admitted client
-publishes outside the permissions `auth-svc` granted it:
+Проверим запись журнала для запрещённой ответными правами публикации:
 
 ```
 [ERR] 127.0.0.1:57852 - cid:12 - "v1.51.0:go:NATS CLI Version v0.4.0" - "ORDERS/user:order-svc" - Publish Violation - Subject "billing.charge"
 ```
 
-The client connected with nothing but a token, yet the server records it
-as `order-svc` in `ORDERS`. Identity, account, and permissions all came
-from the response JWT.
+Хотя клиент принёс только токен, журнал видит order-svc в ORDERS. Личность, запись и права заданы ответом.
 
-Rejections take one of two shapes. `auth-svc` can reply with an error:
-the client gets `nats: error: nats: Authorization Violation` right away,
-and the error text goes to the server log only, never to the client:
+Явный отказ возвращает сразу `nats: error: nats: Authorization Violation`, подробный текст только серверу:
 
 ```
 [WRN] Auth callout service returned an error: token did not match any known service
 ```
 
-Or the service can drop the request without replying: the client waits
-out the callout timeout and typically reports `read tcp ...: i/o
-timeout`. The callout libraries recommend dropping for bad credentials,
-because the added delay slows down brute-force guessing.
+Сервис также может не отвечать: клиент ждёт срок и обычно получает `read tcp ...: i/o
+timeout`. Библиотеки рекомендуют это для неверных данных, замедляя перебор.
 
-## When to use it
+## Когда применять {#when-to-use-it}
 
-Auth callout is the more involved option. Use it when the identity is held
-somewhere NATS can't access directly.
+Это более сложный вариант для внешнего источника личности.
 
-- **OIDC / SSO.** A client carries a bearer token from your identity
-  provider; `auth-svc` validates it and maps the claims to a NATS user.
-- **LDAP / directory.** Users and groups live in a corporate directory;
-  `auth-svc` looks them up and grants the matching permissions.
-- **Custom tokens.** A bespoke credential (an API key, a signed cookie,
-  a license token) that only your service knows how to verify.
+- **OIDC/SSO** — проверка bearer-токена провайдера и отображение утверждений.
+- **LDAP** — корпоративные пользователи и группы с соответствующими правами.
+- **Собственные токены** — API-ключ, подписанный cookie, лицензия.
 
-If your users fit a static config list, use centralized authentication.
-If they fit a trust chain you control with `nats auth`, use operator
-mode. Auth callout is for when the verdict must come from a system NATS
-doesn't own.
+Статическому списку подходит config, управляемой цепочке — operator. Callout нужен внешнему вердикту.
 
-## What we're leaving out
+## За рамками {#what-were-leaving-out}
 
-A few parts of ADR-26 go beyond this page.
+Дополнительные части ADR-26:
 
-- The request and response can be encrypted with an x25519 **xkey**, set
-  in the `auth_callout` block, so the credentials on `$SYS.REQ.USER.AUTH`
-  are sealed even from a leaked subscription. See
-  [Reference → auth_callout](/reference/config/authorization/auth_callout).
-- An **`allowed_accounts`** field (NATS Server 2.11 and later) limits the
-  delegation to the config-defined accounts you list; users of every
-  other account authenticate the ordinary way. One exception: a
-  connection that matches no config user lands in the global account
-  `$G`, and those connections always go through the callout, whatever
-  the list says. The moment `auth_callout`
-  is on, every connection except the `auth_users` entries goes through
-  it — including config users with correct passwords — so
-  `allowed_accounts` lets you move one account at a time.
-- In operator mode, auth callout is configured on the account's JWT
-  instead of the server config, and the account declares which other
-  accounts `auth-svc` may bind clients to. The full request claim and the
-  binding details are in ADR-26.
-- Writing the `auth-svc` handler itself (decoding the request, validating
-  the token, signing the response) is a programming task with ready-made
-  libraries; the See also links point at runnable services.
+- X25519 **xkey** шифрует запросы и ответы даже от читателя темы; см. [auth_callout](/reference/config/authorization/auth_callout).
+- **Allowed_accounts**, сервер 2.11+, ограничивает делегируемые конфигурационные записи. Неизвестные пользователи попадают в $G и всегда проходят callout. Без ограничения все, кроме auth_users, проходят его даже с правильным config-паролем; список даёт постепенный переход.
+- В operator mode настройка в JWT записи с перечнем разрешённых целевых записей; детали в ADR-26.
+- Обработчик декодирования, проверки и подписи пишется готовыми библиотеками из ссылок ниже.
 
-Here we use only the `issuer` and `auth_users` fields, in the global
-account.
+Здесь используются issuer и auth_users в $G.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Two things catch people when they turn the callout on.
+Две основные:
 
-**The auth service is a single point of failure.** Every new connection
-that needs a callout waits for `auth-svc` to reply. If `auth-svc` is down,
-slow, or crashed, the server gets no reply, waits out the `timeout` in the
-`authorization` block, and rejects the client. The default wait is two
-seconds, so an outage turns into two seconds of latency on every new
-connection followed by a rejection.
+**Auth-сервис — точка отказа.** Все новые соединения ждут его. Недоступность или медленная проверка приводит к отказу после стандартных двух секунд authorization timeout.
 
-Set `timeout` deliberately and treat the auth service as production
-infrastructure. Run more than one instance so a single slow one doesn't
-stall logins, and keep its OIDC or LDAP lookups fast.
+Настройте срок осознанно, несколько экземпляров и быстрые OIDC/LDAP-запросы.
 
-What the client reports depends on timing. A client's own connect
-deadline also defaults to about two seconds, so with both defaults in
-place the client usually gives up at the same moment the server rejects
-it and prints `nats: error: read tcp ...: i/o timeout` instead of an
-auth error. When the callout `timeout` is shorter than the client's
-deadline (the demo below sets it to one second), the server's rejection
-arrives first and the client sees `Authorization Violation`. In both
-cases the reason lives only in the server log.
+У клиента connect deadline тоже около двух секунд: при совпадении он чаще видит i/o timeout. Если серверный срок короче, например секунда, первым приходит Authorization Violation. Причина в обоих случаях в журнале.
 
-Here's what an outage looks like. The publish triggers a callout, nobody
-answers, and the connection is rejected after the timeout:
+Проверка без отвечающего сервиса:
 
 <div class="nats-example" data-type="learn-security-auth-callout-callout-timeout" data-languages="cli"></div>
 
@@ -349,19 +197,11 @@ answers, and the connection is rejected after the timeout:
 nats: error: nats: Authorization Violation
 ```
 
-The rejection lands after about one second, the configured `timeout`.
-The server log records the same moment as
-`[ERR] ... authentication error - Token "[REDACTED]"`; the server
-redacts the presented token even in its own log.
+Через заданную секунду журнал сообщает `[ERR] ... authentication error - Token "[REDACTED]"`, скрывая сам токен.
 
-**Adding application users to `auth_users`.** Every user named in
-`auth_users` skips the callout and connects with no external check. The
-list exists for one job: letting `auth-svc` itself in so it can receive
-requests on `$SYS.REQ.USER.AUTH`.
+**Приложение в auth_users.** Такой пользователь пропускает внешнюю проверку. Список нужен только для входа auth-svc.
 
-Adding an application user here to "save a round trip" silently exempts it
-from authentication. List only `auth-svc`. Everything else goes through the
-callout, which is the point of turning callout on.
+Не добавляйте приложения ради экономии обмена: это обход внешней аутентификации.
 
 <div class="nats-example" data-type="learn-security-auth-callout-auth-users-scope" data-languages="cli"></div>
 
@@ -370,58 +210,30 @@ callout, which is the point of turning callout on.
 nats: error: read tcp ...: i/o timeout
 ```
 
-The first line is `auth-svc` itself. It's in `auth_users`, so it
-connects and publishes with no auth service running at all: that's
-the exemption the list grants, and what an application
-user would inherit if you added one. The token client isn't exempt, so
-it goes through the callout, and with nobody answering it fails after
-the default two-second timeout.
+Auth-svc входит и без работающего auth-сервиса, потому что исключён. Токен-клиент не исключён и через две секунды получает отказ.
 
-Two more mistakes are covered by the sections above: leaving the callout
-in the global account `$G`, and skipping `xkey` so credentials cross
-`$SYS.REQ.USER.AUTH` in the clear. Run `auth-svc` in its
-own account, and reach for `xkey` when the wire carries secrets you
-wouldn't want a leaked subscription to read.
+Ещё два риска: общая $G и отсутствие xkey. Выделите запись и шифруйте секреты, если подписка могла утечь.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Auth callout is configured and working:
+Callout настроен:
 
-- The server delegates the decision by publishing each connection
-  attempt to `$SYS.REQ.USER.AUTH`.
-- `auth-svc` subscribes there, maps a token to a user, and replies. In
-  our scenario it maps `ord-token-123` to `order-svc` in `ORDERS`.
-- The server signs the request; `auth-svc` signs the response with the
-  `issuer` account key. The one-time `user_nkey` stops replay.
-- The demo callout runs in the global account `$G`; in production you
-  point the `account` field at a dedicated account holding only
-  `auth-svc`, so nothing else can observe the request traffic. Either
-  way, only `auth_users` may publish on the protected subject.
+- Сервер отправляет попытки в `$SYS.REQ.USER.AUTH`.
+- Auth-svc связывает ord-token-123 с order-svc/ORDERS.
+- Подписи и одноразовый user_nkey защищают обмен и повтор.
+- Демонстрация в $G; при эксплуатации account выделен auth-svc, тема защищена серверными ограничениями.
 
-That's the last of the chapter's three authentication styles: a config
-user list, a signature chain, and a verdict delegated to your own
-service.
+Освоены три модели: список, цепочка подписей и внешний сервис.
 
-## What's next
+## Что дальше {#whats-next}
 
-Every connection this chapter made ran over plaintext TCP: passwords and
-tokens crossed the wire readable, and even the JWT handshake was
-visible. The next page covers TLS on the client connection, a
-certificate as the identity, and encryption of the JetStream store.
+Пока TCP открытый: пароли, токены и JWT видимы в сети. Далее TLS, сертификаты и шифрование хранения.
 
-Continue to [Encryption & TLS](/learn/security/encryption).
+Перейдите к [Шифрованию и TLS](/learn/security/encryption).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → auth_callout](/reference/config/authorization/auth_callout) —
-  every field of the `auth_callout` block, including `xkey` and
-  `allowed_accounts`.
-- [Decentralized authentication](/learn/security/decentralized-auth) —
-  the user JWTs and account NKeys that the callout response reuses.
-- [ADR-26](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-26.md) —
-  the full protocol: request and response claims, signing rules, and
-  xkey encryption.
-- [callout.go](https://github.com/synadia-io/callout.go),
-  [callout.net](https://github.com/synadia-io/callout.net), and
-  [NATS by Example: auth callout](https://natsbyexample.com/examples/auth/callout/cli) —
-  runnable services and libraries for writing `auth-svc`.
+- [auth_callout](/reference/config/authorization/auth_callout) — xkey, allowed_accounts.
+- [Децентрализованная аутентификация](/learn/security/decentralized-auth) — JWT и NKeys.
+- [ADR-26](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-26.md) — протокол.
+- [callout.go](https://github.com/synadia-io/callout.go), [callout.net](https://github.com/synadia-io/callout.net), [NATS by Example](https://natsbyexample.com/examples/auth/callout/cli) — готовые библиотеки и сервисы.

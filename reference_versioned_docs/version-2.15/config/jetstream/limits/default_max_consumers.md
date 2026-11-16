@@ -1,16 +1,12 @@
-# default_max_consumers
+# default_max_consumers {#default_max_consumers}
 
 <Since version="2.15" />
 <Reloadable state="reloadable" note="Read live at the moment a consumer is created, so the new value applies to the next consumer created on any stream, including a stream that already exists. It does not remove consumers that already exceed it." />
-The default maximum number of consumers allowed on a stream that
-does not set its own `max_consumers`, and whose account has no
-consumer limit either. Set to `-1` to disable this default and
-allow an unlimited number of consumers, matching pre-2.15
-behavior.
+Максимальное число потребителей по умолчанию для потока, не задающего собственный `max_consumers`, если у его аккаунта тоже нет лимита потребителей. Значение `-1` отключает этот предел и разрешает неограниченное число потребителей, как в версиях до 2.15.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

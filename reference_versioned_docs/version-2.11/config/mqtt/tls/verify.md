@@ -1,11 +1,11 @@
-# verify
+# verify {#verify}
 
 <Reloadable state="reloadable" note="Set through the TLS block rather than the `-tlsverify` flag, so it reloads with the rest of the TLS material." />
-If true, require and verify client certificates. Does not apply to monitoring.
+Если true, требует и проверяет сертификаты клиентов. К мониторингу не применяется.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

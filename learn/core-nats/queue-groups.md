@@ -1,71 +1,49 @@
 ---
 id: queue-groups
-title: "Queue groups"
+title: "Группы очередей"
 sidebar_position: 6
-description: Share one subject across a pool of subscribers, so each message is handled by exactly one of them
+description: "Общая тема для пула подписчиков, в котором каждое сообщение обрабатывает ровно один участник"
 ---
 
 
-# Queue groups
+# Группы очередей {#queue-groups}
 
-So far every subscriber on a subject gets a copy of every message.
-That's what you want for `notifications` and `analytics`: each of them
-needs to see every order. It's not what you want for `warehouse`.
+До сих пор каждый подписчик темы получает копию каждого сообщения. Для `notifications` и `analytics` это правильно: обоим нужен каждый заказ. Для `warehouse` — нет.
 
-The warehouse does real work for each order: it prints a label and packs
-the box. One process can't keep up with a busy day. You want a pool of
-packers, and you want each order packed by exactly one of them, not zero
-and not two.
+Склад выполняет реальную работу для заказа: печатает этикетку и упаковывает коробку. Один процесс не справится с пиковым днём. Нужен пул упаковщиков, причём каждый заказ должен упаковывать ровно один из них: не ноль и не два.
 
-Plain pub/sub can't do that. Run three copies of the `warehouse`
-subscriber and all three pack the same order. This page introduces the
-NATS answer: the queue group.
+Обычная публикация и подписка этого не даёт. Запустите три экземпляра подписчика `warehouse`, и все три упакуют один заказ. Решение NATS — группа очереди.
 
-## What a queue group is
+## Что такое группа очереди {#what-a-queue-group-is}
 
-A **queue group** is a set of subscribers on the same subject that share
-a name. The server treats the whole group as one logical subscriber: for
-each message, it picks exactly one member of the group and delivers to
-that member alone.
+**Группа очереди** — набор подписчиков одной темы с общим именем. Сервер рассматривает группу как одного логического подписчика: для каждого сообщения выбирает ровно одного участника и доставляет только ему.
 
-The shared name is the **queue group name**. A subscriber joins a group
-by subscribing to a subject *and* naming a group at the same time. Any
-subscriber that names the same group, on the same subject, is in the same
-group.
+Общее имя называется **именем группы очереди**. Подписчик входит в группу, подписываясь на тему *и* одновременно указывая группу. Любой подписчик с тем же именем группы на той же теме становится её участником.
 
-There's nothing to configure on the server. Your application picks the
-queue group name, and it arrives with the subscription. The server
-learns a group exists the moment its first member subscribes.
+На сервере ничего настраивать не нужно. Имя выбирает приложение и передаёт вместе с подпиской. Сервер узнаёт о группе при подписке первого участника.
 
 <div class="nats-flow" data-scenario="queueGroupAnimated" data-width="600" data-height="350"></div>
 
-## Add the packers pool
+## Добавление пула упаковщиков {#add-the-packers-pool}
 
-Our running scenario carries over one `nats-server` from earlier pages,
-with the `notifications` and `analytics` subscribers still running. Now
-replace the single `warehouse` subscriber with a pool.
+В сквозном сценарии остаётся один `nats-server` с предыдущих страниц и работающие подписчики `notifications` и `analytics`. Теперь замените одиночный `warehouse` пулом.
 
-Each packer subscribes to `orders.created` and names the queue group
-`packers`. The `--queue` flag is what turns a plain subscription into a
-queue-group membership:
+Каждый упаковщик подписывается на `orders.created` и указывает группу `packers`. Флаг `--queue` превращает обычную подписку в участие в группе очереди:
 
 <div class="nats-example" data-type="learn-core-nats-queue-groups-queue-subscribe" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The queue group name here is `packers`. It's a plain string the
-application chooses. Pick a name that says what the group does;
-`packers` reads better in logs than `q1`.
+Здесь имя группы — `packers`. Это обычная строка, выбранная приложением. Называйте группу по назначению: `packers` понятнее в журнале, чем `q1`.
 
-## See the load balancing
+## Балансировка нагрузки на практике {#see-the-load-balancing}
 
-Open three terminals and run the same `nats sub` in each, so you have
-three packers in the `packers` group:
+Откройте три терминала и выполните в каждом одинаковый `nats sub`: получите трёх упаковщиков в группе `packers`:
 
 ```bash
 # Terminal 1, 2, and 3 — three members of the packers group
 nats sub orders.created --queue packers
 ```
 
-In a fourth terminal, publish a few orders:
+В четвёртом терминале опубликуйте несколько заказов:
 
 ```bash
 nats pub orders.created '{"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}'
@@ -73,149 +51,82 @@ nats pub orders.created '{"order_id":"ord_2zr9","customer":"globex","total_cents
 nats pub orders.created '{"order_id":"ord_4kp1","customer":"acme-co","total_cents":1500,"ts":"2026-05-22T10:14:29Z"}'
 ```
 
-Each message lands in exactly one of the three terminals. Publish a dozen
-more and they spread across the three packers. No packer sees a message
-that another packer already took.
+Каждое сообщение появляется ровно в одном из трёх терминалов. Опубликуйте ещё дюжину: они распределятся между тремя упаковщиками. Упаковщик не получает сообщение, уже доставленное другому.
 
-## How the server picks a member
+## Как сервер выбирает участника {#how-the-server-picks-a-member}
 
-The server keeps the live members of a group in a list. For each message,
-it picks a random index into that list and delivers to that member. On a
-single server the selection is uniform-random across the available
-members; a cluster adds a locality preference, covered below.
+Сервер хранит доступных участников группы в списке. Для каждого сообщения он выбирает случайный индекс и доставляет сообщение этому участнику. На одном сервере выбор равномерно случаен среди доступных участников; кластер добавляет предпочтение локальности, описанное ниже.
 
-Random selection has one consequence: the server doesn't rotate fairly
-through the members the way round-robin would. The same packer can be
-chosen twice in a row, and over a handful of messages the split can look
-lopsided. Over many messages it evens out.
+У случайного выбора есть следствие: сервер не перебирает участников по очереди, как round-robin. Один упаковщик может быть выбран дважды подряд, и на малом числе сообщений распределение выглядит неравномерным. На большом числе оно выравнивается.
 
-## Membership is dynamic
+## Динамический состав {#membership-is-dynamic}
 
-A packer joins the group by subscribing and leaves by unsubscribing or
-disconnecting. Both happen with no configuration and no coordination
-step.
+Упаковщик входит в группу при подписке и выходит при отписке или отключении. Обе операции не требуют конфигурации и согласования.
 
-Start a fourth packer while orders are flowing. It starts receiving its
-share immediately, because the server includes it in the next random
-pick. Stop a packer and the server drops it from the list; the next
-message goes to one of the survivors.
+Запустите четвёртого упаковщика во время поступления заказов. Он сразу начнёт получать свою долю, поскольку сервер включит его в следующий случайный выбор. Остановите упаковщика — сервер удалит его из списка, а следующее сообщение получит один из оставшихся.
 
-This is what makes a queue group a good fit for an autoscaler. A pool
-that grows to ten packers under load and shrinks to two overnight needs
-no broker reconfiguration. Each instance subscribes on start and the
-group resizes itself.
+Поэтому группа очереди удобна для автоматического масштабирования. Пул, растущий до десяти упаковщиков под нагрузкой и сокращающийся до двух ночью, не требует перенастройки брокера. Экземпляр подписывается при запуске, и размер группы меняется автоматически.
 
-One limit belongs here: core NATS is at-most-once, so if the server picks
-a packer and it dies *after* delivery, that message is gone — the server
-won't retry it with another member. Work that must survive a worker crash
-belongs in a durable work queue in [JetStream](/learn/jetstream).
+Важно ограничение: Core NATS доставляет не более одного раза. Если выбранный упаковщик завершится *после* доставки, сообщение потеряно: сервер не отправит его другому участнику. Работа, которая должна переживать сбой обработчика, требует долговременной очереди [JetStream](/learn/jetstream).
 
-## Queue members and plain subscribers coexist
+## Участники группы и обычные подписчики сосуществуют {#queue-members-and-plain-subscribers-coexist}
 
-A queue group and a plain subscriber can share the same subject without
-interfering. `analytics` subscribes to `orders.created` with no queue
-group; the three packers subscribe in the `packers` group. For each
-published order:
+Группа очереди и обычный подписчик могут использовать одну тему, не мешая друг другу. `analytics` подписывается на `orders.created` без группы, а три упаковщика — в группе `packers`. Для каждого опубликованного заказа:
 
-- `analytics` receives it: plain subscribers always get every message.
-- exactly one packer receives it: the group gets one copy, shared.
+- `analytics` получает сообщение: обычные подписчики получают всё.
+- Ровно один упаковщик получает сообщение: одна копия делится внутри группы.
 
-The server runs the two distributions independently, so the same subject
-carries both behaviors with no extra configuration — analytics counts
-every order while packing happens once per order.
+Сервер выполняет два распределения независимо, поэтому одна тема поддерживает оба поведения без дополнительных настроек: аналитика считает все заказы, а упаковка выполняется один раз на заказ.
 
-You can confirm it. Keep the three `packers` terminals open, and in
-another terminal subscribe plain:
+Проверьте это. Оставьте три терминала `packers` открытыми и создайте в другом обычную подписку:
 
 ```bash
 # A plain subscriber alongside the packers group
 nats sub orders.created
 ```
 
-Publish an order. The plain terminal prints it, and exactly one of the
-three packers prints it too.
+Опубликуйте заказ. Он появится в обычном терминале и ровно у одного из трёх упаковщиков.
 
-## A group only shares within one subject
+## Группа распределяет только подходящие сообщения {#a-group-only-shares-within-one-subject}
 
-Membership is evaluated *after* subject matching. The server first finds
-the subscriptions whose subject matches the message, then, among those,
-applies the group pick. The name alone doesn't pull in members on a
-different subject.
+Участники выбираются *после* сопоставления темы. Сервер сначала находит подходящие подписки, затем выбирает участника группы среди них. Одного имени недостаточно для включения подписчика другой темы.
 
-Two packers in a group named `packers`, one subscribed to `orders.created`
-and one to `orders.shipped`, don't share load. They match different
-subjects, so a message to `orders.created` is only ever considered for the
-first one. The shared name does nothing across different subjects.
+Два упаковщика группы `packers`, один на `orders.created`, другой на `orders.shipped`, не делят нагрузку. Темы различны, поэтому сообщение `orders.created` рассматривается только для первого. Общее имя не распределяет сообщения между неподходящими подписками.
 
-A queue group can subscribe with a wildcard, and then it load-balances
-across everything that wildcard matches. A `packers` group on
-`orders.*.created` (the regional subjects from the
-[subjects page](/learn/core-nats/subjects-and-wildcards)) would spread
-`orders.us.created` and `orders.eu.created` across its members. The group
-shares load across the subjects its own subscription matches, and only
-those.
+Группа очереди может подписаться по шаблону и распределять все подходящие сообщения. Группа `packers` на `orders.*.created` (региональные темы со [страницы о темах](/learn/core-nats/subjects-and-wildcards)) распределяла бы `orders.us.created` и `orders.eu.created` между участниками. Группа делит нагрузку только по темам, соответствующим её подпискам.
 
-## A note on placement across regions
+## Размещение между регионами {#a-note-on-placement-across-regions}
 
-When the same queue group has members in several clusters, the server
-prefers a member in the publisher's own cluster before reaching across to
-another region. That keeps work local and cuts cross-region traffic.
+Когда участники одной группы находятся в нескольких кластерах, сервер сначала предпочитает участника в кластере издателя и лишь затем обращается в другой регион. Это сохраняет локальную обработку и сокращает межрегиональный трафик.
 
-That behavior, geo-affinity for queue groups, belongs to multi-cluster
-deployments, which this chapter doesn't set up. Our scenario is a single
-local server, so every packer is equally local. See
-[Topologies → Super-clusters](/learn/topologies/super-clusters) for how
-it works once you span regions.
+Географическая привязка групп очередей относится к развёртываниям с несколькими кластерами, которые эта глава не создаёт. Здесь один локальный сервер, поэтому все упаковщики одинаково локальны. Работу между регионами см. в [Топологии → Суперкластеры](/learn/topologies/super-clusters).
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-**A typo in the queue group name makes a second group.** The server
-matches members by the exact name string, so `packers` and `packer` are
-two separate groups on the same subject. Both subscriptions succeed with
-no warning, and each published order goes to one member of *each* group:
-the work is double-handled instead of load-balanced. Give every member the
-byte-for-byte identical name.
+**Опечатка в имени создаёт вторую группу.** Сервер сопоставляет участников по точной строке, поэтому `packers` и `packer` — две отдельные группы одной темы. Обе подписки успешны без предупреждения, а каждый заказ поступит одному участнику *каждой* группы. Вместо балансировки работа выполнится дважды. Имя должно побайтно совпадать у всех участников.
 
 <div class="nats-example" data-type="learn-core-nats-queue-groups-typo-splits-group" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**Don't expect ordering or an even split.** Selection is random per
-message, not round-robin, so a short burst can look lopsided. If work must
-be strictly ordered for a customer, keep it on a single subscriber, not a
-queue group.
+**Не ожидайте порядка и равного распределения.** Участник выбирается случайно для каждого сообщения, а не по кругу, поэтому короткая серия может распределиться неравномерно. Если работа для покупателя требует строгого порядка, используйте одного подписчика вместо группы очереди.
 
-**Make a packer's work safe to repeat.** A packer that's slow or briefly
-cut off can still be doing work the publisher assumes was lost, and core
-NATS won't send it again. Write each packer so handling the same order
-twice is harmless — pack by `order_id`, skip one already packed.
+**Обработка заказа должна безопасно повторяться.** Медленный или ненадолго отключённый упаковщик может продолжать работу, которую издатель считает потерянной, а Core NATS сам не отправит её снова. Повторная обработка того же заказа должна быть безвредной: упаковывайте по `order_id` и пропускайте уже упакованный заказ.
 
-## Where you are
+## Что уже сделано {#where-you-are}
 
-Your running session now looks like this:
+Текущий сеанс выглядит так:
 
-- One local `nats-server`, carried from earlier pages.
-- A `packers` queue group on `orders.created`, load-balancing each order
-  to exactly one packer, with members you can add and remove live.
-- `analytics` still a plain subscriber on `orders.created`, seeing every
-  order, undisturbed by the group.
+- Один локальный `nats-server` с предыдущих страниц.
+- Группа `packers` на `orders.created` распределяет каждый заказ ровно одному упаковщику; участников можно добавлять и удалять во время работы.
+- `analytics` остаётся обычным подписчиком `orders.created` и видит все заказы независимо от группы.
 
-You can do load-balanced *work* now, and the same mechanics apply to
-request-reply: a queue group of responders on one subject answers each
-request exactly once. The next pattern is the opposite case — one request
-where you *want* every responder to answer, and you gather all the
-replies.
+Теперь вы можете балансировать *работу*. Те же механизмы применимы к запросам и ответам: группа отвечающих сервисов одной темы обрабатывает каждый запрос одним участником. Следующий шаблон противоположен: вы *хотите* получить ответ от каждого сервиса и собрать все ответы.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page is [Scatter-gather](/learn/core-nats/scatter-gather): one
-request, many responders, and gathering all the replies instead of taking
-the first. You'll query three `shipping.quote` providers and pick the
-best.
+Следующая страница — [Scatter-gather](/learn/core-nats/scatter-gather): один запрос нескольким сервисам со сбором всех ответов вместо первого. Вы опросите трёх поставщиков `shipping.quote` и выберете лучшего.
 
-## See also
+## См. также {#see-also}
 
-- [Core Concepts → Queue Groups](/concepts/queue-groups) — the
-  five-minute overview of the same material.
-- [JetStream → Learn](/learn/jetstream) — durable work queues, where a
-  message survives a worker crash and is retried to another member.
-- [Topologies → Super-clusters](/learn/topologies/super-clusters) —
-  geo-affinity that keeps queue-group work in the publisher's region.
+- [Основные понятия → Группы очередей](/concepts/queue-groups) — пятиминутный обзор темы.
+- [Изучение → JetStream](/learn/jetstream) — долговременные очереди заданий, где сообщение переживает сбой обработчика и доставляется другому повторно.
+- [Топологии → Суперкластеры](/learn/topologies/super-clusters) — географическая привязка, сохраняющая работу группы в регионе издателя.

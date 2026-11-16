@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Replay every message stored in the stream, oldest first.
-#   --all              start at the first stored message (sequence 1)
-#   --terminate-at-end stop once all stored messages have been read
+# Прочитайте все сохранённые сообщения потока, начиная с самого старого.
+#   --all              начать с первого сохранённого сообщения, номер 1
+#   --terminate-at-end завершить после чтения всех сохранённых сообщений
 nats sub "events.>" --all --terminate-at-end

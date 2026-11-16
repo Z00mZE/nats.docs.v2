@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // limitsRetentionAnimated
@@ -52,8 +53,8 @@ function LimitsRetentionAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 14, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Limits.</strong> A consumer reads and acks every order, and each one
-                <strong> stays in the stream</strong>. Only a limit removes a message here, never an ack.
+                <strong>По лимитам.</strong> Потребитель читает и подтверждает каждый заказ, и каждый из них
+                <strong> остаётся в потоке</strong>. Здесь сообщение удаляет только лимит, а не подтверждение.
             </div>
 
             <div style={{ position: "relative", width: W, height: H, border: "1px solid #e5e7eb", borderRadius: 10, background: "#fafafa" }}>
@@ -78,7 +79,7 @@ function LimitsRetentionAnimatedInner() {
                         whiteSpace: "nowrap",
                     }}
                 >
-                    billing reads #{cursorIdx + 1}
+                    billing читает #{localizeDiagramContent(cursorIdx + 1)}
                 </div>
                 {/* tick from cursor down to the cell */}
                 <div
@@ -99,15 +100,15 @@ function LimitsRetentionAnimatedInner() {
                 <div style={{ position: "absolute", left: STREAM_L, top: STREAM_T, width: STREAM_W, height: STREAM_H, borderRadius: 10, border: `2px solid ${STREAM_BLUE}`, background: "white", boxShadow: `0 1px 3px ${STREAM_BLUE}22` }}>
                     <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 12px 0", fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace", color: STREAM_BLUE }}>Limits · {N}/{N} kept</span>
+                        <span style={{ fontFamily: "monospace", color: STREAM_BLUE }}>Лимиты · {localizeDiagramContent(N)}/{localizeDiagramContent(N)} сохранено</span>
                     </div>
                     <div style={{ position: "absolute", left: 12, bottom: 8, fontSize: 10, color: "#9ca3af" }}>
-                        removed by a limit, not an ack
+                        удаляется по лимиту, а не по подтверждению
                     </div>
                 </div>
 
                 {/* stored cells — always present */}
-                {Array.from({ length: N }).map((_, i) => {
+                {localizeDiagramContent(Array.from({ length: N }).map((_, i) => {
                     const isReading = reading(i);
                     const isAcked = acked(i);
                     return (
@@ -130,14 +131,14 @@ function LimitsRetentionAnimatedInner() {
                                 boxShadow: isReading ? `0 0 0 4px ${CONSUMER_GREEN}22` : "none",
                             }}
                         >
-                            <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: isReading ? CONSUMER_GREEN : STREAM_BLUE }}>#{i + 1}</span>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: CONSUMER_GREEN, opacity: isAcked ? 1 : 0, transition: "opacity 0.3s linear" }}>✓ ack</span>
+                            <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: isReading ? CONSUMER_GREEN : STREAM_BLUE }}>#{localizeDiagramContent(i + 1)}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: CONSUMER_GREEN, opacity: isAcked ? 1 : 0, transition: "opacity 0.3s linear" }}>✓ подтверждение</span>
                         </div>
                     );
-                })}
+                }))}
             </div>
 
-            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 16, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

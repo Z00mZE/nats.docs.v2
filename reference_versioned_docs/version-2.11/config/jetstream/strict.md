@@ -1,12 +1,11 @@
-# strict
+# strict {#strict}
 
 <Reloadable state="not-reloadable" />
-Reject API requests containing unknown fields instead of ignoring
-them.
+Отклонять запросы API с неизвестными полями вместо их игнорирования.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

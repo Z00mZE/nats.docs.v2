@@ -1,16 +1,16 @@
-# Account Connections
+# Соединения учётной записи {#account-connections}
 
-Account connection limit events.
+События лимитов соединений учётной записи.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import accountConnections from '@site/src/schemas/vendor/v2.14/jsm/server/advisory/v1/account_connections.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$SYS.ACCOUNT.{account}.CONNECTIONS`
 
-Where `{account}` is the account name.
+Где `{account}` — имя учётной записи.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={accountConnections} />

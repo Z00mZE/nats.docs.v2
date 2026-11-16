@@ -1,13 +1,12 @@
-# host
+# host {#host}
 
 <Aliases aliases="net" />
 <Reloadable state="not-reloadable" />
-Host name the server will listen on for incoming
-leaf node connections.
+Имя хоста, на котором сервер принимает входящие соединения листовых узлов.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `string` | Supports IPv4 and IPv6 addresses, as well as hostnames. | - |
+| `string` | Поддерживает адреса IPv4 и IPv6, а также имена хостов. | - |

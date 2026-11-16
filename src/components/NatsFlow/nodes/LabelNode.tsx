@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React from 'react';
 import { type NodeProps } from '@xyflow/react';
 
@@ -13,7 +14,7 @@ export function LabelNode({ data }: NodeProps) {
         userSelect: 'none',
       }}
     >
-      {(data as any).label}
+      {localizeDiagramContent((data as any).label)}
     </div>
   );
 }

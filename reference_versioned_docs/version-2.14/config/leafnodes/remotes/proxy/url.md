@@ -1,11 +1,11 @@
-# url
+# url {#url}
 
 <Reloadable state="not-reloadable" />
-Proxy URL, e.g. `http://proxy.example.com:3128`.
+URL прокси, например `http://proxy.example.com:3128`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

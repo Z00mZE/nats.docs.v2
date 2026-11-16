@@ -1,141 +1,141 @@
 ---
-title: Queue Groups
-description: Built-in load balancing for NATS subscribers
+title: "Группы очередей"
+description: "Встроенная балансировка нагрузки между подписчиками NATS"
 ---
 
-# Queue Groups
+# Группы очередей {#queue-groups}
 
-In standard publish-subscribe, every subscriber receives every message. Queue groups change this: when subscribers share a **queue name**, NATS delivers each message to only **one randomly chosen member** of that group.
+При обычной публикации и подписке каждый подписчик получает каждое сообщение. Группы очередей (queue groups) меняют это поведение: если подписчики используют общее **имя очереди**, NATS доставляет каждое сообщение только **одному случайно выбранному участнику** группы.
 
 <div class="nats-flow" data-scenario="queueGroupAnimated" data-width="600" data-height="350"></div>
 
-Watch how each message (animated dot) flows to only one worker, even though all three are subscribed. NATS automatically distributes the load.
+Посмотрите: каждое сообщение (движущаяся точка) попадает только к одному обработчику, хотя подписаны все трое. NATS автоматически распределяет нагрузку.
 
-For a runnable, step-by-step treatment, see the [Queue groups in the Core NATS deep dive](/learn/core-nats/queue-groups).
+Пошаговое практическое руководство см. в главе [Группы очередей углублённого курса Core NATS](/learn/core-nats/queue-groups).
 
-## How It Works
+## Как это работает {#how-it-works}
 
-Queue groups operate at the subject level - subscribers still filter messages by subject, but NATS adds distribution logic:
+Группы очередей работают на уровне тем: подписчики по-прежнему отбирают сообщения по теме, а NATS добавляет логику распределения:
 
-1. **Single member**: A lone subscriber in a queue group receives all messages for that subject
-2. **Multiple members**: NATS randomly selects one member for each message
-3. **Member joins/leaves**: Distribution automatically adjusts without configuration
+1. **Один участник**: единственный подписчик в группе получает все сообщения этой темы
+2. **Несколько участников**: для каждого сообщения NATS случайно выбирает одного участника
+3. **Подключение и отключение участников**: распределение автоматически меняется без дополнительной настройки
 
-The queue name is application-defined, not server-configured. Subscribers specify it when subscribing, and NATS handles the rest. Selection is random per message and does not account for how busy a member is. A member stops receiving messages only when its subscription or connection goes away, including when the server disconnects it as a slow consumer; the server then picks among the remaining members.
+Имя очереди задаётся приложением, а не конфигурацией сервера. Подписчики указывают его при подписке, а остальное делает NATS. Выбор для каждого сообщения случаен и не учитывает занятость участника. Участник перестаёт получать сообщения только при удалении подписки или разрыве соединения, в том числе когда сервер отключает его как медленного потребителя. После этого сервер выбирает среди оставшихся участников.
 
-## Basic Queue Groups
+## Основы групп очередей {#basic-queue-groups}
 
-Multiple subscribers use the same queue group name when subscribing to a subject. NATS ensures each message is delivered to only one member of that group, chosen randomly.
+Несколько подписчиков указывают одно имя группы очереди при подписке на тему. NATS обеспечивает доставку каждого сообщения лишь одному случайно выбранному участнику этой группы.
 
-Common use cases: background job processing, API request handling across service instances, event processing pipelines, batch operations.
+Типичные задачи: обработка фоновых заданий, распределение API-запросов между экземплярами сервиса, конвейеры обработки событий и пакетные операции.
 
 <div class="nats-example" data-type="queue-groups-basic" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Dynamic Scaling
+## Динамическое масштабирование {#dynamic-scaling}
 
-Add or remove workers at any time and NATS automatically adjusts distribution. When a worker joins, it immediately starts receiving messages. When it leaves, NATS stops routing to it within milliseconds.
+Добавляйте и удаляйте обработчики в любой момент: NATS автоматически перестраивает распределение. Подключившийся обработчик сразу начинает получать сообщения. После его отключения NATS прекращает маршрутизировать ему сообщения за миллисекунды.
 
-Perfect for auto-scaling scenarios where orchestration systems (Kubernetes, ECS) spin up new workers based on metrics. Supports gradual rollouts, traffic spike handling, and cost optimization.
+Это удобно для автоматического масштабирования, когда системы оркестрации (Kubernetes, ECS) запускают обработчики на основе метрик. Поддерживаются постепенное развёртывание, обработка всплесков трафика и оптимизация затрат.
 
 <div class="nats-example" data-type="queue-groups-dynamic-scaling" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Queue Groups with Request-Reply
+## Группы очередей и запрос-ответ {#queue-groups-with-request-reply}
 
-Queue groups enable horizontally scalable services without a service mesh or API gateway. Each request goes to exactly one service instance, providing automatic load balancing.
+Группы очередей позволяют горизонтально масштабировать сервисы без сервисной сетки или API-шлюза. Каждый запрос поступает ровно одному экземпляру сервиса, обеспечивая автоматическую балансировку нагрузки.
 
-Your service code doesn't need to know about other instances, handle leader election, or coordinate work. Just subscribe with a queue group name and respond to requests.
+Коду сервиса не нужно знать о других экземплярах, выбирать лидера или согласовывать работу. Достаточно подписаться с именем группы очереди и отвечать на запросы.
 
 <div class="nats-example" data-type="queue-groups-request-reply" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Mixed Subscribers
+## Смешанные подписчики {#mixed-subscribers}
 
-Queue groups coexist with regular subscribers on the same subject. Regular subscribers receive every message (pub-sub), while queue group members share the load (work distribution).
+Группы очередей могут сосуществовать с обычными подписчиками одной темы. Обычные подписчики получают каждое сообщение (pub/sub), а участники группы делят нагрузку между собой (распределение работы).
 
-Use queue groups for operational work that needs to happen exactly once, and regular subscribers for observational tasks (audit logging, monitoring, analytics).
+Используйте группы очередей для операций, которые нужно выполнить ровно один раз, а обычные подписки — для наблюдения: аудита, мониторинга и аналитики.
 
 <div class="nats-example" data-type="queue-groups-mixed-subscribers" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Geo-Affinity in Super-Clusters
+## Географическая привязка в суперкластерах {#geo-affinity-in-super-clusters}
 
-In globally distributed NATS super-clusters, queue groups exhibit **geo-affinity** - automatically preferring local workers when available.
+В глобально распределённых суперкластерах NATS группы очередей обладают **географической привязкой (geo-affinity)**: автоматически предпочитают локальные обработчики, если те доступны.
 
-### How It Works
+### Как это работает {#how-it-works-1}
 
-When you have queue group subscribers distributed across multiple regions:
+Если подписчики группы очереди распределены по нескольким регионам:
 
-1. **Local preference**: Messages are delivered to workers in the same cluster/region as the publisher
-2. **Automatic failover**: If no local workers are available, NATS routes to workers in other regions
-3. **No configuration needed**: This happens automatically based on network topology
+1. **Предпочтение локальных обработчиков**: сообщения доставляются обработчикам в том же кластере или регионе, что и издатель
+2. **Автоматическое переключение**: при отсутствии локальных обработчиков NATS направляет сообщения в другие регионы
+3. **Настройка не требуется**: выбор автоматически определяется сетевой топологией
 
-### Example Scenario
+### Пример сценария {#example-scenario}
 
-Consider a queue group named `"order-processors"` with workers in three regions:
+Рассмотрим группу очереди `"order-processors"` с обработчиками в трёх регионах:
 
-| Region | Workers | Publisher Location |
+| Регион | Обработчики | Расположение издателя |
 |--------|---------|-------------------|
-| **US-East** | 3 workers | ✅ Publisher here |
-| **US-West** | 2 workers | - |
-| **EU-West** | 2 workers | - |
+| **US-East** | 3 обработчика | ✅ Издатель здесь |
+| **US-West** | 2 обработчика | - |
+| **EU-West** | 2 обработчика | - |
 
-**Result**: Messages from the US-East publisher are preferentially delivered to the 3 US-East workers. Only if all US-East workers are unavailable will messages route to US-West or EU-West workers.
+**Результат**: сообщения издателя из US-East преимущественно доставляются трём обработчикам US-East. В US-West или EU-West сообщения направляются только при недоступности всех обработчиков US-East.
 
-### Benefits
+### Преимущества {#benefits}
 
-- **Lower latency**: Local processing is faster
-- **Reduced bandwidth**: Fewer cross-region transfers
-- **Natural failover**: Automatic global distribution if local workers fail
-- **No configuration**: Works out of the box in super-clusters
+- **Меньше задержка**: локальная обработка быстрее
+- **Меньше трафика**: сокращается передача данных между регионами
+- **Естественное переключение при отказе**: при сбое локальных обработчиков работа автоматически распределяется глобально
+- **Без настройки**: работает в суперкластерах сразу
 
-## Best Practices
+## Рекомендации {#best-practices}
 
-### Naming Conventions
+### Правила именования {#naming-conventions}
 
-Queue groups follow similar naming conventions as subjects. Here are some common patterns:
+Для групп очередей действуют правила именования, похожие на правила для тем. Несколько распространённых вариантов:
 
 
 ```
-# Service-based naming
+# Имена по сервисам
 api.auth.workers
 api.payments.workers
 api.notifications.workers
 
-# Environment-based naming
+# Имена по окружениям
 prod.order-processors
 staging.order-processors
 dev.order-processors
 
-# Version-based naming
+# Имена по версиям
 service.v1.workers
 service.v2.workers
 ```
 
-### Worker Design
+### Проектирование обработчиков {#worker-design}
 
-1. **At-most-once delivery**: Core queue groups never redeliver — a message sent to a worker that crashes mid-processing is lost. For redelivery and durability, use [JetStream worker pools](/learn/jetstream/worker-pool). Duplicates come only from publisher retries, so make processing idempotent if the publisher may resend.
-2. **Graceful shutdown**: Drain messages before stopping
-3. **Error handling**: Failed messages should be handled appropriately
-4. **Health checks**: Monitor worker health and availability
+1. **Доставка не более одного раза**: группы очередей Core NATS не выполняют повторную доставку. Если обработчик аварийно завершится во время обработки, отправленное ему сообщение будет потеряно. Для повторной доставки и долговременного хранения используйте [пулы обработчиков JetStream](/learn/jetstream/worker-pool). Дубликаты возникают лишь при повторных отправках издателем, поэтому делайте обработку идемпотентной, если издатель может отправить сообщение снова.
+2. **Корректное завершение**: перед остановкой завершайте обработку сообщений с помощью drain
+3. **Обработка ошибок**: корректно обрабатывайте сообщения, завершившиеся с ошибкой
+4. **Проверки работоспособности**: отслеживайте состояние и доступность обработчиков
 
-### Scaling Strategy
+### Стратегия масштабирования {#scaling-strategy}
 
-1. **Start small**: Begin with few workers
-2. **Monitor metrics**: Track queue depth and processing time
-3. **Scale based on load**: Add workers when queue grows
-4. **Auto-scaling**: Use metrics to automatically scale
+1. **Начните с малого**: используйте небольшое число обработчиков
+2. **Следите за метриками**: отслеживайте глубину очереди и время обработки
+3. **Масштабируйтесь по нагрузке**: добавляйте обработчики при росте очереди
+4. **Автоматизируйте масштабирование**: используйте метрики для автоматического изменения числа обработчиков
 
-### Monitoring
+### Мониторинг {#monitoring}
 
-Track these metrics for queue groups:
-- Message processing rate
-- Queue depth (with JetStream)
-- Worker count
-- Processing latency
-- Error rates
+Отслеживайте следующие метрики групп очередей:
+- Скорость обработки сообщений
+- Глубину очереди (в JetStream)
+- Число обработчиков
+- Задержку обработки
+- Частоту ошибок
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Queue groups in the Core NATS deep dive](/learn/core-nats/queue-groups) — runnable, step-by-step walkthrough
-- [Services](/learn/services) — queue-group load balancing for services
-- [JetStream worker pools](/learn/jetstream/worker-pool) — durable work distribution at scale
-- [Request-Reply](./request-reply.md) — synchronous communication patterns
-- [Publish-Subscribe](./pub-sub-basics.md) — one-to-many messaging
+- [Группы очередей в углублённом курсе Core NATS](/learn/core-nats/queue-groups) — пошаговое практическое руководство
+- [Сервисы](/learn/services) — балансировка нагрузки сервисов с помощью групп очередей
+- [Пулы обработчиков JetStream](/learn/jetstream/worker-pool) — масштабируемое распределение работы с долговременным хранением
+- [Запрос-ответ](./request-reply.md) — синхронное взаимодействие
+- [Публикация и подписка](./pub-sub-basics.md) — обмен сообщениями «один ко многим»

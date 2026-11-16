@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../i18n/diagrams";
 import React, { useEffect } from 'react';
 import {
   ReactFlow,
@@ -79,7 +80,7 @@ export function NatsFlow({
         position: 'relative',
       }}
     >
-      <ReactFlow
+      <ReactFlow ariaLabelConfig={diagramAriaLabels}
         nodes={scenario.nodes}
         edges={scenario.edges}
         nodeTypes={nodeTypes}
@@ -99,7 +100,7 @@ export function NatsFlow({
         proOptions={{ hideAttribution: true }}
       >
         <Background />
-        {showControls && <Controls showInteractive={false} />}
+        {localizeDiagramContent(showControls && <Controls showInteractive={false} />)}
       </ReactFlow>
     </div>
   );

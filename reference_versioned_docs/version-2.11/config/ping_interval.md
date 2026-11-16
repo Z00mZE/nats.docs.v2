@@ -1,14 +1,11 @@
-# ping_interval
+# ping_interval {#ping_interval}
 
 <Reloadable state="reloadable" />
-Duration at which pings are sent to clients, leaf nodes and routes.
-In the presence of client traffic, such as messages or client side
-pings, the server will not send pings. Therefore it is recommended
-to keep this value bigger than what clients use.
+Интервал отправки ping клиентам, листовым узлам и маршрутам. При наличии клиентского трафика, например сообщений или ping от клиента, сервер не отправляет ping. Поэтому рекомендуется задавать значение больше используемого клиентами.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

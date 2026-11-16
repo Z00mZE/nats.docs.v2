@@ -1,157 +1,88 @@
 ---
 id: where-next
-title: "Where to go next"
+title: "Куда двигаться дальше"
 sidebar_position: 6
-description: Recap the backup-and-recovery triad and point to what comes after this chapter
+description: "Итоги трёх составляющих резервного копирования и восстановления и дальнейшие шаги"
 ---
 
-# Where to go next
+# Куда двигаться дальше {#where-to-go-next}
 
-You started this chapter with a built but unprotected platform: an
-`ORDERS` stream full of real orders, the `ACME` operator and its
-accounts deciding who may touch them, all spread across the `east`
-cluster, with no backup or recovery in place. You end
-it with a dated snapshot under `./backups/orders/`, an `ORDERS_DR` mirror
-running at a second site, and an encrypted off-site copy of every key
-that proves who you are. That covers the full progression.
+В начале главы была построенная, но незащищённая платформа: поток `ORDERS` с заказами, оператор `ACME` и учётные записи доступа в кластере `east`, без резервного копирования и восстановления. Теперь есть датированный снимок под `./backups/orders/`, зеркало `ORDERS_DR` на второй площадке и зашифрованная внешняя копия всех ключей идентификации.
 
-This page doesn't teach anything new. It collects the model you built
-into one place and points you at the chapters and Reference that take it
-further.
+Эта страница не вводит новых понятий. Она собирает модель целиком и указывает главы и справочник для дальнейшего изучения.
 
-## The three copies
+## Три копии {#the-three-copies}
 
-Every page in this chapter covered the same three ideas. They protect
-against different failures, and they don't protect each other. These are
-the key points to retain.
+Вся глава опиралась на три идеи. Они защищают от разных отказов и не заменяют друг друга. Запомните следующее.
 
-A **snapshot** is the point you can return to. It's a point-in-time
-copy of a stream (its messages, its config, and optionally its consumer
-state) written off-site. When a delete or a corruption occurs, the
-snapshot is the only thing that lets you go *back* to before the
-mistake. It answers how much data you can afford to lose: your
-**recovery point**.
+**Снимок** — момент, к которому можно вернуться. Это внешняя копия сообщений, конфигурации и при необходимости состояния потребителей на определённый момент. После удаления или повреждения только снимок позволяет вернуться *назад*, до ошибки. Он определяет допустимую потерю данных — **точку восстановления**.
 
-A **mirror** is the site you can fail over to. It's a live, read-only
-copy of `ORDERS` running at a second site, kept current by replication
-and tracked by its `Lag`. It doesn't give you a point in the past; it
-gives you a place to keep running when the first site fails. It answers
-how long recovery may take: your **recovery time**.
+**Зеркало** — площадка для переключения. Это живая копия `ORDERS` только для чтения, обновляемая репликацией и контролируемая через `Lag`. Она предоставляет место продолжения работы при отказе первой площадки, а не прошлое состояние. Это **время восстановления**.
 
-**Identity** is the proof of who you are. It's the set of files that
-*are* your security layer: the operator and account JWTs, the nkeys
-that sign them, the user creds, and the server config. A restored stream
-that nobody is allowed to read is not a recovery. Without these files the
-data plane comes back but the platform stays unusable.
+**Данные идентификации** подтверждают вашу личность. Это JWT оператора и учётных записей, подписывающие nkey, файлы учётных данных пользователей и конфигурация сервера. Поток, который никто не может читать, нельзя считать восстановленной системой. Без этих файлов данные вернутся, но платформа останется непригодной к работе.
 
-The three are snapshot, mirror, and identity. The item that is *not* on
-the list: **R3 is availability, not a backup.** Three replicas keep a
-stream alive through a node loss, but a bad write replicates to all three
-just as a good one does. R3 keeps the stream up; only a snapshot lets you
-undo a mistake.
+Итак: снимок, зеркало и данные идентификации. **R3 обеспечивает доступность, а не резервное копирование.** Три реплики переживают отказ узла, но плохая запись попадает во все. Только снимок позволяет отменить последствия ошибки.
 
-## Where the details live
+## Где искать подробности {#where-the-details-live}
 
-The chapter is unversioned and concept-first. The exact flags, defaults,
-and ranges live in **Reference**, which is versioned and exhaustive. When
-you need the precise chunk-size clamp on a snapshot request, the full
-restore schema, or the advisory subjects to alert on, that's where to
-look.
+Глава объясняет понятия и не привязана к версии. Точные флаги, значения по умолчанию и диапазоны находятся в версионируемом **справочнике**. Там ищите ограничения размера фрагмента снимка, полную схему восстановления и темы уведомлений для оповещения.
 
-The [Reference root](/reference/) is the entry point. The handoff
-phrases throughout this chapter ("the full set of options is documented
-in Reference") all point into it. The snapshot and restore request
-schemas live at
-[Snapshot Stream](/reference/jetstream/api/stream/snapshot) and
-[Restore Stream](/reference/jetstream/api/stream/restore); the resolver
-knobs behind identity restore live at
-[resolver config](/reference/config/resolver).
+Начните с [корня справочника](/reference/). Все ссылки главы на полное описание ведут туда. Схемы запросов находятся в [Снимке потока](/reference/jetstream/api/stream/snapshot) и [Восстановлении потока](/reference/jetstream/api/stream/restore), параметры восстановления доступа — в [конфигурации resolver](/reference/config/resolver).
 
-## Sibling deep dives
+## Связанные главы {#sibling-deep-dives}
 
-This chapter sits in the Operate half of Learn, downstream of the
-chapters that *built* the platform. The others around it go deeper than
-any single page here could.
+Эта глава находится в разделе эксплуатации Learn после глав, *создавших* платформу. Соседние главы подробнее раскрывают отдельные темы.
 
-The [JetStream deep dive](/learn/jetstream) is where the data this
-chapter protects comes from, and where the mirror mechanism is
-taught in full. When you want to know *how* a mirror replicates (start
-position, filters, fan-in), read
-[JetStream → Mirrors and sources](/learn/jetstream/mirrors-and-sources).
-This chapter only applies a mirror to disaster recovery and reads its
-lag.
+[JetStream](/learn/jetstream) объясняет происхождение защищаемых данных и полный механизм зеркал. Чтобы понять начальную позицию, фильтры и объединение источников, прочитайте [JetStream → Зеркала и источники](/learn/jetstream/mirrors-and-sources). Здесь зеркало лишь применялось для аварийного восстановления.
 
-The [Security deep dive](/learn/security) is where the identity this
-chapter backs up comes from. When you want to know *what* an operator,
-account, or signing key is, and how a trust chain validates, read
-[Security → Operator mode](/learn/security/operator-mode). This chapter
-only copies those files off-site and puts them back.
+[Безопасность](/learn/security) объясняет сохраняемые данные идентификации. Об операторах, учётных записях, ключах подписи и проверке цепочки доверия читайте [Безопасность → Режим оператора](/learn/security/operator-mode). Здесь файлы только копировались и восстанавливались.
 
-The [Clustering & Replication deep dive](/learn/clustering) owns the R3
-story this chapter deliberately set aside: how a stream elects a leader,
-how placement works, and why replication is availability rather than a
-recovery point.
+[Кластеризация и репликация](/learn/clustering) разбирает R3: выборы лидера, размещение и причины, по которым репликация даёт доступность, но не точку восстановления.
 
-The [Monitoring deep dive](/learn/monitoring) covers the other half of
-running this safely: watching the snapshot advisories fire, alerting on
-a mirror whose lag stops trending to zero, and proving a restore worked
-before you need it.
+[Мониторинг](/learn/monitoring) рассматривает вторую сторону безопасной эксплуатации: наблюдение за уведомлениями снимков, оповещение об отставании зеркала и проверку восстановления до реальной необходимости.
 
-The [Deployment deep dive](/learn/deployment) covers sizing the disks
-and store directories that a restored stream lands on, the capacity
-question this chapter assumes you've already answered.
+[Развёртывание](/learn/deployment) объясняет выбор размера дисков и каталогов хранения для восстановленных потоков — предполагается, что эти ресурсы уже рассчитаны.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-This is the end of the chapter: the triad is complete, and this page
-introduces no new scenario state. The `east` cluster, the `ORDERS`
-stream, the `ORDERS_DR` mirror at the second site, and the off-site
-identity backup are all exactly as you left them on the previous page.
-You can rehearse a failover against them, schedule a test restore, or
-tear the practice copies down when you're done.
+Глава завершена, новых изменений сценария нет. Кластер `east`, поток `ORDERS`, зеркало `ORDERS_DR` на второй площадке и внешняя копия данных идентификации остались в прежнем состоянии. Можно отрепетировать переключение, назначить пробное восстановление или удалить учебные копии после завершения.
 
-You have the operational model: a snapshot for the point you can return
-to, a mirror for the site you can fail over to, identity backup for the
-keys that prove who you are — and R3 as availability, never as any of
-those three.
+Вы освоили эксплуатационную модель: снимок для возврата к моменту, зеркало для переключения площадки, копия данных идентификации для восстановления доступа. R3 отвечает за доступность и не заменяет ни один из этих элементов.
 
-## Production checklist
+## Контрольный список перед эксплуатацией {#production-checklist}
 
-Every content page in this chapter closed with a Pitfalls section. This
-page collects the action items from all of them in one place: a last pass
-before you trust this platform with real orders and a real outage. Each
-group links back to the page that explains the why.
+Каждая содержательная страница завершалась типичными ошибками. Здесь собраны действия для последней проверки перед реальными заказами и реальной аварией. Каждая группа ссылается на объяснение причин.
 
-### Stream backup and restore — see [Pitfalls](/learn/backup-recovery/stream-backup-restore#pitfalls)
+### Резервное копирование и восстановление потока — см. [Типичные ошибки](/learn/backup-recovery/stream-backup-restore#pitfalls) {#stream-backup-and-restore--see-pitfalls}
 
-- [ ] Use file storage for any stream you must snapshot; a memory stream cannot be backed up and the attempt fails outright.
-- [ ] Restore to the original stream name; the name may not change during restore, so mirror or source afterward if you need a copy under a new name.
-- [ ] Reduce `--chunk-size` and `--window-size` on a slow disk or a high-latency link before the flow-control timeout fires and aborts the snapshot.
-- [ ] Keep consumer state in the snapshot; it is included by default, and passing `--no-consumers` silently drops durable consumer config and delivery position.
+- [ ] Используйте файловое хранение для потоков, которым необходимы снимки: на старых версиях потоки в памяти не копируются.
+- [ ] Восстанавливайте исходное имя потока; для нового имени после восстановления создайте зеркало или поток с источником.
+- [ ] На медленном диске или канале с высокой задержкой уменьшите `--chunk-size` и `--window-size`, не дожидаясь тайм-аута управления потоком.
+- [ ] Сохраняйте состояние потребителей: оно включено по умолчанию, а `--no-consumers` исключает конфигурацию и позиции долговременных потребителей.
 
-### Mirrors as a DR tool — see [Pitfalls](/learn/backup-recovery/mirrors-and-sources#pitfalls)
+### Зеркала для аварийного восстановления — см. [Типичные ошибки](/learn/backup-recovery/mirrors-and-sources#pitfalls) {#mirrors-as-a-dr-tool--see-pitfalls}
 
-- [ ] Pair every mirror with snapshots; a mirror is not a backup — a corrupt write replicates to the copy, and a mirror keeps no earlier state to rewind to.
-- [ ] Plan the mirror topology upfront; a mirror's config is effectively locked after creation, so changing it means delete and recreate.
-- [ ] Read the `Lag` field before trusting a mirror; replication is eventually consistent, not synchronous.
-- [ ] Avoid Work Queue retention on a mirrored upstream; the mirror's internal consumer bypasses the work queue's subject-overlap check and breaks the single-consumer guarantee, so use Limits.
+- [ ] Дополняйте каждое зеркало снимками: повреждённая запись реплицируется, а прошлое состояние зеркало не хранит.
+- [ ] Планируйте топологию заранее: конфигурация фиксируется при создании, изменение требует удаления и пересоздания.
+- [ ] Проверяйте `Lag`, прежде чем доверять зеркалу: репликация согласуется со временем и не является синхронной.
+- [ ] Не используйте Work Queue у источника зеркала: внутренний потребитель обходит проверку пересечения тем и нарушает гарантию единственного получателя. Выбирайте Limits.
 
-### Disaster recovery — see [Pitfalls](/learn/backup-recovery/disaster-recovery#pitfalls)
+### Аварийное восстановление — см. [Типичные ошибки](/learn/backup-recovery/disaster-recovery#pitfalls) {#disaster-recovery--see-pitfalls}
 
-- [ ] Verify lag has reached 0 before promoting a mirror; promote early and you publish on top of a stream still missing its tail.
-- [ ] Reach for a snapshot, not R3, against an accidental delete or a logical error; the bad write replicates, so availability cannot undo it.
-- [ ] Test restore on a schedule, quarterly at least; a green `nats stream info` on the live stream proves nothing about the archive.
-- [ ] Stop publishers before purging corrupted messages; purging under live writes races new bad data in.
-- [ ] Name the domain with `--js-domain` when rescuing a topology that has more than one; each domain runs its own meta group and a rescue lowers the quorum of exactly one of them.
+- [ ] Перед повышением зеркала убедитесь, что отставание равно 0: иначе новые записи начнут поступать в поток с отсутствующим концом.
+- [ ] Для отката после случайного удаления или логической ошибки используйте снимок: R3 реплицирует ошибку и не отменяет её.
+- [ ] Проверяйте восстановление по расписанию, хотя бы раз в квартал: исправный рабочий поток ничего не доказывает об архиве.
+- [ ] Останавливайте издателей перед очисткой повреждённых сообщений, чтобы не поступали новые плохие данные.
+- [ ] При rescue в топологии с несколькими доменами задавайте `--js-domain`: каждый домен имеет отдельную группу метаданных, и операция меняет кворум ровно одной.
 
-### Config and JWT backup — see [Pitfalls](/learn/backup-recovery/config-and-jwt-backup#pitfalls)
+### Резервные копии конфигурации и JWT — см. [Типичные ошибки](/learn/backup-recovery/config-and-jwt-backup#pitfalls) {#config-and-jwt-backup--see-pitfalls}
 
-- [ ] Seal every `nats auth operator backup` with `--key` and store the curve seed apart from the backups; the file carries every private seed, and losing store plus key together is losing the identity.
-- [ ] Re-push each account after an identity restore if the server lost its resolver directory; the restore rebuilds only your store, and the push needs the `server.conf` whose `SYSTEM` preload lets it in — so back that file up too.
-- [ ] Tag each identity backup with the operator version or timestamp; an unrecorded operator rotation leaves the backup pointing at a dead operator.
+- [ ] Шифруйте каждый `nats auth operator backup` через `--key`, а seed curve храните отдельно: копия содержит все закрытые seed, и потеря хранилища вместе с ключом означает утрату идентичности.
+- [ ] Если сервер потерял resolver, после восстановления передайте каждую учётную запись заново. Для начального входа нужен `server.conf` с предварительно загруженным `SYSTEM`, поэтому копируйте и его.
+- [ ] Помечайте каждую копию версией оператора или временем: ротация без обновления архива оставит в нём устаревшего оператора.
 
-## See also
+## См. также {#see-also}
 
-- [Reference](/reference/) — every config field, flag, default, and error code behind this chapter, versioned and exhaustive.
-- [JetStream → Mirrors and sources](/learn/jetstream/mirrors-and-sources) — how a mirror actually replicates, the mechanism this chapter applies but never re-teaches.
-- [Clustering & Replication deep dive](/learn/clustering) — the R3 story this chapter deliberately set aside.
+- [Справочник](/reference/) — полный версионируемый список полей, флагов, значений по умолчанию и ошибок.
+- [JetStream → Зеркала и источники](/learn/jetstream/mirrors-and-sources) — механизм репликации, применённый в этой главе.
+- [Кластеризация и репликация](/learn/clustering) — R3, оставленное за рамками главы.

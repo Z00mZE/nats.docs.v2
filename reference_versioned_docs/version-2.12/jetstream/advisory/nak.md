@@ -1,18 +1,18 @@
-# Message Negative Acknowledgement
+# Отрицательное подтверждение сообщения {#message-negative-acknowledgement}
 
-Message negatively acknowledged.
+Получено отрицательное подтверждение сообщения.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import nak from '@site/src/schemas/vendor/v2.12/jsm/jetstream/advisory/v1/nak.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.CONSUMER.MSG_NAKED.{stream}.{consumer}`
 
-Where:
-- `{stream}` is the stream name
-- `{consumer}` is the consumer name
+Где:
+- `{stream}` — имя потока
+- `{consumer}` — имя потребителя
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={nak} />

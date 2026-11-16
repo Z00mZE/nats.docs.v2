@@ -1,57 +1,50 @@
 ---
 id: index
-title: JetStream Deep Dive
+title: "Подробно о JetStream"
 sidebar_position: 1
-description: Streams, consumers, and the acknowledgment loop, taught step by step
+description: "Потоки, потребители и цикл подтверждений шаг за шагом"
 ---
 
-# JetStream Deep Dive
+# Подробно о JetStream {#jetstream-deep-dive}
 
-JetStream is the part of NATS that stores messages. Once a message is stored,
-you can read it again later, and replay it as many times as you need. Delivery
-is tracked per reader: a message counts as handled once it's acknowledged.
+JetStream — часть NATS, сохраняющая сообщения. Сохранённое сообщение можно прочитать позже и воспроизвести столько раз, сколько нужно. Доставка отслеживается для каждого читателя: сообщение считается обработанным после подтверждения.
 
-This chapter builds that up one page at a time, using a single running example:
-the Acme `ORDERS` platform. The same server runs across the whole chapter, and
-its data carries over from one page to the next.
+Глава последовательно строит эту модель на одном примере — платформе Acme `ORDERS`. Сервер работает на протяжении всей главы, а данные переходят с одной страницы на следующую.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You've read the [Core Concepts → JetStream](/concepts/jetstream) primer, or
-you're otherwise comfortable with NATS basics: publishing, subscribing,
-subjects, and queue groups.
+Вы прочитали введение [Основные понятия → JetStream](/concepts/jetstream) или уже знаете основы NATS: публикацию, подписку, темы и группы очередей.
 
-## Map
+## Карта главы {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Your first stream](./your-first-stream.md) | Why a stream, then create the `ORDERS` stream and read its anatomy |
-| [Publishing](./publishing.md) | Publish into a stream and understand the `PubAck` contract |
-| [Reading back the stream](./reading-back.md) | Read stored messages back with a durable consumer |
-| [Filtering what you consume](./filtering.md) | Add a second consumer that reads only `orders.shipped` |
-| [Delivery and acknowledgment](./delivery-and-acknowledgment.md) | In-flight, ack, double ack, and redelivery |
-| [Ack responses and redelivery](./acknowledgment.md) | ack, nak, term, in-progress, and redelivery timing |
-| [Pull consumers in depth](./pull-consumers.md) | fetch vs consume, and the knobs that bound a pull |
-| [Scaling a consumer](./worker-pool.md) | Many workers split the load of one consumer |
-| [Ordered consumers](./ordered-consumer.md) | A throwaway in-order read of a stream, and the config behind it |
-| [Priority groups](./priority-groups.md) | Steer which client gets served: overflow, pinned_client, and prioritized |
-| [Pausing a consumer](./pausing.md) | Stop delivery for a window, then resume |
-| [Shaping the stream](./shaping-the-stream.md) | Tune retention limits and discard behavior |
-| [Retention policies](./retention-policies.md) | Limits, Interest, and WorkQueue retention |
-| [Altering stream state](./altering-stream-state.md) | Delete a message or purge the stream, by hand |
-| [Surviving node loss](./surviving-node-loss.md) | Replicas, leaders, and storage durability |
-| [Advanced publishing](./advanced-publishing.md) | Async, atomic-batch, and fast-ingest publishing |
-| [Mirrors and sources](./mirrors-and-sources.md) | Copy one stream, or aggregate many |
-| [Reading messages directly](./get-direct.md) | Get one message or a batch straight from the stream, no consumer |
-| [Subject mapping and transforms](./subject-mapping.md) | Rewrite subjects on the way into a stream, and republish stored messages |
-| [Per-message TTL](./message-ttl.md) | Expire individual messages ahead of the stream |
-| [Stream and consumer policies](./policies.md) | Every stream and consumer policy, and which are fixed at creation |
-| [Where to go next](./where-next.md) | A map of what's beyond this chapter |
+| [Ваш первый поток](./your-first-stream.md) | Зачем нужен поток, создание `ORDERS` и его устройство |
+| [Публикация](./publishing.md) | Запись в поток и гарантии `PubAck` |
+| [Чтение потока](./reading-back.md) | Чтение сохранённых сообщений долговременным потребителем |
+| [Фильтрация](./filtering.md) | Второй потребитель только для `orders.shipped` |
+| [Доставка и подтверждение](./delivery-and-acknowledgment.md) | Неподтверждённые сообщения, ack, двойное подтверждение и повторная доставка |
+| [Виды подтверждений и повторная доставка](./acknowledgment.md) | ack, nak, term, in-progress и сроки повторной доставки |
+| [Подробно о pull-потребителях](./pull-consumers.md) | fetch, consume и ограничения запроса сообщений |
+| [Масштабирование потребителя](./worker-pool.md) | Разделение нагрузки между обработчиками одного потребителя |
+| [Упорядоченные потребители](./ordered-consumer.md) | Временное последовательное чтение и его конфигурация |
+| [Группы приоритетов](./priority-groups.md) | Выбор обслуживаемого клиента: overflow, pinned_client и prioritized |
+| [Приостановка потребителя](./pausing.md) | Остановка доставки на заданное время и возобновление |
+| [Настройка потока](./shaping-the-stream.md) | Ограничения хранения и поведение при переполнении |
+| [Политики хранения](./retention-policies.md) | Limits, Interest и WorkQueue |
+| [Изменение состояния потока](./altering-stream-state.md) | Ручное удаление сообщения или очистка потока |
+| [Отказ узла](./surviving-node-loss.md) | Реплики, лидеры и надёжность хранения |
+| [Расширенная публикация](./advanced-publishing.md) | Асинхронная, атомарная пакетная и скоростная пакетная публикация |
+| [Зеркала и источники](./mirrors-and-sources.md) | Копирование потока и объединение нескольких |
+| [Прямое чтение сообщений](./get-direct.md) | Чтение сообщения или пакета без потребителя |
+| [Сопоставление и преобразование тем](./subject-mapping.md) | Изменение тем на входе и повторная публикация сохранённого |
+| [TTL отдельных сообщений](./message-ttl.md) | Истечение срока сообщения раньше общего срока потока |
+| [Политики потоков и потребителей](./policies.md) | Все политики и параметры, фиксируемые при создании |
+| [Куда двигаться дальше](./where-next.md) | Дальнейшие темы |
 
-## Prerequisites
+## Предварительные условия {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- A running `nats-server` with JetStream turned on. The simplest way to get one
-  is `nats-server -js` (see [Getting Started](/concepts/getting-started/)).
-- The `nats` CLI installed and pointed at your server.
+- Работающий `nats-server` с JetStream. Проще всего запустить `nats-server -js` (см. [Начало работы](/concepts/getting-started/)).
+- Установленный CLI `nats`, настроенный на этот сервер.

@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -250,15 +251,15 @@ function CrossAccountExportAnimatedInner({
                     flexWrap: "wrap",
                 }}
             >
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {STEP_LABELS[s]}
+                        {localizeDiagramContent(STEP_LABELS[s])}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -272,7 +273,7 @@ function CrossAccountExportAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -317,7 +318,7 @@ function CrossAccountExportAnimatedInner({
                             fontWeight: 600,
                         }}
                     >
-                        account ORDERS
+                        учётная запись ORDERS
                     </div>
                     {/* exports badge, pinned to the box's bottom edge */}
                     <div
@@ -361,7 +362,7 @@ function CrossAccountExportAnimatedInner({
                             transition: "color 0.4s ease",
                         }}
                     >
-                        account ANALYTICS
+                        учётная запись ANALYTICS
                     </div>
                     {/* imports badge, pinned to the box's top edge */}
                     <div
@@ -387,9 +388,9 @@ function CrossAccountExportAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

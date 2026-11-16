@@ -1,9 +1,9 @@
-# prof_port
+# prof_port {#prof_port}
 
 <Reloadable state="not-reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

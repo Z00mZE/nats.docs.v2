@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -181,19 +182,19 @@ function CentralizedAuthAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Credentials:
+                    Учётные данные:
                 </span>
                 <button
                     onClick={() => handleToggle("valid")}
                     style={buttonStyle(isValid, ACCEPT_COLOR)}
                 >
-                    Valid
+                    Допустимо
                 </button>
                 <button
                     onClick={() => handleToggle("invalid")}
                     style={buttonStyle(!isValid, REJECT_COLOR)}
                 >
-                    Invalid
+                    Недопустимо
                 </button>
             </div>
 
@@ -208,7 +209,7 @@ function CentralizedAuthAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -255,9 +256,9 @@ function CentralizedAuthAnimatedInner({
                             fontFamily: "sans-serif",
                         }}
                     >
-                        Server user list
+                        Список пользователей сервера
                     </div>
-                    {USER_LIST.map((u) => {
+                    {localizeDiagramContent(USER_LIST.map((u) => {
                         const match = isValid && u.user === "order-svc";
                         return (
                             <div
@@ -275,13 +276,13 @@ function CentralizedAuthAnimatedInner({
                                         : 400,
                                 }}
                             >
-                                <span>{u.user}</span>
+                                <span>{localizeDiagramContent(u.user)}</span>
                                 <span style={{ color: "#9ca3af" }}>
-                                    {u.account}
+                                    {localizeDiagramContent(u.account)}
                                 </span>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
             </div>
 
@@ -294,7 +295,7 @@ function CentralizedAuthAnimatedInner({
                     fontWeight: phase === "connecting" ? 400 : 500,
                 }}
             >
-                {caption}
+                {localizeDiagramContent(caption)}
             </div>
         </div>
     );

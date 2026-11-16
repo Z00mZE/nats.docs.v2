@@ -1,11 +1,11 @@
-# unknown_is_good
+# unknown_is_good {#unknown_is_good}
 
 <Reloadable state="reloadable" />
-Treat an `unknown` response from the responder as good.
+Считать ответ `unknown` от ответчика положительным.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

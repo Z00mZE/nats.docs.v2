@@ -1,103 +1,54 @@
 ---
 id: super-clusters
-title: "Super-clusters"
+title: "Суперкластеры"
 sidebar_position: 5
-description: Join the east and west clusters with gateways, and keep order traffic local by default
+description: "Связь кластеров east и west через шлюзы и преимущественно локальная обработка заказов"
 ---
 
-# Super-clusters
+# Суперкластеры {#super-clusters}
 
-Acme's `east` cluster is healthy: three servers form a full mesh of
-routes, with the `ORDERS` stream replicated across them. But half of Acme's customers are a continent away from `east`, and every
-order they place has to cross the continent to reach it. So Acme brings up
-a second region — a `west` data center near those customers, where their
-orders land with far less latency.
+У Acme исправный трёхузловой `east` с реплицируемым `ORDERS`. Но половина заказчиков находится на другом конце континента. Рядом с ними запускается центр `west`, уменьшающий задержку заказов.
 
-Now two regions have to behave as one system — a publisher in either
-reaches a subscriber in the other — without dragging every message across
-the slow link between them.
+Регионы должны работать как одна система: издатель одного достигает подписчика другого, но каждое сообщение не должно без необходимости пересекать медленный канал.
 
-You could run `west` as a completely separate NATS deployment. But then
-a publisher in `west` could never reach a subscriber in `east`, and the
-`ORDERS` stream in one region would be invisible to the other, leaving
-you with two isolated islands.
+Два независимых развёртывания создали бы изолированные острова: `west` не видел бы подписчиков и `ORDERS` в `east`.
 
-You could also stretch one cluster across both regions, putting all six
-servers in a single mesh of routes. That works, but every server holds a
-route to every other server, and route traffic flows freely across the
-slow, expensive link between regions. A full mesh assumes the members
-are close together.
+Один растянутый кластер из шести серверов тоже работает, но полносвязные маршруты постоянно используют дорогой межрегиональный канал. Такая сеть предполагает близость узлов.
 
-A **super-cluster** is the shape for this. It joins two independent
-clusters into one logical system without combining them into a single
-mesh. This page wires `east` and `west` together and shows how traffic
-stays in its home region by default.
+**Суперкластер** объединяет независимые кластеры в логическую систему без общей полносвязной сети. Соединим `east` и `west`, оставив большую часть трафика локальной.
 
-## Two concepts on this page
+## Два понятия этой страницы {#two-concepts-on-this-page}
 
-This page introduces two ideas:
+Рассмотрим:
 
-- Gateways: the cluster-to-cluster connection that joins clusters
-  into a super-cluster.
-- Geo-affinity: the behavior that keeps queue-group and request
-  traffic in its home region, crossing a gateway only when no local
-  worker can serve it.
+- Шлюзы — соединения кластеров в суперкластер.
+- Географическую привязку — предпочтение местных обработчиков очередей и запросов, с переходом через шлюз при отсутствии местного.
 
-## How a gateway joins clusters
+## Как шлюз соединяет кластеры {#how-a-gateway-joins-clusters}
 
-Inside a cluster, every server holds a **route** to every other server,
-the full mesh from [Your first cluster](/learn/topologies/your-first-cluster).
-A **gateway** is a different kind of connection. It joins one *cluster*
-to another *cluster*.
+Внутри кластера каждый сервер имеет **маршрут** ко всем остальным, как в [первом кластере](/learn/topologies/your-first-cluster). **Шлюз** связывает один *кластер* с другим.
 
-A route ties two *servers* together and assumes they're close; a gateway
-ties two *clusters* together and assumes they're far apart. Stretch one
-cluster across both regions and every server holds a route to every server
-in the other region — a full mesh running over the slow link. A
-super-cluster keeps each region's mesh local and connects the regions
-through gateways instead, so the servers never mesh across the WAN,
-however many each region runs. Each server opens just one gateway connection
-to each *other cluster*, never one to every remote server.
+Маршрут предполагает близкие *серверы*, шлюз — удалённые *кластеры*. Суперкластер оставляет сети регионов локальными: каждый сервер открывает лишь одно шлюзовое соединение к каждому другому кластеру, а не к каждому удалённому узлу.
 
-A gateway also carries less. A route propagates interest freely inside its
-cluster; a gateway forwards a message to another cluster only when that
-cluster has a subscriber for it, and prefers a local worker over a remote
-one. Those two behaviors — interest-based forwarding and geo-affinity —
-get their own sections below, and they're what keep the inter-region link
-quiet.
+Шлюз также переносит меньше данных: пересылает сообщения только при интересе удалённого кластера и предпочитает местного обработчика удалённому. Фильтрация по интересу и географическая привязка сохраняют межрегиональный канал свободным.
 
-A super-cluster (sometimes called a cluster of clusters) is just clusters
-joined this way.
-Each cluster keeps running on its own. The gateway is the connection
-between them.
+Суперкластер иногда называют кластером кластеров. Каждый продолжает работать самостоятельно; шлюз связывает их.
 
 <div class="nats-flow" data-scenario="superClusterAnimated" data-width="720" data-height="400"></div>
 
-## Gateways carry only what has interest
+## Шлюзы передают только сообщения с интересом {#gateways-carry-only-what-has-interest}
 
-A gateway doesn't blindly forward every message to the other side. It
-carries a message across only when the remote cluster has a subscriber
-interested in that subject.
+Сообщение пересекает шлюз лишь при наличии удалённого подписчика на его тему.
 
-This is the whole reason gateways are cheap to run across a slow link. A
-publisher in `east` floods `orders.created` thousands of times a second.
-If nobody in `west` subscribes to `orders.created`, not one of those
-messages crosses the gateway, because there is no interest on the far
-side to forward them to.
+Если `east` публикует тысячи `orders.created` в секунду, но в `west` нет подписчиков, ни одно сообщение не пересечёт канал.
 
-The wire-level detail of how gateways advertise and track this interest
-lives in [Reference → Gateway protocol](/reference/protocols/gateway).
-All you need here is the behavior: no interest on the far side means no
-traffic across the gateway.
+Объявление и отслеживание интереса описано в [Справочнике → Протокол шлюзов](/reference/protocols/gateway). Здесь достаточно правила: нет интереса — нет трафика.
 
-## Wiring east to west
+## Соединяем east и west {#wiring-east-to-west}
 
-You configure a gateway with a `gateway {}` block. The block names the
-local cluster and lists the remote clusters to reach.
+Блок `gateway {}` задаёт локальный кластер и удалённые цели.
 
-Here's the `gateway {}` block for the `east` servers. It declares the
-local gateway name `east`, the port this server listens on for inbound
-gateway connections, and a `gateways` array pointing at `west`:
+Блок серверов `east`: локальное имя `east`, порт входящих шлюзов и массив `gateways` для `west`:
 
 ```conf
 # east gateway block — the name and the gateways list are shared
@@ -112,37 +63,16 @@ gateway {
 }
 ```
 
-Read two fields carefully.
+Внимательно прочитайте два поля.
 
-The `name` field identifies the *cluster*, not the server. Every server
-in `east` uses the identical gateway name `east`. It has to match the name
-in this server's `cluster {}` block exactly — set them differently and the
-server refuses to start (`cluster name conflicts between cluster and
-gateway definitions`). A server's own entry
-in the `gateways` array is ignored automatically, so the `name` and the
-`gateways` list are identical across all three `east` servers. In this
-localhost demo the `port` differs per server; on separate hosts even that
-is identical.
+`name` обозначает *кластер*, не сервер. У всех `east` оно одинаково и должно совпадать с `cluster {}`. Иначе запуск отклоняется с `cluster name conflicts between cluster and
+gateway definitions`. Собственная запись в `gateways` игнорируется, поэтому имя и список одинаковы на всех трёх серверах. На одной машине меняется порт; на разных хостах он тоже может быть одинаковым.
 
-The `gateways` array lists every remote cluster, each with its `name`
-and the `urls` to reach its gateway listeners. Listing all three `west`
-URLs gives the connection somewhere to land if one `west` server is
-down. That's also the hint that each `west` server runs its own gateway
-listener. On separate hosts every `east` server can use this identical
-block, port 7222 included — each host is its own listener, so the three
-`west` URLs point at three distinct `west` listeners on three hosts. The
-distinct ports here (7222-7224) exist only because this demo runs all six
-servers on one machine, where a shared port would collide.
+`gateways` перечисляет удалённые имена и `urls` их слушателей. Три URL `west` дают запас при отказе узла; у каждого сервера свой слушатель. На разных хостах у всех может быть порт 7222. Различные 7222–7224 в примере нужны лишь для шести процессов одной машины.
 
-You don't have to list every cluster exhaustively, though. Like routes,
-gateways **gossip**: point a server at a few remote gateways and it
-discovers the rest, including clusters it was never told about directly.
-Seed `east` with `west` and `west` with a third region, and `east` picks up
-that region on its own. The URLs are a starting point for discovery and a
-fallback if one is down, not a list you must keep complete.
+Полный список кластеров не обязателен: шлюзы тоже используют **gossip**. Настроив несколько начальных адресов, сервер обнаруживает остальные регионы. URL служат началом обнаружения и запасом при недоступности.
 
-The `west` servers get the mirror-image block, with local name `west`
-pointing back at the `east` gateway URLs:
+Для `west` блок зеркальный: локальное имя `west`, удалённые URL `east`.
 
 ```conf
 # west gateway block — name and gateways list shared by
@@ -157,14 +87,9 @@ gateway {
 }
 ```
 
-Each cluster keeps the `cluster {}` block and the client `port` it had
-before. The `gateway {}` block is additive. You're not rebuilding
-`east`; you're adding a gateway connection from it to `west`.
+Клиентский `port` и `cluster {}` прежние. Шлюз добавляется поверх существующего кластера.
 
-To stand the whole thing up on your own machine without hand-editing six
-files, this script writes every config and starts all six servers. East
-uses client ports 4222-4224 and west 4225-4227; each server's gateway
-`name` matches its cluster `name`, as above.
+Следующий скрипт создаёт все шесть конфигураций и запускает серверы локально. `east` использует клиентские 4222–4224, `west` — 4225–4227. Везде имя шлюза совпадает с кластером.
 
 ```bash
 # Write a cluster+gateway config for each server, then start the super-cluster.
@@ -200,74 +125,46 @@ for s in n1-east n2-east n3-east n1-west n2-west n3-west; do
 done
 ```
 
-Stop everything later with `pkill nats-server`. These configs leave
-JetStream off to keep the gateway demo simple — add the `jetstream` block
-from the [previous page](/learn/topologies/jetstream-in-a-cluster) if you
-want `ORDERS` in the mix too.
+Для остановки используйте `pkill nats-server`. JetStream здесь выключен для простоты; добавьте его блок с [предыдущей страницы](/learn/topologies/jetstream-in-a-cluster), если нужен `ORDERS`.
 
-## Confirm the super-cluster formed
+## Проверьте суперкластер {#confirm-the-super-cluster-formed}
 
-Confirm the super-cluster works by sending a message across it. Subscribe
-in `west`, publish in `east`, and watch the order arrive on the far side of
-the gateway.
+Подпишитесь в `west`, опубликуйте в `east` и проверьте доставку через шлюз.
 
-Subscribe to `orders.>` on a `west` server, in its own terminal:
+Подписка на `orders.>` через сервер `west` в отдельном терминале:
 
 ```bash
 nats sub "orders.>" --server nats://localhost:4225
 ```
 
-In another terminal, publish to an `east` server:
+Публикация через `east` в другом:
 
 ```bash
 nats pub orders.created "order ord_8w2k" --server nats://localhost:4222
 ```
 
-The `west` subscriber prints the order:
+Подписчик `west` выводит заказ:
 
 ```
 [#1] Received on "orders.created"
 order ord_8w2k
 ```
 
-It was published in `east`, crossed the gateway, and arrived in `west`.
-That only happens once the gateway is live *and* `west` has advertised
-interest in `orders.>` across it — the interest-based forwarding from
-[earlier](#gateways-carry-only-what-has-interest). If nothing arrives,
-check each server's log for gateway connection errors — a typo'd remote
-name or an unreachable gateway URL keeps the connection from forming.
+Для этого шлюз должен работать, а `west` — объявить интерес `orders.>`, как описано [выше](#gateways-carry-only-what-has-interest). Если сообщения нет, ищите ошибки соединения шлюза в журналах: неверное имя или недоступный URL.
 
-## Geo-affinity keeps traffic local
+## Географическая привязка оставляет трафик локальным {#geo-affinity-keeps-traffic-local}
 
-The second concept is geo-affinity. Acme runs the same fleet of order
-workers in both regions: a **queue group** named `order-workers`, where each
-message goes to exactly one worker in the group. (If queue groups are
-hazy, the [queue-groups primer](/concepts/queue-groups) is the
-five-minute recap.)
+Acme запускает обработчики в обоих регионах как **группу очереди** `order-workers`: каждое сообщение получает один участник. Краткое объяснение есть во [введении в группы очередей](/concepts/queue-groups).
 
-Here's the question a super-cluster has to answer: when a worker exists
-in *both* `east` and `west`, and an order is published in `east`, which
-worker handles it?
+Если обработчики есть в обоих регионах, кто получит заказ, опубликованный в `east`?
 
-The answer is **geo-affinity**. NATS prefers a local queue subscriber
-first. An order published in `east` goes to an `east` worker, even
-though a `west` worker is also subscribed and willing. The message never
-crosses the gateway, because it doesn't need to.
+**Географическая привязка** предпочитает местного подписчика очереди. Заказ `east` достаётся обработчику `east`; шлюз не используется, хотя `west` тоже готов.
 
-This keeps the slow inter-region link quiet. Day to day, `east` orders
-are served in `east` and `west` orders in `west`, so each region's
-traffic stays within that region.
+В штатной работе каждый регион обрабатывает свои заказы, не занимая медленный канал.
 
-The gateway carries the message only when the local side can't
-serve. If every `east` worker is down, an order published in `east` has
-no local subscriber, so geo-affinity falls through and the message
-crosses the gateway to a remote cluster that has an interested worker.
-When more than one remote cluster has a worker for the queue group, NATS
-picks one of them and sends the message across that single gateway, so the
-order still reaches exactly one worker, and no work is lost in the process.
+Если местных обработчиков нет, сообщение идёт через шлюз. При нескольких удалённых кластерах с подходящей группой NATS выбирает один и отправляет по одному шлюзу, сохраняя единственного получателя.
 
-You can watch this local-first behavior. Start a queue worker in each
-region, each in its own terminal:
+Запустите по обработчику в каждом регионе в отдельных терминалах:
 
 ```bash
 # terminal 1 — a worker in east
@@ -279,79 +176,40 @@ nats sub orders.created --queue order-workers --server nats://localhost:4222
 nats sub orders.created --queue order-workers --server nats://localhost:4225
 ```
 
-Publish an order in `east`:
+Опубликуйте заказ в `east`:
 
 ```bash
 nats pub orders.created "order ord_8w2k" --server nats://localhost:4222
 ```
 
-The `east` worker prints it and `west` stays silent — geo-affinity served
-it locally. Stop the `east` worker (`Ctrl+C`) and publish again: now `west`
-prints it. With no local worker left, the order fell through to the gateway
-and crossed to `west`, and nothing on the publisher changed to make it
-happen.
+Его выведет только `east`. Остановите местного через Ctrl-C и повторите: теперь получит `west`. Издатель не менялся — отсутствие местного обработчика переключило доставку.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A super-cluster has a few traps that all come from one habit: thinking
-about it like a bigger cluster, which it is not. The connection between
-regions is a gateway, and gateways behave differently from routes.
+Ловушки возникают при восприятии суперкластера как большого обычного кластера. Шлюзы и маршруты ведут себя по-разному.
 
-**Reaching for routes to span regions.** A route is the intra-cluster
-link that builds the full mesh. It assumes its peers are close and floods
-freely. Stretch one `cluster {}` across `east` and `west` and every
-server holds a route to every other server, with cluster traffic crossing
-the slow link constantly. Don't grow a cluster across regions. Join two
-independent clusters with a `gateway {}` block instead, so only
-interested traffic crosses the gateway.
+**Маршруты между регионами.** Полносвязная сеть предполагает близость участников и свободно переносит трафик. Не растягивайте один `cluster {}` между `east` и `west`; соедините независимые кластеры через `gateway {}`, пересылая лишь нужное.
 
-**Mismatched gateway names.** Each entry in the `gateways` array must use
-the remote cluster's exact name. Typo it — `wset` for `west` — and that
-entry never connects; the server logs `Failing connection to gateway
-"wset", remote gateway name is "west"` on every retry. Because the other
-cluster's config is correct, its outbound connection still lands, and the
-super-cluster forms through that reverse connection and gossip. So a
-working cross-region publish doesn't prove your config is right — the typo
-keeps failing in the background. Watch each server's log for that error
-string instead.
+**Несовпадение имён шлюзов.** `wset` вместо `west` вызывает `Failing connection to gateway
+"wset", remote gateway name is "west"` при каждой попытке. При этом обратное соединение и gossip могут всё же сформировать суперкластер. Поэтому успешная межрегиональная публикация не доказывает корректность всех настроек: проверяйте журналы каждого сервера.
 
-**Chatty cross-region traffic without local workers.** Geo-affinity only
-keeps traffic home when a *local* queue subscriber exists to serve it.
-Run all your `order-workers` in `east` and let `west` clients publish, and
-every `west` order crosses the gateway to reach a worker. The slow link
-carries your steady-state load, not just failover. Don't centralize
-workers in one region and assume geo-affinity avoids the cross-region
-cost. Place a
-queue subscriber for each workload in every region that produces that
-work, so each region serves its own orders and the gateway stays quiet.
+**Межрегиональный трафик без местных обработчиков.** Если все `order-workers` только в `east`, каждый заказ `west` идёт туда. Географическая привязка помогает лишь при наличии местного подписчика. Размещайте обработчики каждой нагрузки в каждом производящем её регионе.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Acme's deployment grew from one cluster to a super-cluster:
+Acme выросла до суперкластера:
 
-- `east` and `west` are independent clusters, each a full mesh of routes.
-- A gateway joins them, carrying only traffic with interest on the
-  far side.
-- Geo-affinity keeps queue-group and request traffic in its home
-  region, crossing the gateway only when the local side can't serve.
-- Nothing about publishing or subscribing changed — the same
-  `orders.created` publish still reaches an interested subscriber, now even
-  across regions.
+- `east` и `west` остаются независимыми полносвязными кластерами.
+- Шлюз передаёт лишь трафик с удалённым интересом.
+- Географическая привязка предпочитает местную обработку очередей и запросов.
+- Код pub/sub прежний: `orders.created` достигает подписчиков даже в другом регионе.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page pushes NATS past the data center entirely. A
-[leaf node](/learn/topologies/leaf-nodes) is a server that *dials out* to
-the `east` cluster — a single outbound connection, so it works from a
-factory or a laptop with no inbound ports open. That one connection is
-two-way, so once it's up the leaf bridges order traffic in both directions.
+Выведем NATS за пределы центра обработки данных. [Листовой узел](/learn/topologies/leaf-nodes) сам *подключается наружу* к `east`, поэтому подходит цеху или ноутбуку без входящих портов. Установленная связь двунаправленная.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Gateway protocol](/reference/protocols/gateway) — the
-  wire-level detail of how gateways advertise interest and connect.
-- [Core Concepts → Queue Groups](/concepts/queue-groups) — the recap of
-  the queue-group behavior geo-affinity steers.
-- [Operate → Clustering & Replication](/learn/clustering) — how a stream's
-  replicas work within one cluster (a gateway carries interest across
-  regions, not stream copies).
+- [Справочник → Протокол шлюзов](/reference/protocols/gateway) — соединения и распространение интереса.
+- [Основные понятия → Группы очередей](/concepts/queue-groups) — распределение сообщений.
+- [Эксплуатация → Кластеризация и репликация](/learn/clustering) — реплики внутри одного кластера; шлюз переносит интерес, не копии потока.

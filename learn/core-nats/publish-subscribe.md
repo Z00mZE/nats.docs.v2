@@ -1,22 +1,17 @@
 ---
 id: publish-subscribe
-title: "Publish-subscribe"
+title: "Публикация и подписка"
 sidebar_position: 3
-description: Fire-and-forget publish, the in-memory interest graph, and core NATS at-most-once delivery
+description: "Публикация без ожидания, граф интереса в памяти и доставка не более одного раза в Core NATS"
 ---
 
-# Publish-subscribe
+# Публикация и подписка {#publish-subscribe}
 
-Core NATS has one fundamental operation: a client publishes a message to a
-subject, and every client subscribed to that subject right now gets a
-copy. This page shows how that behaves on the wire: where the copies come
-from, what happens when nobody is listening, and what core NATS promises
-about delivery.
+У Core NATS одна базовая операция: клиент публикует сообщение в тему, и каждый клиент, подписанный на неё прямо сейчас, получает копию. Эта страница показывает, как это работает на уровне протокола: откуда берутся копии, что происходит без подписчиков и какие гарантии доставки даёт Core NATS.
 
-## The scenario
+## Сценарий {#the-scenario}
 
-Acme runs an order platform. Three things happen to an order, and each
-one is a message on its own subject:
+Acme использует платформу заказов. С заказом происходят три события, каждое из которых передаётся сообщением в собственной теме:
 
 ```
 orders.created
@@ -24,7 +19,7 @@ orders.shipped
 orders.canceled
 ```
 
-Every message in this chapter carries the same small JSON payload:
+Каждое сообщение этой главы содержит одинаковую небольшую полезную нагрузку JSON:
 
 ```json
 {
@@ -35,156 +30,86 @@ Every message in this chapter carries the same small JSON payload:
 }
 ```
 
-Three services care about these messages. The `warehouse` service
-packs the box when an order is created. The `notifications` service
-emails the customer. The `analytics` service counts everything. None
-of them knows the others exist.
+Этими сообщениями интересуются три сервиса. `warehouse` упаковывает заказ после его создания. `notifications` отправляет письмо покупателю. `analytics` подсчитывает всё. Ни один из них не знает о существовании остальных.
 
-[Connecting](/learn/core-nats/connecting) already started one local
-`nats-server`. Leave it running for the rest of this chapter. If you
-landed here directly, start one now:
+В разделе [Подключение](/learn/core-nats/connecting) уже запущен один локальный `nats-server`. Оставьте его работающим до конца главы. Если вы сразу открыли эту страницу, запустите сервер сейчас:
 
 ```bash
 nats-server
 ```
 
-That's the whole deployment, with no flags, no persistence, and no
-cluster. Add services to it as the chapter grows.
+Это всё развёртывание: без флагов, долговременного хранения и кластера. Добавляйте сервисы по мере прохождения главы.
 
-## Publishing a message
+## Публикация сообщения {#publishing-a-message}
 
-A **publisher** is a client that sends a message to a subject. The
-warehouse doesn't subscribe to anything yet, so start by publishing
-one `orders.created` message:
+**Издатель** — клиент, отправляющий сообщение в тему. Склад ещё ни на что не подписан, поэтому начните с публикации одного сообщения `orders.created`:
 
 <div class="nats-example" data-type="learn-core-nats-publish-subscribe-publish" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The publish call returns immediately. It doesn't wait for a
-subscriber, and it doesn't tell you how many subscribers received the
-message, or whether any did. This is
-**fire-and-forget**: the publisher hands the message to the server and
-moves on.
+Вызов публикации сразу возвращает управление. Он не ждёт подписчика и не сообщает, сколько подписчиков получили сообщение и получил ли его кто-нибудь вообще. Это **fire-and-forget**: издатель передаёт сообщение серверу и продолжает работу.
 
-A publisher always names a fully-qualified subject. `orders.created`
-is a concrete subject, not a pattern. Wildcards belong to subscribers,
-and we cover them on the [next page](/learn/core-nats/subjects-and-wildcards).
+Издатель всегда указывает полностью заданную тему. `orders.created` — конкретная тема, а не шаблон. Подстановочные символы используются подписчиками и разбираются на [следующей странице](/learn/core-nats/subjects-and-wildcards).
 
-## Subscribing to a subject
+## Подписка на тему {#subscribing-to-a-subject}
 
-A **subscriber** is a client that registers interest in a subject and
-receives a copy of every matching message. Start the warehouse service
-as a subscriber on `orders.created`:
+**Подписчик** — клиент, регистрирующий интерес к теме и получающий копию каждого подходящего сообщения. Запустите складской сервис как подписчика `orders.created`:
 
 <div class="nats-example" data-type="learn-core-nats-publish-subscribe-subscribe" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Now publish again with the snippet above. The warehouse receives the
-message. Run a second subscriber for `notifications` and a third for
-`analytics`, each on `orders.created`, and every one of them receives
-its own copy of the next publish.
+Теперь снова опубликуйте сообщение предыдущим примером. Склад его получит. Запустите второго подписчика для `notifications` и третьего для `analytics`, всех на `orders.created`: каждый получит собственную копию следующей публикации.
 
-Each subscriber gets an independent copy; subscribing isn't taking from
-a queue, and one subscriber receiving a message takes nothing from another.
+Копии независимы: подписка не извлекает сообщения из очереди, и получение сообщения одним подписчиком ничего не отнимает у другого.
 
-If you want one subscriber to see *all* order subjects at once, it can
-subscribe to `orders.>` instead of a single subject. That `>` is a
-wildcard, and the [next page](/learn/core-nats/subjects-and-wildcards)
-is where we explain it.
+Чтобы один подписчик видел *все* темы заказов, подпишите его на `orders.>` вместо отдельной темы. Символ `>` — подстановочный; его работа объясняется на [следующей странице](/learn/core-nats/subjects-and-wildcards).
 
-## Unsubscribing
+## Отписка {#unsubscribing}
 
-When a subscriber unsubscribes, the server removes its interest in that
-subject as soon as it processes the request. Any message published
-after that doesn't reach it, and there's nothing to clean up on the
-server side.
+Когда подписчик отписывается, сервер удаляет его интерес к теме после обработки запроса. Последующие публикации ему не доставляются, а на стороне сервера не остаётся ничего, что нужно очищать.
 
-You can also have a subscription end itself after a fixed number of
-messages, without tracking the count yourself. This is
-**auto-unsubscribe**: a client calls its auto-unsubscribe method
-(`AutoUnsubscribe(N)` in Go), which tells the server to end the
-subscription once it has delivered N messages. The CLI's `nats sub
---count N` gets the same result by counting messages itself and
-unsubscribing when it hits the limit. It fits a take-exactly-N flow,
-such as reading the next three orders and stopping.
+Подписка также может завершаться после заданного числа сообщений, без самостоятельного подсчёта в приложении. Это **автоматическая отписка**: клиент вызывает соответствующий метод (`AutoUnsubscribe(N)` в Go), сообщая серверу завершить подписку после доставки N сообщений. CLI `nats sub
+--count N` получает тот же результат, самостоятельно считая сообщения и отписываясь при достижении лимита. Это удобно для сценария «получить ровно N», например прочитать следующие три заказа и остановиться.
 
 <div class="nats-example" data-type="learn-core-nats-publish-subscribe-unsubscribe-after-n" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## The interest graph
+## Граф интереса {#the-interest-graph}
 
-The server tracks who's subscribed to what in an in-memory structure
-called the **interest graph**. Each subscription adds an entry; each
-unsubscribe or disconnect removes it.
+Сервер отслеживает подписки в структуре данных в памяти — **графе интереса**. Каждая подписка добавляет запись; отписка или отключение удаляет её.
 
 <div class="nats-flow" data-scenario="publishSubscribeAnimated" data-width="600" data-height="350"></div>
 
-When a message arrives, the server looks up the subject in the
-interest graph, finds the matching subscribers, and sends each one a
-copy. With three services subscribed to `orders.created`, one publish
-produces three deliveries. The publisher did nothing different; the
-fan-out happened entirely on the server.
+Когда приходит сообщение, сервер находит в графе интереса тему и подходящих подписчиков, затем отправляет каждому копию. Если на `orders.created` подписаны три сервиса, одна публикация приводит к трём доставкам. Издатель ничего не менял: веерная рассылка выполнена целиком сервером.
 
-The interest graph is the source of the decoupling. The publisher
-holds no list of subscribers. It publishes to a subject, and the
-server resolves interest at the moment the message arrives.
+Граф интереса обеспечивает независимость компонентов. Издатель не хранит список подписчиков. Он публикует в тему, а сервер определяет получателей в момент поступления сообщения.
 
-This is also why services can come and go freely. Start a fourth
-subscriber and it joins the graph; the next publish reaches it. Stop
-one and its entry is gone; the next publish skips it. Nobody
-coordinates, and the publisher never changes.
+Поэтому сервисы могут свободно подключаться и отключаться. Запустите четвёртого подписчика — он войдёт в граф и получит следующую публикацию. Остановите подписчика — запись исчезнет и следующая публикация его пропустит. Согласование не требуется, издатель не меняется.
 
-## When nobody is listening
+## Если никто не слушает {#when-nobody-is-listening}
 
-Publish to `orders.created` while no service is subscribed. The
-publish still succeeds, and the message is dropped. The server
-finds no matching entry in the interest graph, so there's nothing to
-deliver to, and the message is discarded.
+Опубликуйте сообщение в `orders.created`, когда сервисы не подписаны. Публикация всё равно завершится успешно, а сообщение будет отброшено. Сервер не найдёт подходящей записи в графе интереса: доставлять некому, поэтому сообщение удаляется.
 
-A publish with no interest is a silent no-op: no error, no stored
-backlog. The publisher
-can't tell "delivered to three subscribers" from "delivered to nobody" —
-both look like a successful publish. If the warehouse is restarting when
-an `orders.created` message is published, that message is gone.
+Публикация без интереса — незаметная операция без результата: ни ошибки, ни сохранённой очереди. Издатель не отличает «доставлено трём подписчикам» от «не доставлено никому»: оба случая выглядят как успешная публикация. Если склад перезапускается в момент публикации `orders.created`, сообщение теряется.
 
-## At-most-once delivery
+## Доставка не более одного раза {#at-most-once-delivery}
 
-Core NATS delivers each message **at-most-once**. A subscriber that's
-connected and interested when the message is published gets it once. A
-subscriber that's absent, slow, or disconnected at that instant gets
-it zero times. There's no second attempt.
+Core NATS доставляет каждое сообщение **не более одного раза**. Подключённый и заинтересованный в момент публикации подписчик получает его один раз. Отсутствующий, медленный или отключённый в этот момент — ни разу. Второй попытки нет.
 
-Core NATS doesn't retry a missed message, doesn't detect or suppress
-duplicates, and doesn't guarantee that two subscribers see messages in
-the same order under load. Each is a property you add with
-[JetStream](/learn/jetstream), not something core provides.
+Core NATS не повторяет пропущенную доставку, не обнаруживает и не подавляет дубликаты и не гарантирует, что под нагрузкой два подписчика увидят сообщения в одном порядке. Такие свойства добавляются с помощью [JetStream](/learn/jetstream), а не предоставляются базовым слоем.
 
-At-most-once is the right guarantee for a large class of messages:
-telemetry you sample, cache invalidations, a live dashboard feed. For
-those, a missed message costs nothing because another is already on
-the way. For an order that must be packed exactly once, it isn't
-enough. That's the boundary of core NATS.
+Доставка не более одного раза подходит большому классу сообщений: выборочной телеметрии, уведомлениям об устаревании кеша и данным для онлайн-панелей. Пропуск здесь несущественен, поскольку следующее сообщение уже в пути. Для заказа, который необходимо упаковать ровно один раз, этого недостаточно. Здесь проходит граница Core NATS.
 
-## The 1 MB payload limit
+## Лимит полезной нагрузки 1 МБ {#the-1-mb-payload-limit}
 
-A message payload has a maximum size. By default the server caps it at
-**1 MB** (`max_payload`, `1048576` bytes). The server announces this
-limit to every client when the connection opens, so the client knows
-the ceiling before it ever publishes.
+Размер полезной нагрузки ограничен. По умолчанию сервер допускает **1 МБ** (`max_payload`, `1048576` байт). При установлении соединения сервер сообщает лимит каждому клиенту, поэтому тот знает ограничение ещё до первой публикации.
 
-Because the client knows the ceiling, it checks the payload before
-sending. An official client fails the publish call with `nats: maximum
-payload exceeded` and leaves the connection up, so the message never
-leaves the client. The server is the backstop for a client that sends
-an oversized message anyway: it replies `-ERR 'Maximum Payload
-Violation'` and closes the connection. The Acme order payload is a few
-hundred bytes, well under the ceiling, but a service that tries to ship
-a large blob inside a message will hit it.
+Клиент знает лимит и проверяет размер перед отправкой. Официальный клиент завершает публикацию ошибкой `nats: maximum
+payload exceeded`, сохраняя соединение, а сообщение остаётся на стороне клиента. Сервер служит последней защитой от клиента, всё же отправившего слишком большое сообщение: он отвечает `-ERR 'Maximum Payload
+Violation'` и закрывает соединение. Заказ Acme занимает несколько сотен байт и укладывается в лимит, но попытка передать большой двоичный объект в сообщении его превысит.
 
-For large data, publish a reference (an object-store key or a URL) and
-let the receiver fetch the bytes out of band.
+Для больших данных публикуйте ссылку (ключ объектного хранилища или URL), а получатель пусть загружает содержимое отдельно.
 
-## Try it in two terminals
+## Попробуйте в двух терминалах {#try-it-in-two-terminals}
 
-Observe fire-and-forget and at-most-once directly. Open two
-terminals against the running server.
+Проверьте публикацию без ожидания и доставку не более одного раза напрямую. Откройте два терминала, подключённых к работающему серверу.
 
 ```bash
 # Terminal 1 — the warehouse subscribes
@@ -198,29 +123,16 @@ nats pub orders.created '{"order_id":"ord_2zr9","customer":"globex","total_cents
 nats pub orders.created '{"order_id":"ord_5kq1","customer":"initech","total_cents":1500,"ts":"2026-05-22T10:14:29Z"}'
 ```
 
-Terminal 1 prints each message the instant it's published. Now stop
-the subscriber in Terminal 1 with Ctrl-C, publish a fourth message,
-and restart the subscriber. The fourth message never appears. It was
-published into an empty interest graph and discarded, which is
-at-most-once delivery in action.
+Первый терминал выводит каждое сообщение сразу после публикации. Теперь остановите в нём подписчика с помощью Ctrl-C, опубликуйте четвёртое сообщение и запустите подписчика снова. Четвёртое сообщение не появится: оно было опубликовано при пустом графе интереса и отброшено. Так проявляется доставка не более одного раза.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-**Publishing over the limit fails the publish.** An official client
-checks the payload against `max_payload` and fails the call with `nats:
-maximum payload exceeded` before anything goes out; the connection
-stays up. Keep payloads under the limit and pass a reference for
-anything large.
+**Превышение лимита приводит к ошибке публикации.** Официальный клиент сверяет нагрузку с `max_payload` и возвращает `nats:
+maximum payload exceeded` до отправки; соединение остаётся открытым. Соблюдайте лимит, а для больших данных передавайте ссылку.
 
 <div class="nats-example" data-type="learn-core-nats-publish-subscribe-check-max-payload" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**Exiting before the publish leaves the client drops it.** The publish
-call returns immediately because the client buffers the message and
-sends it in the background. A short-lived publisher that exits right
-after the call can quit before that buffered message reaches the server,
-and the message is gone. Flush (or drain) before you exit. The client
-waits for a round trip to the server, so everything buffered before it
-has arrived:
+**Завершение до отправки сообщения из клиента приводит к его потере.** Вызов публикации сразу возвращает управление, поскольку клиент буферизует сообщение и отправляет его в фоне. Короткоживущий издатель может завершиться до доставки буфера серверу, и сообщение будет потеряно. Перед выходом выполняйте flush или drain. Клиент дожидается обмена с сервером, к этому моменту весь предыдущий буфер уже доставлен:
 
 ```go
 nc.Publish("orders.created", payload)
@@ -228,46 +140,25 @@ nc.Flush() // wait until the server has the message, then exit
 nc.Close()
 ```
 
-**A connection receives the messages it publishes.** When one
-connection both publishes and subscribes to the same subject, it
-gets a copy of its own messages, because echo is on by default for
-every connection. A service that publishes status updates and also
-subscribes to them can process its own updates in a loop.
-[Connecting](/learn/core-nats/connecting) covers turning it off.
+**Соединение получает опубликованные им сообщения.** Если одно соединение и публикует, и подписывается на тему, оно получает копию собственных сообщений: echo по умолчанию включён. Сервис, публикующий обновления состояния и подписанный на них, может зациклить обработку своих обновлений. Отключение описано в разделе [Подключение](/learn/core-nats/connecting).
 
-**A slow subscriber gets cut off.** A subscriber that can't keep up
-with the rate of matching messages builds a backlog on the server. Past
-a threshold the server stops protecting it, logs `Slow Consumer
-Detected`, and closes its connection. The other subscribers are
-unaffected. The fix lives in the client: process messages fast enough,
-or hand them to a worker. [Resilient clients →
-Slow consumers](/learn/resilient-clients/slow-consumers) covers the
-tuning and recovery.
+**Медленного подписчика отключают.** Если подписчик не успевает за потоком подходящих сообщений, на сервере растёт очередь. После порога сервер перестаёт защищать его, записывает `Slow Consumer
+Detected` и закрывает соединение. Остальные подписчики не затрагиваются. Исправление нужно на клиенте: обрабатывайте сообщения достаточно быстро или передавайте обработчику. Настройки и восстановление разобраны в [Устойчивые клиенты → Медленные потребители](/learn/resilient-clients/slow-consumers).
 
-## Where you are
+## Что уже сделано {#where-you-are}
 
-You have one local `nats-server` running, and the Acme order services
-talking over core publish-subscribe:
+У вас работает один локальный `nats-server`, а сервисы заказов Acme обмениваются сообщениями через базовую публикацию и подписку:
 
-- A publisher sends `orders.created` messages fire-and-forget.
-- The `warehouse`, `notifications`, and `analytics` subscribers each
-  receive their own copy.
-- A message published with no interest is discarded, and delivery is
-  at-most-once.
+- Издатель отправляет сообщения `orders.created` без ожидания.
+- Подписчики `warehouse`, `notifications` и `analytics` получают каждый свою копию.
+- Сообщение без заинтересованных подписчиков отбрасывается, доставка выполняется не более одного раза.
 
-## What's next
+## Что дальше {#whats-next}
 
-Right now every service subscribes to one exact subject. The next page,
-[Subjects & wildcards](/learn/core-nats/subjects-and-wildcards), shows
-how subjects form a hierarchy and how a subscriber uses `*` and `>` to
-match many subjects at once, including regional orders like
-`orders.us.created`.
+Пока каждый сервис подписан на одну точную тему. Следующая страница, [Темы и подстановочные символы](/learn/core-nats/subjects-and-wildcards), показывает иерархию тем и использование `*` и `>` для подписки на множество тем, включая региональные заказы вроде `orders.us.created`.
 
-## See also
+## См. также {#see-also}
 
-- [Core Concepts → Publish-subscribe](/concepts/pub-sub-basics) — the
-  five-minute overview of this pattern.
-- [Learn → JetStream → Why a stream](/learn/jetstream/your-first-stream#why-a-stream) —
-  the layer that keeps the messages core NATS discards.
-- [Reference → Client protocol](/reference/protocols/client) — the
-  wire-level `PUB`/`SUB`/`MSG` details.
+- [Основные понятия → Публикация и подписка](/concepts/pub-sub-basics) — пятиминутный обзор шаблона.
+- [Изучение → JetStream → Зачем нужен поток](/learn/jetstream/your-first-stream#why-a-stream) — слой, сохраняющий сообщения, которые Core NATS отбрасывает.
+- [Справочник → Клиентский протокол](/reference/protocols/client) — протокольные детали `PUB`/`SUB`/`MSG`.

@@ -1,195 +1,101 @@
 ---
 id: watching
-title: "Watching"
+title: "Наблюдение"
 sidebar_position: 3
-description: Watch a bucket for live stock changes — the initial snapshot, the end-of-initial-data signal, and wildcard filters
+description: "Наблюдение за изменениями остатков: начальный снимок, сигнал завершения начальных данных и фильтры с подстановками"
 ---
 
-# Watching
+# Наблюдение {#watching}
 
-You have the `INVENTORY` bucket from the last page, with `widget-blue`
-at `42`. Reading it with get tells you the count *now*. The warehouse
-dashboard needs the count the moment it changes, without polling get in
-a loop.
+С предыдущей страницы у вас есть бакет `INVENTORY`, где `widget-blue` равен `42`. Get показывает остаток *сейчас*. Складской панели нужно узнавать его в момент изменения, без циклического опроса.
 
-A watch does that. This page runs the warehouse dashboard
-watching `INVENTORY`, shows you the two things a watch always delivers in
-order, and ends with a wildcard watch over a subset of keys.
+Для этого служит наблюдение. Здесь складская панель начнёт наблюдать за `INVENTORY`; вы увидите две части данных, всегда приходящие по порядку, а затем ограничите наблюдение подмножеством ключей с помощью фильтра.
 
-## What a watch delivers
+## Что передаёт наблюдение {#what-a-watch-delivers}
 
-A **watch** delivers the current value of every matching key as an
-initial snapshot, and then streams every later change as it happens. One
-call gives you both halves: the state of the bucket now, and the changes
-from now on.
+**Наблюдение** сначала передаёт текущее значение каждого подходящего ключа как начальный снимок, затем все последующие изменения по мере возникновения. Один вызов даёт обе части: состояние бакета сейчас и изменения с этого момента.
 
-Start the warehouse dashboard watching the whole bucket. Run this in its
-own terminal and leave it running:
+Запустите складскую панель для наблюдения за всем бакетом. Выполните команду в отдельном терминале и оставьте её работающей:
 
 <div class="nats-example" data-type="learn-key-value-watching-watchBucket" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The snapshot comes first. The watch immediately prints the current value
-of every key already in the bucket; right now that's one line for
-`widget-blue` at `42`. Then it blocks, waiting.
+Сначала приходит снимок. Наблюдатель сразу выводит текущее значение каждого существующего ключа; пока это одна строка с `widget-blue` и `42`. Затем блокируется в ожидании.
 
-Now, from another terminal, change a count:
+Теперь измените количество в другом терминале:
 
 ```bash
 nats kv put INVENTORY widget-blue 41
 ```
 
-The line appears in the watching terminal the instant the put lands,
-without polling and without delay. The dashboard receives the change as
-soon as the inventory service records it.
+Строка появляется в терминале наблюдения сразу после put, без опроса и задержки. Панель получает изменение, как только сервис inventory записывает его.
 
-The inventory service also stocks two more SKUs, so the bucket holds more
-than one key from here on:
+Сервис inventory также добавляет ещё два артикула, поэтому дальше в бакете будет несколько ключей:
 
 ```bash
 nats kv put INVENTORY widget-red 17
 nats kv put INVENTORY gadget-pro 5
 ```
 
-Each put appears in the watching terminal the moment it lands, the same as
-the change to `widget-blue`.
+Каждый put появляется в терминале наблюдения сразу после записи, как и изменение `widget-blue`.
 
-The snapshot-then-live shape matters here. A new dashboard that
-connects mid-day doesn't start without data: it gets the full current
-picture first, then keeps up with every change after. A watch covers
-both reading the state and watching for changes, so you don't have to
-choose between them.
+Порядок «снимок, затем текущие изменения» важен. Новая панель, подключившаяся в середине дня, не остаётся без данных: сначала получает полную текущую картину, затем отслеживает изменения. Наблюдение совмещает чтение состояния и получение обновлений, поэтому выбирать между ними не нужно.
 
 <div class="nats-flow" data-scenario="kvWatchAnimated" data-width="600" data-height="350"></div>
 
-Underneath, a watch is an ephemeral ordered consumer on the backing
-stream, replaying the last value per key and then following new writes.
-You don't configure or manage it: opening the watch creates it, and
-closing the watch removes it. How consumers track position and deliver messages
-is the JetStream chapter's job; see
-[Why a stream](/learn/jetstream/your-first-stream#why-a-stream) if you want the layer
-below. Here, the behavior is what matters: snapshot, then live.
+В основе наблюдения — временный упорядоченный потребитель базового потока, воспроизводящий последнее значение каждого ключа и затем новые записи. Настраивать и обслуживать его не нужно: открытие наблюдения создаёт потребителя, закрытие удаляет. Позиции и доставка потребителей рассматриваются в главе JetStream; для изучения нижнего слоя см. [Зачем нужен поток](/learn/jetstream/your-first-stream#why-a-stream). Здесь важно поведение: снимок, затем текущие изменения.
 
-## The end-of-initial-data signal
+## Сигнал завершения начальных данных {#the-end-of-initial-data-signal}
 
-There's a boundary between the snapshot and the live stream, and the
-watch marks it for you. After the last snapshot entry and before the
-first live change, the watch delivers one **end-of-initial-data signal**:
-a single nil entry. It carries no key and no value. It indicates only
-that the snapshot is complete and everything after it is a live change.
+Между снимком и текущими обновлениями есть граница, которую наблюдатель обозначает явно. После последней записи снимка и до первого текущего изменения приходит один **сигнал завершения начальных данных**: запись nil без ключа и значения. Она сообщает лишь, что снимок завершён и далее идут текущие изменения.
 
-The CLI consumes that signal silently and keeps printing, so you never
-see it on the command line. In client code you handle the boundary
-explicitly, but how it reaches you depends on the client. Go and Python
-deliver a nil/None entry in the same stream as your real entries: read it,
-recognize it as the boundary, and keep reading. JavaScript sets an
-`isUpdate` flag on each entry, Java calls an `endOfData()` callback, C#
-takes an `OnNoData` option, and Rust has no marker at all — you pick
-snapshot-plus-live or live-only when you open the watch. The idea is the
-same everywhere, a boundary between the snapshot and the live changes; only
-the signal differs. The example below shows the nil-entry form:
+CLI молча обрабатывает сигнал и продолжает вывод, поэтому в терминале он не виден. В клиентском коде граница обрабатывается явно, но способ зависит от библиотеки. Go и Python передают nil/None в том же потоке, что и обычные записи: распознайте границу и продолжайте чтение. JavaScript устанавливает флаг `isUpdate` у записей, Java вызывает `endOfData()`, C# принимает параметр `OnNoData`, а в Rust маркера нет: при открытии выбирается снимок с обновлениями либо только обновления. Идея везде одна — граница между снимком и изменениями; различается сигнал. Ниже показан вариант с записью nil:
 
 <div class="nats-example" data-type="learn-key-value-watching-eoiHandling" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The signal is useful beyond bookkeeping. A dashboard can
-hold its "loading" state until the nil entry arrives, then flip to "live"
-knowing it has the complete current picture. A cache-warming job can
-populate from the snapshot, treat the nil entry as "warm," and switch to
-incremental updates. The boundary carries information you can act on.
+Сигнал полезен не только для учёта. Панель может показывать загрузку до nil, затем переходить в режим текущих данных, зная, что получила полную картину. Прогрев кэша может заполнить его из снимка, считать nil признаком готовности и перейти к приращениям. Граница несёт информацию для действий.
 
-It's also the most common watch bug, and the Pitfalls section below
-includes a runnable version.
+С ней связана и самая частая ошибка наблюдения; ниже, в разделе подводных камней, приведён исполняемый пример.
 
-## Watching a subset
+## Наблюдение за подмножеством {#watching-a-subset}
 
-Watching the whole bucket gives you every key. Often you want fewer. A
-watch takes an optional key filter, matched against the key the same way
-NATS matches a subject: a key is a sequence of dot-separated tokens, `*`
-stands for exactly one whole token, and `>` for one or more tokens at the
-end. (Keys map to subject tokens; that's the
-[subjects](/concepts/subjects) model the backing stream is built on.)
+Наблюдение за всем бакетом передаёт каждый ключ, но часто требуется меньше. Необязательный фильтр ключей сопоставляется так же, как тема NATS: ключ состоит из токенов, разделённых точками; `*` соответствует ровно одному полному токену, а `>` — одному или нескольким токенам в конце. Ключи отображаются на токены тем: это модель [тем](/concepts/subjects), на которой построен базовый поток.
 
-The SKU keys here are single tokens: `widget-blue` is one token, and the
-hyphen is an ordinary character, not a separator. So a filter like
-`widget-*` is not a wildcard at all — `*` is only special as a whole
-token — and it matches nothing. To split keys with a wildcard you'd design
-them with dots, such as `widget.blue` and `widget.red`, so that `widget.*`
-matches both.
+Здесь артикулы состоят из одного токена: `widget-blue` — один токен, а дефис — обычный символ. Поэтому `widget-*` вообще не является подстановкой и ничего не находит: `*` имеет особое значение лишь как целый токен. Для такого разделения ключи нужно проектировать с точками, например `widget.blue` и `widget.red`, чтобы `widget.*` подходил обоим.
 
-With flat SKU names, watch a subset by naming an exact key. The dashboard
-for the blue widget watches just `widget-blue`:
+Для плоских имён артикулов ограничьте наблюдение точным ключом. Панель синего товара наблюдает только за `widget-blue`:
 
 <div class="nats-example" data-type="learn-key-value-watching-watchFiltered" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The snapshot now lists only `widget-blue`, and the live stream only
-carries changes to it. A put to `gadget-pro` or `widget-red` never reaches
-this watcher; a put to `widget-blue` does. The filter applies to both
-halves, snapshot and live, so a filtered watch is a smaller, cheaper view
-of the bucket rather than every change for you to filter afterward.
+Снимок теперь содержит лишь `widget-blue`, а текущие обновления относятся только к нему. Put для `gadget-pro` или `widget-red` не приходит наблюдателю, put для `widget-blue` приходит. Фильтр действует на обе части, поэтому отфильтрованное наблюдение — меньший и более дешёвый вид бакета, а не получение всех изменений с последующей фильтрацией.
 
-A watch supports a few more options, each tuning the same two halves you
-just saw: `IncludeHistory` replays the full history of every key instead
-of just the current snapshot, `IgnoreDeletes` skips deleted keys,
-`UpdatesOnly` drops the snapshot so you see only live changes, and
-`MetaOnly` sends each entry's metadata without its value. You can combine
-them, with one exception: `IncludeHistory` and `UpdatesOnly` conflict —
-one asks for the full snapshot with history, the other for no snapshot at
-all — and a client rejects the pair. These are client-side watch options,
-implemented as settings on the ephemeral consumer the watch opens; the
-[Reference → Create Consumer](/reference/jetstream/api/consumer/create)
-page documents that consumer configuration.
+Есть и другие параметры тех же двух частей: `IncludeHistory` воспроизводит полную историю каждого ключа вместо текущего снимка, `IgnoreDeletes` пропускает удалённые ключи, `UpdatesOnly` отключает снимок и оставляет текущие изменения, `MetaOnly` передаёт метаданные без значения. Их можно сочетать, кроме `IncludeHistory` и `UpdatesOnly`: первый запрашивает снимок с историей, второй вообще исключает снимок, поэтому клиент отклоняет пару. Эти клиентские параметры задают настройки создаваемого временного потребителя; их описание находится в разделе [Справочник → Создание потребителя](/reference/jetstream/api/consumer/create).
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two mistakes are common the first time you watch a bucket. Both come
-from the two concepts above: the snapshot/live boundary, and
-what a watch actually is.
+При первом наблюдении за бакетом распространены две ошибки. Обе связаны с описанными понятиями: границей снимка и обновлений и природой самого наблюдения.
 
-**Don't stop reading at the boundary signal.** In the clients that deliver
-it as a nil/None entry (Go and Python), that entry rides the same stream
-as your real ones. A loop that treats nil as "the stream ended" and breaks
-will read the snapshot and see the boundary marker, then quit before every
-live change that was the reason to watch. The fix is one line: when an
-entry is nil, skip it and keep looping. Do not break. In the clients that
-signal the boundary with a flag or a callback instead, the same mistake is
-treating the end of the snapshot as the end of the watch.
+**Не прекращайте чтение на сигнале границы.** В Go и Python запись nil/None приходит в том же потоке, что и данные. Цикл, считающий nil концом потока и завершающийся, прочитает снимок и маркер, но пропустит все текущие изменения, ради которых и создавался наблюдатель. Исправление простое: пропускайте nil и продолжайте цикл, не выходите из него. В клиентах с флагом или обратным вызовом та же ошибка — считать конец снимка концом наблюдения.
 
-The handling example above doubles as the demo: the loop continues past
-the nil entry instead of stopping on it.
+Пример обработки выше одновременно служит демонстрацией: цикл проходит запись nil и продолжает работу.
 
 <div class="nats-example" data-type="learn-key-value-watching-eoiHandling" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**A watch is live state, not a point read.** A watch is an ephemeral
-ordered consumer: it exists only while your process holds it open, and it
-goes away when the process ends. It's the right tool when you want to
-*keep up* with a bucket, and the wrong tool when you want a single
-current value once. For that, reach for get, which you saw on the last
-page, or history, which the next page covers. Don't open a watch, read
-the first entry, and close it to fake a point read; you pay for a
-consumer and a snapshot to get one value get would have handed you
-directly.
+**Наблюдение — живое состояние, а не точечное чтение.** Это временный упорядоченный потребитель: он существует, пока процесс держит его открытым, и исчезает при завершении процесса. Он нужен, чтобы *следить* за бакетом, но не для однократного получения текущего значения. Для этого используйте get с предыдущей страницы или history со следующей. Не имитируйте чтение открытием наблюдения, получением первой записи и закрытием: ради одного значения вы оплачиваете создание потребителя и снимка, хотя get вернул бы его напрямую.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- The `INVENTORY` bucket with `widget-blue` at `41` (a put landed during
-  the watch demo), plus `widget-red` and `gadget-pro` now stocked.
-- A working warehouse dashboard: a watch that delivered the snapshot,
-  then a live update.
-- The end-of-initial-data signal in hand: you know it marks the
-  snapshot/live boundary and must be consumed, not treated as the end.
-- A filtered watch that views a single key (`widget-blue`), and the rule
-  that a key filter's `*` matches a whole token, not a prefix.
+- Бакет `INVENTORY` со значением `widget-blue`, равным `41` после демонстрации put, а также добавленными `widget-red` и `gadget-pro`.
+- Работающая складская панель: наблюдатель получил снимок, затем текущее обновление.
+- Понимание сигнала завершения начальных данных: он обозначает границу снимка и обновлений, его нужно обработать, не считая концом.
+- Наблюдение за одним ключом (`widget-blue`) и правило: `*` фильтра соответствует целому токену, а не префиксу.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page reads the history each put creates and uses revisions to
-make safe, concurrent updates:
-[History and revisions](/learn/key-value/history-and-revisions).
+Следующая страница читает историю, создаваемую каждым put, и использует ревизии для безопасных одновременных обновлений: [История и ревизии](/learn/key-value/history-and-revisions).
 
-## See also
+## См. также {#see-also}
 
-- [Why a stream](/learn/jetstream/your-first-stream#why-a-stream) — the consumer model a
-  watch is built on.
-- [Reference → Create Consumer](/reference/jetstream/api/consumer/create) —
-  the consumer configuration a watch's options map onto.
+- [Зачем нужен поток](/learn/jetstream/your-first-stream#why-a-stream) — модель потребителей, на которой построено наблюдение.
+- [Справочник → Создание потребителя](/reference/jetstream/api/consumer/create) — конфигурация потребителя, соответствующая параметрам наблюдения.

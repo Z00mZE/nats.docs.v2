@@ -1,19 +1,19 @@
-# Stream Names
+# Имена потоков {#stream-names}
 
-Lists stream names.
+Получение списка имён потоков.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamNamesRequest from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/stream_names_request.json';
 import streamNamesResponse from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/stream_names_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.NAMES`
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamNamesRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamNamesResponse} />

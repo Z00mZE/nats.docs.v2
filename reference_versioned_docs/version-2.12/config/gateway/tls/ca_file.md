@@ -1,11 +1,11 @@
-# ca_file
+# ca_file {#ca_file}
 
 <Reloadable state="reloadable" note="Applies to gateway connections established after the reload." />
-TLS certificate authority file. Defaults to system trust store.
+Файл центра сертификации TLS. По умолчанию используется системное хранилище доверенных сертификатов.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

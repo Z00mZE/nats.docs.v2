@@ -1,120 +1,63 @@
 ---
 id: index
-title: Services
+title: "Сервисы"
 sidebar_position: 1
-description: The micro framework that turns a request-reply responder into a named, versioned, discoverable service
+description: "Небольшой фреймворк, превращающий обработчик запросов в именованный сервис с версией и обнаружением"
 ---
 
-# Services
+# Сервисы {#services}
 
-In the Core NATS chapter you wrote a responder by hand. It subscribed to
-a subject, read each request, and replied. That works, but the responder
-is only a function on a wire. It has no name you can look up and no
-version. There's no way to tell how many copies are running, and no
-built-in count of how many requests it has served.
+В главе Core NATS вы написали обработчик запросов вручную. Он подписывался на субъект, читал каждый запрос и отправлял ответ. Это работает, но такой обработчик — лишь функция, доступная по сети. У него нет имени для поиска и версии. Нельзя узнать, сколько копий запущено, и нет встроенного счётчика обработанных запросов.
 
-The **Services framework** closes that gap. Its module is called `micro`
-in some client libraries (Go, Python) and `service`/`services` in others
-(JavaScript, Java, Rust, C#); the concept is the same everywhere. It takes
-the same request-reply responder you
-already know and formalizes it into a **service**: a named, versioned
-handler that the server can discover, that reports its own stats, and
-that load-balances across as many copies as you start. You add no new
-infrastructure. A service is still request-reply underneath; the
-framework connects those pieces for you.
+**Фреймворк сервисов** устраняет этот пробел. В некоторых клиентских библиотеках (Go, Python) его модуль называется `micro`, в других (JavaScript, Java, Rust, C#) — `service`/`services`; идея везде одинакова. Он превращает знакомый обработчик запросов и ответов в **сервис**: именованный обработчик с версией, который можно обнаружить через сервер, который сообщает свою статистику и распределяет нагрузку между любым числом запущенных копий. Новая инфраструктура не нужна. В основе сервиса остаётся обмен запросами и ответами; фреймворк связывает его части за вас.
 
-This chapter promotes the Core NATS `inventory` responder into a real
-`OrderInventory` service and grows it page by page. The order payload,
-the subjects, and the single local server stay the same, only now with
-a framework around the responder.
+В этой главе обработчик `inventory` из Core NATS становится полноценным сервисом `OrderInventory` и развивается от страницы к странице. Полезная нагрузка заказа, субъекты и один локальный сервер остаются прежними, но обработчик теперь окружён фреймворком.
 
-## By the end you'll have
+## Что получится к концу главы {#by-the-end-youll-have}
 
-- an `OrderInventory` service, version `1.0.0`, answering on
-  `orders.inventory.check` with a named endpoint and the default queue
-  group `"q"`
-- a second `ShippingQuote` service, to show how one process can host
-  multiple endpoints and group them under a subject prefix
-- the ability to discover both services over the `$SRV` subjects:
-  query which services are present, what endpoints they expose, and
-  their current stats
-- per-endpoint stats you can read back at any time: how many
-  requests each endpoint served, how many failed, and how long they
-  took
-- two or more instances of `OrderInventory` sharing the load, with the
-  queue group spreading requests across them and no coordinator
-  involved
+- Сервис `OrderInventory` версии `1.0.0`, отвечающий на `orders.inventory.check` через именованную конечную точку в группе очереди по умолчанию `"q"`.
+- Второй сервис `ShippingQuote`, показывающий, как один процесс может обслуживать несколько конечных точек и объединять их общим префиксом субъектов.
+- Возможность обнаруживать оба сервиса через субъекты `$SRV`: узнавать, какие сервисы присутствуют, какие конечные точки они предоставляют и какова их текущая статистика.
+- Статистика каждой конечной точки, доступная в любой момент: число обработанных запросов, число ошибок и время обработки.
+- Два или более экземпляра `OrderInventory`, между которыми группа очереди распределяет запросы без координатора.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You've read the [Core NATS deep dive](/learn/core-nats), or you're
-otherwise comfortable with [request-reply](/learn/core-nats/request-reply)
-and [queue groups](/learn/core-nats/queue-groups). This chapter doesn't
-re-teach those mechanisms. It builds directly on top of them: a service
-is a request-reply responder, and its default load balancing is a queue
-group. When something in this chapter is really one of those underlying
-mechanisms, the page names it and links back rather than explaining it
-again.
+Вы прочитали [подробную главу о Core NATS](/learn/core-nats) либо уже знакомы с [запросами и ответами](/learn/core-nats/request-reply) и [группами очередей](/learn/core-nats/queue-groups). Эта глава не объясняет эти механизмы заново, а непосредственно опирается на них: сервис — обработчик запросов и ответов, а балансировка нагрузки по умолчанию обеспечивается группой очереди. Если речь идёт об одном из этих базовых механизмов, страница называет его и даёт ссылку на объяснение.
 
-You don't need to know anything about the micro framework itself. We
-start from "what does the framework add to a plain responder" and grow
-from there.
+Знание самого фреймворка micro не требуется. Начнём с того, что он добавляет к обычному обработчику, и будем двигаться дальше.
 
-A service stores nothing; it answers a request and retains no record of
-it. That's the at-most-once nature of request-reply. When you need the work to
-survive a restart or be retried, that's a job for the persistence layer,
-covered in the [JetStream deep dive](/learn/jetstream). We name that
-boundary as it comes up.
+Сервис ничего не хранит: отвечает на запрос и не оставляет о нём записи. Такова доставка не более одного раза при обмене запросами и ответами. Если работа должна пережить перезапуск или повторяться при сбое, нужен слой долговременного хранения из [подробной главы о JetStream](/learn/jetstream). По ходу главы мы будем обозначать эту границу.
 
-## How to read it
+## Как читать главу {#how-to-read-it}
 
-Each page introduces at most two new concepts and carries the same Acme
-ORDERS session forward. You keep the `OrderInventory` service running and
-add an endpoint, a second service, a discovery query, a stats query, and
-a second instance as the chapter progresses. You can keep one terminal
-open the whole way through.
+Каждая страница вводит не более двух новых понятий и продолжает тот же сеанс Acme ORDERS. Вы оставляете сервис `OrderInventory` работающим и по ходу главы добавляете конечную точку, второй сервис, запрос обнаружения, запрос статистики и второй экземпляр. Один терминал можно держать открытым на протяжении всей главы.
 
-The framework exposes many configuration fields: every endpoint option,
-every metadata map, the full discovery wire schema. Where a feature has a
-long list, the page covers only the behavior you need and links to
-[Reference](/reference/) for the exhaustive set.
+Фреймворк предоставляет множество полей конфигурации: все параметры конечных точек, наборы метаданных, полный сетевой формат обнаружения. Если у возможности длинный список параметров, страница объясняет только необходимое поведение и направляет в [справочник](/reference/) за полным перечнем.
 
-## Map
+## Содержание {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Your first service](./your-first-service.md) | Create `OrderInventory` with one endpoint, and the handler contract |
-| [Endpoints and groups](./endpoints-and-groups.md) | Host multiple endpoints in one service and group them under a subject prefix |
-| [Discovery](./discovery.md) | The three `$SRV` verbs (PING, INFO, STATS) and why discovery is broadcast |
-| [Observability](./observability.md) | Read per-endpoint stats and signal a service error |
-| [Scaling](./scaling.md) | Run N instances and let the queue group balance the load |
-| [Where to go next](./where-next.md) | A map of what's beyond this chapter |
+| [Первый сервис](./your-first-service.md) | Создание `OrderInventory` с одной конечной точкой и контракт обработчика |
+| [Конечные точки и группы](./endpoints-and-groups.md) | Несколько конечных точек в одном сервисе и их объединение префиксом субъектов |
+| [Обнаружение](./discovery.md) | Три команды `$SRV` (PING, INFO, STATS) и почему обнаружение широковещательное |
+| [Наблюдаемость](./observability.md) | Чтение статистики конечных точек и возврат ошибки сервиса |
+| [Масштабирование](./scaling.md) | Запуск N экземпляров и балансировка нагрузки группой очереди |
+| [Куда двигаться дальше](./where-next.md) | Возможности за пределами этой главы |
 
-## Prerequisites
+## Предварительные требования {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- A single local `nats-server`. The Services framework needs nothing
-  special enabled. It runs on ordinary request-reply, so a plain
-  `nats-server` is enough. Topology is a separate concern, covered in the
-  [Topologies deep dive](/learn/topologies).
-- The `nats` CLI installed and pointed at your server. The CLI can
-  request, list, and inspect services directly, and the examples use it
-  to drive and observe a running service. Building the service itself
-  (creating it, adding endpoints, writing handlers) is a client-library
-  task, so reach for your client library (JavaScript, Go, Python, Java,
-  Rust, or C#) when you build one for real.
-- Comfort with [request-reply](/learn/core-nats/request-reply) and
-  [queue groups](/learn/core-nats/queue-groups). The framework assumes
-  both.
+- Один локальный `nats-server`. Фреймворк сервисов не требует специальных настроек: он использует обычные запросы и ответы, поэтому достаточно стандартного `nats-server`. Топология рассматривается отдельно в [подробной главе о топологиях](/learn/topologies).
+- Установленный CLI `nats`, подключённый к вашему серверу. CLI позволяет напрямую отправлять запросы сервисам, получать их список и просматривать сведения; в примерах он используется для управления работающим сервисом и наблюдения за ним. Создание самого сервиса, добавление конечных точек и написание обработчиков выполняются через клиентскую библиотеку. При разработке используйте библиотеку для JavaScript, Go, Python, Java, Rust или C#.
+- Знакомство с [запросами и ответами](/learn/core-nats/request-reply) и [группами очередей](/learn/core-nats/queue-groups). Фреймворк опирается на оба механизма.
 
-Open a terminal, start a `nats-server`, and continue to the next page.
+Откройте терминал, запустите `nats-server` и переходите к следующей странице.
 
-## See also
+## См. также {#see-also}
 
-- [Core NATS → Request-reply](/learn/core-nats/request-reply) — the
-  mechanism every service is built on
-- [Core NATS → Queue groups](/learn/core-nats/queue-groups) — the load
-  balancing a service gets for free
-- [Concepts → What is NATS](/concepts/what-is-nats) — the five-minute
-  overview of the whole system
+- [Core NATS → Запросы и ответы](/learn/core-nats/request-reply) — механизм, на котором построен каждый сервис.
+- [Core NATS → Группы очередей](/learn/core-nats/queue-groups) — балансировка нагрузки, которую сервис получает автоматически.
+- [Концепции → Что такое NATS](/concepts/what-is-nats) — пятиминутный обзор всей системы.

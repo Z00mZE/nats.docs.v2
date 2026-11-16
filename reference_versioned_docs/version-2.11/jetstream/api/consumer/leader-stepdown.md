@@ -1,21 +1,21 @@
-# Leader Stepdown
+# Сложение полномочий лидера {#leader-stepdown}
 
-Initiates leader stepdown for a consumer.
+Запуск сложения полномочий лидера потребителя.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerLeaderStepdownRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/consumer_leader_stepdown_request.json';
 import consumerLeaderStepdownResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/consumer_leader_stepdown_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.LEADER.STEPDOWN.{stream}.{consumer}`
 
-Where `{stream}` is the stream name and `{consumer}` is the consumer name.
+Где `{stream}` — имя потока, а `{consumer}` — имя потребителя.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={consumerLeaderStepdownRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={consumerLeaderStepdownResponse} />

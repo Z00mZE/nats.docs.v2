@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -290,15 +291,15 @@ function TlsFirstHandshakeAnimatedInner({
                     flexWrap: "wrap",
                 }}
             >
-                {STAGE_ORDER.map((s, i) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s, i) => (
                     <button
                         key={s}
                         onClick={() => handleStep(i)}
                         style={buttonStyle(stage === s)}
                     >
-                        {STEP_LABELS[s]}
+                        {localizeDiagramContent(STEP_LABELS[s])}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -312,7 +313,7 @@ function TlsFirstHandshakeAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -333,22 +334,22 @@ function TlsFirstHandshakeAnimatedInner({
                 </ReactFlow>
 
                 {/* Lane tags */}
-                <div style={{ ...laneTagStyle, top: "10px" }}>DEFAULT</div>
+                <div style={{ ...laneTagStyle, top: "10px" }}>ПО УМОЛЧАНИЮ</div>
                 <div style={{ ...laneTagStyle, top: "52%" }}>
                     HANDSHAKE_FIRST: TRUE
                 </div>
 
                 {/* Verdict badges — only during the compare stage */}
-                {isCompare && (
+                {localizeDiagramContent(isCompare && (
                     <>
                         <div style={{ ...badgeStyle("red"), top: "12px" }}>
-                            INFO crossed in plaintext
+                            INFO передано открытым текстом
                         </div>
                         <div style={{ ...badgeStyle("green"), bottom: "12px" }}>
-                            no plaintext byte ever
+                            ни одного открытого байта
                         </div>
                     </>
-                )}
+                ))}
             </div>
 
             {/* Caption */}
@@ -361,9 +362,9 @@ function TlsFirstHandshakeAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageIndex + 1}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageIndex + 1)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

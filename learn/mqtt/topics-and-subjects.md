@@ -1,178 +1,116 @@
 ---
 id: topics-and-subjects
-title: "Topics and subjects"
+title: "Темы MQTT и NATS"
 sidebar_position: 3
-description: How the server converts MQTT topics into NATS subjects, what wildcards become, and which characters have no valid conversion
+description: "Как сервер преобразует темы MQTT в темы NATS, что происходит с подстановочными знаками и какие символы нельзя преобразовать"
 ---
 
-# Topics and subjects
+# Темы MQTT и NATS {#topics-and-subjects}
 
-On the last page `sensors/warehouse/cold-1/temp` arrived as
-`sensors.warehouse.cold-1.temp`. That conversion was easy to guess: each
-`/` became a `.`.
+На предыдущей странице `sensors/warehouse/cold-1/temp` превратилась в `sensors.warehouse.cold-1.temp`. Это преобразование легко угадать: каждый `/` заменяется на `.`.
 
-Real device fleets aren't that tidy. Topics start with a slash, end with
-one, contain empty levels, or hold a `.` that means nothing special in
-MQTT but separates levels in NATS. This page covers the whole rule set,
-so you can predict the subject for any topic your devices publish and
-write permissions and subscriptions against it.
+В реальном парке устройств темы устроены сложнее. Они начинаются или заканчиваются косой чертой, содержат пустые уровни или символ `.`, который в MQTT не имеет особого значения, а в NATS разделяет уровни. Здесь разобраны все правила, чтобы вы могли определить тему NATS для любой публикации устройства и правильно настроить права и подписки.
 
-Both systems are hierarchical, and that's why the conversion works at
-all. MQTT separates levels with `/`; NATS separates them with `.`. The
-server rewrites the separator and escapes anything that would produce an
-invalid subject.
+Обе системы используют иерархию — именно поэтому преобразование возможно. MQTT разделяет уровни символом `/`, а NATS — символом `.`. Сервер заменяет разделитель и экранирует всё, что иначе привело бы к недопустимой теме NATS.
 
-## The conversion rules
+## Правила преобразования {#the-conversion-rules}
 
-A plain topic converts one separator at a time. The awkward cases are
-the ones where a `/` sits at the start, at the end, or next to another
-`/` — a bare translation would produce `.foo.bar.`, which isn't a valid
-NATS subject. The server escapes those positions instead.
+В простой теме разделители заменяются по одному. Особые случаи возникают, когда `/` находится в начале, в конце или рядом с другим `/`: прямая замена дала бы `.foo.bar.`, а такая тема NATS недопустима. В этих позициях сервер применяет экранирование.
 
-| MQTT topic | NATS subject | Rule |
+| Тема MQTT | Тема NATS | Правило |
 |---|---|---|
-| `sensors/cold-1/temp` | `sensors.cold-1.temp` | `/` between two levels becomes `.` |
-| `/sensors/temp` | `/.sensors.temp` | a leading `/` becomes `/.` |
-| `sensors/temp/` | `sensors.temp./` | a trailing `/` becomes `./` |
-| `sensors//temp` | `sensors./.temp` | a `/` next to another becomes `./` |
-| `//sensors/temp` | `/./.sensors.temp` | both rules apply in turn |
-| `cold-1.temp` | `cold-1//temp` | a `.` in the topic becomes `//` |
+| `sensors/cold-1/temp` | `sensors.cold-1.temp` | `/` между двумя уровнями превращается в `.` |
+| `/sensors/temp` | `/.sensors.temp` | начальный `/` превращается в `/.` |
+| `sensors/temp/` | `sensors.temp./` | конечный `/` превращается в `./` |
+| `sensors//temp` | `sensors./.temp` | `/` рядом с другим `/` превращается в `./` |
+| `//sensors/temp` | `/./.sensors.temp` | оба правила применяются последовательно |
+| `cold-1.temp` | `cold-1//temp` | `.` в теме превращается в `//` |
 
-The last row is the one to watch. A `.` is an ordinary
-character in an MQTT topic and the level separator in NATS, so it can't
-pass through unchanged. The server encodes it as `//`, which is why the
-first five rows escape `/` the way they do: the two characters swap
-roles, and the escaping keeps the mapping reversible.
+Обратите внимание на последнюю строку. В теме MQTT `.` — обычный символ, а в NATS — разделитель уровней, поэтому оставить его без изменения нельзя. Сервер кодирует его как `//`. Этим объясняется и экранирование `/` в первых пяти строках: два символа меняются ролями, а экранирование сохраняет обратимость преобразования.
 
-Converting `.` was added in NATS Server 2.10. Before that a `.` in a
-topic was rejected the way whitespace still is.
+Преобразование `.` появилось в NATS Server 2.10. Раньше темы с `.` отклонялись, как сейчас отклоняются темы с пробельными символами.
 
-## Characters with no conversion
+## Символы, которые нельзя преобразовать {#characters-with-no-conversion}
 
-Some characters have no valid encoding, and the server refuses the topic
-rather than converting it.
+Для некоторых символов нет допустимого кодирования: сервер отклоняет тему вместо её преобразования.
 
-The space is the one to design around, and it has never been accepted
-on any version. A subject containing a space would break the NATS wire
-protocol when forwarded to other connection types, because the control
-line could be split. The full set the server refuses is the space, tab,
-newline, carriage return, form feed, and the DEL character.
+Прежде всего учитывайте пробел: он не поддерживался ни в одной версии. Тема с пробелом нарушила бы сетевой протокол NATS при пересылке в соединения других типов, поскольку управляющая строка оказалась бы разделена. Полный список запрещённых символов: пробел, табуляция, перевод строки, возврат каретки, перевод страницы и DEL.
 
-Other control characters pass through unchanged, but there's no good
-reason to use them. Treat anything that isn't printable as unusable in
-topics and keep it out at the source.
+Остальные управляющие символы проходят без изменений, но использовать их незачем. Считайте все непечатные символы недопустимыми в темах и исключайте их ещё при формировании имени.
 
-The refusal shows up differently depending on what the client was doing:
+Результат отказа зависит от действия клиента:
 
-- **Publishing** to a topic with one of these characters closes the
-  connection.
-- **Subscribing** to a filter with one of them returns a failure code in
-  the SUBACK packet, so the subscription isn't created and the
-  connection survives.
+- **Публикация** в тему с одним из этих символов закрывает соединение.
+- **Подписка** на фильтр с таким символом возвращает код ошибки в пакете SUBACK: подписка не создаётся, но соединение остаётся открытым.
 
-This most often comes up in device firmware that builds topics from
-free-text fields, such as a location name. Strip whitespace before it
-reaches the topic.
+Обычно это случается в прошивках, которые строят темы из произвольного текста, например названия местоположения. Удаляйте пробельные символы до включения текста в тему.
 
-## Wildcards
+## Подстановочные знаки {#wildcards}
 
-MQTT and NATS both have single-level and multi-level wildcards, and they
-map onto each other directly. As in NATS, MQTT allows them only in
-subscriptions, never in a published topic — publish to a topic
-containing `+` or `#` and the server rejects it.
+И MQTT, и NATS поддерживают подстановочные знаки для одного и нескольких уровней; они непосредственно соответствуют друг другу. Как и NATS, MQTT разрешает их только в подписках. Если опубликовать сообщение в тему с `+` или `#`, сервер отклонит публикацию.
 
-| MQTT wildcard | NATS wildcard | Matches |
+| Подстановочный знак MQTT | Подстановочный знак NATS | Соответствие |
 |---|---|---|
-| `+` | `*` | exactly one level |
-| `#` | `>` | one or more levels |
+| `+` | `*` | ровно один уровень |
+| `#` | `>` | один или несколько уровней |
 
-So a device subscribing to `sensors/+/temp` gets the NATS subscription
-`sensors.*.temp`, and it receives `sensors/cold-1/temp` and
-`sensors/cold-2/temp` but not `sensors/warehouse/cold-1/temp`.
+Таким образом, устройство, подписанное на `sensors/+/temp`, получает подписку NATS на `sensors.*.temp`. Она принимает `sensors/cold-1/temp` и `sensors/cold-2/temp`, но не `sensors/warehouse/cold-1/temp`.
 
-### Why `#` sometimes creates two subscriptions
+### Почему `#` иногда создаёт две подписки {#why--sometimes-creates-two-subscriptions}
 
-`#` and `>` are almost the same, and the difference costs an extra
-subscription.
+`#` и `>` почти одинаковы, но из-за различия требуется дополнительная подписка.
 
-In MQTT, `sensors/#` matches `sensors/cold-1`, `sensors/cold-1/temp`,
-and also the parent level `sensors` on its own. In NATS, `sensors.>`
-requires at least one token after `sensors`, so it never matches
-`sensors` by itself.
+В MQTT фильтру `sensors/#` соответствуют `sensors/cold-1`, `sensors/cold-1/temp`, а также сам родительский уровень `sensors`. В NATS после `sensors` в `sensors.>` должен быть хотя бы один токен, поэтому сама тема `sensors` этому фильтру не соответствует.
 
-To make MQTT behave as specified, the server creates two NATS
-subscriptions for that filter: one on `sensors.>` and one on `sensors`.
-Together they cover exactly what MQTT's `#` covers.
+Чтобы выполнить требования MQTT, сервер создаёт для этого фильтра две подписки NATS: на `sensors.>` и на `sensors`. Вместе они охватывают ровно то, что охватывает `#` в MQTT.
 
-A filter of just `#` needs no such help. It converts to `>`, which
-already matches everything, so one subscription is enough.
+Для фильтра из одного `#` дополнительная подписка не нужна. Он превращается в `>`, который уже соответствует всему.
 
-This is worth remembering because the pair counts twice against limits.
-A subscription ending in `#` consumes twice the `max_ack_pending`
-budget, which the [next page](/learn/mqtt/qos-sessions-and-retained) covers.
+Помните об этом при расчёте ограничений: такая пара учитывается дважды. Подписка, заканчивающаяся на `#`, расходует вдвое больше лимита `max_ack_pending`, рассмотренного на [следующей странице](/learn/mqtt/qos-sessions-and-retained).
 
-## NATS wildcards inside MQTT topics
+## Подстановочные знаки NATS в темах MQTT {#nats-wildcards-inside-mqtt-topics}
 
-MQTT has no special meaning for `*` or `>`. They're ordinary characters
-in a topic, and the server doesn't escape them during conversion. If one
-ends up as a complete token in the resulting subject, NATS reads it as a
-wildcard.
+В MQTT символы `*` и `>` не имеют особого значения. Это обычные символы темы, и при преобразовании сервер их не экранирует. Если такой символ становится отдельным токеном итоговой темы, NATS воспринимает его как подстановочный знак.
 
-| MQTT topic | NATS subject | How NATS reads it |
+| Тема MQTT | Тема NATS | Как её понимает NATS |
 |---|---|---|
-| `fleet*/telemetry` | `fleet*.telemetry` | literal — `*` is only part of the token |
-| `fleet>/telemetry` | `fleet>.telemetry` | literal — same reason |
-| `fleet/*/telemetry` | `fleet.*.telemetry` | wildcard — `*` is the whole token |
-| `fleet/>` | `fleet.>` | wildcard — `>` is the whole token |
+| `fleet*/telemetry` | `fleet*.telemetry` | буквально: `*` — лишь часть токена |
+| `fleet>/telemetry` | `fleet>.telemetry` | буквально по той же причине |
+| `fleet/*/telemetry` | `fleet.*.telemetry` | подстановочный знак: `*` занимает весь токен |
+| `fleet/>` | `fleet.>` | подстановочный знак: `>` занимает весь токен |
 
-The server doesn't reject these. The publish-time wildcard check covers
-only MQTT's own wildcards, `+` and `#`; `*` and `>` are ordinary
-characters as far as MQTT is concerned, so they pass straight through.
+Сервер не отклоняет такие темы. Проверка при публикации учитывает только собственные подстановочные знаки MQTT — `+` и `#`. Для MQTT `*` и `>` являются обычными символами, поэтому проходят без изменений.
 
-That leaves two different problems depending on direction:
+Это создаёт две разные проблемы в зависимости от направления:
 
-- **Subscribing** to `fleet/*/telemetry` creates a real NATS wildcard
-  subscription on `fleet.*.telemetry`. The device asked for one literal
-  topic and receives every `fleet/<anything>/telemetry` instead.
-- **Publishing** to `fleet/*/telemetry` succeeds and lands on the subject
-  `fleet.*.telemetry`, which is not a subject any device is reading
-  literally.
+- **Подписка** на `fleet/*/telemetry` создаёт настоящую подписку NATS с подстановочным знаком: `fleet.*.telemetry`. Устройство запрашивало одну буквальную тему, а получает все темы вида `fleet/<anything>/telemetry`.
+- **Публикация** в `fleet/*/telemetry` проходит успешно и попадает в тему `fleet.*.telemetry`, которую ни одно устройство не читает как буквальное имя.
 
-Keep `*` and `>` out of topic names unless you mean the NATS behavior.
+Не используйте `*` и `>` в именах тем, если вам не требуется именно поведение NATS.
 
-## Permissions apply to the subject
+## Права проверяются для темы NATS {#permissions-apply-to-the-subject}
 
-Authorization runs on the converted subject, not the MQTT topic. The
-server converts first, then checks permissions.
+Авторизация выполняется для преобразованной темы NATS. Сервер сначала преобразует тему MQTT, затем проверяет права.
 
-Write permissions for MQTT users as NATS subjects, with NATS wildcards.
-A device publishing `sensors/warehouse/cold-1/temp` needs publish
-permission on `sensors.warehouse.cold-1.temp`, and `sensors.>` covers
-the whole fleet. A rule written `sensors/#` never matches anything.
+Задавайте права пользователей MQTT с помощью тем и подстановочных знаков NATS. Устройству, публикующему в `sensors/warehouse/cold-1/temp`, нужно разрешение на публикацию в `sensors.warehouse.cold-1.temp`; `sensors.>` охватывает весь парк. Правило `sensors/#` никогда ни с чем не совпадёт.
 
-Subscribe permissions need one more step, because of the two-subscription
-rule above. A device subscribing to `sensors/#` makes the server create
-subscriptions on both `sensors.>` and `sensors`, and permissions are
-checked for each. Allow only `sensors.>` and the second one is denied —
-which fails the *whole* filter, not just the parent level. Grant both:
+Права на подписку требуют ещё одного шага из-за описанного выше правила двух подписок. Когда устройство подписывается на `sensors/#`, сервер создаёт подписки и на `sensors.>`, и на `sensors`, проверяя права для каждой. Если разрешить только `sensors.>`, вторая будет запрещена, а это отклонит *весь* фильтр, а не только родительский уровень. Разрешите обе:
 
 ```conf
 subscribe: ["sensors.>", "sensors"]
 ```
 
-The full permission setup for MQTT users is on
-[Auth and clustering](/learn/mqtt/auth-and-clustering).
+Полная настройка прав пользователей MQTT приведена на странице [Аутентификация и кластеризация](/learn/mqtt/auth-and-clustering).
 
-## See a conversion for yourself
+## Посмотрите на преобразование в действии {#see-a-conversion-for-yourself}
 
-The quickest way to check any topic is to subscribe to everything on the
-NATS side and watch what arrives. In one terminal:
+Самый быстрый способ проверить любую тему — подписаться на всё со стороны NATS и посмотреть, что приходит. В одном терминале:
 
 ```bash
 nats sub ">"
 ```
 
-Publish a few awkward topics from another:
+Из другого опубликуйте сообщения в несколько тем с особенностями:
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "/sensors/temp" -m "4.2"
@@ -180,7 +118,7 @@ mosquitto_pub -h 127.0.0.1 -p 1883 -t "sensors//temp" -m "4.3"
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "cold-1.temp" -m "4.4"
 ```
 
-The subjects show the escaping:
+В полученных темах видно экранирование:
 
 ```
 [#28] Received on "/.sensors.temp"
@@ -199,70 +137,36 @@ Nmqtt-Pub: 0
 4.4
 ```
 
-The full wildcard also catches the server's own traffic — the JetStream
-API calls it makes to manage MQTT state, on `$JS.>` and `$MQTT.>`
-subjects — which is why the message numbers jump. The device messages
-are the ones carrying an `Nmqtt-Pub` header.
+Подписка на всё также перехватывает собственный трафик сервера: вызовы API JetStream для управления состоянием MQTT в темах `$JS.>` и `$MQTT.>`. Поэтому номера сообщений идут с пропусками. Сообщения устройств можно узнать по заголовку `Nmqtt-Pub`.
 
-Keep this handy when you're writing permissions for a fleet whose topics
-you don't control. Publish one message and read the subject off the
-subscriber rather than working it out by hand.
+Используйте этот приём при настройке прав для парка, чьи темы вы не контролируете. Опубликуйте сообщение и прочитайте имя темы у подписчика вместо ручного вычисления.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-**Writing permissions as MQTT topics.** Permissions are checked against
-the converted subject, so a rule written with `/` separators or MQTT
-wildcards never matches. `sensors/#` is not a NATS subject; for
-publishing, the rule you want is `sensors.>`. This fails late: the
-device connects fine, then its publishes are rejected.
+**Права в формате тем MQTT.** Проверяются преобразованные темы NATS, поэтому правила с разделителями `/` или подстановочными знаками MQTT никогда не совпадают. `sensors/#` не является темой NATS; для публикации нужно правило `sensors.>`. Ошибка проявляется поздно: устройство успешно подключается, но его публикации отклоняются.
 
-**Granting only `sensors.>` for a `#` subscription.** A device
-subscribing to `sensors/#` needs both `sensors.>` and `sensors`, because
-the server creates a subscription for each. Grant only the first and the
-second is denied, at which point the server refuses the entire filter:
-it returns `0x80` in the SUBACK and tears down the `sensors.>`
-subscription it had already created. The device receives nothing on
-`sensors/#` at all, not merely nothing from the parent level.
+**Разрешение только `sensors.>` для подписки с `#`.** Устройству с подпиской на `sensors/#` нужны и `sensors.>`, и `sensors`, поскольку сервер создаёт отдельную подписку для каждой. Если разрешить лишь первую, вторая будет запрещена, и сервер отклонит весь фильтр: вернёт `0x80` в SUBACK и удалит уже созданную подписку на `sensors.>`. Устройство вообще ничего не получит по `sensors/#`, а не только сообщения родительского уровня.
 
-**Assuming a leading or trailing slash is cosmetic.** `sensors/temp` and
-`/sensors/temp` convert to different subjects (`sensors.temp` and
-`/.sensors.temp`), and neither matches a subscription written for the
-other. If some devices in a fleet emit a leading slash and others don't,
-you have two subject trees, not one. Normalize the topics on the device
-or account for both in your subscriptions.
+**Предположение, что начальная или конечная косая черта ни на что не влияет.** `sensors/temp` и `/sensors/temp` превращаются в разные темы (`sensors.temp` и `/.sensors.temp`); подписка на одну не охватывает другую. Если часть устройств добавляет начальную косую черту, а часть нет, у вас два дерева тем. Нормализуйте темы на устройствах либо учитывайте оба варианта в подписках.
 
-**Letting free text into a topic.** A topic built from a device name or
-location that contains a space is rejected: the publish closes the
-connection, and a subscription gets a failure code in its SUBACK.
-Sanitize anything interpolated into a topic.
+**Произвольный текст в теме.** Тема, составленная из имени устройства или местоположения с пробелом, отклоняется: публикация закрывает соединение, а подписка получает код ошибки в SUBACK. Проверяйте все значения, подставляемые в тему.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Nothing changed in your running setup. What you have now is the full
-mapping:
+Рабочая конфигурация не изменилась. Теперь вы знаете все правила преобразования:
 
-- `/` becomes `.`, with escaping at the start, at the end, and between
-  adjacent slashes
-- `.` becomes `//`
-- the space, tab, newline, carriage return, form feed, and DEL are
-  refused; the space on every version
-- `+` becomes `*`, `#` becomes `>`, and `#` below the top level costs two
-  subscriptions
-- permissions, subscriptions, and stream subjects are all written against
-  the converted subject
+- `/` превращается в `.`, с экранированием в начале, в конце и между соседними косыми чертами.
+- `.` превращается в `//`.
+- Пробел, табуляция, перевод строки, возврат каретки, перевод страницы и DEL запрещены; пробел запрещён во всех версиях.
+- `+` превращается в `*`, `#` — в `>`; `#` ниже корневого уровня требует двух подписок.
+- Права, подписки и темы потоков задаются для преобразованной темы NATS.
 
-## What's next
+## Что дальше {#whats-next}
 
-You can now predict which subject any topic lands on. The next question
-is what the server promises about delivering it.
-[QoS, sessions, and retained messages](/learn/mqtt/qos-sessions-and-retained)
-covers the delivery guarantees, what the server stores between
-connections, and why messages from the NATS side always arrive as QoS 0.
+Теперь вы можете определить, в какую тему NATS попадёт любая тема MQTT. Следующий вопрос — какие гарантии доставки даёт сервер. Страница [QoS, сессии и сохранённые сообщения](/learn/mqtt/qos-sessions-and-retained) объясняет гарантии доставки, состояние между подключениями и причины, по которым сообщения со стороны NATS всегда приходят с QoS 0.
 
-## See also
+## См. также {#see-also}
 
-- [Core NATS → Subjects and wildcards](/learn/core-nats/subjects-and-wildcards)
-  — the NATS subject rules these conversions target
-- [Security → Authorization](/learn/security/authorization) — how
-  publish and subscribe permissions are evaluated
-- [Reference → mqtt](/reference/config/mqtt/) — the `mqtt {}` block
+- [Core NATS → Темы и подстановочные знаки](/learn/core-nats/subjects-and-wildcards) — правила тем NATS, которым должен соответствовать результат преобразования.
+- [Безопасность → Авторизация](/learn/security/authorization) — проверка прав на публикацию и подписку.
+- [Справочник → mqtt](/reference/config/mqtt/) — блок `mqtt {}`.

@@ -1,36 +1,21 @@
 ---
 id: config-management
-title: "Config management"
+title: "Управление конфигурацией"
 sidebar_position: 4
-description: Split the cluster config into includes and reload it live with a SIGHUP — no downtime, no client reconnect
+description: "Разделение конфигурации на включаемые файлы и перечитывание через SIGHUP без простоя и переподключения клиентов"
 ---
 
-# Config management
+# Управление конфигурацией {#config-management}
 
-The `ORDERS` cluster is running on Kubernetes as the three pods
-`nats-0`, `nats-1`, `nats-2`. Now the inevitable happens: you need to
-change something. Raise an account limit, rotate a TLS certificate, add a
-user for a new service. One option is to restart the process. The better
-option is to **reload** it: apply the new config to the
-running server without dropping a connection.
+Кластер `ORDERS` работает в Kubernetes на `nats-0`, `nats-1`, `nats-2`. Неизбежно потребуется повысить ограничение учётной записи, заменить сертификат TLS или добавить пользователя сервиса. Вместо перезапуска можно **перечитать конфигурацию**: применить её к работающему серверу без разрыва соединений.
 
-Two mechanisms make live config change safe. First, an **include**
-splits one giant config file into small files you can own per account
-and per region. Second, **live reload** applies a changed file to the
-running server through a SIGHUP, after a dry-run validates it. Together
-they let you change `order-svc`'s limits or the cluster's certificates
-while `ORDERS` keeps flowing.
+Безопасное изменение обеспечивают два механизма. **Включаемые файлы** делят большую конфигурацию на части с отдельными владельцами для учётных записей и регионов. **Перечитывание без остановки** применяет проверенный файл через SIGHUP. Так ограничения `order-svc` и сертификаты кластера меняются, пока `ORDERS` продолжает работать.
 
-## Includes split the config
+## Включаемые файлы разделяют конфигурацию {#includes-split-the-config}
 
-A single `nats.conf` for a production cluster grows large. Put accounts,
-users, per-region routing, TLS paths, and JetStream limits all in one
-file, and it becomes hard to review and hard to hand to different owners.
+Общий `nats.conf` рабочего кластера быстро растёт. Учётные записи, пользователи, региональные маршруты, TLS и ограничения JetStream в одном файле усложняют проверку и разделение ответственности.
 
-An include pulls another file into the config at the point of the
-directive. The keyword is `include`, and the path is **relative to the
-directory of the config file that contains it**, not to the directory you
-launch the server from:
+Директива включения вставляет другой файл в указанное место. Ключевое слово — `include`, путь считается **от каталога содержащего директиву файла**, а не от рабочего каталога запуска сервера:
 
 ```conf
 # /etc/nats-config/nats.conf — the main config for nats-0..2
@@ -59,25 +44,11 @@ include "regions/us.conf"
 include "regions/eu.conf"
 ```
 
-A JetStream cluster won't boot without both `server_name` and `routes`, so
-the chart fills them in per pod; a dry-run that reports the file valid
-still can't start without them (see
-[Validate, then reload](#validate-then-reload)). The per-region files hold
-the routing each region owns, so a region's configuration can be reviewed
-and changed on its own without touching the main config or another
-region's file.
+Кластер JetStream не запустится без `server_name` и `routes`; чарт заполняет их отдельно для каждого пода. Пробная проверка может признать синтаксис корректным даже без возможности запуска (см. [Проверка перед перечитыванием](#validate-then-reload)). Региональные файлы хранят принадлежащие региону маршруты: их можно проверять и менять независимо от главного файла и других регионов.
 
-Because the path is relative to the config file's directory,
-`include "regions/us.conf"` resolves to `/etc/nats-config/regions/us.conf`.
-Launch the server from `/root` or from `/`, and it still resolves the same
-way. The [Pitfalls](#pitfalls) section shows what happens when you forget
-this.
+`include "regions/us.conf"` разрешается как `/etc/nats-config/regions/us.conf`. Запуск из `/root` или `/` ничего не меняет. Последствия неверного понимания этого правила разобраны в [типичных ошибках](#pitfalls).
 
-An account splits into its own file the same way. This cluster runs under
-the `ACME` operator, which keeps accounts as JWTs in a resolver — you edit
-those with `nats account edit` and push them live, not through a config
-include. A deployment that keeps accounts in the config instead wraps each
-one in an `accounts` block so the server parses it:
+Учётную запись можно вынести аналогично. Здесь оператор `ACME` хранит записи как JWT в resolver: они меняются через `nats account edit` и передаются серверу, а не включаются конфигурацией. Если записи хранятся в конфигурации, оберните каждую в блок `accounts`, чтобы сервер её разобрал:
 
 ```conf
 # /etc/nats-config/accounts/orders.conf — config-based accounts (no operator)
@@ -92,101 +63,56 @@ accounts {
 }
 ```
 
-The `$ORDER_SVC_PASS` reference is unquoted on purpose: an unquoted
-`$NAME` token resolves a config-defined variable and then an environment
-variable, and an unset one is a parse error the dry-run catches. Quoting
-it (`"$ORDER_SVC_PASS"`) would store the literal string `$ORDER_SVC_PASS`
-instead — which is why bcrypt hashes, full of `$`, are the values you do
-quote.
+`$ORDER_SVC_PASS` намеренно не заключён в кавычки. Токен `$NAME` без кавычек сначала ищет переменную конфигурации, затем окружения; отсутствие значения даёт ошибку разбора, обнаруживаемую пробной проверкой. `"$ORDER_SVC_PASS"` сохранило бы буквальную строку `$ORDER_SVC_PASS`. Поэтому хеши bcrypt, содержащие `$`, наоборот, нужно заключать в кавычки.
 
-## Reloadable versus non-reloadable keys
+## Перечитываемые и неперечитываемые параметры {#reloadable-versus-non-reloadable-keys}
 
-Not every key can change on a running server. Knowing which keys are
-reloadable determines whether a change is a zero-downtime reload or
-requires a restart.
+Не все настройки можно менять на работающем сервере. Это определяет, достаточно ли перечитывания или потребуется перезапуск.
 
-**Reloadable** keys take effect on a reload, in place, with no
-reconnect:
+**Перечитываемые** параметры применяются на месте без переподключения:
 
-- Account, user, and permission definitions: add `analytics-reader`,
-  tighten `order-svc`'s subjects.
-- Connection and message limits: `max_connections`, `max_payload`,
-  `max_control_line`. (Not `max_subscriptions` — a reload rejects a change
-  to it.)
-- Most JetStream account limits, and the `jetstream` enable flag itself
-  (a reload turns JetStream on or off).
-- TLS certificate and key paths: the server re-reads the files when it
-  reloads.
-- Cluster routes and logging settings. (Gateway routes are not
-  reloadable; a reload can only refresh their TLS material.)
+- Учётные записи, пользователи и права: добавление `analytics-reader`, сужение тем `order-svc`.
+- Ограничения соединений и сообщений: `max_connections`, `max_payload`, `max_control_line`. Изменение `max_subscriptions` перечитывание отклоняет.
+- Большинство ограничений учётных записей JetStream и сам флаг `jetstream`: перечитывание включает или отключает JetStream.
+- Пути сертификатов и ключей TLS: сервер заново читает файлы.
+- Маршруты кластера и журналирование. Маршруты шлюзов не перечитываются; для них можно только обновить TLS.
 
-**Non-reloadable** keys need a process restart, because they define the
-server's identity:
+**Неперечитываемые** параметры требуют перезапуска, поскольку определяют идентичность сервера:
 
-- `port` / `listen`: the address the server binds.
-- The cluster's listen host and port: the address peers route to.
-- The JetStream `store_dir`: the server won't move its storage directory
-  on a reload.
+- `port` / `listen`: адрес прослушивания сервера.
+- Адрес и порт слушателя кластера.
+- `store_dir` JetStream: сервер не переносит хранилище при перечитывании.
 
-A reload can change *policy* (who connects, what they
-may do, how much they may store), but it can't change *identity* (the
-addresses the server and its cluster bind, or where JetStream keeps its
-data). Changing one of those requires a
-[rolling upgrade](/learn/deployment/rolling-upgrades) rather than a
-reload.
+Перечитывание меняет *политику*: кто подключается, что делает и сколько хранит. Оно не меняет *идентичность*: адреса прослушивания и расположение данных. Для них нужен [последовательный перезапуск](/learn/deployment/rolling-upgrades).
 
-The full set of reloadable keys is in
-[Reference → Configuration](/reference/config); here we cover only the
-ones this deployment reloads.
+Полный набор перечитываемых параметров находится в [Справочнике → Конфигурация](/reference/config). Здесь рассмотрены необходимые нашему кластеру.
 
-## Validate, then reload
+## Проверка перед перечитыванием {#validate-then-reload}
 
-A reload that fails is a problem only if it leaves the server in a broken
-state. NATS validates the new config first, and on a
-parse or validation failure the old config stays active. The reload
-is atomic: either the new config applies cleanly, or nothing changes.
+NATS сначала проверяет новую конфигурацию. При ошибке разбора или проверки старая остаётся активной. Операция атомарна: либо новая конфигурация применяется целиком, либо ничего не меняется.
 
-You still validate before you signal, because catching a typo at your
-terminal is preferable to catching it in the server log. The dry-run parses a config
-file and exits without starting a server:
+Тем не менее проверяйте файл до отправки сигнала: лучше увидеть опечатку в терминале, чем в журнале сервера. Пробный запуск разбирает файл и завершается, не запуская сервер:
 
 ```bash
 nats-server -c /etc/nats/nats.conf -t
 ```
 
-A clean config prints `nats-server: configuration file ... is valid` and
-exits zero. A broken one prints the parse error and the offending line,
-and exits non-zero, so you can gate the reload on it in a script. The
-dry-run checks syntax and validation, not whether the server can start: a
-JetStream cluster missing `server_name` or `routes` passes `-t` yet still
-fails to boot, which is why the chart supplies those keys.
+Корректный файл даёт `nats-server: configuration file ... is valid` и код 0. Некорректный — сообщение с проблемной строкой и ненулевой код, по которому можно разрешать дальнейший шаг в скрипте. Проверяется синтаксис и допустимость, но не фактическая возможность запуска: конфигурация кластера JetStream без `server_name` или `routes` проходит `-t`, но не стартует. Эти поля добавляет чарт.
 
-With the config validated, trigger the reload. The mechanism is a
-**SIGHUP** to the `nats-server` process. The systemd unit wires
-`systemctl reload` to send exactly that signal:
+После проверки отправьте **SIGHUP** процессу `nats-server`. Модуль systemd связывает с этим сигналом `systemctl reload`:
 
 ```bash
 # Validate the edited config, then reload only if it is valid.
 nats-server -c /etc/nats/nats.conf -t && systemctl reload nats-server
 ```
 
-The server re-reads its config, applies the reloadable changes in place,
-and logs `Reloaded server configuration`. Open connections, including
-`order-svc`'s, stay up the whole time, and no client reconnects. That is
-the advantage of reload over restart.
+Сервер перечитывает файл, применяет допустимые изменения и пишет `Reloaded server configuration`. Открытые соединения, включая `order-svc`, продолжают работать без переподключения.
 
-## The reloader sidecar on Kubernetes
+## Вспомогательный контейнер перечитывания в Kubernetes {#the-reloader-sidecar-on-kubernetes}
 
-On Kubernetes there's no shell to run `systemctl reload` in. The config
-arrives as a ConfigMap mounted into the pod, and editing the ConfigMap
-updates the file on disk, but nothing tells `nats-server` to re-read it.
+В Kubernetes нет `systemctl reload`. Конфигурация приходит из ConfigMap, смонтированного в под. Правка обновляет файл на диске, но сама не сообщает `nats-server`, что его нужно прочитать снова.
 
-That's the job of the **config reloader sidecar**. It runs alongside
-`nats-server` in each of the `nats-0..2` pods, watches the mounted config
-file with inotify, and on any change reads the server PID from
-`/var/run/nats/nats.pid` and sends it a SIGHUP. The NATS Helm chart
-includes the reloader by default, so a ConfigMap edit becomes a live
-reload across all three pods automatically:
+Это делает **вспомогательный контейнер перечитывания**. Он работает рядом с `nats-server` в каждом `nats-0..2`, следит за файлом через inotify, при изменении читает PID из `/var/run/nats/nats.pid` и отправляет SIGHUP. Чарт включает его по умолчанию, поэтому правка ConfigMap автоматически применяется на всех трёх подах:
 
 ```yaml
 # values.yaml — the reloader ships enabled in the Helm chart
@@ -194,25 +120,15 @@ reloader:
   enabled: true
 ```
 
-The animation below traces the whole path: a config file change, the
-reloader detecting it and sending the SIGHUP, the server reloading in
-place, and the `order-svc` connection staying open while the peers pick
-up the new server info.
+Анимация показывает весь путь: изменение файла, обнаружение контейнером, SIGHUP, применение на месте. Соединение `order-svc` остаётся открытым, пока соседи получают новые сведения о сервере.
 
 <div class="nats-flow" data-scenario="configReloadAnimated" data-width="600" data-height="350"></div>
 
-The reloader retries if the server is briefly unreachable (30 retries by
-default, four seconds apart), so a reload issued during a momentary
-blip still lands. Where a node's filesystem doesn't deliver inotify
-events, add the reloader's `--force-poll` flag through `reloader.merge`,
-which replaces the container's args wholesale.
+При краткой недоступности сервера контейнер повторяет попытки: по умолчанию 30 раз с интервалом четыре секунды. Если файловая система не выдаёт inotify-события, добавьте `--force-poll` через `reloader.merge`; при этом список аргументов контейнера заменяется целиком.
 
-## Secrets as mounted files
+## Секреты как смонтированные файлы {#secrets-as-mounted-files}
 
-Credentials and TLS material never belong inline in the config. They're
-mounted as **files**: a Kubernetes Secret projected into the pod, or a
-creds file on disk for a systemd deployment. The config references the
-path; the secret lives outside the ConfigMap.
+Учётным данным и материалам TLS не место в тексте конфигурации. Их подключают **файлами**: Kubernetes Secret, спроецированный в под, или файл учётных данных на диске для systemd. Конфигурация содержит путь, сам секрет находится вне ConfigMap.
 
 ```conf
 # A TLS path the config points at — the file itself is a mounted secret.
@@ -223,60 +139,23 @@ tls {
 }
 ```
 
-This split matters for reload. Rotating a certificate means replacing the
-file behind `cert_file` and `key_file`, then reloading; the server
-re-reads the certificates when it reloads, and new handshakes present the
-new certificate while open connections keep their session. The config text
-never changes; only the file it points at does. The auth model behind these
-credentials (operators, accounts, JWTs) is taught in
-[Security](/learn/security); here you only mount and reference them.
+Это важно для замены сертификатов. Замените файлы по `cert_file` и `key_file`, затем перечитайте конфигурацию. Новые соединения получат новый сертификат, уже открытые сохранят сессию. Текст конфигурации может не меняться — только указанный файл. Модель операторов, учётных записей и JWT объясняется в [Безопасности](/learn/security); здесь мы подключаем файлы и задаём пути.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A few mistakes can turn a routine reload into an outage. Each is scoped to this
-page's two ideas: includes and live reload.
+Несколько ошибок превращают обычное перечитывание в простой. Они относятся к включаемым файлам и применению без остановки.
 
-**Include paths are relative to the config file, not your shell.** The
-`include "regions/us.conf"` directive resolves against the directory of
-the file that contains it, so a server launched from `/root` and one
-launched from `/etc/nats-config` both find
-`/etc/nats-config/regions/us.conf`. The trap is assuming the path is
-relative to your current directory, moving the main config, and watching
-the includes fail to resolve. Use absolute paths when in doubt, and
-validate before you trust it.
+**Пути include считаются от конфигурации, а не оболочки.** `include "regions/us.conf"` разрешается по каталогу содержащего файла. Запуски из `/root` и `/etc/nats-config` находят один `/etc/nats-config/regions/us.conf`. Ловушка — перенести главный файл, ожидая разрешения от рабочего каталога. При сомнениях используйте абсолютные пути и проверяйте конфигурацию.
 
-**A reload during a rebalance can interrupt a leadership transfer.** If
-you SIGHUP a node while JetStream is moving `ORDERS` replicas or handing
-off Raft leadership, the reload competes with that work. Don't reload
-mid-rebalance. Wait for the cluster to settle, then apply the change.
-That's the same graceful window the [rolling
-upgrades](/learn/deployment/rolling-upgrades) page builds its procedure
-around.
+**Перечитывание во время перераспределения может прервать передачу лидерства.** SIGHUP конкурирует с перемещением реплик `ORDERS` и передачей Raft-лидерства. Дождитесь стабильного состояния кластера, затем меняйте настройки. На таком же безопасном окне построены [последовательные обновления](/learn/deployment/rolling-upgrades).
 
-**Lowering a store limit on reload does not evict data already stored.**
-Drop the `ORDERS` account's `max_file` below what the stream already
-holds, reload, and the existing messages stay, but new writes fail until
-an admin trims the stream back under the limit. The reload changes the
-*ceiling*, not the *contents*. Raise limits freely; lower them only after
-checking what the stream currently stores.
+**Уменьшение лимита не удаляет уже сохранённые данные.** Если `max_file` учётной записи `ORDERS` станет меньше текущего объёма, сообщения останутся, но новые записи будут отклоняться, пока администратор не сократит поток. Меняется *предел*, а не *содержимое*. Перед уменьшением проверяйте объём.
 
-**Rotating a TLS certificate late fails every new handshake.** The server
-re-reads `cert_file` and `key_file` when it reloads, so a reload swaps the
-certificate cleanly and connections already open keep the session they
-negotiated regardless of the old cert's expiry. What breaks is letting the
-certificate expire before you rotate: once it's expired the server
-presents a dead cert, and every new connection and every client reconnect
-fails its TLS handshake until you drop in a valid file and reload.
+**Поздняя замена сертификата нарушает новые TLS-соединения.** Сервер перечитывает `cert_file` и `key_file`, а открытые соединения сохраняют согласованные сессии независимо от истечения прежнего сертификата. Но после истечения новые подключения и переподключения не проходят TLS до установки действительного файла и перечитывания.
 
-Do: rotate well before expiry, and track the certificate's expiry date so
-the swap is never an emergency. Don't: wait for the alert that the cert
-already expired. The auth model behind these certificates lives in
-[Security](/learn/security); here the rule is operational: replace the
-file, reload, and rotate with margin to spare.
+Заменяйте сертификаты заранее и отслеживайте срок действия, не дожидаясь оповещения об истечении. Модель сертификатов разобрана в [Безопасности](/learn/security); эксплуатационное правило простое: заменить файл, перечитать и оставить запас времени.
 
-The do-this for all four is the same: never SIGHUP an unvalidated config.
-The dry-run parses the file and exits without touching the running server,
-so a typo never reaches it. Gate the reload on it:
+Общий первый шаг: никогда не отправляйте SIGHUP с непроверенной конфигурацией. Пробный запуск не трогает работающий сервер. Сделайте его условием перечитывания:
 
 ```bash
 # Validate first; only signal the running server if the config is valid.
@@ -289,38 +168,22 @@ else
 fi
 ```
 
-Because the server also validates internally and keeps the old config on
-failure, even a reload that slips through the dry-run can't leave the
-cluster broken. The worst case is that no change applies, rather than a
-half-applied one.
+Сервер также проверяет файл сам и оставляет старую конфигурацию при ошибке. Поэтому даже пропущенная предварительной проверкой проблема не даст частично применённого состояния: изменение просто не вступит в силу.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The `ORDERS` config is now split into per-account and per-region
-includes, each ownable on its own. You can change a limit, add a user, or
-rotate a certificate, validate it with a dry-run, and apply it to the
-running cluster with a SIGHUP: no downtime, no client reconnect. On
-Kubernetes the reloader sidecar does the signaling for you whenever the
-ConfigMap changes.
+Конфигурация `ORDERS` разделена по учётным записям и регионам с отдельными владельцами. Вы умеете менять ограничения, пользователей и сертификаты, проверять файл и применять через SIGHUP без простоя и переподключений. В Kubernetes сигнал отправляет вспомогательный контейнер при изменении ConfigMap.
 
-What a reload can't do is change the server's identity: its ports, the
-addresses its cluster binds, or where JetStream keeps its data. Those need
-a process restart, rolled through the cluster one node at a time.
+Перечитывание не меняет адреса, порты и расположение данных JetStream. Для этого требуется перезапуск процесса, последовательно по одному узлу.
 
-## What's next
+## Что дальше {#whats-next}
 
-That controlled restart is the next mechanism: a **rolling upgrade**.
-Lame-duck mode drains a node gracefully, transfers its Raft leadership,
-and lets the next version take its place, all while the R3 `ORDERS`
-stream stays available and clients stay connected.
+Такой управляемый перезапуск — **последовательное обновление**. Режим плавного вывода освобождает узел, передаёт лидерство Raft и позволяет новой версии занять его место, пока поток R3 `ORDERS` остаётся доступным.
 
-Continue to [Rolling upgrades](/learn/deployment/rolling-upgrades).
+Перейдите к [последовательным обновлениям](/learn/deployment/rolling-upgrades).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Configuration](/reference/config) — the full set of
-  reloadable and non-reloadable keys.
-- [Rolling upgrades](/learn/deployment/rolling-upgrades) — the procedure
-  for the non-reloadable changes a SIGHUP can't apply.
-- [Security](/learn/security) — the auth model behind the credentials
-  this page mounts as files.
+- [Справочник → Конфигурация](/reference/config) — все перечитываемые и неперечитываемые параметры.
+- [Последовательные обновления](/learn/deployment/rolling-upgrades) — процедура для изменений, недоступных через SIGHUP.
+- [Безопасность](/learn/security) — модель учётных данных, подключаемых файлами.

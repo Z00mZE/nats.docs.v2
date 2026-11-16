@@ -1,15 +1,11 @@
-# reject_unknown_cluster
+# reject_unknown_cluster {#reject_unknown_cluster}
 
 <Reloadable state="not-reloadable" />
-If true, gateway will reject connections from cluster that are
-not configured in gateways. It does so by checking if the cluster
-name, provided by the incomming connection, exists as named gateway.
-This effectively disables gossiping of new cluster. It does not
-restrict a configured gateway, thus cluster, from dynamically growing.
+Если true, шлюз отклоняет соединения кластеров, не заданных в gateways: имя кластера из входящего соединения должно соответствовать имени настроенного шлюза. Это фактически отключает распространение сведений о новых кластерах. Динамическое расширение настроенного шлюза и его кластера не ограничивается.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

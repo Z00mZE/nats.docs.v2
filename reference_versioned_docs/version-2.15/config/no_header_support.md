@@ -1,11 +1,11 @@
-# no_header_support
+# no_header_support {#no_header_support}
 
 <Reloadable state="not-reloadable" />
-Disables support for message headers.
+Отключает поддержку заголовков сообщений.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

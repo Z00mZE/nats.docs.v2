@@ -1,37 +1,32 @@
 ---
 id: build-an-app
-title: "7. Capstone: build a small NATS app"
+title: "7. Итоговая работа: небольшое приложение NATS"
 sidebar_position: 8
-description: Combine publish/subscribe, request/reply, and a stream into one working app
+description: "Объедините публикацию и подписку, запрос и ответ и поток в одном работающем приложении"
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 7. Capstone: build a small NATS app
+# 7. Итоговая работа: небольшое приложение NATS {#7-capstone-build-a-small-nats-app}
 
-This is the capstone: one small, runnable app that combines everything from
-the earlier tutorials. It connects to NATS, publishes order events into a
-JetStream stream, and answers a request that reports how many orders it has
-seen. Run it once and watch all three patterns work together:
-publish/subscribe, request/reply, and a stream that keeps your messages.
+Это итоговая работа: небольшое приложение, которое объединяет всё из предыдущих руководств. Оно подключается к NATS, публикует события заказов в поток JetStream и отвечает на запрос о числе учтённых заказов. Запустите его и посмотрите, как вместе работают три шаблона: публикация и подписка, запрос и ответ и поток, сохраняющий ваши сообщения.
 
-## What you'll need
+## Что понадобится {#what-youll-need}
 
-- A `nats-server` installed and the `nats` CLI ([Tutorial 1: Hello NATS](/tutorials/hello-nats)).
-- A language runtime for the client tab you pick (Go, Node.js, Python, and others).
-- About 15 minutes. You'll use three terminals.
+- Установленные `nats-server` и CLI `nats` ([Руководство 1: Привет, NATS](/tutorials/hello-nats)).
+- Среда выполнения языка, выбранного во вкладке клиента (Go, Node.js, Python и другие).
+- Около 15 минут. Понадобятся три терминала.
 
-## Step 1: Start a JetStream server
+## Шаг 1: запустите сервер JetStream {#step-1-start-a-jetstream-server}
 
-In your first terminal, start the server with JetStream enabled so it can store
-your stream:
+В первом терминале запустите сервер с включённым JetStream, чтобы он мог сохранять поток:
 
 ```bash
 nats-server -js
 ```
 
-You should see startup logs ending with a line that mentions JetStream:
+В журнале запуска должна быть строка с упоминанием JetStream:
 
 ```
 [INF] Starting nats-server
@@ -39,16 +34,15 @@ You should see startup logs ending with a line that mentions JetStream:
 [INF] Server is ready
 ```
 
-Leave this terminal running.
+Оставьте этот терминал работающим.
 
-## Step 2: Create the stream
+## Шаг 2: создайте поток {#step-2-create-the-stream}
 
-Open a second terminal. Create a stream named `ORDERS` that captures every
-message published on subjects under `orders.>`:
+Откройте второй терминал. Создайте поток `ORDERS`, сохраняющий все сообщения, опубликованные в темы, соответствующие `orders.>`:
 
 <div class="nats-example" data-type="tutorials-build-an-app-create-stream" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see a confirmation summarizing the new stream:
+Должно появиться подтверждение с описанием нового потока:
 
 ```
 Stream ORDERS was created
@@ -57,16 +51,11 @@ Subjects: orders.>
  Storage: File
 ```
 
-## Step 3: Write and run the app
+## Шаг 3: напишите и запустите приложение {#step-3-write-and-run-the-app}
 
-Now write the app itself. It connects to NATS, publishes three order events into
-the stream, then subscribes to `app.orders.count` and replies to any request with the
-running total it published. The request subject sits outside `orders.>` on
-purpose: a subject under `orders.>` would be stored by the stream, and the
-stream's storage acknowledgment would answer the request before the app does.
+Теперь напишите само приложение. Оно подключается к NATS, публикует в поток три события заказа, затем подписывается на `app.orders.count` и отвечает на запросы текущим числом опубликованных заказов. Тема запросов намеренно находится за пределами `orders.>`: запрос в тему из `orders.>` сохранился бы в потоке, и подтверждение сохранения от потока пришло бы раньше ответа приложения.
 
-Save the code for your language as a single file, then install its
-dependencies and run it in your second terminal:
+Сохраните код для выбранного языка в одном файле, затем установите зависимости и запустите его во втором терминале:
 
 <Tabs groupId="lang">
 <TabItem value="go" label="Go" default>
@@ -84,7 +73,7 @@ import (
 )
 
 func main() {
-	// Connect to the server you started in Step 1.
+	// Подключиться к серверу, запущенному на шаге 1.
 	nc, _ := nats.Connect(nats.DefaultURL)
 	defer nc.Drain()
 
@@ -92,7 +81,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Publish three order events into the ORDERS stream.
+	// Опубликовать три события заказов в поток ORDERS.
 	orders := []string{"orders.created", "orders.created", "orders.shipped"}
 	for _, subject := range orders {
 		js.Publish(ctx, subject, []byte("event"))
@@ -100,7 +89,7 @@ func main() {
 	count := len(orders)
 	fmt.Printf("published %d order events\n", count)
 
-	// Reply to any request on app.orders.count with the running total.
+	// Отвечать на запросы app.orders.count текущим общим количеством.
 	nc.Subscribe("app.orders.count", func(msg *nats.Msg) {
 		msg.Respond([]byte(fmt.Sprintf("%d orders", count)))
 	})
@@ -110,7 +99,7 @@ func main() {
 }
 ```
 
-Save it as `main.go`, then set up the module and run it:
+Сохраните код как `main.go`, затем настройте модуль и запустите:
 
 ```bash
 go mod init orders-app
@@ -126,11 +115,11 @@ import { connect } from "@nats-io/transport-node";
 import { jetstream } from "@nats-io/jetstream";
 
 (async () => {
-  // Connect to the server you started in Step 1.
+  // Подключиться к серверу, запущенному на шаге 1.
   const nc = await connect({ servers: "nats://localhost:4222" });
   const js = jetstream(nc);
 
-  // Publish three order events into the ORDERS stream.
+  // Опубликовать три события заказов в поток ORDERS.
   const orders = ["orders.created", "orders.created", "orders.shipped"];
   for (const subject of orders) {
     await js.publish(subject, "event");
@@ -138,7 +127,7 @@ import { jetstream } from "@nats-io/jetstream";
   const count = orders.length;
   console.log(`published ${count} order events`);
 
-  // Reply to any request on app.orders.count with the running total.
+  // Отвечать на запросы app.orders.count текущим общим количеством.
   nc.subscribe("app.orders.count", {
     callback: (_err, msg) => {
       msg.respond(`${count} orders`);
@@ -147,13 +136,12 @@ import { jetstream } from "@nats-io/jetstream";
 
   console.log("ready: send a request to app.orders.count");
 
-  // Keep running so it can answer requests.
+  // Продолжить работу, чтобы отвечать на запросы.
   await nc.closed();
 })();
 ```
 
-Save it as `app.mjs` (the `.mjs` extension enables the `import` syntax),
-then install the dependencies and run it:
+Сохраните код как `app.mjs` (расширение `.mjs` включает синтаксис `import`), затем установите зависимости и запустите:
 
 ```bash
 npm install @nats-io/transport-node @nats-io/jetstream
@@ -163,22 +151,22 @@ node app.mjs
 </TabItem>
 </Tabs>
 
-You should see the app print its progress and then wait:
+Приложение должно вывести ход выполнения и перейти в ожидание:
 
 ```
 published 3 order events
 ready: send a request to app.orders.count
 ```
 
-Leave the app running.
+Оставьте приложение работающим.
 
-## Step 4: Confirm the events landed in the stream
+## Шаг 4: убедитесь, что события попали в поток {#step-4-confirm-the-events-landed-in-the-stream}
 
-Open a third terminal. Read the messages your app stored in the `ORDERS` stream:
+Откройте третий терминал. Прочитайте сообщения, сохранённые приложением в потоке `ORDERS`:
 
 <div class="nats-example" data-type="tutorials-build-an-app-view-stream" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see the three order events the app published, each on its subject:
+Вы должны увидеть три опубликованных события заказа, каждое в своей теме:
 
 ```
 [1] Subject: orders.created
@@ -186,34 +174,31 @@ You should see the three order events the app published, each on its subject:
 [3] Subject: orders.shipped
 ```
 
-The events are now in the stream, ready for a consumer to read back:
+Теперь события находятся в потоке и готовы к чтению потребителем:
 
 <div class="nats-flow" data-scenario="jetStreamConsumersAnimated" data-width="600" data-height="350"></div>
 
-## Step 5: Ask the app a question
+## Шаг 5: задайте приложению вопрос {#step-5-ask-the-app-a-question}
 
-Still in your third terminal, send a request to the app on `app.orders.count`:
+В том же третьем терминале отправьте приложению запрос в тему `app.orders.count`:
 
 <div class="nats-example" data-type="tutorials-build-an-app-call-app" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see the app's reply come straight back:
+Вы должны сразу получить ответ приложения:
 
 ```
 3 orders
 ```
 
-That's it — the app answered your request with the total it published.
+Готово: приложение ответило на запрос числом опубликованных им заказов.
 
-## What you built
+## Что вы создали {#what-you-built}
 
-A single app that connects to NATS, publishes order events into a durable stream,
-and answers a live request with a computed total: publish/subscribe, JetStream,
-and request/reply working together in one program.
+Одно приложение, которое подключается к NATS, публикует события заказов в долговременный поток и отвечает на запрос текущим вычисленным итогом. Публикация и подписка, JetStream и запрос-ответ работают вместе в одной программе.
 
-## Next
+## Дальше {#next}
 
-You've finished the tutorials. To understand *why* each piece works the way it
-does, move on to the deep dives:
+Вы завершили практические руководства. Чтобы понять, *почему* каждый компонент работает именно так, переходите к углублённым курсам:
 
-- Subjects, publish/subscribe, and request/reply: [Core NATS deep dive](/learn/core-nats)
-- Streams, consumers, and acknowledgments: [JetStream deep dive](/learn/jetstream)
+- Темы, публикация и подписка, запрос и ответ: [углублённый курс Core NATS](/learn/core-nats)
+- Потоки, потребители и подтверждения: [углублённый курс JetStream](/learn/jetstream)

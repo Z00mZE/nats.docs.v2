@@ -1,11 +1,11 @@
-# no_advertise
+# no_advertise {#no_advertise}
 
 <Reloadable state="not-reloadable" />
-If true, the server will not be advertised to leaf nodes.
+Если true, сервер не объявляется листовым узлам.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

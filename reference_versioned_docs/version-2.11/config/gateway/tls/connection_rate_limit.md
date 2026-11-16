@@ -1,9 +1,9 @@
-# connection_rate_limit
+# connection_rate_limit {#connection_rate_limit}
 
 <Reloadable state="noop" note="Silently discarded by parseGateway." />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

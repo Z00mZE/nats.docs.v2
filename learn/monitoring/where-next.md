@@ -1,153 +1,91 @@
 ---
 id: where-next
-title: "Where to go next"
+title: "Куда двигаться дальше"
 sidebar_position: 7
-description: Recap the four monitoring lenses and point to the Operate siblings and Reference that take watching NATS further
+description: "Итоги четырёх способов мониторинга и ссылки на главы эксплуатации и справочник для дальнейшего изучения"
 ---
 
-# Where to go next
+# Куда двигаться дальше {#where-to-go-next}
 
-You started this chapter with a deployment you knew how to build but not
-how to watch. You end it able to read the `shipping` consumer falling
-behind four different ways: as a number on an endpoint, as lag computed
-from consumer state, as an advisory you subscribed to, and as a line
-climbing on a Grafana panel. That covers the full chapter.
+В начале главы вы умели строить систему, но ещё не наблюдать за ней. Теперь вы видите отставание `shipping` четырьмя способами: как показатель конечной точки, как вычисленное по состоянию потребителя отставание, как уведомление по подписке и как восходящую линию Grafana. Это и было содержанием главы.
 
-This page doesn't teach anything new. It collects the model you built
-into one place and points you at the chapters and Reference that take it
-further.
+Эта страница не вводит новых понятий. Она собирает освоенную модель и указывает главы и справочник для дальнейшего изучения.
 
-## The four monitoring lenses
+## Четыре способа мониторинга {#the-four-monitoring-lenses}
 
-Every page in this chapter watched the same Acme ORDERS deployment from
-one more angle. If you remember nothing else, remember where each number
-comes from.
+Каждая страница рассматривала ту же систему Acme ORDERS ещё с одной стороны. Прежде всего запомните источник каждого показателя.
 
-The **numbers come from endpoints.** The monitoring port `:8222` serves
-on-demand JSON: `/varz` for the server, `/connz` for clients, `/routez`
-for cluster routes, and `/jsz` for JetStream. When you request an
-endpoint, the node returns its current state with no history and no
-subscription.
+**Показатели приходят из конечных точек.** Порт мониторинга `:8222` выдаёт JSON по запросу: `/varz` — сервер, `/connz` — клиенты, `/routez` — маршруты кластера, `/jsz` — JetStream. Узел возвращает текущее состояние без истории и без подписки.
 
-**Lag comes from consumer state.** The stream's `LastSeq` and the
-consumer's `delivered.stream_seq` give you lag as a single number, and
-`num_ack_pending` and `num_redelivered` tell you what's in-flight and
-what keeps coming back. The pinned snapshot (20 waiting, 5 in-flight, 3
-redelivered) is consumer health expressed as three numbers.
+**Отставание определяется состоянием потребителя.** `LastSeq` потока и `delivered.stream_seq` потребителя дают отставание одним числом. `num_ack_pending` и `num_redelivered` показывают неподтверждённые и повторные доставки. Наш снимок — 20 ожидающих, 5 в обработке и 3 повторно доставленных — выражает состояние потребителя тремя числами.
 
-**Surprises come from advisories.** Events you never polled for arrive as
-transient JSON on `$JS.EVENT.ADVISORY.>` and `$SYS.*`. A poison order
-exhausting its deliveries publishes one `max_deliver` advisory. You learn
-it only if you're subscribed when it fires; otherwise it's gone.
+**Неожиданные события приходят через уведомления.** То, чего вы не запрашивали, приходит как кратковременный JSON в `$JS.EVENT.ADVISORY.>` и `$SYS.*`. Проблемный заказ, исчерпавший попытки доставки, вызывает одно уведомление `max_deliver`. Вы узнаете о нём только при активной подписке; иначе сообщение исчезнет.
 
-**History comes from the exporter.** prometheus-nats-exporter scrapes
-`:8222` and re-exposes the numbers as time series on `:7777`. Prometheus
-stores them, Grafana charts them, and `nats server check` raises an alert
-when lag crosses a threshold you set.
+**История появляется благодаря экспортёру.** prometheus-nats-exporter опрашивает `:8222` и предоставляет показатели на `:7777` как временные ряды. Prometheus их хранит, Grafana строит графики, а `nats server check` поднимает тревогу при превышении заданного порога отставания.
 
-Everything else in this chapter is a refinement of those four lenses:
-endpoints, consumer state, advisories, and the exporter.
+Остальная глава уточняет эти четыре источника: конечные точки, состояние потребителя, уведомления и экспортёр.
 
-## Where the details live now
+## Где искать подробности {#where-the-details-live-now}
 
-The chapter is unversioned and concept-first. The exact field types,
-defaults, and full endpoint field lists live in **Reference**, which is
-versioned and exhaustive. When you need the precise type of a `/jsz`
-field or the complete list of `/connz` query params, that's where to
-look.
+Глава объясняет понятия и не привязана к версии. Точные типы полей, значения по умолчанию и полные списки полей конечных точек находятся в версионируемом **справочнике**. Там ищите точный тип поля `/jsz` или полный набор параметров `/connz`.
 
-The [Reference root](/reference/) is the entry point. The handoff
-phrases throughout this chapter ("the full set of fields is documented
-in Reference") all point into it. The
-[monitoring endpoints reference](/reference/system/monitor) and the
-[advisory reference](/reference/system/advisory) are the two you'll
-reach for most.
+Начните с [корня справочника](/reference/). Все фразы главы вроде «полный набор полей описан в справочнике» ведут туда. Чаще всего понадобятся [конечные точки мониторинга](/reference/system/monitor) и [уведомления](/reference/system/advisory).
 
-## Sibling deep dives
+## Связанные главы {#sibling-deep-dives}
 
-This chapter sits in the Operate half alongside its siblings. The others
-pick up exactly where a metric stops: this chapter names the symptom,
-and the Operate siblings cover the fix.
+Эта глава относится к эксплуатации. Соседние главы продолжают там, где заканчивается метрика: здесь назван симптом, а там описано решение.
 
-The [Backup & Recovery deep dive](/learn/backup-recovery) is what you
-reach for when the lag you measured here won't drain on its own. It
-covers snapshotting a stream and restoring it, the repair this chapter
-deliberately never prescribes.
+[Резервное копирование и восстановление](/learn/backup-recovery) полезно, когда измеренное отставание не устраняется само. Глава рассматривает снимки потоков и восстановление — операции, которые здесь намеренно не разбирались.
 
-The [Deployment deep dive](/learn/deployment) covers running the things
-you watched: sizing and running the exporter and Prometheus, and scaling
-the `shipping` consumer pool when its lag climbs for real.
+[Развёртывание](/learn/deployment) объясняет эксплуатацию наблюдаемых компонентов: выбор ресурсов и запуск экспортёра с Prometheus, а также масштабирование пула `shipping` при устойчивом росте отставания.
 
-The [Clustering & Replication deep dive](/learn/clustering) explains the
-mechanics behind the events you only *observed* here. When a
-leader-elected advisory reports a flap, the *why* lives in that chapter's
-[raft-and-leaders](/learn/clustering/raft-and-leaders) page.
+[Кластеризация и репликация](/learn/clustering) объясняет механику событий, которые здесь только *наблюдались*. Если уведомления о выборе лидера показывают частые смены, причины разобраны на странице [RAFT и лидеры](/learn/clustering/raft-and-leaders).
 
-The [Services deep dive](/learn/services) and its
-[observability](/learn/services/observability) page extend the metric
-picture to request/reply: service latency and error counts, the one
-metric family this chapter pointed at but didn't cover.
+[Сервисы](/learn/services) и страница [Наблюдаемость](/learn/services/observability) расширяют набор метрик до запросов и ответов: задержек сервисов и числа ошибок. Эта группа показателей здесь лишь упоминалась.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-This is the end of the chapter. This page adds no new scenario state.
-The `east` cluster, the `ORDERS` stream, and the `shipping` and
-`analytics` consumers are still running in your session exactly as you
-left them, now with an exporter scraping `:8222` and Grafana charting
-the result. You can keep watching, or tear the observation stack down and
-leave the deployment running.
+Это конец главы; новых изменений сценария нет. Кластер `east`, поток `ORDERS`, потребители `shipping` и `analytics` продолжают работать, теперь с экспортёром, опрашивающим `:8222`, и графиками Grafana. Можно продолжить наблюдение или отключить компоненты мониторинга, оставив саму систему работающей.
 
-You hold the core model: the live numbers come from the monitoring
-endpoints, lag comes from consumer state, the events you didn't poll for
-come from advisories, and the history that turns a number into an alert
-comes from the exporter. Those four sources together are how you keep a
-NATS deployment observable in production. When all four say a node is
-unhealthy and none says why, a
-[profile](/learn/monitoring/profiling) is what you take next.
+Главная модель освоена: текущие числа поступают из конечных точек, отставание — из состояния потребителя, незапрошенные события — из уведомлений, а история для графиков и оповещений создаётся через экспортёр. Вместе эти источники обеспечивают наблюдаемость NATS при эксплуатации. Если все четыре указывают на проблему узла, но не объясняют причину, следующий шаг — [профиль](/learn/monitoring/profiling).
 
-## Production checklist
+## Контрольный список перед эксплуатацией {#production-checklist}
 
-Every page in this chapter closed with a Pitfalls section. This collects
-the action items from all of them in one place: a last pass before you
-trust this deployment to tell you when it's unhealthy. Each group links
-back to the page that explains the why.
+Каждая страница завершалась разделом типичных ошибок. Здесь собраны действия для последней проверки перед тем, как доверить системе оповещение о собственных неполадках. Каждая группа ссылается на объяснение причин.
 
-### Monitoring endpoints — see [Pitfalls](/learn/monitoring/monitoring-endpoints#pitfalls)
+### Конечные точки мониторинга — см. [Типичные ошибки](/learn/monitoring/monitoring-endpoints#pitfalls) {#monitoring-endpoints--see-pitfalls}
 
-- [ ] Alert on `connections` (active), not `total_connections` (lifetime); connection flapping inflates the lifetime count without anything being wrong.
-- [ ] Watch `slow_consumers` on `/varz`; a rising count is a reader that can't keep up.
-- [ ] Scope a `/jsz` scrape with `?acc=ORDERS` and page it with `offset`/`limit`; the full `?accounts=true&streams=true&consumers=true` query is slow at scale and will time out.
-- [ ] Restrict the monitoring port; it's unauthenticated by default (see [Security](/learn/security)).
+- [ ] Настраивайте пороги по `connections` (активные соединения), а не по `total_connections` (за всё время): переподключения увеличивают накопительное число без роста текущей нагрузки.
+- [ ] Следите за `slow_consumers` в `/varz`: рост указывает на клиентов, которые не успевают читать.
+- [ ] Ограничивайте сбор `/jsz` через `?acc=ORDERS` и разбивайте ответ через `offset`/`limit`: полный запрос `?accounts=true&streams=true&consumers=true` на большой системе работает медленно и может превысить тайм-аут.
+- [ ] Защитите порт мониторинга: по умолчанию он не требует аутентификации (см. [Безопасность](/learn/security)).
 
-### JetStream health — see [Pitfalls](/learn/monitoring/jetstream-health#pitfalls)
+### Состояние JetStream — см. [Типичные ошибки](/learn/monitoring/jetstream-health#pitfalls) {#jetstream-health--see-pitfalls}
 
-- [ ] Read crashed workers as rising `num_pending` with `num_waiting` at `0` and `delivered.stream_seq` stalled; `num_pending` keeps climbing whether or not a client is fetching, so watch those three fields together.
-- [ ] Read in-flight (`num_ack_pending`) and lag (`num_pending`) as two separate numbers; confusing the two hides a stuck handler.
-- [ ] Remember a filtered consumer's `num_pending` counts only matching subjects; empty pending does not mean an empty stream.
+- [ ] Определяйте падение обработчиков по растущему `num_pending`, нулевому `num_waiting` и остановившемуся `delivered.stream_seq`: ожидание растёт независимо от запросов клиентов, поэтому смотрите три поля вместе.
+- [ ] Читайте неподтверждённые доставки (`num_ack_pending`) и отставание (`num_pending`) отдельно: их смешение скрывает зависший обработчик.
+- [ ] Помните, что `num_pending` фильтрующего потребителя учитывает только подходящие темы: нулевое ожидание не означает пустой поток.
 
-### Advisories and events — see [Pitfalls](/learn/monitoring/advisories-and-events#pitfalls)
+### Уведомления и события — см. [Типичные ошибки](/learn/monitoring/advisories-and-events#pitfalls) {#advisories-and-events--see-pitfalls}
 
-- [ ] Persist advisories to a stream subscribed to `$JS.EVENT.ADVISORY.>`; advisories are transient, so if nothing durable is listening when the event fires, you never learn it happened.
-- [ ] Treat the `max_deliver` advisory as the only built-in signal a message was dropped; JetStream has no dead-letter queue, so subscribe or lose poison orders silently.
-- [ ] Read a leader-elected advisory as a flap report only; the *why* behind the election is [Clustering](/learn/clustering).
+- [ ] Сохраняйте уведомления в потоке, подписанном на `$JS.EVENT.ADVISORY.>`: без постоянно работающего долговременного получателя события теряются.
+- [ ] Учитывайте, что `max_deliver` — единственный встроенный сигнал прекращения доставки сообщения: у JetStream нет очереди недоставленных сообщений.
+- [ ] Воспринимайте уведомление о выборе лидера как сообщение о смене; причины выборов объясняет [Кластеризация](/learn/clustering).
 
-### Prometheus and dashboards — see [Pitfalls](/learn/monitoring/prometheus-and-dashboards#pitfalls)
+### Prometheus и панели — см. [Типичные ошибки](/learn/monitoring/prometheus-and-dashboards#pitfalls) {#prometheus-and-dashboards--see-pitfalls}
 
-- [ ] Use `/healthz?js-meta-only=true` to check cluster quorum; `?js-enabled-only=true` checks only whether the local node's JetStream is running and returns 200 even with no quorum.
-- [ ] Set explicit `nats server check` thresholds like `--unprocessed-critical`; defaults don't know your SLA, and a check with no threshold never fires.
-- [ ] Put Prometheus behind the exporter; the exporter stores no history, so on its own you only ever see "now."
+- [ ] Проверяйте кворум кластера через `/healthz?js-meta-only=true`: `?js-enabled-only=true` проверяет только локальную работу JetStream и возвращает 200 даже без кворума.
+- [ ] Задавайте явные пороги `nats server check`, например `--unprocessed-critical`: значения по умолчанию не знают вашего SLA.
+- [ ] Используйте Prometheus вместе с экспортёром: экспортёр не хранит историю и сам по себе показывает только текущее состояние.
 
-### Profiling — see [Pitfalls](/learn/monitoring/profiling#pitfalls)
+### Профилирование — см. [Типичные ошибки](/learn/monitoring/profiling#pitfalls) {#profiling--see-pitfalls}
 
-- [ ] Leave `prof_port` unset in production, or restrict it with firewall rules; it has no authentication and binds to the same interfaces as the client port.
-- [ ] Reach for `nats server request profile` before `prof_port`; it needs no config change and no restart, and `prof_port` isn't reloadable.
-- [ ] Set `prof_block_rate` above zero before asking for a `block` profile, and drop it back to zero afterwards; the profile is empty without it and the sampling slows the server down.
+- [ ] Не задавайте `prof_port` при эксплуатации либо ограничьте его межсетевым экраном: он не требует аутентификации и слушает те же интерфейсы, что клиентский порт.
+- [ ] Сначала пробуйте `nats server request profile`: не нужны ни изменения конфигурации, ни перезапуск, в отличие от `prof_port`.
+- [ ] Перед запросом `block` задайте ненулевой `prof_block_rate`, а после верните ноль: без него профиль пуст, а сбор замедляет сервер.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → monitoring endpoints](/reference/system/monitor) — every
-  endpoint field, type, and query param, versioned and exhaustive.
-- [Backup & Recovery deep dive](/learn/backup-recovery) — the fix for a
-  lag this chapter only measured.
-- [Clustering & Replication deep dive](/learn/clustering) — the mechanics
-  behind the leader-elected advisories you observed.
+- [Справочник → конечные точки мониторинга](/reference/system/monitor) — полный версионируемый список полей, типов и параметров.
+- [Резервное копирование и восстановление](/learn/backup-recovery) — действия по восстановлению системы.
+- [Кластеризация и репликация](/learn/clustering) — механика наблюдаемых выборов лидера.

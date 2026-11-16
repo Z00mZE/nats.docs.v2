@@ -1,9 +1,9 @@
-# Start with one worker
+# Начните с одного обработчика
 nats sub tasks --queue workers
 
-# Load increases - add more workers (in new terminals)
+# Нагрузка растёт: добавьте обработчиков в новых терминалах
 nats sub tasks --queue workers
 nats sub tasks --queue workers
 
-# Load decreases - stop workers with Ctrl+C
-# Remaining workers automatically take over
+# Нагрузка снижается: остановите обработчики сочетанием Ctrl+C
+# Оставшиеся обработчики автоматически принимают нагрузку

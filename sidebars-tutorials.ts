@@ -16,11 +16,11 @@ const sidebars: SidebarsConfig = {
     {
       type: "doc",
       id: "index",
-      label: "Tutorials",
+      label: "Практические руководства",
     },
     {
       type: "category",
-      label: "Get started",
+      label: "Начало работы",
       collapsed: false,
       items: [
         "hello-nats",
@@ -30,7 +30,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Persistence",
+      label: "Долговременное хранение",
       collapsed: false,
       items: [
         "first-stream",
@@ -40,7 +40,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Put it together",
+      label: "Собираем всё вместе",
       collapsed: false,
       items: [
         "build-an-app",

@@ -1,21 +1,21 @@
-# Purge Stream
+# Очистка потока {#purge-stream}
 
-Purges messages from a stream.
+Очистка сообщений потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import streamPurgeRequest from '@site/src/schemas/vendor/v2.12/jsm/jetstream/api/v1/stream_purge_request.json';
 import streamPurgeResponse from '@site/src/schemas/vendor/v2.12/jsm/jetstream/api/v1/stream_purge_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.STREAM.PURGE.{stream}`
 
-Where `{stream}` is the name of the stream.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={streamPurgeRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={streamPurgeResponse} />

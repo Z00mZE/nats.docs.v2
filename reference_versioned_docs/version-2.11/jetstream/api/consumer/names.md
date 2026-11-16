@@ -1,21 +1,21 @@
-# Consumer Names
+# Имена потребителей {#consumer-names}
 
-Lists consumer names for a stream.
+Получение списка имён потребителей потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerNamesRequest from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/consumer_names_request.json';
 import consumerNamesResponse from '@site/src/schemas/vendor/v2.11/jsm/jetstream/api/v1/consumer_names_response.json';
 
-## Subject
+## Тема {#subject}
 
 `$JS.API.CONSUMER.NAMES.{stream}`
 
-Where `{stream}` is the stream name.
+Где `{stream}` — имя потока.
 
-## Request
+## Запрос {#request}
 
 <JSONSchema schema={consumerNamesRequest} />
 
-## Response
+## Ответ {#response}
 
 <JSONSchema schema={consumerNamesResponse} />

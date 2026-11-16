@@ -1,3 +1,4 @@
+import { localizeDiagramContent, localizeDiagramText, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -261,18 +262,18 @@ function ResolverPushAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Step:
+                    Шаг:
                 </span>
-                {STEPS.map((s, i) => (
+                {localizeDiagramContent(STEPS.map((s, i) => (
                     <button
                         key={s.id}
                         onClick={() => setStep(i)}
                         style={stepButtonStyle(i === step)}
-                        aria-label={`Go to step ${i + 1}`}
+                        aria-label={localizeDiagramText(`Go to step ${i + 1}`)}
                     >
-                        {i + 1}
+                        {localizeDiagramContent(i + 1)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -286,7 +287,7 @@ function ResolverPushAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -330,7 +331,7 @@ function ResolverPushAnimatedInner({
                         transitionDelay: isVerify ? "600ms" : "0ms",
                     }}
                 >
-                    trusts: operator ACME
+                    доверие: оператор ACME
                 </div>
 
                 {/* The server's resolver directory: SYSTEM preloaded, the
@@ -361,7 +362,7 @@ function ResolverPushAnimatedInner({
                             fontFamily: "sans-serif",
                         }}
                     >
-                        resolver dir
+                        каталог резолвера
                     </div>
                     <div style={{ padding: "1px 0" }}>SYSTEM.jwt</div>
                     <div
@@ -397,9 +398,9 @@ function ResolverPushAnimatedInner({
                 }}
             >
                 <strong style={{ color: NAVY }}>
-                    {step + 1}/{STEPS.length}
-                </strong>{" "}
-                {STEPS[step].caption}
+                    {localizeDiagramContent(step + 1)}/{localizeDiagramContent(STEPS.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(STEPS[step].caption)}
             </div>
         </div>
     );

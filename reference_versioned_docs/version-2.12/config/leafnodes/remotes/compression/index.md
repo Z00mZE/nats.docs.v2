@@ -1,20 +1,20 @@
-# compression
+# compression {#compression}
 
 <Reloadable state="reloadable" note="Connections that need renegotiation (off->on, ->accept) are closed and reconnect." />
-Defines the compression mode to use for a outgoing leafnode connection.
+Задаёт режим сжатия для исходящего соединения листового узла.
 
-If set to `on`, it will use the `s2_auto`.
+При значении `on` используется `s2_auto`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `string` | The compression mode dictates if and how compression is applied for a connection.  The value of `accept` indicates it will inherit the mode of the server it is connecting to. If both have `accept`, no compression will be used.  The `s2_fast`, `s2_better`, and `s2_best` modes indicate the level of S2 compression used.  `s2_auto` will dynamically change the compression level based on RTT thresholds. | `disabled`, `off`, `enabled`, `on`, `accept`, `s2_fast`, `s2_better`, `s2_best`, `s2_auto` |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `string` | Режим сжатия определяет, применяется ли сжатие к соединению и каким образом. Значение `accept` означает наследование режима сервера, к которому устанавливается соединение. Если обе стороны используют `accept`, сжатие не применяется. Режимы `s2_fast`, `s2_better` и `s2_best` задают уровень сжатия S2. `s2_auto` динамически меняет уровень сжатия по порогам RTT. | `disabled`, `off`, `enabled`, `on`, `accept`, `s2_fast`, `s2_better`, `s2_best`, `s2_auto` |
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`mode`](./mode.md) |  | `string` | `accept` | Yes |
-| [`rtt_thresholds`](./rtt_thresholds.md) | Applies only when the `s2_auto` mode is used and defines the round-trip time (RTT) thresholds for compression level changes.  By default, no compression is used unless the RTT hits the first threshold (e.g. 10ms), then `s2_fast`. The next threshold would switch to `s2_better`, and then finally `s2_best` is the last threshold is reached.  Note, the compression level is dynamic so if the RTT decreases, the compression level will decrease accordingly. | `duration` | `[10ms 50ms 100ms]` | Yes |
+| [`mode`](./mode.md) |  | `string` | `accept` | Да |
+| [`rtt_thresholds`](./rtt_thresholds.md) | Применяется только в режиме `s2_auto` и задаёт пороги времени кругового обхода (RTT) для изменения уровня сжатия. По умолчанию сжатие не используется до достижения первого порога RTT (например, 10 мс), затем включается `s2_fast`. Следующий порог включает `s2_better`, а последний — `s2_best`. Уровень сжатия меняется динамически: при уменьшении RTT он также снижается. | `duration` | `[10ms 50ms 100ms]` | Да |

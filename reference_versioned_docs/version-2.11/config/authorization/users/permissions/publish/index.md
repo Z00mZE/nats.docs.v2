@@ -1,37 +1,34 @@
-# publish
+# publish {#publish}
 
 <Aliases aliases="pub" />
 <Reloadable state="reloadable" />
-A single subject, list of subjects, or a allow-deny map of
-subjects for publishing. Specifying a single subject or list
-of subjects denotes an *allow* and implcitly denies publishing
-to all other subjects.
+Один субъект, список субъектов или объект с разрешёнными и запрещёнными субъектами для публикации. Один субъект или список задаёт *разрешение* и неявно запрещает публикацию во все остальные субъекты.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` |  | - |
 | `[ string ]` |  | - |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`allow`](./allow.md) | List of subjects that are allowed to the client. | `string` | - | Yes |
-| [`deny`](./deny.md) | List of subjects that are denied to the client. | `string` | - | Yes |
-## Examples
+| [`allow`](./allow.md) | Список субъектов, разрешённых клиенту. | `string` | - | Да |
+| [`deny`](./deny.md) | Список субъектов, запрещённых клиенту. | `string` | - | Да |
+## Examples {#examples}
 
-### Allow publish to `foo`
+### Разрешить публикацию в `foo` {#allow-publish-to-foo}
 ```
 foo
 ```
-### Allow publish on `foo` and `bar.*`
+### Разрешить публикацию в `foo` и `bar.*` {#allow-publish-on-foo-and-bar}
 ```
 [foo, bar.*]
 ```
-### Allow publish to `foo.*` except `foo.bar`
+### Разрешить публикацию в `foo.*`, кроме `foo.bar` {#allow-publish-to-foo-except-foobar}
 ```
 {
   allow: "foo.*"

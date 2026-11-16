@@ -1,44 +1,23 @@
 ---
 id: config-and-jwt-backup
-title: Config and JWT backup
+title: "Резервные копии конфигурации и JWT"
 sidebar_position: 5
-description: Back up and restore the operator, accounts, keys, and server config off-site so the identity plane survives a clean-room rebuild
+description: "Копирование и восстановление оператора, учётных записей, ключей и конфигурации сервера вне основной площадки"
 ---
 
-# Config and JWT backup
+# Резервные копии конфигурации и JWT {#config-and-jwt-backup}
 
-The last three pages protected the data with a snapshot to return to, a
-mirror to fail over to, and a runbook to choose between them. But a restored
-`ORDERS` stream is useless if nobody is allowed to read it. The accounts
-that gate it, the operator that signs those accounts, and the creds
-`order-svc` connects with don't live in the stream. They live in
-a different set of files, and those files need their own backup.
+Предыдущие три страницы защитили данные: снимок для отката, зеркало для переключения и инструкция выбора. Но восстановленный `ORDERS` бесполезен, если никто не вправе его читать. Учётные записи, подписывающий их оператор и данные входа `order-svc` находятся не в потоке, а в других файлах. Этим файлам нужна отдельная резервная копия.
 
-This page protects the **identity plane**. It does two things: it copies
-the files that *are* your security layer off-site, encrypted; then it
-puts them back in a clean-room rebuild and verifies that the platform runs
-again.
+Эта страница защищает **уровень идентификации**. Сначала мы зашифруем и вынесем на другую площадку файлы, составляющие уровень безопасности, затем восстановим их в чистой среде и проверим работу платформы.
 
-This page doesn't teach what an operator, account, or user *is*; that
-model lives in
-[Security → Operator mode](/learn/security/operator-mode). Here you only
-learn which files carry that identity, how to get them off-site, and
-how to restore them.
+Что *такое* оператор, учётная запись и пользователь, объясняет [Безопасность → Режим оператора](/learn/security/operator-mode). Здесь рассматриваются только файлы, их внешнее копирование и восстановление.
 
-## The files that carry identity
+## Файлы данных идентификации {#the-files-that-carry-identity}
 
-Everything that proves who may touch the `ORDERS` platform reduces to
-files on disk. There are three groups, and losing any one of them breaks
-the platform in a different way.
+Всё, что доказывает право доступа к платформе `ORDERS`, сводится к файлам на диске. Они делятся на три группы; потеря каждой нарушает работу по-своему.
 
-The first group is the **`nats auth` store**, the directory tree the
-Security chapter built under `$XDG_DATA_HOME/nats` (by default
-`~/.local/share/nats`). Two kinds of file live in it. A **JWT** is the
-signed identity token: one for the operator, one per account, one per
-user. A **seed** (an `.nk` file) is the private half of the nkey pair
-whose public key the JWT names as its subject. Each JWT is signed by the
-key one level up the chain: the operator signs the account JWTs, and each
-account signs its own users' JWTs. The layout for the Acme world:
+Первая — **хранилище `nats auth`**, дерево каталогов из главы безопасности в `$XDG_DATA_HOME/nats` (по умолчанию `~/.local/share/nats`). В нём два типа файлов. **JWT** — подписанный токен идентификации: один для оператора, по одному для учётных записей и пользователей. **Seed** (файл `.nk`) — закрытая часть пары nkey, открытый ключ которой указан в поле subject JWT. Каждый JWT подписан ключом на уровень выше: оператор подписывает учётные записи, а они — своих пользователей. Структура Acme:
 
 ```text
 $XDG_DATA_HOME/nats/nsc/            # store root; the on-disk layout is nsc-compatible
@@ -58,26 +37,11 @@ $XDG_DATA_HOME/nats/nsc/            # store root; the on-disk layout is nsc-comp
             └── SYSTEM/…            # SYSTEM.jwt, admin.jwt
 ```
 
-The `stores` half holds only JWTs, which are public; they assert
-identity, they sign nothing. The `keys` half is secret. A leaked
-operator or account seed lets identity be forged, because those keys sign
-the JWTs one level down; a leaked user seed lets an attacker connect as
-that user; and a lost seed means that identity is lost. Protect the
-`keys` subtree with the same controls you apply to stored passwords.
+Часть `stores` содержит только публичные JWT: они заявляют идентичность, но ничего не подписывают. Часть `keys` секретна. Утечка seed оператора или учётной записи позволяет подделывать подчинённые сущности, поскольку эти ключи подписывают JWT следующего уровня. Seed пользователя позволяет войти от его имени; утрата seed означает утрату идентичности. Защищайте поддерево `keys` так же, как хранимые пароли.
 
-The second group is the **creds files**. A `.creds` file is a user's JWT
-and seed concatenated into one file: the thing a client points at to
-connect. They aren't inside the store — each one landed wherever
-`--credential` wrote it when the user was created, and the copies your
-services run with sit on the client machines. These are the files
-`order-svc` and `analytics-reader` present at connect time.
+Вторая группа — **файлы учётных данных**. Файл `.creds` объединяет JWT пользователя и seed; именно его клиент использует для входа. Эти файлы находятся вне хранилища, по путям `--credential`, выбранным при создании пользователей. Рабочие копии сервисов лежат на клиентских машинах. Их предъявляют при подключении `order-svc` и `analytics-reader`.
 
-The third group is the **server config**, the `server.conf` that
-`nats server generate` wrote for the running cluster. It isn't identity
-itself, but it anchors it: the operator JWT the server trusts, the
-`SYSTEM` account preload, and the resolver directory where account JWTs
-land. Restore the keys without the config and the server doesn't know to
-trust them.
+Третья группа — **конфигурация сервера**, `server.conf`, созданный `nats server generate` для кластера. Сам файл не является идентичностью, но закрепляет доверие: JWT доверенного оператора, предварительно загруженная учётная запись `SYSTEM`, каталог разрешения учётных записей. Если вернуть ключи без конфигурации, сервер не узнает, что им нужно доверять.
 
 ```conf
 # ./acme-server/server.conf — what ties the identity together
@@ -96,18 +60,11 @@ resolver {
 }
 ```
 
-The `resolver` block is the **account resolver**, the server component
-that verifies accounts when a user connects. Its `dir` holds the
-server's own copy of every pushed account JWT, and that copy matters at
-restore time. The full set of resolver options lives in
-[Reference → Resolver](/reference/config/resolver). For now you only need
-to know that the server keeps its own copy.
+Блок `resolver` задаёт **механизм разрешения учётных записей**: компонент сервера, проверяющий учётную запись при входе пользователя. Его `dir` хранит серверные копии переданных JWT, важные при восстановлении. Все параметры приведены в [Справочнике → Resolver](/reference/config/resolver). Пока достаточно знать, что у сервера своя копия.
 
-## Backing up the files
+## Резервное копирование файлов {#backing-up-the-files}
 
-The store has a native backup command. One line captures the whole
-`ACME` subtree — every JWT and every private seed, operator, accounts,
-and users — in a single file:
+У хранилища есть собственная команда копирования. Одна строка сохраняет всё поддерево `ACME` — JWT и закрытые seed оператора, учётных записей и пользователей — в один файл:
 
 ```bash
 nats auth operator backup ACME acme-operator.backup
@@ -120,15 +77,9 @@ WARNING: The output file is unencrypted and contains secrets,
 consider encrypting it with 'nats auth nkey seal'
 ```
 
-The file is a single JSON document — treat it as an opaque blob and
-don't edit it by hand. Read the warning literally: the file
-holds the operator's private seed, every signing-key seed, and every
-account and user seed. Whoever holds this one file *is* the `ACME`
-operator. Never ship it anywhere unencrypted.
+Это единый JSON-документ: обращайтесь с ним как с непрозрачным объектом и не редактируйте вручную. Предупреждение следует понимать буквально: здесь закрытый seed оператора, все seed ключей подписи, учётных записей и пользователей. Обладатель файла получает все полномочия оператора `ACME`. Никогда не передавайте его незашифрованным.
 
-The `--key` flag encrypts the backup with a curve key. Generate the key
-once, then point `--key` at the seed file — it takes a file path, not
-the key string:
+Флаг `--key` шифрует копию ключом curve. Один раз создайте ключ, затем передайте в `--key` путь к файлу seed, а не строку ключа:
 
 ```bash
 nats auth nkey gen curve --output backup-curve.nk
@@ -140,20 +91,11 @@ nats auth operator backup ACME acme-operator.backup --key backup-curve.nk
 Wrote backup for ACME to acme-operator.backup
 ```
 
-No warning this time: the output is a sealed blob that only the curve
-seed can open. That makes `backup-curve.nk` the key to every future
-restore. Store it somewhere other than the location holding the
-backups; keeping an archive and its key in the same place is a single
-point of failure that defeats the backup.
+Теперь предупреждения нет: результат зашифрован и открывается только соответствующим seed curve. Файл `backup-curve.nk` становится ключом всех будущих восстановлений. Храните его отдельно от копий: архив и ключ в одном месте образуют единую точку отказа.
 
-Two things the backup does *not* contain. It carries no creds files —
-those are re-minted from the restored store, as you'll see below. And
-it carries nothing from the server side: back up `server.conf`
-alongside it, because the `SYSTEM` preload inside it is what lets you
-repopulate a server after a disaster. The resolver directory itself
-needs no backup; re-pushing the accounts rebuilds it.
+В копии нет двух вещей. Файлы учётных данных не включаются: ниже мы заново создадим их из восстановленного хранилища. Серверные файлы тоже не включаются: отдельно сохраните `server.conf`, поскольку предварительная загрузка `SYSTEM` позволяет наполнить сервер после аварии. Сам каталог resolver копировать не обязательно — повторная передача JWT учётных записей воссоздаст его.
 
-Ship both files off-site, dated:
+Перенесите оба файла на другую площадку, добавив дату:
 
 ```bash
 # Ship the sealed backup and the server config away from the live cluster.
@@ -163,27 +105,20 @@ aws s3 cp ./acme-server/server.conf \
   s3://acme-dr/identity/server-2026-07-04.conf
 ```
 
-The date serves a purpose. If you rotate the operator key (re-sign the
-chain under a new operator identity), an older backup restores the
-*previous* operator, and a server rebuilt from it trusts a chain nobody
-signs anymore. Tag each backup with the day the identity was current so
-you can match a file to the operator version it belongs to.
+Дата важна. После ротации ключа оператора и переподписания цепочки старая копия восстановит *прежнего* оператора; сервер будет доверять цепочке, которую больше никто не подписывает. Указывайте дату актуальности данных идентификации, чтобы сопоставить копию с версией оператора.
 
-Run this on a schedule the same way you schedule the snapshot. A daily
-cron line keeps the identity copy as fresh as the data copy:
+Выполняйте копирование по расписанию, как снимки. Ежедневная строка cron сохраняет данные идентификации такими же свежими, как данные потоков:
 
 ```bash
 # /etc/cron.d/acme-identity-backup — daily at 02:30
 30 2 * * *  nats  /usr/local/bin/backup-identity.sh
 ```
 
-## Restoring the files
+## Восстановление файлов {#restoring-the-files}
 
-A clean-room restore is one command against the backup file, then a
-verification pass, then one server-side step that teams often miss.
+В чистой среде восстановление состоит из одной команды для копии, проверки и серверного шага, о котором часто забывают.
 
-Pull the backup down and restore it. `--key` names the same curve seed
-file the backup was sealed with:
+Скачайте и восстановите копию. В `--key` укажите тот же файл seed curve, которым она была зашифрована:
 
 ```bash
 aws s3 cp s3://acme-dr/identity/acme-operator-2026-07-04.backup acme-operator.backup
@@ -203,26 +138,16 @@ Configuration:
     Signing Keys: OCYOEBDCJQKV3F6LWKCWVLGDOLMLZYO5LRLILZVRW376BDWBBZOO4RQX
 ```
 
-The `Subject` is the same operator public key as before the loss:
-restore brings back the original keys, it doesn't mint new ones. That
-has a useful consequence — every creds file you handed out before the
-disaster keeps working, because nothing rotated. One caveat: restore
-refuses to run if the operator already exists in the store
-(`nats: error: operator ACME already exist`). It's for rebuilding a
-clean machine; to restore over a corrupted store, move the old store
-directory aside first.
+`Subject` содержит прежний открытый ключ оператора: восстановление возвращает исходные ключи, а не создаёт новые. Поэтому все ранее выданные файлы учётных данных продолжают работать — ротации не было. Ограничение: операция отклоняется, если оператор уже существует (`nats: error: operator ACME already exist`). Для восстановления поверх повреждённого хранилища сначала переместите старый каталог в другое место.
 
-Confirm the chain is complete:
+Убедитесь, что цепочка полна:
 
 ```bash
 nats auth account ls
 nats auth user ls ORDERS
 ```
 
-`account ls` should list `ANALYTICS`, `ORDERS`, and `SYSTEM` with one
-user each, and `user ls ORDERS` should show `order-svc`. If a service's
-creds file was lost along with the machine it lived on, mint a fresh
-one from the restored seeds:
+`account ls` должен показывать `ANALYTICS`, `ORDERS` и `SYSTEM` с одним пользователем в каждой, а `user ls ORDERS` — `order-svc`. Если файл учётных данных сервиса потерян вместе с машиной, создайте его заново из восстановленных seed:
 
 ```bash
 nats auth user credential order-svc.creds order-svc ORDERS
@@ -232,13 +157,7 @@ nats auth user credential order-svc.creds order-svc ORDERS
 Wrote credential for order-svc to order-svc.creds
 ```
 
-Next comes the step that a naive restore skips. Restoring the store
-rebuilds your workstation's copy of the chain, but the server validates
-connections against its *own* copy: the account JWTs in its resolver
-directory. If that directory survived, the server never notices your
-restore. If it didn't — a fresh machine, a wiped disk — the server
-starts from the saved `server.conf`, trusts `ACME`, and still rejects
-every user:
+Далее идёт часто пропускаемый шаг. Восстановление хранилища возвращает копию цепочки на рабочей станции, но сервер проверяет подключения по *собственной* копии — JWT в каталоге resolver. Если каталог сохранился, сервер вообще не заметит восстановления. Если он утрачен при очистке диска или замене машины, сервер запустится с сохранённым `server.conf`, будет доверять `ACME`, но отклонит всех пользователей:
 
 ```bash
 nats pub orders.new "hello" --creds order-svc.creds
@@ -248,9 +167,7 @@ nats pub orders.new "hello" --creds order-svc.creds
 nats: error: nats: Authorization Violation
 ```
 
-The resolver directory is empty, so the server can't find the `ORDERS`
-account JWT. Fill it by pushing each account, exactly as on first
-setup:
+Каталог resolver пуст, и сервер не может найти JWT `ORDERS`. Заполните его, передав каждую учётную запись, как при первоначальной настройке:
 
 ```bash
 nats auth account push ORDERS --operator ACME --creds sys.creds
@@ -265,13 +182,9 @@ Updating account ORDERS (ACXV2TF4CTC575UWIFY75K4ZHLS337VNP2JKAD4E5IS346TATYFTDLY
 Success 1 Failed 0 Expected 1
 ```
 
-The push itself authenticates with the `SYSTEM` creds, and it can get
-in even though the resolver is empty because `server.conf` preloads the
-`SYSTEM` account JWT. That preload is the bootstrap path for the whole
-recovery — and the reason the config file belongs in the backup set.
+Передача проходит с учётными данными `SYSTEM`. Войти можно даже при пустом resolver, поскольку `server.conf` предварительно загружает JWT `SYSTEM`. Это начальная точка всего восстановления и причина включать конфигурацию в набор копий.
 
-Finally, prove a real client can connect — identity plane and data
-plane together:
+Наконец, проверьте вход настоящего клиента — уровни идентификации и данных вместе:
 
 ```bash
 nats pub orders.new "back" --creds order-svc.creds
@@ -281,24 +194,13 @@ nats pub orders.new "back" --creds order-svc.creds
 13:48:24 Published 4 bytes to "orders.new"
 ```
 
-If `order-svc` authenticates with the same creds file it had before the
-disaster, and `nats stream info ORDERS --creds order-svc.creds` returns
-the restored stream, the full platform is back: the data the earlier
-pages protected, and now the identity that gates it.
+Если `order-svc` входит со старым файлом учётных данных, а `nats stream info ORDERS --creds order-svc.creds` возвращает восстановленный поток, вся платформа вернулась в работу: и данные предыдущих страниц, и управляющие доступом данные идентификации.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Three traps come up the first time teams back up identity rather than
-data. Each one stays inside this page's two jobs: backing the files
-up, and restoring them.
+При первом копировании данных идентификации встречаются три ловушки. Все относятся к двум задачам: сохранению файлов и их восстановлению.
 
-**The backup file is the whole authority.** `operator backup` writes
-every private seed in the `ACME` subtree into one file; anyone who
-reads it can sign accounts and users as you. Treat it more carefully
-than any single key: always pass `--key` so it leaves your machine
-sealed, and keep the curve seed file away from the backups it opens.
-The flip side is that the curve seed is now load-bearing. Restore
-without it fails —
+**Файл копии содержит все полномочия.** `operator backup` записывает все закрытые seed поддерева `ACME` в один файл; прочитавший его сможет подписывать учётные записи и пользователей от вашего имени. Защищайте его строже отдельного ключа: всегда передавайте `--key`, а seed curve храните отдельно. При этом сам seed становится критически важен. Без него восстановление завершается ошибкой —
 
 ```bash
 nats auth operator restore ACME acme-operator.backup
@@ -308,63 +210,26 @@ nats auth operator restore ACME acme-operator.backup
 nats: error: unmarshal failed: invalid character 'e' looking for beginning of value
 ```
 
-— and there's no recovery path: no reset link, no support ticket that
-regenerates a seed. Losing both the store and the means to open its
-backup is losing the identity. Test-restore on a spare machine once so
-you know the file and the key actually pair up.
+— и обходного пути нет: ни сброса, ни обращения в поддержку, способного воссоздать seed. Потеря хранилища вместе с ключом копии означает утрату идентичности. Один раз проверьте восстановление на запасной машине, убедившись, что файл и ключ подходят друг другу.
 
-**A restored store doesn't refill the server's resolver.** The store on
-your workstation and the resolver directory on the server are separate
-copies of the account JWTs. `operator restore` rebuilds only yours. A
-server that lost its resolver directory keeps rejecting users with
-`Authorization Violation` — the files on your side are correct,
-`account ls` looks right, yet nobody can connect. The fix is one
-`nats auth account push` per account, authenticated with the `SYSTEM`
-creds that the config's `resolver_preload` lets in. That works only
-while you still have `server.conf`; back it up with the identity, not
-as an afterthought.
+**Восстановление хранилища не заполняет resolver сервера.** Рабочее хранилище и серверный каталог содержат отдельные копии JWT. `operator restore` восстанавливает только вашу. Сервер без своего каталога продолжит отвечать `Authorization Violation`, даже если `account ls` корректен. Выполните `nats auth account push` для каждой записи с учётными данными `SYSTEM`, допущенными через `resolver_preload`. Для этого нужен сохранённый `server.conf`: копируйте его вместе с данными идентификации.
 
-**An un-backed-up operator rotation orphans the archive.** If you
-rotate the `ACME` operator (re-sign the chain under a fresh operator
-key) and your last off-site backup predates the rotation, that backup
-restores an operator nobody signs accounts under anymore. Tag every
-backup with the operator version or timestamp, and take a fresh backup
-right after any rotation, so a backup and the live operator never
-drift apart.
+**Ротация оператора без новой копии оставляет архив устаревшим.** Если цепочка `ACME` переподписана новым ключом, а внешняя копия сделана раньше, она вернёт оператора, которым уже не подписывают учётные записи. Помечайте копии версией оператора или временем и создавайте новую сразу после ротации.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The identity plane is now recoverable. You have a sealed, off-site
-backup of the whole `ACME` subtree — the operator, `ORDERS`,
-`ANALYTICS`, and `SYSTEM` with all their JWTs and private seeds — plus
-the `server.conf` that anchors it, dated to the operator version it
-belongs to, with the curve seed stored apart. And you have a restore
-procedure that rebuilds the store, re-mints any lost creds, re-pushes
-the accounts into an empty resolver, and verifies a real client
-connects.
+Уровень идентификации теперь можно восстановить. Есть зашифрованная внешняя копия всего поддерева `ACME`: оператор, `ORDERS`, `ANALYTICS`, `SYSTEM`, все JWT и закрытые seed, а также закрепляющий доверие `server.conf`. Копия помечена версией оператора, seed curve хранится отдельно. Процедура возвращает хранилище, пересоздаёт потерянные файлы учётных данных, передаёт JWT в пустой resolver и проверяет подключение клиента.
 
-Combined with the snapshot from [Stream backup and restore](/learn/backup-recovery/stream-backup-restore)
-and the `ORDERS_DR` mirror from [Mirrors as a DR tool](/learn/backup-recovery/mirrors-and-sources),
-the whole platform now survives a clean-room rebuild. The data
-comes back from a snapshot, the site comes back from the mirror, and the
-identity that gates both comes back from this backup.
+Вместе со снимком из [резервного копирования и восстановления потока](/learn/backup-recovery/stream-backup-restore) и зеркалом `ORDERS_DR` из [зеркал для аварийного восстановления](/learn/backup-recovery/mirrors-and-sources) платформа теперь переживает построение с нуля. Снимок возвращает данные, зеркало — рабочую площадку, эта копия — доступ.
 
-## What's next
+## Что дальше {#whats-next}
 
-Every protective copy is now in place: snapshot, mirror, runbook, and
-identity. The last page recaps the whole chapter and collects every page's
-pitfalls into one production checklist you run before you trust the
-platform with production traffic.
+Все защитные элементы готовы: снимок, зеркало, инструкция и данные идентификации. Последняя страница подводит итоги и собирает типичные ошибки в единый список проверок перед рабочим трафиком.
 
-Continue to [Where to go next](/learn/backup-recovery/where-next).
+Перейдите к странице [Куда двигаться дальше](/learn/backup-recovery/where-next).
 
-## See also
+## См. также {#see-also}
 
-- [Security → Operator mode](/learn/security/operator-mode) — what the
-  operator, accounts, and users you backed up here actually are.
-- [Security → Cross-account](/learn/security/cross-account) — the
-  `ORDERS`-to-`ANALYTICS` export/import that a cross-account mirror also
-  depends on; it lives in the account JWTs, so the backup carries it.
-- [Reference → Resolver](/reference/config/resolver) — the full set of
-  account-resolver options, including the `dir` the push refills on
-  restore.
+- [Безопасность → Режим оператора](/learn/security/operator-mode) — устройство сохранённых оператора, учётных записей и пользователей.
+- [Безопасность → Межаккаунтный обмен](/learn/security/cross-account) — экспорт и импорт `ORDERS` → `ANALYTICS`, необходимые и межаккаунтному зеркалу; они находятся в JWT и входят в копию.
+- [Справочник → Resolver](/reference/config/resolver) — все параметры, включая заполняемый при восстановлении `dir`.

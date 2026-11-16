@@ -1,12 +1,12 @@
-# disabled
+# disabled {#disabled}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" />
-Keep the remote in the configuration without connecting to it.
+Оставить удалённый узел в конфигурации, не подключаясь к нему.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

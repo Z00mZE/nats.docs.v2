@@ -1,12 +1,11 @@
-# port
+# port {#port}
 
 <Reloadable state="not-reloadable" note="Leaving `port: -1` across reloads is fine — the running port is restored. Any other change fails." />
-Port for client connections. Use `-1` for a
-random available port.
+Порт клиентских соединений. Значение `-1` выбирает случайный свободный порт.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

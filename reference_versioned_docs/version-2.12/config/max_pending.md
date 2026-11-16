@@ -1,11 +1,11 @@
-# max_pending
+# max_pending {#max_pending}
 
 <Reloadable state="not-reloadable" />
-Maximum number of bytes buffered for a connection Applies to client connections. Note that applications can also set `PendingLimits` (number of messages and total size) for their subscriptions.
+Максимальное число байтов, буферизуемых для соединения. Применяется к клиентским соединениям. Приложения также могут задавать `PendingLimits` (число сообщений и общий размер) для своих подписок.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

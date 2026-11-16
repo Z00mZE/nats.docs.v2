@@ -1,26 +1,19 @@
 ---
 id: auth-and-clustering
-title: "Auth and clustering"
+title: "Аутентификация и кластеризация"
 sidebar_position: 5
-description: Restrict a user to MQTT connections, authenticate devices in operator mode, and run MQTT on the east cluster
+description: "Ограничение пользователя соединениями MQTT, аутентификация устройств в режиме оператора и запуск MQTT в кластере east"
 ---
 
-# Auth and clustering
+# Аутентификация и кластеризация {#auth-and-clustering}
 
-Everything so far ran on one server with no credentials. Acme's sensors
-are about to leave the lab, which raises two questions: how does a device
-prove who it is, and what happens when the fleet outgrows a single
-server.
+До сих пор всё работало на одном сервере без учётных данных. Датчики Acme скоро покинут лабораторию, и возникают два вопроса: как устройство подтверждает свою личность и что делать, когда парку уже недостаточно одного сервера.
 
-## Restrict a user to MQTT
+## Ограничьте пользователя соединениями MQTT {#restrict-a-user-to-mqtt}
 
-Users are shared across connection types. A username and password
-defined in `authorization` works from an MQTT device, a NATS client, or
-a WebSocket browser session, which is usually more access than a sensor
-needs.
+Пользователи общие для разных типов соединений. Имя и пароль из `authorization` работают и для устройства MQTT, и для клиента NATS, и для браузерной сессии WebSocket. Обычно датчику такой широкий доступ не нужен.
 
-`allowed_connection_types` pins a user to the connection types you
-intend:
+Параметр `allowed_connection_types` ограничивает пользователя нужными типами соединений:
 
 ```conf
 authorization {
@@ -36,16 +29,14 @@ authorization {
 }
 ```
 
-Now `sensor` can connect over MQTT and nothing else. See it hold in
-both directions. Over MQTT, the credentials work:
+Теперь `sensor` может подключаться только по MQTT. Проверьте обе стороны ограничения. По MQTT учётные данные работают:
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 -u sensor -P s3cret \
   -t "sensors/warehouse/cold-1/temp" -m "4.2"
 ```
 
-Present the same credentials on port 4222 as a NATS client and the
-connection is refused:
+Если передать те же данные клиентом NATS на порт 4222, подключение отклоняется:
 
 ```bash
 nats pub --user sensor --password s3cret sensors.test "4.2"
@@ -55,30 +46,21 @@ nats pub --user sensor --password s3cret sensors.test "4.2"
 nats: error: nats: Authorization Violation
 ```
 
-The option accepts a list, so a user that needs two kinds gets both:
+Параметр принимает список: если пользователю нужны два типа соединений, разрешите оба:
 
 ```conf
 allowed_connection_types: ["STANDARD", "MQTT"]
 ```
 
-The full set of values is `STANDARD`, `WEBSOCKET`, `LEAFNODE`,
-`LEAFNODE_WS`, `MQTT`, `MQTT_WS`, and `IN_PROCESS`. The `_WS` variants
-cover the same protocol carried over WebSocket, so a browser-based MQTT
-client needs `MQTT_WS` rather than `MQTT`. Omit
-`allowed_connection_types` entirely and every type is allowed, which is
-the default.
+Полный список значений: `STANDARD`, `WEBSOCKET`, `LEAFNODE`, `LEAFNODE_WS`, `MQTT`, `MQTT_WS` и `IN_PROCESS`. Варианты с `_WS` означают тот же протокол поверх WebSocket, поэтому браузерному клиенту MQTT нужен `MQTT_WS`, а не `MQTT`. Если полностью опустить `allowed_connection_types`, разрешены все типы — это поведение по умолчанию.
 
-`allowed_connection_types` can also be written `connection_types` or
-`clients`; they're aliases for the same option.
+Вместо `allowed_connection_types` можно написать `connection_types` или `clients`: это псевдонимы одного параметра.
 
-## Permissions for MQTT users
+## Права пользователей MQTT {#permissions-for-mqtt-users}
 
-Permissions are written against converted subjects, as
-[Topics and subjects](/learn/mqtt/topics-and-subjects#permissions-apply-to-the-subject)
-covered. A device publishing `sensors/warehouse/cold-1/temp` needs
-publish permission on `sensors.warehouse.cold-1.temp`.
+Права задаются для преобразованных тем NATS, как описано на странице [Темы MQTT и NATS](/learn/mqtt/topics-and-subjects#permissions-apply-to-the-subject). Устройству, публикующему в `sensors/warehouse/cold-1/temp`, нужно разрешение на публикацию в `sensors.warehouse.cold-1.temp`.
 
-Here's a complete single-server config with a locked-down MQTT user:
+Полная конфигурация одного сервера с ограниченными правами пользователя MQTT:
 
 ```conf
 listen: 127.0.0.1:4222
@@ -107,13 +89,9 @@ mqtt {
 }
 ```
 
-The `subscribe` list carries both `fleet.>` and `fleet` so that a device
-subscribing to the MQTT filter `fleet/#` gets both subscriptions the
-server creates for it.
+Список `subscribe` содержит и `fleet.>`, и `fleet`, чтобы устройству с фильтром MQTT `fleet/#` были разрешены обе подписки, создаваемые сервером.
 
-Before this listener faces real devices, put TLS on it. The `mqtt {}`
-block takes its own `tls {}` map, separate from the one on the client
-port:
+Прежде чем подключать реальные устройства, включите TLS на этом слушателе. Блок `mqtt {}` принимает собственный блок `tls {}`, отдельный от TLS клиентского порта:
 
 ```conf
 mqtt {
@@ -125,95 +103,48 @@ mqtt {
 }
 ```
 
-The options are the same as any other `tls {}` block — add `ca_file`
-and `verify: true` for mutual TLS — and
-[Security → Encryption](/learn/security/encryption) covers them.
+Параметры такие же, как в любом блоке `tls {}`. Для взаимной аутентификации TLS добавьте `ca_file` и `verify: true`; подробности приведены в разделе [Безопасность → Шифрование](/learn/security/encryption).
 
-The `mqtt {}` block can also carry its own `authorization {}` with a
-username, password, or token scoped to the MQTT listener only, and its
-own `no_auth_user`, which overrides the top-level one for MQTT
-connections. That last one is the answer when device firmware can't
-send credentials at all: it maps credential-less MQTT connections onto
-one of the users defined in the top-level `users` list, so the fleet
-gets that user's permissions while NATS clients keep their own rules.
-Two limits apply: a listener-scoped username or token can't be combined
-with a top-level `users` list, and `no_auth_user` doesn't work in
-operator mode.
+Блок `mqtt {}` также может содержать собственный `authorization {}` с именем пользователя, паролем или токеном, действующими только на слушателе MQTT, и собственный `no_auth_user`, переопределяющий одноимённый параметр верхнего уровня для соединений MQTT. Последний нужен, когда прошивка совсем не умеет передавать учётные данные: он сопоставляет подключения MQTT без них с одним из пользователей списка `users` верхнего уровня. Парк получает права этого пользователя, а клиенты NATS сохраняют свои правила. Есть два ограничения: имя пользователя или токен в настройках слушателя нельзя сочетать со списком `users` верхнего уровня, а `no_auth_user` не работает в режиме оператора.
 
-### You don't need to allow `$MQTT.sub.>`
+### Разрешать `$MQTT.sub.>` не требуется {#you-dont-need-to-allow-mqttsub}
 
-A QoS 1 or 2 subscription is backed by a JetStream durable, and the
-server delivers to it over an internal subject under `$MQTT.sub.`.
+Подписка QoS 1 или 2 опирается на долговременного потребителя JetStream; сервер доставляет ему сообщения через внутреннюю тему с префиксом `$MQTT.sub.`.
 
-You don't have to grant permission for that subject. From server
-2.12.3, an MQTT connection is implicitly allowed to subscribe to
-`$MQTT.sub.` and `$MQTT.deliver.pubrel.` subjects: the allow-list check
-is skipped for them. Before 2.12.3 — including 2.10 and 2.11, which this
-chapter otherwise supports — you have to list `$MQTT.sub.>` in the
-user's subscribe allow list, or every QoS 1 and 2 subscription fails
-with `0x80` in the SUBACK. Configs written for those servers often still
-carry the entry; on 2.12.3 or later it's harmless, and you can drop it.
+Выдавать право на эту тему не нужно. Начиная с сервера 2.12.3 соединению MQTT неявно разрешены подписки на темы `$MQTT.sub.` и `$MQTT.deliver.pubrel.`: проверка списка разрешений для них пропускается. До 2.12.3, включая поддерживаемые этой главой версии 2.10 и 2.11, необходимо явно включить `$MQTT.sub.>` в список разрешённых подписок пользователя, иначе любая подписка QoS 1 или 2 получает `0x80` в SUBACK. В конфигурациях для старых серверов это правило часто остаётся; на 2.12.3 и новее оно безвредно, и его можно удалить.
 
-Deny is still enforced. An explicit deny on `$MQTT.sub.>` stops the
-server from creating the internal subscription, and QoS 1 and 2
-subscriptions fail with a failure code in the SUBACK. So leave those
-subjects out of your permission lists entirely: don't allow them
-(unnecessary) and don't deny them (breaks QoS 1).
+Запреты продолжают действовать. Явный запрет `$MQTT.sub.>` мешает серверу создать внутреннюю подписку, и подписки QoS 1 и 2 получают код ошибки в SUBACK. Поэтому на новых версиях полностью исключите эти темы из списков прав: разрешать их избыточно, а запрещать — значит нарушать работу QoS 1.
 
-## Authenticating devices in operator mode
+## Аутентификация устройств в режиме оператора {#authenticating-devices-in-operator-mode}
 
-[Operator mode](/learn/security/operator-mode) authenticates NATS
-clients with a challenge: the server sends a nonce and the client signs
-it with the private key from its credentials file. MQTT clients can't do
-that. There's nothing in the MQTT protocol that signs a server-supplied
-nonce.
+В [режиме оператора](/learn/security/operator-mode) клиенты NATS проходят проверку запросом: сервер отправляет одноразовое значение, а клиент подписывает его закрытым ключом из файла учётных данных. MQTT-клиенты этого не умеют: протокол MQTT не предусматривает подпись полученного от сервера одноразового значения.
 
-Operator mode handles this by treating the user JWT itself as the
-credential. The device sends the JWT as the MQTT **password**, with any
-non-empty username, and the server authenticates on the JWT alone.
+В режиме оператора для MQTT учётными данными становится сам JWT пользователя. Устройство отправляет JWT как **пароль** MQTT с любым непустым именем пользователя; сервер проверяет только JWT.
 
-Because the JWT travels as a bearer credential with no signature step,
-the user has to be a **bearer** user. That takes two steps, since
-accounts disallow bearer tokens by default. Here the devices live in
-their own account, `SENSORS`, keeping their subjects separate from the
-ORDERS workload:
+Поскольку JWT передаётся как токен предъявителя без этапа подписи, пользователь должен иметь признак **bearer**. Настройка состоит из двух шагов: по умолчанию учётные записи запрещают токены предъявителя. Здесь устройства находятся в отдельной учётной записи `SENSORS`, изолирующей их темы от нагрузки ORDERS:
 
 ```bash
 nats auth account edit SENSORS --bearer
 nats auth user add sensor SENSORS --bearer
 ```
 
-Miss either one and the connection is refused: the server is waiting for
-a nonce signature that MQTT can't produce, or the account still
-disallows bearer tokens. The device sees a CONNACK with return code 5,
-"not authorized" — MQTT clients get that rather than the
-`Authorization Violation` error a NATS client would receive, so check
-the CONNACK code rather than looking for that string.
+Если пропустить любой шаг, соединение будет отклонено: сервер либо ждёт подпись одноразового значения, которую MQTT не может предоставить, либо учётная запись всё ещё запрещает токены предъявителя. Устройство видит CONNACK с кодом 5, «нет авторизации». Клиенты MQTT получают этот код вместо ошибки `Authorization Violation`, которую получил бы клиент NATS, поэтому проверяйте код CONNACK, а не ищите эту строку.
 
-A bearer credential has two consequences.
-Anyone holding the JWT can connect as that user, since there's no key to
-prove possession, so treat it like a password and put TLS in front of
-it. And `no_auth_user` isn't compatible with operator mode at all — in
-operator mode every connection needs a JWT.
+У такого способа входа два следствия. Любой обладатель JWT может подключиться от имени пользователя, поскольку владение ключом не проверяется: обращайтесь с JWT как с паролем и защищайте передачу TLS. Кроме того, `no_auth_user` вообще несовместим с режимом оператора: в этом режиме каждому соединению нужен JWT.
 
-## MQTT on a cluster
+## MQTT в кластере {#mqtt-on-a-cluster}
 
-Devices connect to one server, but the fleet needs more than one. MQTT
-runs on the `east` cluster with two changes to what you've already seen.
+Устройство подключается к одному серверу, но парку нужно несколько. Для запуска MQTT в кластере `east` в уже знакомую конфигурацию нужно внести два изменения.
 
-### `server_name` becomes required
+### `server_name` становится обязательным {#server_name-becomes-required}
 
-A standalone server can go without `server_name`. Once the server has a
-`cluster` or `gateway` block, MQTT requires it, and startup fails
-otherwise:
+Отдельный сервер может обходиться без `server_name`. Как только появляется блок `cluster` или `gateway`, MQTT требует имя сервера; без него запуск завершается ошибкой:
 
 ```
 mqtt requires server name to be explicitly set
 ```
 
-Server names have to be unique across the cluster or super-cluster,
-which the `east` cluster already satisfies with `n1-east`, `n2-east`,
-and `n3-east`. Here's `n1-east` accepting MQTT connections:
+Имена серверов должны быть уникальными в кластере или суперкластере. В `east` это уже обеспечено именами `n1-east`, `n2-east` и `n3-east`. Так выглядит `n1-east`, принимающий соединения MQTT:
 
 ```conf
 server_name: n1-east
@@ -237,23 +168,13 @@ mqtt {
 }
 ```
 
-Add the same `mqtt {}` block to `n2-east` and `n3-east`, giving each its
-own MQTT port if they share a machine. A device can then connect to any
-of the three.
+Добавьте такой же блок `mqtt {}` в `n2-east` и `n3-east`. Если серверы работают на одной машине, назначьте каждому свой порт MQTT. Устройство сможет подключиться к любому из трёх.
 
-### Stream replicas in a cluster
+### Реплики потоков в кластере {#stream-replicas-in-a-cluster}
 
-The streams holding MQTT state are replicated automatically once
-JetStream is clustered, and you don't create them. The replica count is
-derived from the `routes` you configured, not from how many servers
-the cluster actually has: the server counts the addresses in its own
-`routes` list, then clamps the result to between 1 and 3.
+Потоки состояния MQTT реплицируются автоматически после объединения JetStream в кластер; создавать их вручную не нужно. Число реплик определяется настройкой `routes`, а не фактическим числом серверов кластера: сервер считает адреса в собственном списке `routes` и ограничивает результат диапазоном от 1 до 3.
 
-That distinction matters for the config above. `n1-east` lists two
-routes, so its MQTT streams come up at `R=2`, not `R=3` — enough to
-survive one server, but not what you'd guess from a three-node cluster.
-If you want three replicas, either list all the peers in `routes` or set
-it explicitly:
+Это различие существенно для конфигурации выше. У `n1-east` указаны два маршрута, поэтому его потоки MQTT создаются с `R=2`, а не `R=3`. Это позволяет пережить отказ одного сервера, но отличается от ожидаемого для кластера из трёх узлов. Если нужны три реплики, перечислите всех участников в `routes` либо задайте число явно:
 
 ```conf
 mqtt {
@@ -262,19 +183,13 @@ mqtt {
 }
 ```
 
-`stream_replicas` overrides the derived value. Ask for more replicas
-than the cluster can satisfy and the streams fail to create, which
-surfaces as MQTT clients being unable to connect.
+`stream_replicas` переопределяет вычисленное значение. Если запросить больше реплик, чем способен предоставить кластер, потоки не создадутся; для клиентов MQTT это проявится как невозможность подключиться.
 
-### MQTT on a leaf node
+### MQTT на листовом узле {#mqtt-on-a-leaf-node}
 
-A leaf node close to the devices — on a factory floor, in a vehicle —
-can serve MQTT too, and it doesn't have to run JetStream itself. The
-standalone JetStream check doesn't apply once the server has a
-`leafnodes` configuration; the leaf can use JetStream reachable through
-its connection to the hub.
+Листовой узел рядом с устройствами — в цехе или автомобиле — тоже может обслуживать MQTT и не обязан запускать собственный JetStream. Проверка наличия локального JetStream не применяется, если у сервера есть конфигурация `leafnodes`: листовой узел может использовать JetStream, доступный через соединение с центральным узлом.
 
-If the leaf runs its own JetStream under a domain, point MQTT at it:
+Если листовой узел запускает собственный JetStream в домене, укажите его для MQTT:
 
 ```conf
 mqtt {
@@ -283,97 +198,50 @@ mqtt {
 }
 ```
 
-`js_domain` selects the JetStream domain MQTT stores its state in. Set
-it to the leaf's local domain and sessions and retained messages stay
-on the leaf, so local devices keep working when the link to the hub is
-down. The domain is part of the session's storage identity, which is
-also what keeps sessions in different domains from colliding.
+`js_domain` выбирает домен JetStream для хранения состояния MQTT. Если задать локальный домен листового узла, сессии и сохранённые сообщения останутся на нём, а местные устройства продолжат работать при потере связи с центром. Домен входит в идентификатор хранилища сессии и предотвращает конфликты между сессиями разных доменов.
 
-### Two cluster caveats
+### Две особенности кластера {#two-cluster-caveats}
 
-**Retained messages are best-effort in a cluster.** They're stored in a
-replicated stream available cluster-wide, but propagation isn't instant.
-A publisher can retain a message on one server while a subscriber
-connecting to a different server subscribes microseconds later and sees
-nothing, because that server hasn't received it yet. When an
-application depends on reading a retained value immediately, have it
-connect to the server that produced it.
+**Сохранённые сообщения распространяются по кластеру без гарантии немедленной доступности.** Они находятся в реплицируемом потоке, доступном всему кластеру, но распространение занимает время. Издатель может сохранить сообщение на одном сервере, а подписчик, подключившийся к другому через несколько микросекунд, ничего не увидит: этот сервер ещё не получил сообщение. Если приложению нужно немедленно прочитать сохранённое значение, подключайте его к серверу, на котором оно было опубликовано.
 
-**Client-ID collision detection is slower in a cluster.** On one server,
-a second connection with a live client ID evicts the first immediately.
-Across a cluster the eviction travels between servers, so both
-connections can be briefly alive at once. The detection still works;
-it's just not instantaneous. Unique client IDs per device remain the
-answer.
+**Обнаружение конфликтов идентификаторов клиентов в кластере медленнее.** На одном сервере второе соединение с занятым идентификатором сразу вытесняет первое. В кластере запрос вытеснения передаётся между серверами, поэтому оба соединения могут ненадолго сосуществовать. Проверка работает, но не мгновенно. Решение прежнее: уникальный идентификатор для каждого устройства.
 
-## Seeing your devices
+## Наблюдение за устройствами {#seeing-your-devices}
 
-The monitoring port knows about MQTT. With `http: 8222` in the config,
-`/connz` can filter connections by MQTT client ID:
+Порт мониторинга поддерживает MQTT. При `http: 8222` в конфигурации `/connz` позволяет фильтровать соединения по идентификатору клиента MQTT:
 
 ```bash
 curl -s "http://127.0.0.1:8222/connz?mqtt_client=truck-17"
 ```
 
-Each MQTT connection's record carries its client ID in the
-`mqtt_client` field, and `/varz` has an `mqtt` section showing the
-listener's resolved settings, including the JetStream domain in use.
-This is the tool for the client-ID collision from the
-[previous page](/learn/mqtt/qos-sessions-and-retained#two-devices-one-client-id):
-filter on the suspect client ID and watch which remote address holds
-the session between drops.
-[Monitoring endpoints](/learn/monitoring/monitoring-endpoints) covers
-the port itself.
+Запись каждого соединения MQTT содержит идентификатор в поле `mqtt_client`. В `/varz` есть раздел `mqtt` с итоговыми настройками слушателя, включая используемый домен JetStream. Так можно расследовать конфликт идентификаторов с [предыдущей страницы](/learn/mqtt/qos-sessions-and-retained#two-devices-one-client-id): отфильтруйте подозрительный идентификатор и посмотрите, какой удалённый адрес удерживает сессию между разрывами. Сам порт рассмотрен в разделе [Конечные точки мониторинга](/learn/monitoring/monitoring-endpoints).
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-**Leaving credentials off the MQTT listener.** With no `authorization`
-block, any device that can reach port 1883 connects. Devices sit on
-networks you control least, so put credentials and TLS on the MQTT
-listener before it leaves a lab.
+**Слушатель MQTT без учётных данных.** При отсутствии блока `authorization` подключиться может любое устройство, имеющее доступ к порту 1883. Устройства работают в сетях, которые вы контролируете хуже всего, поэтому включите учётные данные и TLS до выхода из лаборатории.
 
-**Denying `$MQTT.sub.>`.** A permission set written to be restrictive
-sometimes denies everything under `$MQTT.`, which silently breaks QoS 1
-and 2 subscriptions — they fail in the SUBACK while QoS 0 keeps working,
-so the fleet looks half-broken. Leave those subjects out of the list.
+**Запрет `$MQTT.sub.>`.** Стремясь ограничить доступ, иногда запрещают всё под `$MQTT.`. Это незаметно нарушает подписки QoS 1 и 2: они получают отказ в SUBACK, тогда как QoS 0 продолжает работать. Парк выглядит частично неисправным. Не включайте эти темы в список запретов.
 
-**Forgetting `--bearer` in operator mode.** The device presents a
-perfectly valid JWT and is still refused with CONNACK return code 5.
-The credential is fine; either the user isn't marked as a bearer or the
-account still disallows bearer tokens. Both have to be set. Don't go
-looking for an `Authorization Violation` in the client's output — MQTT
-clients never receive that message, only the CONNACK code.
+**Отсутствие `--bearer` в режиме оператора.** Устройство предъявляет корректный JWT, но получает код 5 в CONNACK. Проблема не в самом токене: либо пользователь не помечен как bearer, либо учётная запись ещё запрещает такие токены. Настроить нужно оба уровня. Не ищите `Authorization Violation` в выводе клиента: MQTT-клиенты получают только код CONNACK.
 
-**Adding a cluster block without `server_name`.** The server starts fine
-as a standalone and then refuses to start the moment you add clustering.
-Set `server_name` on every server from the beginning and the problem
-never appears.
+**Блок кластера без `server_name`.** Отдельный сервер запускается успешно, но перестаёт запускаться сразу после включения кластеризации. Задавайте `server_name` каждому серверу с самого начала.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Acme's fleet is now ready for production:
+Парк Acme теперь готов к эксплуатации:
 
-- a `sensor` user restricted to MQTT connections, with permissions
-  written against converted subjects
-- no `$MQTT.sub.>` entry needed, and none denied
-- devices in operator mode authenticating with a bearer JWT sent as the
-  MQTT password
-- MQTT enabled on `n1-east`, `n2-east`, and `n3-east`, each with
-  `server_name` set
-- MQTT state replicated across the cluster, with retained messages
-  best-effort and client-ID eviction slightly delayed
+- Пользователь `sensor` ограничен соединениями MQTT; права заданы для преобразованных тем NATS.
+- На новых версиях правило `$MQTT.sub.>` не требуется; запретов для этих тем нет.
+- В режиме оператора устройства проходят аутентификацию с bearer JWT, переданным как пароль MQTT.
+- MQTT включён на `n1-east`, `n2-east` и `n3-east`; на каждом задан `server_name`.
+- Состояние MQTT реплицируется по кластеру; сохранённые сообщения распространяются с возможной задержкой, а вытеснение совпадающих идентификаторов клиентов происходит чуть медленнее.
 
-## What's next
+## Что дальше {#whats-next}
 
-That's the whole of MQTT support.
-[Where to go next](/learn/mqtt/where-next) collects the model into one place and
-points at the chapters that take each piece further.
+На этом обзор поддержки MQTT завершён. Страница [Куда двигаться дальше](/learn/mqtt/where-next) собирает модель целиком и указывает главы для дальнейшего изучения.
 
-## See also
+## См. также {#see-also}
 
-- [Security → Authorization](/learn/security/authorization) — how
-  publish and subscribe permissions are evaluated
-- [Topologies → Your first cluster](/learn/topologies/your-first-cluster)
-  — building the `east` cluster this page enables MQTT on
-- [Reference → mqtt](/reference/config/mqtt/) — `stream_replicas` and
-  the rest of the block
+- [Безопасность → Авторизация](/learn/security/authorization) — проверка прав на публикацию и подписку.
+- [Топологии → Ваш первый кластер](/learn/topologies/your-first-cluster) — создание кластера `east`, в котором здесь включён MQTT.
+- [Справочник → mqtt](/reference/config/mqtt/) — `stream_replicas` и остальные параметры блока.

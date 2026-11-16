@@ -1,76 +1,45 @@
 ---
 id: qos-sessions-and-retained
-title: "QoS, sessions, and retained messages"
+title: "QoS, сессии и сохранённые сообщения"
 sidebar_position: 4
-description: What the server guarantees about delivery, what it stores between connections, and why NATS publishes always arrive as QoS 0
+description: "Какие гарантии доставки даёт сервер, что хранит между подключениями и почему публикации NATS всегда приходят с QoS 0"
 ---
 
-# QoS, sessions, and retained messages
+# QoS, сессии и сохранённые сообщения {#qos-sessions-and-retained-messages}
 
-You can predict the subject any topic lands on. What the server
-promises about delivering the message there is a separate contract, and
-it's the one devices depend on when they drop off the network and
-reconnect. MQTT handles disconnects with state the broker holds for the
-client, and this page covers the three kinds NATS keeps: delivery state
-(QoS), subscription state (sessions), and retained messages. It also
-covers will messages, which announce an abnormal disconnect to whoever
-is listening.
+Вы уже можете определить, в какую тему NATS попадёт любая тема MQTT. Гарантии доставки сообщения — отдельное соглашение, от которого зависят устройства при потере сети и повторном подключении. MQTT обрабатывает отключения с помощью состояния, которое брокер хранит для клиента. Здесь рассмотрены три вида такого состояния в NATS: доставка (QoS), подписки (сессии) и сохранённые сообщения. Также разобраны сообщения завещания, уведомляющие подписчиков об аварийном отключении.
 
-The stored state lives in the JetStream streams the server created when
-you enabled MQTT. You don't manage them, but knowing they're streams
-explains why JetStream is required and where the storage goes.
+Это состояние хранится в потоках JetStream, созданных сервером при включении MQTT. Управлять ими самостоятельно не нужно, но их устройство объясняет, почему необходим JetStream и на что расходуется хранилище.
 
-## The three QoS levels
+## Три уровня QoS {#the-three-qos-levels}
 
-Quality of Service is the promise the broker makes about delivering one
-message.
+Quality of Service, или качество обслуживания, — это гарантия, которую брокер даёт для доставки одного сообщения.
 
-| QoS | Promise | Cost |
+| QoS | Гарантия | Затраты |
 |---|---|---|
-| 0 | At most once. Sent and forgotten. | Nothing stored, no acknowledgment |
-| 1 | At least once. Redelivered until acknowledged. | Stored until the PUBACK arrives; duplicates possible |
-| 2 | Exactly once. A four-packet handshake removes duplicates. | Most round trips and most state |
+| 0 | Не более одного раза. Отправили и забыли. | Ничего не хранится, подтверждения нет |
+| 1 | Не менее одного раза. Повторная доставка до подтверждения. | Хранение до получения PUBACK; возможны дубликаты |
+| 2 | Ровно один раз. Обмен из четырёх пакетов исключает дубликаты. | Больше всего сетевых обменов и хранимого состояния |
 
-The server implements all three for MQTT connections. A device can
-publish at any level and subscribe at any level, and the effective level
-for a delivery is the lower of the two: a QoS 0 publish to a QoS 1
-subscriber is still delivered at QoS 0.
+Сервер реализует все три уровня для соединений MQTT. Устройство может публиковать и подписываться с любым уровнем, а фактический QoS доставки равен меньшему из двух: публикация с QoS 0 подписчику с QoS 1 всё равно доставляется с QoS 0.
 
-QoS is an MQTT-side contract, though. NATS has no equivalent — a NATS
-client doesn't request a delivery guarantee when it publishes, and
-there's no field on a NATS message to carry one. So these guarantees hold end
-to end only when both ends are MQTT. The next section covers what
-happens when they aren't.
+Однако QoS действует на стороне MQTT. У NATS нет прямого аналога: при публикации клиент не запрашивает такую гарантию, а в сообщении NATS нет поля для её передачи. Поэтому эти гарантии действуют от отправителя до получателя только тогда, когда оба используют MQTT. Следующий раздел объясняет остальные случаи.
 
-## NATS publishes arrive as QoS 0
+## Публикации NATS приходят с QoS 0 {#nats-publishes-arrive-as-qos-0}
 
-The bridge has one asymmetry worth knowing before you design around it.
-A message published by a NATS client and delivered to an MQTT subscriber
-is always QoS 0, whatever QoS that subscription asked for.
+Перед проектированием обмена учитывайте одну асимметрию. Сообщение, опубликованное клиентом NATS и доставленное подписчику MQTT, всегда имеет QoS 0 независимо от запрошенного уровня подписки.
 
-Nothing in a NATS publish carries a QoS. There's no field to read and no
-acknowledgment contract to inherit, so the server delivers at the only
-level it can promise. An MQTT device subscribed at QoS 1 to a subject
-that NATS clients publish to gets at-most-once delivery in practice.
+Публикация NATS не содержит QoS. Серверу неоткуда прочитать этот уровень и нечего унаследовать в качестве соглашения о подтверждении, поэтому он использует единственную доступную гарантию. Устройство MQTT, подписанное с QoS 1 на тему публикаций клиентов NATS, фактически получает доставку не более одного раза.
 
-When a device genuinely needs the delivery guarantee, the message has to
-originate from an MQTT publisher at QoS 1 or 2. If the traffic starts on
-the NATS side and delivery matters, keep the durability on the NATS
-side, in a stream, rather than expecting MQTT redelivery to cover it.
+Если устройству необходима гарантия доставки, сообщение должно исходить от издателя MQTT с QoS 1 или 2. Когда трафик возникает на стороне NATS и его нельзя потерять, обеспечивайте надёжность там же — с помощью потока, не рассчитывая на повторную доставку MQTT.
 
-## Redelivery for QoS 1 and 2
+## Повторная доставка для QoS 1 и 2 {#redelivery-for-qos-1-and-2}
 
-When the server delivers a QoS 1 or 2 message to a matching
-subscription, it keeps the message until the client acknowledges the
-packet identifier. If that acknowledgment doesn't arrive within
-`ack_wait`, the server sends the message again, flagged as a duplicate.
+Доставляя сообщение с QoS 1 или 2 подходящей подписке, сервер хранит его, пока клиент не подтвердит идентификатор пакета. Если подтверждение не приходит за `ack_wait`, сервер повторно отправляет сообщение с признаком дубликата.
 
-The two levels acknowledge differently. QoS 1 is a single PUBACK. QoS 2
-is a four-packet handshake — the client answers with PUBREC, the server
-replies PUBREL, and the client closes it with PUBCOMP — which is what
-lets the server drop duplicates instead of delivering them.
+Подтверждение устроено по-разному. Для QoS 1 достаточно одного PUBACK. QoS 2 использует обмен из четырёх пакетов: клиент отвечает PUBREC, сервер отправляет PUBREL, а клиент завершает обмен пакетом PUBCOMP. Это позволяет отбрасывать дубликаты вместо их доставки.
 
-`ack_wait` defaults to 30 seconds. Set it in the `mqtt {}` block:
+Значение `ack_wait` по умолчанию — 30 секунд. Задайте его в блоке `mqtt {}`:
 
 ```conf
 mqtt {
@@ -81,23 +50,18 @@ mqtt {
 }
 ```
 
-Two things are worth knowing about this in practice. A change to
-`ack_wait` applies only to subscriptions created after the change, so
-existing subscriptions keep the old value until they're recreated. And a
-redelivered message is a genuine duplicate: the device sees the same
-payload twice, which is why QoS 1 is "at least once" rather than
-"exactly once". Handlers that matter should be idempotent.
+На практике учитывайте два обстоятельства. Изменение `ack_wait` применяется только к новым подпискам: существующие сохраняют прежнее значение до пересоздания. Кроме того, повторно доставленное сообщение действительно является дубликатом: устройство видит ту же полезную нагрузку дважды. Именно поэтому QoS 1 означает «не менее одного раза», а не «ровно один раз». Обработчики значимых операций должны быть идемпотентными.
 
-### See QoS 1 run
+### Посмотрите, как работает QoS 1 {#see-qos-1-run}
 
-Subscribe at QoS 1 as the truck's telemetry unit:
+Подпишитесь с QoS 1 от имени телематического блока грузовика:
 
 ```bash
 mosquitto_sub -h 127.0.0.1 -p 1883 \
   -t "fleet/truck-17/telemetry" -q 1 -v
 ```
 
-Publish at QoS 1 from another MQTT client:
+Опубликуйте сообщение с QoS 1 из другого клиента MQTT:
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 \
@@ -105,113 +69,56 @@ mosquitto_pub -h 127.0.0.1 -p 1883 \
   -m "eta 14:20" -q 1
 ```
 
-The subscriber prints the message once:
+Подписчик выводит сообщение один раз:
 
 ```
 fleet/truck-17/telemetry eta 14:20
 ```
 
-The visible output is the same as QoS 0; the difference is the
-bookkeeping around it. The publisher waited for a PUBACK before
-exiting, the server stored the message until the subscriber's PUBACK
-arrived, and if that acknowledgment hadn't come within `ack_wait`, the
-server would have sent the message again with the DUP flag set. Both
-ends were MQTT here, which is what made the QoS 1 contract hold end to
-end.
+Вывод выглядит так же, как при QoS 0; разница — в сопутствующем учёте. Издатель дождался PUBACK перед завершением, сервер хранил сообщение до PUBACK подписчика, а если бы подтверждение не пришло за `ack_wait`, отправил бы сообщение ещё раз с установленным флагом DUP. Здесь обе стороны использовали MQTT, поэтому гарантия QoS 1 действовала на всём пути.
 
-## How many messages can be in flight
+## Сколько сообщений может ожидать подтверждения {#how-many-messages-can-be-in-flight}
 
-`max_ack_pending` caps how many QoS 1 and 2 messages (combined) the
-server will send to a subscription before it has to wait for
-acknowledgments. It defaults to **1024**, and the valid range is 0 to
-65535. Setting it to `0` doesn't mean "nothing in flight" — the server
-reads 0 as "use the default" and applies 1024.
+`max_ack_pending` ограничивает суммарное число сообщений QoS 1 и 2, которые сервер отправляет подписке, прежде чем ждать подтверждений. По умолчанию это **1024**, допустимый диапазон — от 0 до 65535. Значение `0` не запрещает неподтверждённые сообщения: сервер понимает его как «использовать значение по умолчанию» и применяет 1024.
 
-Two limits follow from that:
+Отсюда следуют два ограничения:
 
-- The total across all of a session's subscriptions can't exceed
-  **65535**. A subscription that would push the total over the limit is
-  refused, and the server returns `0x80` in the SUBACK for it.
-- A subscription ending in `#` counts **twice**, because of the two
-  subscriptions the server creates for it (see
-  [Topics and subjects](/learn/mqtt/topics-and-subjects#why--sometimes-creates-two-subscriptions)).
+- Сумма по всем подпискам сессии не может превышать **65535**. Подписка, которая превысила бы предел, отклоняется с кодом `0x80` в SUBACK.
+- Подписка, заканчивающаяся на `#`, учитывается **дважды**, поскольку сервер создаёт для неё две подписки (см. [Темы MQTT и NATS](/learn/mqtt/topics-and-subjects#why--sometimes-creates-two-subscriptions)).
 
-Those two combine into a tighter ceiling than the 65535 suggests. At the
-default of 1024, a session has room for 63 plain subscriptions, or
-31 if they all end in `#` — the check is strict, so the subscription
-that would reach the cap exactly is already refused. A device that
-subscribes to many topics can
-hit that, and the symptom is a subscription refused with `0x80` rather
-than an error your code can catch later. Lower `max_ack_pending` if you
-need more subscriptions per session. Like `ack_wait`, a change applies
-only to new subscriptions.
+Вместе эти условия дают более жёсткий предел, чем можно ожидать от числа 65535. При значении по умолчанию 1024 сессия вмещает 63 обычные подписки или 31 подписку с окончанием `#`: проверка строгая, поэтому подписка, которая достигла бы предела в точности, уже отклоняется. Устройство с множеством тем может столкнуться с этим ограничением; симптомом будет отказ с `0x80` при подписке, а не ошибка, которую можно перехватить позже. Чтобы увеличить число подписок в сессии, уменьшите `max_ack_pending`. Как и для `ack_wait`, изменение применяется только к новым подпискам.
 
-## Sessions
+## Сессии {#sessions}
 
-A session is the subscription state and in-flight delivery state the
-server holds for one client. It's identified by the **client ID** the
-device sends in its CONNECT packet, not by its connection, which is what
-lets it survive a reconnect.
+Сессия — это состояние подписок и неподтверждённых доставок, которое сервер хранит для одного клиента. Она определяется **идентификатором клиента**, переданным устройством в пакете CONNECT, а не соединением. Благодаря этому сессия переживает переподключение.
 
-The server stores sessions in JetStream, so they outlive both the
-connection and a server restart. A reconnecting device that used the
-same client ID finds its subscriptions still in place and any unacked
-QoS 1 and 2 messages still pending.
+Сервер хранит сессии в JetStream, поэтому они переживают и разрыв соединения, и перезапуск сервера. Устройство, подключившееся повторно с тем же идентификатором клиента, находит прежние подписки и неподтверждённые сообщения QoS 1 и 2, всё ещё ожидающие доставки.
 
-The `clean session` flag inverts that. Set it, and the server clears any
-stored state for that client ID and the session lasts only as long as
-the connection. A device with no durable subscriptions should set it;
-one that wants messages buffered while it's offline shouldn't.
+Флаг `clean session` меняет это поведение. При его установке сервер удаляет сохранённое состояние для данного идентификатора, а сессия существует только до закрытия соединения. Устройству без долговременных подписок стоит устанавливать этот флаг; устройству, которому нужны накопленные за время отключения сообщения, — нет.
 
-A client ID has to be a valid name — the same character restrictions
-that apply to NATS subject tokens. An invalid one is refused at connect
-with an identifier-rejected code. An empty client ID is allowed only
-together with the clean session flag, in which case the server generates
-one.
+Идентификатор клиента должен быть допустимым именем: действуют те же ограничения на символы, что и для токенов тем NATS. Недопустимый идентификатор отклоняется при подключении с кодом отказа в идентификаторе. Пустой идентификатор допустим только с флагом чистой сессии; тогда сервер генерирует его сам.
 
-### Two devices, one client ID
+### Два устройства с одним идентификатором клиента {#two-devices-one-client-id}
 
-Client IDs must be unique. The specification requires that when a second
-connection presents a client ID already in use, the server closes the
-first one and accepts the newcomer.
+Идентификаторы клиентов должны быть уникальными. Спецификация требует, чтобы при втором подключении с уже используемым идентификатором сервер закрывал первое соединение и принимал новое.
 
-This bites when it happens by accident. Deploy the same client ID to
-two devices and each connection evicts the other; if both have
-reconnect logic, the cycle repeats as fast as they can reconnect. The
-server limits the damage by recording the client ID as flapping and
-refusing to hand the session over again for about a second, which slows
-the cycle without stopping it.
+Случайное совпадение приводит к проблемам. Если развернуть один идентификатор на двух устройствах, каждое соединение вытесняет другое; при автоматическом переподключении цикл повторяется с максимально возможной частотой. Сервер ограничивает последствия: помечает идентификатор как нестабильный и примерно на секунду запрещает очередную передачу сессии. Это замедляет цикл, но не прекращает его.
 
-The check works across a cluster too, and there it's less immediate:
-eviction has to travel between servers rather than happening in one
-process. There are also cases where the server refuses the new
-connection instead of closing the old one — for instance when the
-existing connection is in the middle of processing packets and can't be
-closed safely. Treat client IDs as unique per device and none of this
-comes up.
+Проверка действует и в кластере, хотя не так быстро: для вытеснения нужен обмен между серверами. В некоторых случаях сервер отклоняет новое соединение вместо закрытия старого — например, если существующее соединение обрабатывает пакеты и его нельзя безопасно закрыть. Уникальный идентификатор для каждого устройства исключает эти ситуации.
 
-## Will messages
+## Сообщения завещания {#will-messages}
 
-A will message is how the rest of the system finds out a device dropped
-off. The device registers the will in its CONNECT packet: a topic, a
-payload, and optionally a QoS level and the RETAIN flag. If the
-connection ends without a clean DISCONNECT — the network drops, the
-keepalive times out, the process dies — the server publishes the will.
-A clean DISCONNECT discards it silently.
+Сообщение завещания сообщает остальной системе об аварийном отключении устройства. Устройство регистрирует его в пакете CONNECT: тему, полезную нагрузку и при необходимости QoS и флаг RETAIN. Если соединение завершается без корректного DISCONNECT — пропала сеть, истёк keepalive или завершился процесс, — сервер публикует завещание. Корректный DISCONNECT удаляет его без публикации.
 
-The will topic converts to a subject by the same rules as any other
-topic, so the notification reaches NATS subscribers too. That makes
-device liveness visible to the whole backbone: a will on
-`fleet/truck-17/status` lands on `fleet.truck-17.status`, where any
-NATS service can react to it.
+Тема завещания преобразуется по обычным правилам, поэтому уведомление получают и подписчики NATS. Состояние устройства становится видно всей системе: завещание в `fleet/truck-17/status` попадает в `fleet.truck-17.status`, где на него может отреагировать любой сервис NATS.
 
-Watch it happen. Subscribe on the NATS side:
+Проверьте это. Подпишитесь со стороны NATS:
 
 ```bash
 nats sub "fleet.>"
 ```
 
-Connect an MQTT client that registers a will, in another terminal:
+В другом терминале подключите клиент MQTT, регистрирующий завещание:
 
 ```bash
 mosquitto_sub -h 127.0.0.1 -p 1883 \
@@ -220,14 +127,13 @@ mosquitto_sub -h 127.0.0.1 -p 1883 \
   --will-payload "offline"
 ```
 
-Now kill that client without giving it the chance to disconnect
-cleanly:
+Теперь принудительно завершите клиент, не дав ему корректно отключиться:
 
 ```bash
 kill -9 $(pgrep mosquitto_sub)
 ```
 
-The NATS subscriber receives the will:
+Подписчик NATS получает завещание:
 
 ```
 [#1] Received on "fleet.truck-17.status"
@@ -236,22 +142,11 @@ Nmqtt-Pub: 0
 offline
 ```
 
-Interrupt the client with Ctrl-C instead and nothing arrives: mosquitto
-sends a DISCONNECT on the way out, and the server discards the will.
-The will fires only on an abnormal disconnect, which is exactly the
-case you want to detect.
+Если вместо этого прервать клиент сочетанием Ctrl-C, ничего не придёт: mosquitto отправит DISCONNECT перед завершением, а сервер удалит завещание. Оно публикуется только при аварийном отключении — именно его и требуется обнаруживать.
 
-Pair the will with the RETAIN flag (`--will-retain` in mosquitto) and
-the "offline" marker persists as the topic's retained value, so a
-dashboard that subscribes later still sees the device as down. Retained
-messages are the next section. Publish with the
-RETAIN flag and the server stores that message; every subscriber whose
-filter matches the topic afterward receives it immediately on
-subscribing, without waiting for the next publish.
+Добавьте к завещанию флаг RETAIN (`--will-retain` в mosquitto), и отметка «не в сети» останется сохранённым значением темы. Панель, подписавшаяся позднее, тоже увидит, что устройство отключено. Далее рассмотрены сохранённые сообщения. При публикации с флагом RETAIN сервер сохраняет сообщение; каждый последующий подписчик, чей фильтр соответствует теме, получает его сразу при подписке, не дожидаясь следующей публикации.
 
-This is what makes a device's current state readable on demand. A
-dashboard subscribing to `sensors/warehouse/cold-1/temp` gets the last
-reading right away instead of waiting for the sensor's next report.
+Так можно получить текущее состояние устройства по запросу. Панель, подписывающаяся на `sensors/warehouse/cold-1/temp`, сразу получает последнее показание вместо ожидания следующего отчёта датчика.
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 \
@@ -259,7 +154,7 @@ mosquitto_pub -h 127.0.0.1 -p 1883 \
   -m "4.2" --retain
 ```
 
-Subscribe afterward and the reading arrives at once:
+Подпишитесь после публикации — показание придёт немедленно:
 
 ```bash
 mosquitto_sub -h 127.0.0.1 -p 1883 \
@@ -272,19 +167,13 @@ sensors/warehouse/cold-1/temp 4.2
 
 <div class="nats-flow" data-scenario="mqttRetainedAnimated" data-width="680" data-height="340"></div>
 
-Only one message is retained per topic; a new retained publish replaces
-the previous one. Retention is per topic name, not per filter, so a
-subscriber using a wildcard receives the retained message for every
-matching topic.
+Для каждой темы хранится только одно сообщение: новая публикация с RETAIN заменяет предыдущее. Сохранение привязано к имени темы, а не к фильтру, поэтому подписчик с подстановочным знаком получает сохранённое сообщение каждой подходящей темы.
 
-Retained messages are stored regardless of QoS. A retained QoS 0
-message is still persisted, which is part of why the account needs
-JetStream even for a fleet that never uses QoS 1.
+Сохранённые сообщения записываются независимо от QoS. Сообщение QoS 0 с RETAIN тоже сохраняется — в том числе поэтому учётной записи нужен JetStream, даже если весь парк никогда не использует QoS 1.
 
-### Clearing a retained message
+### Удаление сохранённого сообщения {#clearing-a-retained-message}
 
-To delete one, publish an empty payload to the same topic with RETAIN
-set:
+Для удаления опубликуйте в ту же тему пустую полезную нагрузку с флагом RETAIN:
 
 ```bash
 mosquitto_pub -h 127.0.0.1 -p 1883 \
@@ -292,70 +181,37 @@ mosquitto_pub -h 127.0.0.1 -p 1883 \
   -m "" --retain
 ```
 
-The zero-byte message is delivered to current subscribers as a normal
-message, then the stored retained message is removed. Future subscribers
-get nothing for that topic until something retains a new value.
+Сообщение нулевой длины доставляется текущим подписчикам как обычное, затем сохранённое сообщение удаляется. Новые подписчики ничего не получат для этой темы, пока кто-нибудь не сохранит новое значение.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-**Expecting QoS 1 to cover NATS-originated messages.** A device
-subscribed at QoS 1 still receives NATS publishes at QoS 0, with no
-redelivery. If that traffic has to survive a device being offline, put
-it in a JetStream stream and have something replay it, rather than
-relying on the MQTT subscription.
+**Ожидание QoS 1 для сообщений из NATS.** Устройство с подпиской QoS 1 всё равно получает публикации NATS с QoS 0, без повторной доставки. Если этот трафик должен пережить отключение устройства, сохраняйте его в потоке JetStream и обеспечьте повторное воспроизведение.
 
-**Sharing a client ID across devices.** Two devices with the same client
-ID evict each other on every reconnect. It looks like a flaky network:
-both devices connect and both keep dropping. Give every device its
-own client ID, and prefer one derived from hardware rather than baked
-into an image.
+**Один идентификатор клиента на нескольких устройствах.** Два устройства с одинаковым идентификатором вытесняют друг друга при каждом переподключении. Это похоже на нестабильную сеть: оба подключаются и постоянно теряют связь. Назначайте каждому устройству свой идентификатор, предпочтительно на основе аппаратных данных, а не зашитый в общий образ.
 
-**Raising `max_ack_pending` without counting subscriptions.** The
-per-session total is capped at 65535, and every `#` subscription costs
-double. Raise the per-subscription value on a device with many
-subscriptions and new subscriptions start failing with `0x80` in the
-SUBACK, which is easy to misread as a permissions problem.
+**Увеличение `max_ack_pending` без учёта числа подписок.** Общий лимит сессии равен 65535, причём каждая подписка с `#` учитывается дважды. Если повысить значение для одной подписки на устройстве со множеством подписок, новые подписки начнут получать `0x80` в SUBACK. Это легко принять за проблему с правами.
 
-**Assuming a retained message is a message queue.** Only the last
-retained value per topic is kept. A device that publishes ten readings
-with RETAIN while a subscriber is offline leaves one value behind, not
-ten. Use JetStream when you need the history.
+**Восприятие сохранённых сообщений как очереди.** Хранится лишь последнее значение каждой темы. Устройство, опубликовавшее десять показаний с RETAIN за время отсутствия подписчика, оставляет одно значение, а не десять. Если нужна история, используйте JetStream.
 
-**Testing a will with a clean shutdown.** A client that exits normally
-sends DISCONNECT, and the server discards the will without publishing
-it. If your liveness test stops the device politely, you'll conclude
-wills don't work. Test with a hard kill or by cutting the network, the
-failures the will exists for.
+**Проверка завещания корректным завершением.** Клиент, завершающийся штатно, отправляет DISCONNECT, и сервер удаляет завещание без публикации. Если проверка работоспособности аккуратно останавливает устройство, можно ошибочно решить, что завещания не работают. Проверяйте принудительным завершением или отключением сети — именно для этих сбоев они предназначены.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-Your setup is unchanged, and you now know what the server is holding:
+Конфигурация не изменилась, а вы теперь знаете, какое состояние хранит сервер:
 
-- QoS 0, 1, and 2 supported, with delivery at the lower of publish and
-  subscription QoS
-- NATS-originated messages always delivered at QoS 0
-- unacknowledged QoS 1 and 2 messages redelivered after `ack_wait`
-  (30 seconds by default), capped in flight by `max_ack_pending`
-- sessions keyed by client ID, stored in JetStream, cleared by the
-  clean session flag
-- a will message registered at connect, published on abnormal
-  disconnect, and discarded on a clean one
-- one retained message per topic, replaced by the next retained publish
-  and deleted by an empty one
+- Поддерживаются QoS 0, 1 и 2; при доставке выбирается меньший QoS публикации и подписки.
+- Сообщения из NATS всегда доставляются с QoS 0.
+- Неподтверждённые сообщения QoS 1 и 2 доставляются повторно через `ack_wait` (по умолчанию 30 секунд); число ожидающих подтверждения ограничено `max_ack_pending`.
+- Сессии определяются идентификатором клиента, хранятся в JetStream и очищаются флагом чистой сессии.
+- Завещание регистрируется при подключении, публикуется при аварийном отключении и удаляется при корректном.
+- Для каждой темы хранится одно сообщение с RETAIN; следующая публикация с RETAIN заменяет его, а пустая удаляет.
 
-## What's next
+## Что дальше {#whats-next}
 
-Everything so far ran on one server with no authentication. Devices in
-the field need credentials, and the fleet needs more than one server.
-[Auth and clustering](/learn/mqtt/auth-and-clustering) restricts a user to MQTT
-connections, writes permissions for a device fleet, and covers what
-changes when MQTT runs on the `east` cluster.
+До сих пор всё работало на одном сервере без аутентификации. Устройствам вне лаборатории нужны учётные данные, а парку — несколько серверов. Страница [Аутентификация и кластеризация](/learn/mqtt/auth-and-clustering) показывает, как ограничить пользователя соединениями MQTT, задать права парка устройств и учесть особенности работы MQTT в кластере `east`.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → mqtt](/reference/config/mqtt/) — `ack_wait`,
-  `max_ack_pending`, and the rest of the block
-- [JetStream → Delivery and acknowledgment](/learn/jetstream/delivery-and-acknowledgment)
-  — the same redelivery idea on the NATS side, where MQTT's state is stored
-- [Topics and subjects](/learn/mqtt/topics-and-subjects) — the `#` rule that makes
-  a subscription cost double
+- [Справочник → mqtt](/reference/config/mqtt/) — `ack_wait`, `max_ack_pending` и остальные параметры блока.
+- [JetStream → Доставка и подтверждение](/learn/jetstream/delivery-and-acknowledgment) — тот же принцип повторной доставки на стороне NATS, где хранится состояние MQTT.
+- [Темы MQTT и NATS](/learn/mqtt/topics-and-subjects) — правило `#`, из-за которого подписка учитывается дважды.

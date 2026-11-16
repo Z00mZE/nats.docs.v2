@@ -1,48 +1,48 @@
-# Configuration
+# Конфигурация {#configuration}
 
-While the NATS server has many flags that allow for simple testing of features, the NATS server products provide a flexible configuration format that combines the best of traditional formats and newer styles such as JSON and YAML.
+Хотя сервер NATS имеет множество флагов для простого тестирования возможностей, продукты NATS Server предоставляют гибкий формат конфигурации, сочетающий лучшие стороны традиционных форматов и современных подходов, таких как JSON и YAML.
 
-## Syntax
+## Синтаксис {#syntax}
 
-The NATS configuration file supports the following syntax:
+Файл конфигурации NATS поддерживает следующий синтаксис:
 
-* Lines can be commented with `#` and `//`
-* Values can be assigned to properties with:
+* Строки можно комментировать с помощью `#` и `//`
+* Значения можно присваивать свойствам с помощью:
   * Equals sign: `foo = 2`
   * Colon: `foo: 2`
   * Whitespace: `foo 2`
-* Arrays are enclosed in brackets: `["a", "b", "c"]`
-* Maps are enclosed in braces: `{foo: 2}`
-* Maps can be assigned with no key separator
-* Semicolons can be used as terminators
+* Массивы заключаются в квадратные скобки: `["a", "b", "c"]`
+* Объекты заключаются в фигурные скобки: `{foo: 2}`
+* Объекты можно присваивать без разделителя после ключа
+* Точка с запятой может завершать выражение
 
-The NATS configuration file is parsed with UTF-8 encoding.
+Файл конфигурации NATS разбирается в кодировке UTF-8.
 
 :::note
-The NATS configuration in the file can also be rendered as a JSON object (with comments!), but to combine it with variables the variables still have to be unquoted.
+Конфигурацию NATS в файле также можно представить в виде объекта JSON (с комментариями!), однако при использовании переменных их по-прежнему нужно указывать без кавычек.
 :::
 
-### Strings and Numbers
+### Строки и числа {#strings-and-numbers}
 
-The configuration parser is very forgiving, as you have seen:
+Как видно, синтаксический анализатор конфигурации допускает множество вариантов:
 
-* values can be a primitive, or a list, or a map
-* strings and numbers typically do the right thing
-* numbers support units such as, 1K for 1000, 1KB for 1024
+* Значениями могут быть примитивы, списки или объекты
+* Строки и числа обычно обрабатываются ожидаемым образом
+* Числа поддерживают единицы, например 1K для 1000 и 1KB для 1024
 
-String values that start with a digit or a dot '.' can create issues. To force such values as strings, quote them.
+Строковые значения, начинающиеся с цифры или точки '.', могут вызывать проблемы. Чтобы явно задать их как строки, заключите их в кавычки.
 
-Bad Config:
+Неверная конфигурация:
 
 ```text
 listen: 127.0.0.1:4222
 authorization: {
-    # BAD!
+    # НЕВЕРНО!
     token: 3secret
 }
 ```
 
-Good Config:
+Верная конфигурация:
 
 ```text
 listen: 127.0.0.1:4222
@@ -51,48 +51,48 @@ authorization: {
 }
 ```
 
-### Variables
+### Переменные {#variables}
 
-Server configurations can specify variables. Variables allow you to reference a value from one or more sections in the configuration. Variables:
+В конфигурациях сервера можно задавать переменные. Они позволяют ссылаться на значение из одного или нескольких разделов конфигурации. Переменные:
 
-* Are block-scoped
-* Are referenced with a `$` prefix. They have to be unquoted when being referenced, for example an assigment like `foo = "$example"` will result in `foo` being the literal string `"$example"`.
-* Can be resolved from environment variables having the same name
+* Имеют область видимости блока
+* Используют префикс `$` при обращении. Ссылки на переменные не заключаются в кавычки: например, присваивание `foo = "$example"` задаст для `foo` буквальную строку `"$example"`.
+* Могут получать значения из одноимённых переменных окружения
 
 :::warning
-If the environment variable value begins with a number you may have trouble resolving it depending on the server version you are running.
+Если значение переменной окружения начинается с цифры, при его разрешении могут возникнуть проблемы в зависимости от версии сервера.
 :::
 
 ```text
-# Define a variable in the config
+# Определите переменную в конфигурации
 TOKEN: "secret"
 
-# Reference the variable
+# Используйте переменную
 authorization {
     token: $TOKEN
 }
 ```
 
-A similar configuration, but this time, the value is in the environment:
+Аналогичная конфигурация, но теперь значение задано в окружении:
 
 ```text
-# TOKEN is defined in the environment
+# TOKEN задана в окружении
 authorization {
     token: $TOKEN
 }
 ```
 
-The environment variable can either be inlined (below) or previously exported.
+Переменную окружения можно задать непосредственно в команде (ниже) или экспортировать заранее.
 
 ```
 TOKEN="hello" nats-server -c /config/file
 ```
 
-### Include Directive
+### Директива включения {#include-directive}
 
-The `include` directive allows you to split a server configuration into several files. This is useful for separating configuration into chunks that you can easily reuse between different servers.
+Директива `include` позволяет разделить конфигурацию сервера на несколько файлов. Это удобно для выделения частей конфигурации, которые можно повторно использовать на разных серверах.
 
-Includes _must_ use relative paths, and are relative to the main configuration \(the one specified via the `-c` option\):
+Включаемые файлы _должны_ задаваться относительными путями от основного файла конфигурации \(указанного параметром `-c`\):
 
 server.conf:
 
@@ -102,7 +102,7 @@ include ./auth.conf
 ```
 
 :::note
-Note that `include` is not followed by `=` or `:`, as it is a _directive_.
+После `include` не ставится `=` или `:`, поскольку это _директива_.
 :::
 
 auth.conf:
@@ -113,143 +113,143 @@ authorization: {
 }
 ```
 
-Starting the server only needs to refer to the top-level config containing the include.
+При запуске сервера достаточно указать файл конфигурации верхнего уровня, содержащий включение.
 
 ```text
 nats-server -c server.conf
 ```
 
 
-## Properties
+## Свойства {#properties}
 
-### Connectivity
+### Подключения {#connectivity}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`host`](./host.md) | Host for client connections. | `string` | `0.0.0.0` | No |
-| [`port`](./port.md) | Port for client connections. Use `-1` for a random available port. | `integer` | `4222` | No\* |
-| [`listen`](./listen.md) | `<host>:<port>` for a client connections. | `string` | - | No |
-| [`client_advertise`](./client_advertise.md) | Advertised client `<host>:<port>`. Useful for cluster setups behind a NAT. | `string` | - | Yes |
-| [`tls`](./tls/index.md) | TLS configuration for client and HTTP monitoring. | `object` | - | Yes\* |
-| [`proxy_protocol`](./proxy_protocol.md) | Accept the PROXY protocol header on client connections, so the server sees the original client address behind a load balancer. | `boolean` | `false` | No |
-| [`allow_non_tls`](./allow_non_tls.md) | Allow mixed TLS and non-TLS on the same port. | `boolean` | - | No |
-| [`ocsp`](./ocsp/index.md) | OCSP Stapling is honored by default for certificates that have the `status_request` `Must-Staple` flag. If explicitly disabled, the server will not request staples even if `Must-Staple` is present. | `(multiple)` | `true` | Yes |
-| [`ocsp_cache`](./ocsp_cache/index.md) | Cache OCSP responses the server staples, so it does not query the responder on every handshake. | `(multiple)` | - | Yes |
-| [`mqtt`](./mqtt/index.md) | Configuration for enabling the MQTT interface. | `object` | - | Yes\* |
-| [`websocket`](./websocket/index.md) | Configuration for enabling the WebSocket interface. | `object` | - | Yes\* |
+| [`host`](./host.md) | Хост для клиентских соединений. | `string` | `0.0.0.0` | Нет |
+| [`port`](./port.md) | Порт клиентских соединений. Значение `-1` выбирает случайный свободный порт. | `integer` | `4222` | Нет\* |
+| [`listen`](./listen.md) | `<host>:<port>` для клиентских соединений. | `string` | - | Нет |
+| [`client_advertise`](./client_advertise.md) | Объявляемый клиентский адрес `<host>:<port>`. Полезен для кластеров за NAT. | `string` | - | Да |
+| [`tls`](./tls/index.md) | Конфигурация TLS для клиентов и мониторинга HTTP. | `object` | - | Да\* |
+| [`proxy_protocol`](./proxy_protocol.md) | Принимать заголовок протокола PROXY в клиентских соединениях, чтобы сервер видел исходный адрес клиента за балансировщиком нагрузки. | `boolean` | `false` | Нет |
+| [`allow_non_tls`](./allow_non_tls.md) | Разрешить TLS и незашифрованные соединения на одном порту. | `boolean` | - | Нет |
+| [`ocsp`](./ocsp/index.md) | OCSP Stapling по умолчанию применяется для сертификатов с флагом `status_request` `Must-Staple`. При явном отключении сервер не запрашивает прикрепляемые ответы даже при наличии `Must-Staple`. | `(multiple)` | `true` | Да |
+| [`ocsp_cache`](./ocsp_cache/index.md) | Кэшировать прикрепляемые сервером ответы OCSP, чтобы не обращаться к ответчику при каждом рукопожатии. | `(multiple)` | - | Да |
+| [`mqtt`](./mqtt/index.md) | Конфигурация включения интерфейса MQTT. | `object` | - | Да\* |
+| [`websocket`](./websocket/index.md) | Конфигурация включения интерфейса WebSocket. | `object` | - | Да\* |
 
-\* See the property page for reload caveats.
-### Centralized Auth
+\* Ограничения перезагрузки описаны на странице параметра.
+### Централизованная аутентификация {#centralized-auth}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`authorization`](./authorization/index.md) | Static single or multi-user declaration. | `object` | - | Yes |
-| [`accounts`](./accounts/index.md) | Static config-defined accounts. | `object` | - | Yes |
-| [`no_auth_user`](./no_auth_user.md) | Name of the user that non-authenticated clients will inherit the authorization controls of. This must be a user defined in either the `authorization` or `accounts` block. | `string` | - | Yes\* |
+| [`authorization`](./authorization/index.md) | Статическое объявление одного или нескольких пользователей. | `object` | - | Да |
+| [`accounts`](./accounts/index.md) | Статические аккаунты, заданные конфигурацией. | `object` | - | Да |
+| [`no_auth_user`](./no_auth_user.md) | Имя пользователя, чьи разрешения наследуют неаутентифицированные клиенты. Пользователь должен быть определён в блоке `authorization` или `accounts`. | `string` | - | Да\* |
 
-\* See the property page for reload caveats.
-### Decentralized Auth
+\* Ограничения перезагрузки описаны на странице параметра.
+### Децентрализованная аутентификация {#decentralized-auth}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`operator`](./operator.md) | One or more operator JWTs, either in files or inlined. | `(multiple)` | - | No |
-| [`trusted_keys`](./trusted_keys.md) | One or more operator public keys to trust. | `string` | - | No |
-| [`resolver`](./resolver/index.md) | Takes precedence over the value obtained from the `operator` if defined.  If a string value is used, it must be `MEMORY` or `URL(<url>)` where where `url` is an HTTP endpoint pointing to the [NATS account resolver](https://docs.nats.io/legacy/nas).  Note: the NATS account resolver is deprecated and the built-in NATS-based resolver should be used. | `(multiple)` | - | Yes\* |
-| [`resolver_tls`](./resolver_tls/index.md) |  | `object` | - | Yes |
-| [`resolver_preload`](./resolver_preload.md) | Map of account public key to the account JWT. | `string` | - | Yes\* |
-| [`resolver_pinned_accounts`](./resolver_pinned_accounts.md) |  | `(multiple)` | - | Yes |
-| [`system_account`](./system_account.md) | Name or public key of the account that will be deemed the *system* account. | `string` | `$SYS` | No |
-| [`no_system_account`](./no_system_account.md) |  | `boolean` | - | No |
+| [`operator`](./operator.md) | Один или несколько JWT оператора в файлах или непосредственно в конфигурации. | `(multiple)` | - | Нет |
+| [`trusted_keys`](./trusted_keys.md) | Один или несколько доверенных открытых ключей операторов. | `string` | - | Нет |
+| [`resolver`](./resolver/index.md) | Имеет приоритет перед значением из `operator`, если задано. Строковое значение должно быть `MEMORY` или `URL(<url>)`, где `url` — HTTP-адрес [резолвера аккаунтов NATS](https://docs.nats.io/legacy/nas). Примечание: резолвер аккаунтов NATS устарел; следует использовать встроенный резолвер на базе NATS. | `(multiple)` | - | Да\* |
+| [`resolver_tls`](./resolver_tls/index.md) |  | `object` | - | Да |
+| [`resolver_preload`](./resolver_preload.md) | Отображение открытых ключей аккаунтов на их JWT. | `string` | - | Да\* |
+| [`resolver_pinned_accounts`](./resolver_pinned_accounts.md) |  | `(multiple)` | - | Да |
+| [`system_account`](./system_account.md) | Имя или открытый ключ аккаунта, который будет считаться *системным*. | `string` | `$SYS` | Нет |
+| [`no_system_account`](./no_system_account.md) |  | `boolean` | - | Нет |
 
-\* See the property page for reload caveats.
-### Clustering
+\* Ограничения перезагрузки описаны на странице параметра.
+### Кластеризация {#clustering}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`cluster`](./cluster/index.md) | Configuration for clustering a set of servers. | `object` | - | Yes\* |
-| [`gateway`](./gateway/index.md) | Configuration for setting up gateway connections between clusters. | `object` | - | Yes\* |
+| [`cluster`](./cluster/index.md) | Конфигурация объединения серверов в кластер. | `object` | - | Да\* |
+| [`gateway`](./gateway/index.md) | Конфигурация соединений шлюзов между кластерами. | `object` | - | Да\* |
 
-\* See the property page for reload caveats.
-### Leafnodes
+\* Ограничения перезагрузки описаны на странице параметра.
+### Листовые узлы {#leafnodes}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`leafnodes`](./leafnodes/index.md) | Configuration for setting up leaf node connections. | `object` | - | Yes\* |
+| [`leafnodes`](./leafnodes/index.md) | Конфигурация соединений листовых узлов. | `object` | - | Да\* |
 
-\* See the property page for reload caveats.
-### JetStream
+\* Ограничения перезагрузки описаны на странице параметра.
+### JetStream {#jetstream}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`jetstream`](./jetstream/index.md) |  | `(multiple)` | `false` | Yes\* |
-| [`store_dir`](./store_dir.md) | Directory to use for file-based JetStream storage. | `string` | - | Yes\* |
+| [`jetstream`](./jetstream/index.md) |  | `(multiple)` | `false` | Да\* |
+| [`store_dir`](./store_dir.md) | Каталог файлового хранилища JetStream. | `string` | - | Да\* |
 
-\* See the property page for reload caveats.
-### Subject Mapping
+\* Ограничения перезагрузки описаны на странице параметра.
+### Отображение субъектов {#subject-mapping}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`mappings`](./mappings/index.md) |  | `(multiple)` | - | Yes |
-### Logging
+| [`mappings`](./mappings/index.md) |  | `(multiple)` | - | Да |
+### Журналирование {#logging}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`debug`](./debug.md) | If true, enables debug log messages. | `boolean` | `false` | Yes\* |
-| [`trace`](./trace.md) | If true, enables protocol trace log messages, excluding the system account. | `boolean` | `false` | Yes\* |
-| [`trace_headers`](./trace_headers.md) | Trace message headers. Also enables `trace`. | `boolean` | `false` | Yes |
-| [`trace_verbose`](./trace_verbose.md) | If true, enables protocol trace log messages, including the system account. | `boolean` | `false` | Yes\* |
-| [`logtime`](./logtime.md) | If false, log without timestamps. | `string` | `true` | Yes\* |
-| [`logtime_utc`](./logtime_utc.md) | If true, log timestamps with be in UTC rather than the local timezone. | `string` | `false` | Yes |
-| [`logfile`](./logfile.md) | Log file name. | `string` | - | Yes\* |
-| [`logfile_max_num`](./logfile_max_num.md) | Maximum number of rotated log files to keep. Older ones are deleted. | `integer` | - | No |
-| [`logfile_size_limit`](./logfile_size_limit.md) | Size in bytes after the log file rolls over to a new one. | `integer` | `0` | No |
-| [`syslog`](./syslog.md) | Log to syslog. | `boolean` | `false` | Yes\* |
-| [`remote_syslog`](./remote_syslog.md) | Remote syslog address. | `string` | - | Yes\* |
+| [`debug`](./debug.md) | Если true, включает отладочные сообщения журнала. | `boolean` | `false` | Да\* |
+| [`trace`](./trace.md) | Если true, включает трассировку протокола в журнале, кроме системного аккаунта. | `boolean` | `false` | Да\* |
+| [`trace_headers`](./trace_headers.md) | Трассировать заголовки сообщений. Также включает `trace`. | `boolean` | `false` | Да |
+| [`trace_verbose`](./trace_verbose.md) | Если true, включает трассировку протокола в журнале, включая системный аккаунт. | `boolean` | `false` | Да\* |
+| [`logtime`](./logtime.md) | Если false, записи журнала не содержат временных меток. | `string` | `true` | Да\* |
+| [`logtime_utc`](./logtime_utc.md) | Если true, временные метки журнала используют UTC вместо местного часового пояса. | `string` | `false` | Да |
+| [`logfile`](./logfile.md) | Имя файла журнала. | `string` | - | Да\* |
+| [`logfile_max_num`](./logfile_max_num.md) | Максимальное число сохраняемых файлов ротации журнала. Более старые файлы удаляются. | `integer` | - | Нет |
+| [`logfile_size_limit`](./logfile_size_limit.md) | Размер в байтах, после которого журнал переключается на новый файл. | `integer` | `0` | Нет |
+| [`syslog`](./syslog.md) | Записывать журнал в syslog. | `boolean` | `false` | Да\* |
+| [`remote_syslog`](./remote_syslog.md) | Адрес удалённого syslog. | `string` | - | Да\* |
 
-\* See the property page for reload caveats.
-### Monitoring and Tracing
+\* Ограничения перезагрузки описаны на странице параметра.
+### Мониторинг и трассировка {#monitoring-and-tracing}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`server_name`](./server_name.md) | The servers name, shows up in logging. Defaults to the generated server ID. When JetStream is used, within a domain, all server names need to be unique. | `string` | - | No |
-| [`server_tags`](./server_tags.md) | One or more tags associated with the server. This is currently used for placement of JetStream streams and consumers. | `(multiple)` | - | Yes\* |
-| [`http`](./http.md) | Listen specification `<host>:<port>` for server monitoring. | `string` | - | No |
-| [`https`](./https.md) | Listen specification `<host>:<port>` for TLS server monitoring. | `string` | - | No |
-| [`http_port`](./http_port.md) | HTTP port for server monitoring. | `integer` | - | No |
-| [`https_port`](./https_port.md) | HTTPS port for server monitoring. | `integer` | - | No |
-| [`http_base_path`](./http_base_path.md) | Base path for monitoring endpoints. | `string` | - | No\* |
-| [`connect_error_reports`](./connect_error_reports.md) | Number of attempts at which a repeated failed route, gateway or leaf node connection is reported. Connect attempts are made once every second. | `integer` | `3600` | Yes\* |
-| [`reconnect_error_reports`](./reconnect_error_reports.md) | Number of failed attempt to reconnect a route, gateway or leaf node connection. Default is to report every attempt. | `integer` | `1` | Yes |
-| [`max_traced_msg_len`](./max_traced_msg_len.md) | Set a limit to the trace of the payload of a message. | `integer` | `0` | Yes |
+| [`server_name`](./server_name.md) | Имя сервера, отображаемое в журнале. По умолчанию используется сгенерированный идентификатор сервера. При использовании JetStream имена всех серверов в пределах домена должны быть уникальными. | `string` | - | Нет |
+| [`server_tags`](./server_tags.md) | Один или несколько тегов сервера. Сейчас используются для размещения потоков и потребителей JetStream. | `(multiple)` | - | Да\* |
+| [`http`](./http.md) | Адрес прослушивания `<host>:<port>` для мониторинга сервера. | `string` | - | Нет |
+| [`https`](./https.md) | Адрес прослушивания `<host>:<port>` для мониторинга сервера по TLS. | `string` | - | Нет |
+| [`http_port`](./http_port.md) | Порт HTTP для мониторинга сервера. | `integer` | - | Нет |
+| [`https_port`](./https_port.md) | Порт HTTPS для мониторинга сервера. | `integer` | - | Нет |
+| [`http_base_path`](./http_base_path.md) | Базовый путь конечных точек мониторинга. | `string` | - | Нет\* |
+| [`connect_error_reports`](./connect_error_reports.md) | Число попыток, через которое сообщается о повторяющейся ошибке подключения маршрута, шлюза или листового узла. Попытки подключения выполняются раз в секунду. | `integer` | `3600` | Да\* |
+| [`reconnect_error_reports`](./reconnect_error_reports.md) | Число неудачных попыток переподключения маршрута, шлюза или листового узла между сообщениями об ошибке. По умолчанию сообщается о каждой попытке. | `integer` | `1` | Да |
+| [`max_traced_msg_len`](./max_traced_msg_len.md) | Ограничить объём полезной нагрузки сообщения, записываемый в трассировку. | `integer` | `0` | Да |
 
-\* See the property page for reload caveats.
-### Runtime Configuration
+\* Ограничения перезагрузки описаны на странице параметра.
+### Настройки времени выполнения {#runtime-configuration}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`max_control_line`](./max_control_line.md) | Maximum length of a protocol line (including combined length of subject and queue group). Increasing this value may require client changes to be used. Applies to all traffic. | `string` | `4KB` | Yes\* |
-| [`max_connections`](./max_connections.md) | Maximum number of active client connections. | `string` | `64K` | Yes |
-| [`max_payload`](./max_payload.md) | Maximum number of bytes in a message payload. Reducing this size may force you to implement chunking in your clients. Applies to client and leafnode payloads. It is not recommended to use values over 8MB but `max_payload` can be set up to 64MB. The max payload must be equal or smaller to the `max_pending` value. | `string` | `1MB` | Yes |
-| [`max_pending`](./max_pending.md) | Maximum number of bytes buffered for a connection Applies to client connections. Note that applications can also set `PendingLimits` (number of messages and total size) for their subscriptions. | `string` | `64MB` | No |
-| [`max_subscriptions`](./max_subscriptions.md) | Maximum numbers of subscriptions per client and leafnode accounts connection. A value of `0` means unlimited. | `string` | `0` | No\* |
-| [`max_subscription_tokens`](./max_subscription_tokens.md) |  | `integer` | - | No |
-| [`ping_interval`](./ping_interval.md) | Duration at which pings are sent to clients, leaf nodes and routes. In the presence of client traffic, such as messages or client side pings, the server will not send pings. Therefore it is recommended to keep this value bigger than what clients use. | `string` | `2m` | Yes |
-| [`ping_max`](./ping_max.md) | After how many unanswered pings the server will allow before closing the connection. | `integer` | `2` | Yes |
-| [`write_timeout`](./write_timeout.md) | What the server does when a connection misses its `write_deadline`: `close` drops it, `retry` keeps trying, `default` uses the built-in behaviour. | `string` | `default` | No |
-| [`max_closed_clients`](./max_closed_clients.md) | How many closed connections the server keeps for `/connz` reporting. | `integer` | `10000` | No |
-| [`no_fast_producer_stall`](./no_fast_producer_stall.md) | Do not stall a fast producer when a consumer cannot keep up. The server drops messages to the slow consumer instead. | `boolean` | `false` | Yes |
-| [`server_metadata`](./server_metadata.md) | Arbitrary key/value pairs reported with this server in monitoring endpoints. | `string` | - | Yes |
-| [`feature_flags`](./feature_flags.md) | Toggles for features that are not yet on by default. Names are server-internal and change between releases. | `boolean` | - | No |
-| [`default_sentinel`](./default_sentinel.md) | User name applied to connections that authenticate with a sentinel JWT, which carries no permissions of its own. | `string` | - | Yes |
-| [`write_deadline`](./write_deadline.md) | Maximum number of seconds the server will block when writing. Once this threshold is exceeded the connection will be closed. See slow consumer on how to deal with this on the client. | `duration` | `10s` | Yes\* |
-| [`no_header_support`](./no_header_support.md) | Disables support for message headers. | `boolean` | - | No |
-| [`disable_sublist_cache`](./disable_sublist_cache.md) | If true, disable subscription caches for all accounts. This saves resources in situations where different subjects are used all the time. | `boolean` | `false` | No |
-| [`lame_duck_duration`](./lame_duck_duration.md) | Must be at least 30s. | `duration` | `2m` | No |
-| [`lame_duck_grace_period`](./lame_duck_grace_period.md) | This is the duration the server waits, after entering lame duck mode, before starting to close client connections | `duration` | `10s` | No |
-| [`pidfile`](./pidfile.md) |  | `string` | - | Yes |
-| [`ports_file_dir`](./ports_file_dir.md) |  | `string` | - | Yes |
-| [`prof_block_rate`](./prof_block_rate.md) | Go block-profile sampling rate. Set only while profiling; it slows the server down. | `integer` | - | Yes |
-| [`prof_port`](./prof_port.md) |  | `integer` | - | No |
-| [`default_js_domain`](./default_js_domain.md) | Account to domain name mapping. | `string` | - | No |
+| [`max_control_line`](./max_control_line.md) | Максимальная длина строки протокола (включая суммарную длину субъекта и группы очереди). Использование увеличенного значения может потребовать изменений в клиентах. Применяется ко всему трафику. | `string` | `4KB` | Да\* |
+| [`max_connections`](./max_connections.md) | Максимальное число активных клиентских соединений. | `string` | `64K` | Да |
+| [`max_payload`](./max_payload.md) | Максимальное число байтов полезной нагрузки сообщения. Уменьшение размера может потребовать реализации разбиения сообщений в клиентах. Применяется к полезной нагрузке клиентов и листовых узлов. Значения больше 8 МБ не рекомендуются, однако `max_payload` можно увеличить до 64 МБ. Максимальная полезная нагрузка не должна превышать `max_pending`. | `string` | `1MB` | Да |
+| [`max_pending`](./max_pending.md) | Максимальное число байтов, буферизуемых для соединения. Применяется к клиентским соединениям. Приложения также могут задавать `PendingLimits` (число сообщений и общий размер) для своих подписок. | `string` | `64MB` | Нет |
+| [`max_subscriptions`](./max_subscriptions.md) | Максимальное число подписок на соединение аккаунта клиента или листового узла. Значение `0` снимает ограничение. | `string` | `0` | Нет\* |
+| [`max_subscription_tokens`](./max_subscription_tokens.md) |  | `integer` | - | Нет |
+| [`ping_interval`](./ping_interval.md) | Интервал отправки ping клиентам, листовым узлам и маршрутам. При наличии клиентского трафика, например сообщений или ping от клиента, сервер не отправляет ping. Поэтому рекомендуется задавать значение больше используемого клиентами. | `string` | `2m` | Да |
+| [`ping_max`](./ping_max.md) | Число оставшихся без ответа ping, после которого сервер закрывает соединение. | `integer` | `2` | Да |
+| [`write_timeout`](./write_timeout.md) | Действие сервера при превышении `write_deadline` соединения: `close` закрывает его, `retry` продолжает попытки, `default` использует встроенное поведение. | `string` | `default` | Нет |
+| [`max_closed_clients`](./max_closed_clients.md) | Число закрытых соединений, сохраняемых сервером для отчётов `/connz`. | `integer` | `10000` | Нет |
+| [`no_fast_producer_stall`](./no_fast_producer_stall.md) | Не задерживать быстрого издателя, когда потребитель не успевает. Вместо этого сервер отбрасывает сообщения для медленного потребителя. | `boolean` | `false` | Да |
+| [`server_metadata`](./server_metadata.md) | Произвольные пары ключ/значение, публикуемые для этого сервера в конечных точках мониторинга. | `string` | - | Да |
+| [`feature_flags`](./feature_flags.md) | Переключатели возможностей, пока не включённых по умолчанию. Имена являются внутренними для сервера и меняются между выпусками. | `boolean` | - | Нет |
+| [`default_sentinel`](./default_sentinel.md) | Имя пользователя для соединений, аутентифицирующихся с помощью sentinel JWT, который сам по себе не содержит разрешений. | `string` | - | Да |
+| [`write_deadline`](./write_deadline.md) | Максимальное время блокировки сервера при записи в секундах. При превышении соединение закрывается. О способах обработки на стороне клиента см. раздел о медленных потребителях. | `duration` | `10s` | Да\* |
+| [`no_header_support`](./no_header_support.md) | Отключает поддержку заголовков сообщений. | `boolean` | - | Нет |
+| [`disable_sublist_cache`](./disable_sublist_cache.md) | Если true, отключает кэши подписок для всех аккаунтов. Это экономит ресурсы, когда постоянно используются разные субъекты. | `boolean` | `false` | Нет |
+| [`lame_duck_duration`](./lame_duck_duration.md) | Должно быть не менее 30 с. | `duration` | `2m` | Нет |
+| [`lame_duck_grace_period`](./lame_duck_grace_period.md) | Время ожидания сервера после перехода в режим lame duck до начала закрытия клиентских соединений. | `duration` | `10s` | Нет |
+| [`pidfile`](./pidfile.md) |  | `string` | - | Да |
+| [`ports_file_dir`](./ports_file_dir.md) |  | `string` | - | Да |
+| [`prof_block_rate`](./prof_block_rate.md) | Частота выборки профиля блокировок Go. Задавайте только при профилировании: параметр замедляет сервер. | `integer` | - | Да |
+| [`prof_port`](./prof_port.md) |  | `integer` | - | Нет |
+| [`default_js_domain`](./default_js_domain.md) | Отображение аккаунтов на доменные имена. | `string` | - | Нет |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

@@ -1,12 +1,12 @@
-# max_connections
+# max_connections {#max_connections}
 
 <Aliases aliases="max_conns" />
 <Reloadable state="reloadable" />
-Maximum number of active client connections.
+Максимальное число активных клиентских соединений.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,13 +1,12 @@
-# proxy_required
+# proxy_required {#proxy_required}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-Reject client connections that did not arrive through a PROXY
-protocol header.
+Отклонять клиентские соединения без заголовка протокола PROXY.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

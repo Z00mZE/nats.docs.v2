@@ -1,11 +1,11 @@
-# cipher
+# cipher {#cipher}
 
 <Reloadable state="not-reloadable" />
-Cipher used for the filestore once the key is unsealed.
+Шифр файлового хранилища после раскрытия ключа.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `aes`, `chacha` |

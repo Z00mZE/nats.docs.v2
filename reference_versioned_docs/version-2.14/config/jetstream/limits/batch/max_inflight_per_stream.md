@@ -1,11 +1,11 @@
-# max_inflight_per_stream
+# max_inflight_per_stream {#max_inflight_per_stream}
 
 <Reloadable state="not-reloadable" />
-Batches allowed in flight for one stream.
+Допустимое число одновременно выполняемых пакетов для одного потока.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

@@ -1,7 +1,7 @@
 #!/bin/bash
-# Create the ORDERS stream that captures every order event your app
-# publishes. The stream stores every message on subjects under orders.>
-# so nothing is lost between runs.
+# Создайте поток ORDERS, принимающий каждое событие заказа, которое приложение
+# публикует. Поток хранит все сообщения в темах orders.>
+# и сохраняет их между запусками.
 nats stream add ORDERS \
   --subjects "orders.>" \
   --storage file \

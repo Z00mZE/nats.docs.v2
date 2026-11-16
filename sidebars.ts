@@ -10,26 +10,26 @@ const sidebars: SidebarsConfig = {
         {
             type: "doc",
             id: "concepts/intro",
-            label: "Welcome",
+            label: "Добро пожаловать",
         },
         {
             type: "doc",
             id: "concepts/what-is-nats",
-            label: "What is NATS?",
+            label: "Что такое NATS?",
         },
         {
             type: "doc",
             id: "concepts/ecosystem",
-            label: "The NATS Ecosystem",
+            label: "Экосистема NATS",
         },
         {
             type: "doc",
             id: "concepts/getting-started/index",
-            label: "Getting Started",
+            label: "Начало работы",
         },
         {
             type: "category",
-            label: "Core Concepts",
+            label: "Основные понятия",
             collapsed: false,
             items: [
                 "concepts/pub-sub-basics",
@@ -46,7 +46,7 @@ const sidebars: SidebarsConfig = {
         {
             type: "doc",
             id: "release-notes/index",
-            label: "Overview",
+            label: "Обзор",
         },
         "release-notes/upgrade-to-2.15",
         "release-notes/upgrade-to-2.14",

@@ -1,11 +1,11 @@
-# url
+# url {#url}
 
 <Reloadable state="not-reloadable" />
-A single URL to connect to.
+Один URL для подключения.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

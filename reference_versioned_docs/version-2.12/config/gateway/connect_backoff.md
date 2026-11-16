@@ -1,13 +1,12 @@
-# connect_backoff
+# connect_backoff {#connect_backoff}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-Back off between gateway reconnect attempts instead of retrying at
-a fixed interval.
+Увеличивать интервалы между попытками переподключения шлюзов вместо повторов с фиксированным интервалом.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

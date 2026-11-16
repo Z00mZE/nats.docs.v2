@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // mirrorCopyAnimated
@@ -95,7 +96,7 @@ function MirrorCopyInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 10, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                A <strong>mirror</strong> copies one stream into another, then keeps pace with it.
+                A <strong>зеркало</strong> копирует один поток в другой, затем поддерживает их синхронизацию.
             </div>
 
             <div style={{ position: "relative", width: 640, height: 168, margin: "0 auto" }}>
@@ -116,20 +117,20 @@ function MirrorCopyInner() {
                         transition: "color 0.15s, border-color 0.15s, background 0.15s",
                     }}
                 >
-                    ✎ publish
+                    ✎ публикация
                 </div>
-                {publishPulse && (
+                {localizeDiagramContent(publishPulse && (
                     <span style={{ position: "absolute", left: 80, top: ROW1_Y - 7, fontSize: 11, fontWeight: 700, color: BLUE, opacity: 1 - sincePub / 240 }}>+1</span>
-                )}
+                ))}
 
                 {/* ORDERS row */}
                 <span style={{ position: "absolute", left: 100, top: ROW1_Y + 4, fontSize: 11, fontWeight: 700, fontFamily: "monospace", color: NAVY }}>ORDERS</span>
                 <div style={{ position: "absolute", left: TRACK_X, top: ROW1_Y, width: TRACK_W, height: TRACK_H, borderRadius: 5, background: "#f1f5f9", border: "1px solid #e5e7eb" }} />
                 <div style={{ position: "absolute", left: TRACK_X, top: ROW1_Y, width: fillW(published), height: TRACK_H, borderRadius: 5, background: BLUE, transition: "width 0.25s linear" }} />
-                <span style={{ position: "absolute", left: TRACK_X + TRACK_W + 10, top: ROW1_Y + 5, fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: NAVY }}>{published}</span>
+                <span style={{ position: "absolute", left: TRACK_X + TRACK_W + 10, top: ROW1_Y + 5, fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: NAVY }}>{localizeDiagramContent(published)}</span>
 
                 {/* message block dropping from ORDERS into the mirror */}
-                {block && (
+                {localizeDiagramContent(block && (
                     <div
                         style={{
                             position: "absolute",
@@ -150,17 +151,17 @@ function MirrorCopyInner() {
                             fontFamily: "monospace",
                         }}
                     >
-                        {block.n}
+                        {localizeDiagramContent(block.n)}
                     </div>
-                )}
+                ))}
 
                 {/* ORDERS-ARCHIVE row */}
-                {mirrorExists ? (
+                {localizeDiagramContent(mirrorExists ? (
                     <>
                         <span style={{ position: "absolute", left: 8, top: ROW2_Y + 4, fontSize: 11, fontWeight: 700, fontFamily: "monospace", color: BLUE }}>ORDERS-ARCHIVE</span>
                         <div style={{ position: "absolute", left: TRACK_X, top: ROW2_Y, width: TRACK_W, height: TRACK_H, borderRadius: 5, background: "#f1f5f9", border: "1px solid #e5e7eb" }} />
                         {/* lag region — the gap the mirror still has to cover */}
-                        {lag > 0 && (
+                        {localizeDiagramContent(lag > 0 && (
                             <div
                                 style={{
                                     position: "absolute",
@@ -174,10 +175,10 @@ function MirrorCopyInner() {
                                     transition: "left 0.25s linear, width 0.25s linear",
                                 }}
                             />
-                        )}
+                        ))}
                         {/* copied fill */}
                         <div style={{ position: "absolute", left: TRACK_X, top: ROW2_Y, width: fillW(copied), height: TRACK_H, borderRadius: 5, background: BLUE, transition: "width 0.25s linear" }} />
-                        <span style={{ position: "absolute", left: TRACK_X + TRACK_W + 10, top: ROW2_Y + 5, fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: NAVY }}>{copied}</span>
+                        <span style={{ position: "absolute", left: TRACK_X + TRACK_W + 10, top: ROW2_Y + 5, fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: NAVY }}>{localizeDiagramContent(copied)}</span>
                         {/* lag pill */}
                         <span
                             style={{
@@ -194,12 +195,12 @@ function MirrorCopyInner() {
                                 background: `${lagColor}12`,
                             }}
                         >
-                            Lag {lag}
+                            Отставание {localizeDiagramContent(lag)}
                         </span>
                     </>
                 ) : (
-                    <span style={{ position: "absolute", left: 8, top: ROW2_Y + 5, fontSize: 12, fontStyle: "italic", color: "#9ca3af" }}>no mirror yet</span>
-                )}
+                    <span style={{ position: "absolute", left: 8, top: ROW2_Y + 5, fontSize: 12, fontStyle: "italic", color: "#9ca3af" }}>зеркала пока нет</span>
+                ))}
             </div>
 
             <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 14 }}>
@@ -207,9 +208,9 @@ function MirrorCopyInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

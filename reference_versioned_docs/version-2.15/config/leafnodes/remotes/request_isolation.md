@@ -1,12 +1,12 @@
-# request_isolation
+# request_isolation {#request_isolation}
 
 <Since version="2.12" />
 <Reloadable state="not-reloadable" />
-Ask the remote to isolate this connection's interest on its side.
+Попросить удалённую сторону изолировать интерес этого соединения на своей стороне.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

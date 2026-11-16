@@ -1,11 +1,11 @@
-# nkey
+# nkey {#nkey}
 
 <Reloadable state="not-reloadable" />
-Public user nkey a connecting leaf node must sign for.
+Открытый nkey пользователя, владение которым подключающийся листовой узел должен подтвердить подписью.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

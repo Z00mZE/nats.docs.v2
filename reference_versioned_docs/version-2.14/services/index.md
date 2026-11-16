@@ -1,42 +1,42 @@
-# Services API
+# API сервисов {#services-api}
 
-The NATS Services API provides a framework for building observable microservices with built-in discovery, health checking, and monitoring.
+API сервисов NATS — фреймворк для создания наблюдаемых микросервисов со встроенным обнаружением, проверками работоспособности и мониторингом.
 
-## Overview
+## Обзор {#overview}
 
-NATS Services extend the request-reply pattern with:
-- Automatic service discovery
-- Health monitoring endpoints
-- Statistics collection
-- Load balancing across instances
-- Standardized response schemas
+Сервисы NATS расширяют шаблон запрос-ответ:
+- Автоматическим обнаружением сервисов
+- Точками проверки работоспособности
+- Сбором статистики
+- Балансировкой нагрузки между экземплярами
+- Стандартными схемами ответов
 
-## API Responses
+## Ответы API {#api-responses}
 
-### [Info Response](./info-response.md)
-Service metadata and configuration:
-- Service name and version
-- Endpoint descriptions
-- Configuration details
+### [Ответ Info](./info-response.md) {#info-response}
+Метаданные и конфигурация сервиса:
+- Имя и версия сервиса
+- Описания конечных точек
+- Сведения о конфигурации
 
-### [Ping Response](./ping-response.md)
-Health check and liveness probe:
-- Service availability status
-- Response time measurement
-- Instance identification
+### [Ответ Ping](./ping-response.md) {#ping-response}
+Проверка работоспособности и активности:
+- Доступность сервиса
+- Измерение времени ответа
+- Идентификация экземпляра
 
-### [Stats Response](./stats-response.md)
-Operational statistics:
-- Request counts and rates
-- Error tracking
-- Performance metrics
-- Resource utilization
+### [Ответ Stats](./stats-response.md) {#stats-response}
+Статистика работы:
+- Число и частота запросов
+- Учёт ошибок
+- Метрики производительности
+- Использование ресурсов
 
-## Service Patterns
+## Шаблоны сервисов {#service-patterns}
 
-Services follow these conventions:
-- Discovery - Services announce themselves on startup
-- Monitoring - Built-in health and statistics endpoints
-- Load Balancing - Automatic distribution via queue groups
-- Versioning - API version management support
-- Observability - Structured logging and metrics
+Сервисы придерживаются следующих соглашений:
+- Обнаружение — сервисы объявляют о себе при запуске
+- Мониторинг — встроенные точки проверки состояния и статистики
+- Балансировка нагрузки — автоматическое распределение через группы очередей
+- Версионирование — поддержка управления версиями API
+- Наблюдаемость — структурированные журналы и метрики

@@ -1,74 +1,43 @@
 ---
 id: putting-it-together
-title: "Putting it together"
+title: "Объединяем всё"
 sidebar_position: 7
-description: Compose clusters, gateways, and leaf nodes into the full Acme topology, with isolation behind leaves and the same client code everywhere
+description: "Общая топология Acme из кластеров, шлюзов и листовых узлов с изоляцией учётными записями и единым клиентским кодом"
 ---
 
-# Putting it together
+# Объединяем всё {#putting-it-together}
 
-Across five pages you've seen four shapes: a single server, a cluster
-joined by routes, a super-cluster joined by gateways, and a leaf node
-bridging in from the edge. Each page either added a shape or deepened
-one, and carried the last one forward.
+За пять страниц вы изучили четыре формы: сервер, кластер маршрутов, суперкластер шлюзов и листовое подключение периферии. Каждая страница расширяла прежнюю систему.
 
-This page doesn't add a new shape. It shows how the shapes you already
-know stack into one deployment, and names the one property that stack
-provides without extra work.
+Новых форм здесь нет: мы покажем, как знакомые складываются в одно развёртывание и что это даёт автоматически.
 
-It introduces two ideas: composition — the shapes are layers you
-combine, not options you choose between — and the one thing composition
-doesn't give you: a boundary between the layers, which stays a
-leaf-and-account decision.
+Две идеи: композиция — формы как совмещаемые слои — и её предел: границы доступа требуют отдельного решения листового узла и учётной записи.
 
-## The Acme deployment so far
+## Система Acme к этому моменту {#the-acme-deployment-so-far}
 
-By the end of the leaf-nodes page, the Acme deployment looked like this.
+После страницы листовых узлов схема такова.
 
-Two clusters: `east` (`n1-east`, `n2-east`, `n3-east`) and `west`
-(`n1-west`, `n2-west`, `n3-west`). Each is three servers in a full
-mesh of routes.
+Два кластера: `east` (`n1-east`, `n2-east`, `n3-east`) и `west` (`n1-west`, `n2-west`, `n3-west`), каждый — три сервера с полносвязными маршрутами.
 
-The two clusters are joined into a super-cluster by gateways. A message
-crosses a gateway only when the other side has interest in its subject.
+Шлюзы объединяют их в суперкластер. Через шлюз идёт лишь сообщение с интересом на другой стороне.
 
-One leaf, `factory-1`, opens an outbound connection to the `east`
-cluster and serves its own local edge clients on the factory floor.
+`factory-1` исходящим соединением подключён к `east` и обслуживает местных клиентов цеха.
 
-The ORDERS workload runs on top of all of it, unchanged. Producers
-publish `orders.*`. Consumers read the `ORDERS` stream. The same code
-that ran against `n1` on a laptop runs against this.
+ORDERS работает без изменений. Производители публикуют `orders.*`, потребители читают поток. Код с ноутбука `n1` подходит и здесь.
 
 <div class="nats-flow" data-scenario="massiveScaleAnimated" data-width="820" data-height="470"></div>
 
-The animation shows the messaging layer: an order published in one place
-crossing routes, the gateway, and the leaf link to reach interest
-elsewhere. The `ORDERS` stream's replicas live on the same servers but
-aren't drawn here — that's the JetStream layer from
-[JetStream in a cluster](/learn/topologies/jetstream-in-a-cluster).
+Анимация показывает слой сообщений: заказ проходит маршруты, шлюз и листовую связь к подписчикам. Реплики `ORDERS` здесь не изображены — это отдельный уровень [JetStream в кластере](/learn/topologies/jetstream-in-a-cluster).
 
-## Shapes are layers you combine
+## Формы — совмещаемые слои {#shapes-are-layers-you-combine}
 
-Look at that deployment again and notice that no shape replaced
-another. The cluster is three servers, each one a server like `n1`,
-added without removing the single server. The super-cluster is two
-clusters with a gateway between them, added without removing the
-cluster. The leaf is one more server that dials in, added without
-removing anything.
+Ни одна форма не заменила предыдущую. Кластер объединяет отдельные серверы; суперкластер — кластеры; лист добавляет ещё один сервер. Нижние уровни остаются.
 
-This is **composition**. Each shape is a layer. You add the next layer
-when the current one runs out of room, and the layer below keeps
-working exactly as it did.
+Это **композиция**: новый слой добавляется, когда прежнего недостаточно, а нижний продолжает прежнюю работу.
 
-The wiring stays local to each layer. Routes wire servers inside one
-cluster. Gateways wire clusters inside a super-cluster. Leaf remotes
-wire a leaf to a hub. No single config block has to know about the
-whole picture; each server configures only the connections it owns.
+Связи локальны для слоя: маршруты внутри кластера, шлюзы между кластерами, remotes между листом и центром. Ни один блок конфигурации не обязан знать всю систему.
 
-A server can take part in more than one layer at once. `n1-east`
-carries routes to its cluster peers, a gateway to `west`, and the
-inbound leaf connection from `factory-1`, all from one config file
-with three topology blocks:
+Сервер может участвовать во всех слоях: `n1-east` имеет маршруты к соседям, шлюз в `west` и входящий лист `factory-1`. В одном файле три блока:
 
 ```conf
 # n1-east.conf — one server, three roles
@@ -100,55 +69,29 @@ jetstream {
 }
 ```
 
-That's three topology blocks for three layers on one server. The `cluster` block
-is the same one from [Your first cluster](/learn/topologies/your-first-cluster),
-the `gateway` block is from [Super-clusters](/learn/topologies/super-clusters),
-and the `leafnodes` block is from
-[Leaf nodes](/learn/topologies/leaf-nodes). Putting them in one file is
-all "composition" means.
+`cluster` взят из [первого кластера](/learn/topologies/your-first-cluster), `gateway` — из [суперкластеров](/learn/topologies/super-clusters), `leafnodes` — из [листовых узлов](/learn/topologies/leaf-nodes). Их объединение и есть композиция.
 
-## Composition and boundaries
+## Композиция и границы {#composition-and-boundaries}
 
-Stacking these shapes gives you one address space by default. Routes carry
-an account's full interest across a cluster; a gateway forwards any subject
-the far side wants. Neither partitions anything — they widen where a message
-can go.
+По умолчанию получается единое пространство адресов. Маршруты разносят интерес учётной записи по кластеру, шлюз пересылает нужные темы. Они расширяют охват, не разделяя пространство.
 
-The one layer that *can* draw a boundary is the leaf, and only when you bind
-it to its own account — the **address-space isolation** from
-[Leaf nodes](/learn/topologies/leaf-nodes). In a composed deployment, if you
-want to keep one part's subjects private, that's where the boundary lives,
-not in another route or gateway.
+Границу способен задать лист, привязанный к отдельной учётной записи: **изоляция пространства адресов** из [Листовых узлов](/learn/topologies/leaf-nodes). Для приватности тем используйте этот уровень, а не дополнительный маршрут или шлюз.
 
-## Picking the next layer
+## Выбор следующего слоя {#picking-the-next-layer}
 
-You don't design the whole stack up front. You add a layer when a
-specific limit forces it. The limits map cleanly onto the shapes.
+Всю систему не обязательно проектировать сразу. Добавляйте слой при конкретном ограничении:
 
-- **One server** is enough until a single point of failure is
-  unacceptable, or one server can't carry the load. Then add a
-  cluster.
-- **One cluster** is enough until you need a second region, or a
-  failure domain that a single mesh can't give you. Then join a
-  second cluster with a gateway.
-- **A super-cluster** reaches every region, but not every site. When a
-  factory, a ship, or a laptop needs NATS locally with only outbound
-  network access, attach a leaf.
+- **Один сервер** — пока допустим единичный отказ и хватает ресурсов. Затем нужен кластер.
+- **Один кластер** — пока не нужен второй регион или отдельная область отказа. Затем второй кластер со шлюзом.
+- **Суперкластер** охватывает регионы, но локальному цеху, судну или ноутбуку с исходящим доступом нужен лист.
 
-Each step is reversible: the layer below never changed, so removing the
-layer above leaves a working deployment behind.
+Каждый шаг обратим: удаление верхнего слоя оставляет нижний работающим.
 
-## Seeing the whole topology at once
+## Просмотр всей топологии {#seeing-the-whole-topology-at-once}
 
-Everything so far has run auth-free, confirmed by publishing across each
-boundary. To *survey* the whole fabric instead — every server, cluster, and
-connection in one view — you need the **system account** (`$SYS`), which
-this chapter doesn't set up. Add one (the [Security deep
-dive](/learn/security) covers it), connect with its credentials, and a few
-admin commands report the layers.
+Пока мы проверяли систему без аутентификации публикациями через связи. Для общего обзора серверов, кластеров и соединений нужна **системная учётная запись** `$SYS`. Настройте её по [Безопасности](/learn/security), затем подключитесь с её данными.
 
-`nats server list` reports each server, which cluster it belongs to, and
-its route and gateway connection counts:
+`nats server list` показывает серверы, кластеры и числа маршрутов и шлюзов:
 
 ```bash
 nats server list
@@ -169,7 +112,7 @@ nats server list
 ╰──────────┴─────────┴──────┴─────────┴─────┴───────┴──────┴────────┴─────────╯
 ```
 
-Each layer also has its own focused report, one command per layer:
+У каждого слоя также свой отчёт:
 
 ```bash
 nats server report routes      # the mesh inside each cluster
@@ -177,10 +120,7 @@ nats server report gateways    # the gateways between clusters
 nats server report leafnodes   # the leaves dialed into the hub
 ```
 
-`nats server report leafnodes` is the one that shows `factory-1`. It
-lists the leaf by name, the account it's on, its address, and its
-round-trip time. That's the leaf link the previous section described,
-made visible:
+`nats server report leafnodes` показывает `factory-1`: имя, учётную запись, адрес и время кругового обмена.
 
 ```
 ╭──────────────────────────────────────────────────────────────────╮
@@ -192,88 +132,52 @@ made visible:
 ╰─────────┴───────────┴─────────┴──────────────────┴──────┴─────────╯
 ```
 
-The `Account` column reads `$G`: nothing set up a dedicated account for
-the leaf, so it lands in the default global account, and there's no
-boundary here — matching the auth-free deployment.
+`Account` равен `$G`: отдельная запись не создана, поэтому используется глобальная и границы нет.
 
-The `Spoke` column reads `false` because this report comes from
-`n1-east`, the hub end that accepted the connection. The column is
-`true` only on the leaf's own report — `factory-1` dialed out, so from
-its side it's the spoke. Either way it's the leaf direction from
-[Leaf nodes](/learn/topologies/leaf-nodes).
+`Spoke` равен `false`, поскольку отчёт получен от принимающего `n1-east`. На стороне `factory-1`, инициировавшего соединение, будет `true`. Это направление из [Листовых узлов](/learn/topologies/leaf-nodes).
 
-Run these three reports together and you've surveyed every layer of
-the deployment in one pass: routes, gateways, and leaves, each shown by
-the command named after it.
+Три отчёта вместе показывают все слои: маршруты, шлюзы и листы.
 
-## The client code stays the same
+## Клиентский код остаётся прежним {#the-client-code-stays-the-same}
 
-The main point of this chapter is that nothing on the client side changed
-across any of these layers.
+Главная мысль главы: клиентская сторона не менялась при добавлении слоёв.
 
-The producer still publishes `orders.created` with the same payload it did
-on a single server — order id, customer, total, timestamp.
+Издатель отправляет в `orders.created` прежние поля заказа: идентификатор, заказчик, сумма и время.
 
-A consumer still reads the `ORDERS` stream. The client connects to a
-NATS URL and the server fabric (routes, gateways, leaves) delivers
-the message to wherever interest lives. The topology is an operations
-concern, not an application one.
+Потребитель читает `ORDERS`. Клиент подключается к URL NATS, а серверные связи доставляют сообщение по интересу. Топология относится к эксплуатации.
 
-That separation is why you can start on a laptop and grow to a
-multi-region edge deployment without rewriting a line of business
-logic. Growing the system means changing the deployment while the app
-stays the same.
+Поэтому от ноутбука можно вырасти до нескольких регионов и периферии без переписывания бизнес-логики. Растёт развёртывание, приложение прежнее.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-The one trap in composing shapes is doing it before you need to.
+Главная ловушка — преждевременная сложность.
 
-**Building the whole stack before a limit forces it.** Each layer adds
-operational cost: more servers to run, more connections to watch. A
-super-cluster you stood up "to be safe" is two regions to keep healthy
-before you have a second region's traffic.
+**Создание всех слоёв до реальной необходимости.** Каждый добавляет серверы и наблюдаемые соединения. Суперкластер «на всякий случай» требует обслуживать два региона ещё до появления трафика второго.
 
-Add the next layer only when the current one runs out of room, as
-[Picking the next layer](#picking-the-next-layer) describes. The
-application code is identical at every stage, so growing later costs you
-nothing in the app. Adding a layer early gives you no benefit.
+Добавляйте слой при ограничении, как описано в [выборе следующего слоя](#picking-the-next-layer). Код одинаков, поэтому поздний рост не потребует переделки приложения.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The Acme deployment is now its final, composed shape:
+Итоговая схема Acme:
 
-- Two clusters, `east` and `west`, each a full mesh of three servers
-  joined by routes.
-- The two clusters joined into a super-cluster by gateways.
-- A leaf, `factory-1`, dialed into `east`, serving its local edge
-  clients.
-- The unchanged ORDERS workload running across all of it.
+- Два кластера `east`, `west`, по три сервера с маршрутами.
+- Шлюзы между ними.
+- Лист `factory-1`, подключённый к `east` и обслуживающий местных клиентов.
+- Неизменённая нагрузка ORDERS поверх всей системы.
 
-And two ideas to carry forward:
+Две идеи для дальнейшей работы:
 
-- Composition: the shapes are layers you stack, each one leaving
-  the layer below untouched.
-- The limit of composition: stacking shapes adds reach, not boundaries.
-  Only a leaf with its own account partitions the stack — address-space
-  isolation is the leaf's property, from
-  [Leaf nodes](/learn/topologies/leaf-nodes).
+- Композиция складывает слои, сохраняя нижние.
+- Она расширяет охват, но не создаёт границ: для изоляции нужен лист со своей учётной записью, как в [Листовых узлах](/learn/topologies/leaf-nodes).
 
-This is the full picture the [Topologies concept
-page](/concepts/topologies) sketched, now wired up for real.
+Теперь схема из [введения в топологии](/concepts/topologies) собрана на практике.
 
-## What's next
+## Что дальше {#whats-next}
 
-You can wire the shapes. The next page,
-[Where to go next](/learn/topologies/where-next), points you at the
-chapters that take each shape further: the mechanics under a cluster,
-the deployment tooling that runs these servers in production, and the
-monitoring that watches the whole fabric.
+Вы умеете соединять формы. [Куда двигаться дальше](/learn/topologies/where-next) укажет главы о механике кластера, средствах развёртывания и мониторинге.
 
-## See also
+## См. также {#see-also}
 
-- [Operate → Clustering & Replication](/learn/clustering/scaling-and-peers)
-  — how to grow and shrink the servers inside a cluster safely.
-- [Operate → Deployment](/learn/deployment/kubernetes) — running these
-  servers under Kubernetes, with rolling upgrades.
-- [Reference → Leafnode protocol](/reference/protocols/leafnode) — the
-  wire-level detail behind address-space isolation.
+- [Эксплуатация → Кластеризация и репликация](/learn/clustering/scaling-and-peers) — безопасное изменение числа серверов.
+- [Эксплуатация → Развёртывание](/learn/deployment/kubernetes) — Kubernetes и обновления.
+- [Справочник → Протокол листовых узлов](/reference/protocols/leafnode) — детали связи и изоляции.

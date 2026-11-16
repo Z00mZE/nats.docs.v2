@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // fastIngestAnimated
@@ -84,10 +85,9 @@ function FastIngestAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Fast-ingest: the server sets the pace.</strong> No PubAck per message — the server{" "}
-                <span style={{ color: GREEN, fontWeight: 600 }}>acks whole batches</span> and widens the batch as you
-                keep up. Not atomic: a dropped message leaves a{" "}
-                <span style={{ color: RED, fontWeight: 600 }}>gap</span>.
+                <strong>Быстрый приём: темп задаёт сервер.</strong> Нет PubAck для каждого сообщения — сервер{localizeDiagramContent(" ")}
+                <span style={{ color: GREEN, fontWeight: 600 }}>подтверждает целые пакеты</span> и увеличивает пакет, пока вы успеваете. Атомарности нет: потерянное сообщение оставляет{localizeDiagramContent(" ")}
+                <span style={{ color: RED, fontWeight: 600 }}>пропуск</span>.
             </div>
 
             <div
@@ -123,7 +123,7 @@ function FastIngestAnimatedInner() {
                     {/* current flow window */}
                     <div style={{ height: 18, marginBottom: 4, textAlign: "center" }}>
                         <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: NAVY, border: `1px solid ${NAVY}`, borderRadius: 4, padding: "1px 7px", background: "white" }}>
-                            flow window: 1 ack · {w} message{w > 1 ? "s" : ""}
+                            окно передачи: 1 подтверждение · {localizeDiagramContent(w)} сообщение{localizeDiagramContent(w > 1 ? "s" : "")}
                         </span>
                     </div>
 
@@ -132,15 +132,15 @@ function FastIngestAnimatedInner() {
                         <div style={{ position: "absolute", top: "50%", left: 0, right: 0, borderTop: "1px dashed #e2e8f0" }} />
 
                         {/* dropped-message marker stays where it was lost */}
-                        {isGapPhase && p > 0.45 && (
+                        {localizeDiagramContent(isGapPhase && p > 0.45 && (
                             <span style={{ position: "absolute", top: "50%", left: TRACK_W * 0.42, transform: "translate(-50%, -50%)", color: RED, fontSize: 14, fontWeight: 800 }}>
                                 ✕
                             </span>
-                        )}
+                        ))}
 
                         {/* the traveling batch */}
                         <div style={{ position: "absolute", top: "50%", left: x, transform: "translateY(-50%)", display: "flex", gap: DOT_GAP }}>
-                            {Array.from({ length: w }).map((_, i) => {
+                            {localizeDiagramContent(Array.from({ length: w }).map((_, i) => {
                                 const dropped = ph.drop > 0 && i === w - 1;
                                 const op = dropped ? Math.max(0, 1 - Math.max(0, (p - 0.4) / 0.28)) : 1;
                                 return (
@@ -156,14 +156,14 @@ function FastIngestAnimatedInner() {
                                         }}
                                     />
                                 );
-                            })}
+                            }))}
                         </div>
                     </div>
 
                     {/* flow-control return: one ack per batch */}
                     <div style={{ height: 18, marginTop: 4, textAlign: "center" }}>
                         <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: arrived ? GREEN : "#cbd5e1", transition: "color 0.15s" }}>
-                            {arrived ? "← BatchFlowAck ✓" : "← waiting for the batch…"}
+                            {localizeDiagramContent(arrived ? "← BatchFlowAck ✓" : "← waiting for the batch…")}
                         </span>
                     </div>
                 </div>
@@ -182,9 +182,9 @@ function FastIngestAnimatedInner() {
                 >
                     <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>ORDERS</div>
                     <div style={{ fontSize: 24, fontFamily: "monospace", fontWeight: 800, color: gapShown ? AMBER : GREEN, transition: "color 0.2s" }}>
-                        {stored}
+                        {localizeDiagramContent(stored)}
                     </div>
-                    <div style={{ fontSize: 9, color: "#9ca3af" }}>stored{gapShown ? " · 1 gap" : ""}</div>
+                    <div style={{ fontSize: 9, color: "#9ca3af" }}>сохранено{localizeDiagramContent(gapShown ? " · 1 gap" : "")}</div>
                 </div>
             </div>
 
@@ -193,9 +193,9 @@ function FastIngestAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

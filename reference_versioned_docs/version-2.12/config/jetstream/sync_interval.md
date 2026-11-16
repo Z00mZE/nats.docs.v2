@@ -1,23 +1,17 @@
-# sync_interval
+# sync_interval {#sync_interval}
 
 <Aliases aliases="sync" />
 <Reloadable state="not-reloadable" />
-Defines the internal to force sync file-based stream and consumer data
-to disk. The filestore relies on the operating system's filesystem buffers
-to periodically sync to disk. However, the server will still periodically
-force sync files based on this interval.
+Задаёт интервал принудительной синхронизации файловых данных потоков и потребителей с диском. Файловое хранилище полагается на периодическую запись буферов файловой системы операционной системой. Однако сервер также принудительно синхронизирует файлы с этим интервалом.
 
-For use cases where unclean shutdowns are common, this can provide more
-control over how frequently to force sync data when written.
+Позволяет точнее управлять частотой принудительного сохранения записываемых данных при частых аварийных завершениях работы.
 
-If a value `always` is used, a explicit sync will occur on every write.
-Do note that this will degrade the max throughput due to the additional
-I/O calls.
+При значении `always` синхронизация выполняется при каждой записи. Дополнительные операции ввода-вывода снижают максимальную пропускную способность.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |
 | `string` |  | `always` |

@@ -1,219 +1,100 @@
 ---
 id: replication-and-r3
-title: Replication and R=3
+title: "Репликация и R=3"
 sidebar_position: 4
-description: How a replicated stream commits a write by quorum, the consistency you get from it, and what quorum does and doesn't guarantee once the write reaches disk
+description: "Фиксация записи кворумом, согласованность реплицируемого потока и границы гарантий записи на диск"
 ---
 
-# Replication and R=3
+# Репликация и R=3 {#replication-and-r3}
 
-The last page elected leaders, so the cluster now has a meta leader and,
-once you create a stream, a leader for that stream's RAFT group. This
-page uses those leaders: it follows a single order from
-`order-svc` into the `ORDERS` stream and shows exactly when that write
-becomes safe to lose a server over.
+На прошлой странице выбраны лидеры: у кластера есть лидер метаданных, а у созданного потока — лидер его группы RAFT. Теперь проследим один заказ от `order-svc` до `ORDERS` и определим, когда запись начинает переживать потерю сервера.
 
-The [surviving node loss](/learn/jetstream/surviving-node-loss) page in
-the JetStream chapter gave you the one-line version: `R=3` keeps three
-copies, so the loss of one server costs nothing. This page explains the
-mechanism behind that guarantee. It introduces two ideas: **quorum
-commit**, how the leader turns one write into a committed entry across
-the group, and the **consistency** you get back from it. It also
-covers a narrower gap worth knowing before you rely on either: what
-quorum commit does, and doesn't, guarantee once the write reaches disk.
+Страница JetStream об [отказе узла](/learn/jetstream/surviving-node-loss) дала краткую модель: три копии `R=3` позволяют потерять один сервер. Здесь разобран механизм: **фиксация кворумом** и получаемая **согласованность**. Также рассмотрена граница гарантии между согласованием записи и её сохранением на физический диск.
 
-## R=3 means three peers in one RAFT group
+## R=3 — три участника одной группы RAFT {#r3-means-three-peers-in-one-raft-group}
 
-A stream's replica count is the number of copies the cluster keeps.
-`R=3` keeps three. Each copy lives on a different server, and the three
-servers holding the copies form a single RAFT group, the same kind of
-consensus group the last page elected a leader for.
+Число реплик — число копий потока. При `R=3` их три на разных серверах; эти серверы образуют одну группу RAFT.
 
-You set the count when you create the stream. On the `east` cluster,
-one flag turns the single-server `ORDERS` of the JetStream chapter into
-a three-peer stream. (If you ran the election exercise on
-[Raft and leaders](/learn/clustering/raft-and-leaders), `ORDERS` already
-runs at `R=3`; restart any server you stopped there, and read this as the
-create that stood it up.)
+Количество задаётся при создании. В `east` один флаг превращает одиночный `ORDERS` из JetStream в поток трёх участников. Если вы уже выполнили упражнение [RAFT и лидеры](/learn/clustering/raft-and-leaders), поток имеет `R=3`: верните остановленные серверы и рассматривайте команду как описание его создания.
 
 <div class="nats-example" data-type="learn-clustering-replication-and-r3-createR3" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-`--replicas=3` is the whole change. Starting from the JetStream chapter's
-`R=1` stream instead, raise it in place with
-`nats stream edit ORDERS --replicas=3`. The application code doesn't move:
-`order-svc` publishes the same payload to the same subject whether the
-stream is `R=1` or `R=3`.
+Всё изменение — `--replicas=3`. Для существующего `R=1` используйте `nats stream edit ORDERS --replicas=3`. Код приложения прежний: `order-svc` публикует ту же нагрузку в ту же тему.
 
 ```json
 {"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}
 ```
 
-What changes is underneath. The stream now has a **leader** (one of
-the three peers — the meta leader picks which, and an election may have
-moved it) and two **followers**. Every write goes through the leader. The
-followers never take writes directly; they receive them from the leader.
+Меняется внутреннее устройство. Теперь есть **лидер** и два **ведомых**. Первоначального лидера выбирают при размещении; последующие выборы могли его сменить. Все записи проходят через лидера, ведомые получают их только от него.
 
-Three is the minimum for production, and a stream
-supports at most `R=5`. The reasoning for *which* odd count to choose
-belongs to [surviving node loss](/learn/jetstream/surviving-node-loss).
-Here we follow what one write does once the count is three.
+Три — минимальное рекомендуемое число для эксплуатации; поток поддерживает до `R=5`. Выбор нечётного количества разобран в [Отказе узла](/learn/jetstream/surviving-node-loss). Здесь проследим запись при трёх копиях.
 
-## A write commits by quorum
+## Запись фиксируется кворумом {#a-write-commits-by-quorum}
 
-When `order-svc` publishes `orders.created`, the message reaches the
-stream leader, `n1-east`. The leader does not return success on storing
-it locally; it runs a short sequence first.
+Публикация `order-svc` в `orders.created` приходит к лидеру `n1-east`. Локального сохранения недостаточно для ответа об успехе: сначала выполняется последовательность.
 
-The leader **appends** the write to its own log: an ordered,
-append-only record of every operation the group has agreed on. Appending
-is local and not yet durable across the group: only `n1-east` has the
-entry so far.
+Лидер **добавляет** запись в свой упорядоченный журнал, допускающий только добавление. Пока это локальная операция: запись есть лишь у `n1-east` и ещё не защищена всей группой.
 
-The leader then sends an **append entry** to each follower: the
-replication message that says "add this entry to your log at this
-position." `n2-east` and `n3-east` receive it, write it to their own
-logs, and reply with an ack.
+Затем каждому ведомому отправляется **append entry**: сообщение репликации с требованием добавить запись на указанную позицию. `n2-east` и `n3-east` записывают её в свои журналы и подтверждают.
 
-The leader counts acks. A write is **committed** once a **quorum**,
-a majority of the peers, holds the entry. For `R=3`, a quorum is two
-of three. The leader is itself one of the two, so it needs just one
-follower's ack to reach quorum. The instant the first follower acks,
-the entry is committed.
+Лидер считает подтверждения. Запись **зафиксирована**, когда её имеет **кворум**, то есть большинство участников. При `R=3` это два из трёх. Сам лидер уже один из них, поэтому достаточно подтверждения первого ведомого.
 
-Commit is the point at which durability is reached. A committed entry
-survives the loss of any single server, because it already lives on a
-majority. This is what makes the `PubAck` that `order-svc` receives a
-real guarantee: the leader returns it only after the write commits, so
-a `PubAck` means the order already survived the chance of a single-node
-failure before you heard back.
+Фиксация обеспечивает устойчивость к потере одного сервера: запись уже есть у большинства. Лидер возвращает `PubAck` только после фиксации, поэтому полученное `order-svc` подтверждение означает, что отказ одного узла уже не уничтожит заказ.
 
-The third peer isn't on the critical path. `n3-east` may ack a moment
-later, or be briefly behind; the write committed without waiting for it.
-That's the point of a quorum: the group makes progress as long as a
-majority is reachable, even if not all peers are.
+Третий участник не задерживает ответ. `n3-east` может подтвердить позже или немного отставать. Кворум позволяет группе продвигаться при доступном большинстве, даже без всех участников.
 
-## Followers apply what the leader commits
+## Ведомые применяют зафиксированное лидером {#followers-apply-what-the-leader-commits}
 
-Committing records that a quorum *has* the entry. It doesn't yet put
-the order into each peer's copy of the stream. That last step is
-**apply**: copying a committed entry from the log into the stream store,
-where consumers can read it.
+Фиксация означает, что запись *есть* у кворума. Но её ещё нужно перенести из журнала в хранилище потока, откуда читают потребители. Это **применение** (apply).
 
-The leader tracks a **commit index**, the position up to which entries
-are committed. It is included on the next append entry or heartbeat, so
-followers learn "everything up to here is committed; apply it." Each
-follower then applies those entries to its own stream store in the same
-order the leader did.
+Лидер отслеживает **индекс фиксации** — последнюю зафиксированную позицию — и передаёт его со следующим append entry или сигналом активности. Ведомые узнают, какие записи можно применить, и переносят их в том же порядке, что лидер.
 
-Order is what the group guarantees here. Every peer applies the same
-entries in the same sequence, so all three copies of `ORDERS` converge
-on the identical message log. A follower can lag the leader by a few
-entries, but it never reorders them and never skips one.
+Именно порядок гарантирует группа. Все участники применяют одни записи в одной последовательности; три копии `ORDERS` сходятся к одинаковому журналу. Ведомый может отстать на несколько записей, но не переставляет и не пропускает их.
 
-Here's one write from `order-svc` moving through that whole sequence
-(publish, append entry, ack, commit at quorum, apply):
+Одна запись `order-svc` проходит весь путь: публикация, append entry, подтверждение, фиксация кворумом, применение:
 
 <div class="nats-flow" data-scenario="r3ReplicationAnimated" data-width="600" data-height="350"></div>
 
-You'll find the full set of RAFT replication parameters (append-entry
-batching, heartbeat intervals, log compaction) in
-[Reference](/reference/system/monitor/raftz). All you need here is the
-append → quorum → commit → apply shape.
+Пакетирование append entry, интервалы активности и уплотнение журнала описаны в [справочнике](/reference/system/monitor/raftz). Здесь важна схема: добавление → кворум → фиксация → применение.
 
-## The consistency you get
+## Получаемая согласованность {#the-consistency-you-get}
 
-Quorum commit gives a specific, nameable consistency, and you should
-know its boundaries before you build on it.
+Фиксация кворумом даёт конкретные гарантии с определёнными границами.
 
-Reads from the leader are read-after-write. The leader holds every
-committed entry and assigns every sequence number, so once a `PubAck`
-returns, a read from the leader sees that order. There's no window
-where your own just-acked write is missing.
+Чтение у лидера видит предшествующую запись. Лидер имеет все зафиксированные записи и назначает номера, поэтому после `PubAck` чтение у него увидит заказ: только что подтверждённая запись не может отсутствовать.
 
-Reads from a follower can lag. A follower applies committed entries
-slightly after the leader does, so a direct read from `n2-east` or
-`n3-east` might not yet show the most recent order, even though that
-order is already committed and safe. The data is correct but slightly
-behind. For read-after-write, read from the leader.
+Чтение у ведомого может отставать. Прямой запрос к `n2-east` или `n3-east` иногда ещё не покажет последнего заказа, хотя он уже зафиксирован. Данные корректны, но немного старее. Для чтения после записи обращайтесь к лидеру.
 
-This is the trade `R=3` makes on purpose. Rather than promising that
-every copy is identical at every instant, it promises that every copy
-*converges*, in order, and that a committed write survives one server
-loss. When you need to confirm where the copies actually stand, the
-`Cluster` block of `nats stream info` reports each replica's status and
-how far behind it is, which is exactly the first trap under Pitfalls,
-below.
+Это осознанный компромисс `R=3`: копии не обязаны совпадать в каждую микросекунду, но *сходятся* в одном порядке, а зафиксированная запись переживает отказ сервера. Реальные позиции и отставание реплик показывает блок `Cluster` команды `nats stream info`; к этому вернёмся в типичных ошибках.
 
-## Syncing data to disk
+## Синхронизация данных с диском {#syncing-data-to-disk}
 
-Quorum commit protects against losing a server, not against losing a
-server's disk. For file storage, applying a committed entry writes it
-to disk — but JetStream doesn't `fsync` every write immediately. It
-batches disk syncs on a timer, `sync_interval`, which defaults to 2
-minutes. Until the next sync, an applied write can sit in the OS's
-write cache without reaching physical disk.
+Фиксация кворумом защищает от потери сервера, но не сама по себе от потери несинхронизированных данных диска. При файловом хранении применение записывает данные, однако JetStream не вызывает `fsync` после каждого сообщения. Синхронизация выполняется по таймеру `sync_interval`, по умолчанию раз в 2 минуты. До этого данные могут находиться в кеше записи ОС.
 
-That gap means a `PubAck` only confirms quorum; the disk sync still
-happens later, on the next timer tick. Two peers can hold a write in
-memory and still lose it if the underlying hardware fails before
-either one's next sync:
+Следовательно, `PubAck` подтверждает кворум, а синхронизация диска может произойти позже. Два участника могут иметь запись в памяти и всё же потерять её при отказе оборудования до синхронизации:
 
-- Multiple peers suffer an OS failure within the same `sync_interval`
-  window, before any of them synced the write.
-- A peer that lost unsynced data in an OS crash rejoins the group and,
-  together with a peer that never held the write, reaches a new
-  quorum — one that never saw it.
+- Несколько участников одновременно теряют ОС в пределах одного `sync_interval`, прежде чем кто-либо синхронизировал запись.
+- Узел после сбоя ОС возвращается без несинхронизированной записи и образует новый кворум с участником, у которого её никогда не было.
 
-A shorter `sync_interval` narrows this window, at the cost of write
-throughput. Setting it to `always` closes the window entirely: every
-write syncs to disk before the leader returns its `PubAck`. Combined
-with peers spread across availability zones, `always` gives you the
-strongest durability guarantee available, at the cost of the slowest
-writes.
+Меньший `sync_interval` сужает окно ценой производительности. Значение `always` закрывает его: каждая запись синхронизируется до `PubAck`. Вместе с распределением по зонам доступности это даёт максимальную доступную надёжность при самых медленных записях.
 
-The 2-minute default balances that risk against performance for a
-typical production deployment spread across multiple availability
-zones. Here's how narrow the failure window actually is. Take `ORDERS`
-at `R=3`, its three peers spread across three zones. For its log to
-diverge, all of this has to happen, in order:
+Стандартные две минуты балансируют риск и производительность для системы в нескольких зонах. Чтобы журнал `ORDERS` с `R=3` разошёлся, нужна такая последовательность независимых сбоев:
 
-- One of the three peers is already offline, isolated, or
-  partitioned, and never gets the write.
-- A second peer's OS crashes and loses the write: it was one of only
-  two peers holding it, and neither had synced yet.
-- The leader — the third peer, the one that did have the write — goes
-  down or gets isolated too.
-- The offline peer reconnects, but the leader isn't reachable anymore.
-- The crashed peer comes back and reaches the reconnected peer, but
-  not the leader.
+- Один участник уже отключён или изолирован и не получает запись.
+- ОС второго падает, теряя запись: она была только у двух участников, и ни один ещё не синхронизировал её.
+- Лидер, третий участник с записью, тоже отключается или изолируется.
+- Первый участник возвращается, но не видит лидера.
+- Упавший второй возвращается и связывается с первым, но не с лидером.
 
-Now two peers are up, neither holding the write, and together they
-form a new quorum. They start accepting new writes, silently dropping
-some of what the old leader had acked.
+Теперь два доступных участника без записи образуют новый кворум и принимают новые данные, незаметно теряя часть подтверждённого старым лидером.
 
-This is a real way for a stream's log to diverge, but it takes several
-independent faults landing in exactly this order, across separate
-availability zones.
+Это реальный путь расхождения журнала, но он требует нескольких независимых отказов в точном порядке между разными зонами доступности.
 
-One mitigation: keep the crashed server offline instead of restarting
-it right away. A NATS server rejoins its cluster automatically on
-restart, so the safeguard is in when you restart it — wait until
-`nats stream info` shows the remaining peers are fully caught up
-before bringing it back. Or remove the crashed peer and let it rejoin
-as a wiped, empty peer that resyncs over the network — safer, though
-expensive if there's a lot of data to resync.
+Одна мера — не запускать упавший сервер немедленно. NATS автоматически присоединяется при старте, поэтому сначала дождитесь полной синхронизации оставшихся реплик по `nats stream info`. Другой вариант — удалить потерянного участника и вернуть очищенным, чтобы он заново получил данные по сети. Это безопаснее, но дорого при большом объёме.
 
-If minimizing loss matters more than throughput, use
-`sync_interval: always`. It costs performance cluster-wide, even for
-streams that don't need the extra durability, so weigh it against
-your own durability, cost, and performance requirements before you
-turn it on everywhere.
+Если минимизация потерь важнее пропускной способности, используйте `sync_interval: always`. Цена платится всем кластером, включая потоки, которым усиленная гарантия не нужна; сопоставьте её с требованиями надёжности, стоимости и скорости.
 
-You don't have to pick one setting for the whole deployment. Run most
-clusters on the default `sync_interval`, and add a separate cluster
-tagged for `sync_interval: always`. Then place only the streams that
-need the strongest durability there, using [placement
-tags](/learn/clustering/placement).
+Необязательно применять один режим ко всей системе. Оставьте большинство кластеров со стандартным `sync_interval`, а отдельный кластер с `sync_interval: always` пометьте для критичных потоков. Направляйте их туда через [метки размещения](/learn/clustering/placement).
 
 ```conf
 # Configure a cluster that's dedicated to always sync writes.
@@ -224,79 +105,45 @@ jetstream {
 }
 ```
 
-Create a replicated stream pinned to that cluster, so only the writes
-that need this level of durability pay for it.
+Создайте реплицируемый поток с привязкой к этому кластеру, чтобы дополнительные затраты несли только нужные записи.
 
 ```bash
 nats stream add --replicas 3 --tag sync:always
 ```
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-These are three common mistakes the first time you trust a replicated
-stream.
+При первом использовании репликации распространены три ошибки.
 
-**`R=1` has no copy.** A stream at `R=1` lives on exactly one server.
-There's no second peer, so there's no quorum and nothing to commit
-*to* beyond the one log. If that server's disk is lost, the order is
-lost too, with no failover and no recovery. Only `R≥3` survives a node
-loss.
-Don't run real orders at `R=1`; the why-three reasoning is covered on
-[surviving node loss](/learn/jetstream/surviving-node-loss).
+**При `R=1` запасной копии нет.** Поток находится на одном сервере, без второго участника и распределённого кворума. Потеря диска уничтожает заказ, автоматического переключения нет. Для переживания отказа узла нужен `R≥3`. Обоснование числа три приведено в [Отказе узла](/learn/jetstream/surviving-node-loss).
 
-**A follower may lag, so a follower read can be stale.** A committed
-write is safe, but it reaches each follower's stream store slightly after
-the leader applies it. A direct read aimed at a follower can therefore
-return data that's correct but not the newest. Don't assume any peer
-is current just because the write was acked. For read-after-write, read
-from the leader.
+**Чтение у ведомого может быть устаревшим.** Зафиксированная запись приходит в хранилища ведомых чуть позже лидера. Не считайте любую реплику актуальной лишь из-за `PubAck`. Для чтения после записи используйте лидера.
 
-Check the leader and each replica's lag when you need to know how far
-behind the group's followers are running, not as a way to decide
-whether a particular read is fresh:
+Проверяйте лидера и отставание реплик для оценки состояния группы, но не как доказательство свежести конкретного чтения:
 
 <div class="nats-example" data-type="learn-clustering-replication-and-r3-inspectReplicas" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**A `PubAck` proves quorum, not full replication.** The leader returns
-the `PubAck` the instant a quorum holds the entry: for `R=3`, the
-leader plus one follower. The third peer may still be catching up at that
-moment. That's correct and safe: the write already survives one node
-loss. But don't read a `PubAck` as "all three copies are identical
-right now." If you need every copy current (say, before deliberately
-taking a server down), verify each replica shows `current` in
-`nats stream info` first.
+**`PubAck` доказывает кворум, а не полную синхронизацию.** При `R=3` достаточно лидера и одного ведомого; третий может догонять. Запись уже переживает отказ одного узла, но копии ещё не обязательно идентичны прямо сейчас. Перед намеренной остановкой сервера убедитесь через `nats stream info`, что все реплики имеют `current`.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-The `ORDERS` stream now runs `R=3` on the `east` cluster: a leader on one
-of `n1-east`, `n2-east`, or `n3-east` and followers on the other two, all
-carrying the same order log.
+`ORDERS` работает с `R=3` на `east`: лидер на одном из `n1-east`, `n2-east`, `n3-east`, ведомые на остальных, общий журнал заказов.
 
-What changed is your model of a write:
+Изменилась ваша модель записи:
 
-- A write appends to the leader's log, replicates as an append entry
-  to followers, and commits once a quorum holds it: two of three for
-  `R=3`.
-- Followers apply committed entries in order, so all three copies
-  converge on the identical log.
-- A `PubAck` means the order survived the loss of one server before you
-  heard back.
-- Read-after-write comes from the leader; follower reads may lag.
+- Запись добавляется в журнал лидера, передаётся ведомым и фиксируется при наличии кворума: двух из трёх для `R=3`.
+- Ведомые применяют записи по порядку, и копии сходятся.
+- `PubAck` означает защиту заказа от потери одного сервера ещё до ответа издателю.
+- Чтение после записи гарантирует лидер; ведомые могут отставать.
 
-## What's next
+## Что дальше {#whats-next}
 
-The stream is replicated, but the cluster chose *where* its three copies
-landed. The next page makes that choice yours: placement constrains a
-stream's replicas to a cluster and to servers carrying matching tags,
-and lets you ask a chosen server to take leadership.
+Репликация включена, но серверы для копий выбрал кластер. Следующая страница передаёт выбор вам: ограничения кластера и меток, а также запрос передачи лидерства определённому серверу.
 
-Continue to [Placement](/learn/clustering/placement).
+Перейдите к [размещению](/learn/clustering/placement).
 
-## See also
+## См. также {#see-also}
 
-- [Surviving node loss](/learn/jetstream/surviving-node-loss) — the
-  one-page operator intro to `R=3` and storage durability.
-- [Reference → Stream Configuration](/reference/jetstream/api/stream) —
-  the full `StreamConfig`, including every replica option.
-- [Mirrors and sources](/learn/jetstream/mirrors-and-sources) — copying
-  a stream's data on purpose, across clusters and for DR.
+- [Отказ узла](/learn/jetstream/surviving-node-loss) — краткий обзор `R=3` и надёжности хранения.
+- [Справочник → Конфигурация потока](/reference/jetstream/api/stream) — полный `StreamConfig` и параметры реплик.
+- [Зеркала и источники](/learn/jetstream/mirrors-and-sources) — копирование данных между кластерами для аварийного восстановления.

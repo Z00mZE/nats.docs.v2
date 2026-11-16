@@ -9,7 +9,7 @@ type Props = {
 export default function Aliases({ aliases }: Props) {
   return (
     <div className={styles.meta} style={{ fontStyle: "italic" }}>
-      Aliases:{" "}
+      Псевдонимы:{" "}
       {aliases
         .split(",")
         .map((t, i) => {

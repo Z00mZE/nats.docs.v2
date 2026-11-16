@@ -1,75 +1,86 @@
-# CLI Examples
+<a id="cli-examples"></a>
 
-This directory contains CLI examples for NATS documentation. These examples are **stored in git** (unlike Go/Rust examples which are fetched from GitHub during build).
+# Примеры CLI
 
-## Directory Structure
+Этот каталог содержит примеры CLI для документации NATS. Эти примеры **хранятся в git**, а примеры Go/Rust загружаются с GitHub во время сборки.
 
-Examples follow the pattern: `[page]/[snippet].sh`
+<a id="directory-structure"></a>
 
-Examples:
-- `queue-groups/basic.sh` → Used by page `queue-groups` for snippet `basic`
-- `request-reply/timeout.sh` → Used by page `request-reply` for snippet `timeout`
+## Структура каталогов
 
-## Adding New CLI Examples
+Путь к примеру имеет формат `[page]/[snippet].sh`.
 
-1. **Create the example file:**
+Примеры:
+- `queue-groups/basic.sh` → фрагмент `basic` на странице `queue-groups`
+- `request-reply/timeout.sh` → фрагмент `timeout` на странице `request-reply`
+
+<a id="adding-new-cli-examples"></a>
+
+## Добавление примеров CLI
+
+1. **Создайте файл примера:**
    ```bash
-   # Create in the appropriate directory
+   # Создайте файл в соответствующем каталоге
    static/examples/snippets/cli/[page]/[snippet].sh
    ```
 
-2. **Write the CLI commands:**
+2. **Напишите команды CLI:**
    ```bash
    #!/bin/bash
 
-   # Your NATS CLI commands here
+   # Здесь находятся ваши команды NATS CLI
    nats pub subject "message"
    ```
 
-3. **Add to git (IMPORTANT!):**
+3. **Добавьте файл в git (ВАЖНО!):**
    ```bash
-   # CLI examples MUST be added to git
+   # Примеры CLI ОБЯЗАТЕЛЬНО добавляются в git
    git add static/examples/snippets/cli/[page]/[snippet].sh
    ```
 
-4. **Use in documentation:**
+4. **Используйте пример в документации:**
    ```mdx
    <div class="nats-example" data-type="[page]-[snippet]" data-languages="cli,js,go,python,java,rust,csharp"></div>
    ```
 
-## Why CLI Examples are Different
+<a id="why-cli-examples-are-different"></a>
 
-- **All other languages** (Go, Rust, JavaScript, Python, Java, C#, etc.): Stored in their respective client repos and fetched during build
-- **CLI examples**: Stored directly in this repo and committed to git
-- **Reason**: CLI examples are simple shell scripts that don't need separate repos
-- **gitignore**: Uses pattern `static/examples/snippets/*` to ignore all languages, with exception `!static/examples/snippets/cli/` to keep CLI tracked
+## Особенности примеров CLI
 
-## Example Workflow
+- **Все остальные языки** (Go, Rust, JavaScript, Python, Java, C# и другие): примеры хранятся в репозиториях клиентов и загружаются при сборке.
+- **Примеры CLI:** хранятся непосредственно в этом репозитории и добавляются в git.
+- **Причина:** это простые скрипты оболочки, которым не нужны отдельные репозитории.
+- **gitignore:** правило `static/examples/snippets/*` исключает все языки, а исключение `!static/examples/snippets/cli/` сохраняет отслеживание CLI.
+
+<a id="example-workflow"></a>
+
+## Пример рабочего процесса
 
 ```bash
-# 1. Create new CLI example
+# 1. Создайте пример CLI
 echo '#!/bin/bash
 nats pub hello "world"' > static/examples/snippets/cli/basics/hello.sh
 
-# 2. Add to git (don't forget this!)
+# 2. Добавьте файл в git: не пропустите этот шаг
 git add static/examples/snippets/cli/basics/hello.sh
 
-# 3. Commit
+# 3. Создайте коммит
 git commit -m "Add CLI example for basics-hello"
 
-# 4. Use in docs
-# In your .md file:
+# 4. Используйте пример в документации
+# В файле .md:
 # <div class="nats-example" data-type="basics-hello" data-languages="cli"></div>
 ```
 
-## Troubleshooting
+<a id="troubleshooting"></a>
 
-**Q: My CLI example isn't showing up in production**
-A: Did you `git add` the file? CLI examples must be committed to git.
+## Устранение неполадок
 
-**Q: How do I check if a CLI example is tracked?**
-A: Run `git ls-files static/examples/snippets/cli/` to see all tracked files.
+**Вопрос: пример CLI не отображается на опубликованном сайте.**
+Ответ: добавлен ли файл командой `git add`? Примеры CLI должны быть включены в коммит.
 
-**Q: I added the file but it's not in git**
-A: The parent `snippets/` directory is in `.gitignore` for Go/Rust examples.
-   You need to explicitly add CLI files with `git add static/examples/snippets/cli/your-file.sh`
+**Вопрос: как проверить, отслеживается ли пример CLI?**
+Ответ: выполните `git ls-files static/examples/snippets/cli/`, чтобы увидеть все отслеживаемые файлы.
+
+**Вопрос: файл создан, но в git его нет.**
+Ответ: родительский каталог `snippets/` включён в `.gitignore` для примеров Go/Rust. Явно добавьте файл CLI командой `git add static/examples/snippets/cli/your-file.sh`.

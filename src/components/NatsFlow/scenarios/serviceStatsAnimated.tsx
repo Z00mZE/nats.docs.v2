@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -261,17 +262,17 @@ function ServiceStatsAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Stage:
+                    Этап:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {s}
+                        {localizeDiagramContent(s)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -285,7 +286,7 @@ function ServiceStatsAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -333,7 +334,7 @@ function ServiceStatsAnimatedInner({
                             marginBottom: "4px",
                         }}
                     >
-                        OrderInventory stats
+                        Статистика OrderInventory
                     </div>
                     <div
                         style={{
@@ -344,7 +345,7 @@ function ServiceStatsAnimatedInner({
                     >
                         <span>num_requests</span>
                         <strong style={{ color: MSG_COLOR }}>
-                            {numRequests}
+                            {localizeDiagramContent(numRequests)}
                         </strong>
                     </div>
                     <div
@@ -362,7 +363,7 @@ function ServiceStatsAnimatedInner({
                                     : "#9ca3af",
                             }}
                         >
-                            {numErrors}
+                            {localizeDiagramContent(numErrors)}
                         </strong>
                     </div>
                 </div>
@@ -378,9 +379,9 @@ function ServiceStatsAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

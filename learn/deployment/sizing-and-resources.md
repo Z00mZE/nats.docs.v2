@@ -1,72 +1,35 @@
 ---
 id: sizing-and-resources
-title: "Sizing & resources"
+title: "Размер системы и ресурсы"
 sidebar_position: 2
-description: The four resources a NATS node spends, the JetStream defaults, and how account limits count R3 replication
+description: "Четыре ресурса узла NATS, значения JetStream по умолчанию и учёт репликации R3 в ограничениях учётной записи"
 ---
 
-# Sizing & resources
+# Размер системы и ресурсы {#sizing--resources}
 
-Topologies decided the shape: a three-node cluster called `east`
-(`n1-east`, `n2-east`, `n3-east`) carrying the R3 `ORDERS` stream. This
-chapter runs that shape for real, and running it starts with the question
-of how much of each resource this cluster needs.
+В топологиях выбран кластер `east` из трёх узлов (`n1-east`, `n2-east`, `n3-east`) с потоком R3 `ORDERS`. Реальная эксплуатация начинается с вопроса, сколько ресурсов ему нужно.
 
-A node spends a small, fixed set of resources, the JetStream defaults are
-knowable numbers, and the account limits the server enforces are readable
-with one command. This page turns those into a baseline for the ORDERS
-workload.
+Узел расходует небольшой фиксированный набор ресурсов, значения JetStream по умолчанию известны, а применяемые ограничения можно прочитать одной командой. Здесь мы превратим их в исходный расчёт для ORDERS.
 
-You'll learn two things here: the four resources a node spends (and their
-JetStream defaults), and how account limits count R3 replication
-against the storage ceiling.
+Вы узнаете о четырёх ресурсах узла, значениях JetStream по умолчанию и учёте R3 в ограничениях хранения учётной записи.
 
-## The four resources a node spends
+## Четыре ресурса узла {#the-four-resources-a-node-spends}
 
-Every NATS node spends the same four resources. Once you size each one,
-you've sized the node.
+Каждый узел NATS использует четыре вида ресурсов. Рассчитайте каждый — и узел рассчитан.
 
-**CPU** handles moving messages. Core NATS routing is cheap; TLS
-handshakes and JetStream replication are where cycles go. There's no hard
-CPU limit to set, so the rule is headroom: overprovision CPU by 20–30%
-above steady state so a node has cycles spare for a rebalance when a peer
-leaves.
+**CPU** обеспечивает передачу сообщений. Маршрутизация Core NATS сравнительно дешева; основные затраты дают установление TLS и репликация JetStream. Жёсткого параметра ограничения CPU нет, поэтому оставляйте запас 20–30% над установившейся нагрузкой для перераспределения при выходе соседа.
 
-**Memory** holds connections, subscriptions, and (for memory-storage
-streams) message data. The ORDERS stream uses file storage, so its
-messages live on disk, not in RAM. The `order-svc` publisher and the
-`warehouse`, `notifications`, and `analytics` subscribers are light
-clients; a few hundred connections fit comfortably in a few hundred
-megabytes. Budget `order-svc` at roughly 128 MiB.
+**Память** хранит соединения, подписки и сообщения потоков с хранением в памяти. ORDERS использует файловое хранение, поэтому сообщения находятся на диске. Издатель `order-svc` и подписчики `warehouse`, `notifications`, `analytics` — лёгкие клиенты: несколько сотен соединений укладываются в несколько сотен мегабайт. Для `order-svc` закладывайте около 128 МиБ.
 
-**Disk** holds file-storage streams. This is the resource the ORDERS
-stream actually spends, and the one most likely to run out. We'll size it
-below.
+**Диск** хранит файловые потоки. Именно его расходует ORDERS, и именно он вероятнее всего закончится. Ниже рассчитаем объём.
 
-**File descriptors (FDs)** are the per-process limit on open files and
-sockets. Connections, routes, and streams each consume FDs. JetStream
-spends roughly two FDs per stream. On a small cluster the
-default per-process limit is plenty; on a large one it isn't, which is
-why the hardened service unit on the [hardening](/learn/deployment/hardening)
-page raises it to `LimitNOFILE=800000`.
+**Файловые дескрипторы (FD)** ограничивают число открытых файлов и сокетов процесса. Они нужны соединениям, маршрутам и потокам; JetStream использует примерно два на поток. На небольшом кластере стандартного лимита достаточно, на большом — нет. Поэтому защищённый модуль из страницы [Защита системы](/learn/deployment/hardening) повышает предел до `LimitNOFILE=800000`.
 
-### The JetStream defaults
+### Значения JetStream по умолчанию {#the-jetstream-defaults}
 
-Left unset, JetStream sizes its limits from the system it's on. **Memory
-storage** defaults to 75% of system RAM (capped by `GOMEMLIMIT` if set),
-falling back to **256 MB** only when the server can't read system memory.
-**File storage** defaults to 75% of the disk space actually available
-under `store_dir`, falling back to **1 TB** only when the platform can't
-report disk size (Windows and a few others, or a failed `statfs`). On a
-Linux container with a 10 GiB volume the file-storage default is therefore
-about 7.5 GiB, not 1 TB.
+Без явной настройки JetStream вычисляет ограничения по системе. **Хранение в памяти** получает 75% системной RAM с учётом `GOMEMLIMIT`, если он задан; резервное значение **256 МБ** используется лишь при невозможности определить память. **Файловое хранение** получает 75% реально доступного места под `store_dir`; **1 ТБ** применяется только при невозможности узнать размер диска — например, на Windows или при ошибке `statfs`. Поэтому контейнер Linux с томом 10 ГиБ по умолчанию получает около 7,5 ГиБ, а не 1 ТБ.
 
-Because the default tracks the real disk, the container hazard isn't the
-default itself — it's setting `max_file_store` *larger* than the volume,
-or running on a shared or thin-provisioned volume where "available" disk
-overstates what this stream may safely use. Either way the node accepts
-writes it can't ultimately store, and the publish that crosses the real
-boundary fails. Pin `max_file_store` to what the volume can actually hold:
+Поскольку значение по умолчанию учитывает реальный диск, опасно другое: вручную поставить `max_file_store` *выше* размера тома либо использовать общий или тонко выделяемый том, где доступное место превышает безопасную долю потока. Тогда узел принимает записи, которые в итоге не сможет сохранить; публикация за реальным пределом завершится ошибкой. Явно ограничьте `max_file_store` вместимостью тома:
 
 ```conf
 # n1-east.conf — pin JetStream storage to the real volume size
@@ -77,137 +40,72 @@ jetstream {
 }
 ```
 
-The ORDERS stream is an R3 file stream. At R3 it keeps three copies, one
-per node, so each node stores the full stream once. A 10 GiB
-`max_file_store` per node leaves ample room for an ORDERS stream sized to
-fit the default 10 GiB volume the Kubernetes chapter provisions. The Helm
-chart already defaults `max_file_store` to the PVC size, so on Kubernetes
-this pin is usually set for you.
+ORDERS — файловый поток R3: три копии, по одной на узел. Каждый узел хранит весь поток один раз. Значение `max_file_store` 10 ГиБ на узел позволяет разместить ORDERS в стандартном томе 10 ГиБ из главы Kubernetes. Чарт Helm по умолчанию уже устанавливает `max_file_store` равным размеру PVC, поэтому обычно делает это за вас.
 
-The full set of JetStream limit keys is documented in
-[Reference → Configuration](/reference/config/jetstream). We only cover
-`max_memory_store` and `max_file_store` here.
+Полный список ограничений JetStream находится в [Справочнике → Конфигурация](/reference/config/jetstream). Здесь рассмотрены `max_memory_store` и `max_file_store`.
 
-## Account limits and how replication counts
+## Ограничения учётной записи и стоимость репликации {#account-limits-and-how-replication-counts}
 
-The server config sizes the *node*, while **account limits** size the
-*tenant*. The ORDERS account has its own ceilings (`MaxMemory`,
-`MaxStore`, `MaxStreams`, `MaxConsumers`), and the server enforces them
-no matter how much disk the node has. Read them live before you size:
+Конфигурация сервера задаёт ресурсы *узла*, а **ограничения учётной записи** — *арендатора*. У ORDERS свои пределы `MaxMemory`, `MaxStore`, `MaxStreams`, `MaxConsumers`, применяемые независимо от свободного диска узла. Прочитайте их перед расчётом:
 
 <div class="nats-example" data-type="learn-deployment-sizing-and-resources-accountInfo" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-One subtlety in that output decides your storage math: how replication
-counts against `MaxStore`. There are two cases.
+Важная тонкость — учёт репликации в `MaxStore`. Есть два случая.
 
-On an **un-tiered** account, an R3 stream counts as `replicas × bytes`.
-A 10 GiB ORDERS stream at R3 spends 30 GiB of the account's
-`MaxStore`, because the limit measures total bytes stored across all
-replicas. Forget the multiplier and the third replica fails to place
-when the account hits its ceiling.
+В учётной записи **без уровней** поток R3 учитывается как `replicas × bytes`. Поток ORDERS размером 10 ГиБ расходует 30 ГиБ `MaxStore`: ограничение измеряет суммарные байты всех реплик. Если забыть множитель, размещение третьей реплики не удастся при достижении предела.
 
-On a **tiered** account, replication is baked into the tier. The bytes
-the limit reports are the usable bytes: the R3 multiplier is already
-accounted for, so a 10 GiB tier holds a 10 GiB R3 stream.
+В учётной записи **с уровнями** репликация включена в уровень. Указанные байты — полезная вместимость: множитель R3 уже учтён, и уровень 10 ГиБ вмещает поток R3 размером 10 ГиБ.
 
-The durability R3 buys (surviving the loss of a node) is the
-JetStream chapter's subject, covered on
-[Surviving node loss](/learn/jetstream/surviving-node-loss). Here you only
-need the cost: on an un-tiered account, three copies cost three times the
-bytes.
+Устойчивость R3 к потере узла разобрана в [JetStream → Отказ узла](/learn/jetstream/surviving-node-loss). Здесь важна стоимость: без уровней три копии требуют втрое больше байтов лимита.
 
-## Connection, subscription, and payload limits
+## Ограничения соединений, подписок и сообщений {#connection-subscription-and-payload-limits}
 
-Three more limits round out the node, and one command reads them all:
+Ещё три ограничения дополняют параметры узла. Одна команда показывает их все:
 
 <div class="nats-example" data-type="learn-deployment-sizing-and-resources-serverInfo" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-`max_connections` caps how many clients a node accepts (default 64K, i.e.
-65,536; it's reloadable, and overflow disconnects immediately).
-`max_subscriptions` caps subscriptions per connection (default
-unlimited). `max_payload` caps a single message at 1 MB by default,
-and it must stay `≤ max_pending`. The ORDERS payload is well under a
-kilobyte, so the defaults have room to spare:
+`max_connections` ограничивает клиентов узла: по умолчанию 64K, то есть 65 536; параметр перечитывается, превышение приводит к немедленному отключению. `max_subscriptions` ограничивает подписки одного соединения и по умолчанию не ограничен. `max_payload` по умолчанию ограничивает сообщение 1 МБ и должен быть `≤ max_pending`. Сообщения ORDERS существенно меньше килобайта, поэтому стандартных значений достаточно:
 
 ```json
 {"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}
 ```
 
-The full set of connection and payload keys is documented in
-[Reference → Configuration](/reference/config/max_payload). We only name
-the ones a sizing baseline needs here.
+Полный набор параметров соединений и размера сообщений описан в [Справочнике → Конфигурация](/reference/config/max_payload). Здесь названы необходимые для исходного расчёта.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-A few sizing mistakes only surface in production under load, where
-they're expensive to fix. Each is scoped to this page's two concepts: the
-node's resources and the account's limits.
+Некоторые ошибки проявляются только под рабочей нагрузкой, когда исправлять их дорого. Все относятся к ресурсам узла и ограничениям учётной записи.
 
-**Setting `max_file_store` beyond the real disk.** A `max_file_store`
-larger than the mounted volume — or a shared or thin-provisioned volume
-whose "available" space the default over-reads — lets the node accept
-writes it can't store. The failure is a publish error mid-stream, not a
-startup warning. Set `max_file_store` to the volume size, test small with
-a `10GB` value, and watch the real disk with `df -h`. Don't trust the
-config number over what the device reports.
+**`max_file_store` больше реального диска.** Слишком большой предел или переоценённое доступное место общего тома позволяют принять записи, которые невозможно сохранить. Ошибка возникнет во время публикации, без предварительного предупреждения при запуске. Задайте вместимость тома, начните проверку со значения `10GB` и следите за диском через `df -h`. Реальное устройство важнее числа в конфигурации.
 
-**`max_payload` larger than `max_pending`.** If `max_payload` exceeds
-`max_pending`, the server refuses to start. Keep `max_pending` at
-`≥ 10× peak message size` so a burst of large messages can't stall a
-connection. Don't raise `max_payload` in isolation.
+**`max_payload` больше `max_pending`.** Сервер не запустится. Держите `max_pending` на уровне `≥ 10× peak message size`, чтобы всплеск больших сообщений не остановил соединение. Не увеличивайте `max_payload` отдельно.
 
-**File-descriptor exhaustion on a big cluster.** Each stream costs about
-two FDs, and routes and gossip add more. On a large cluster the default
-per-process FD limit runs out, and the symptom is connection refusals
-that look like a network fault. Raise the limit (`ulimit -n 800000`)
-before the process starts; the hardened unit on the
-[hardening](/learn/deployment/hardening) page does exactly this.
+**Исчерпание файловых дескрипторов.** Каждый поток требует около двух FD, плюс маршруты и служебный обмен. На большом кластере стандартный предел процесса заканчивается, а отказы соединений похожи на сетевой сбой. Увеличьте предел до запуска (`ulimit -n 800000`); модуль на странице [Защита системы](/learn/deployment/hardening) делает именно это.
 
-**JWT account limits change only when the account JWT does.** Operator-mode
-accounts enforce their limits through the account JWT the resolver holds,
-not through server config, so raising `MaxStore` or `MaxStreams` means
-editing and pushing the JWT — a server reload or restart won't move them.
-Keep the cluster's server versions aligned as you roll upgrades so every
-node reads the same JWT limit fields (tiered R1/R3 limits, for instance,
-need servers new enough to understand them). Read the active tier with
-`nats account info` before you size, so you plan against the limits the
-cluster actually applies.
+**Ограничения учётной записи JWT меняются только вместе с JWT.** В режиме оператора сервер применяет значения из JWT resolver, а не из своей конфигурации. Для повышения `MaxStore` или `MaxStreams` нужно изменить и передать JWT: перечитывание или перезапуск сервера не помогут. При обновлении согласуйте версии узлов, чтобы они одинаково понимали поля ограничений; например, уровни R1/R3 требуют достаточно новой версии. Перед расчётом читайте активный уровень через `nats account info`.
 
-The runnable fix for all four is the same first step: read the live
-limits before you size, so the numbers you plan against are the numbers
-the server enforces.
+Первый шаг для всех четырёх ошибок один: прочитать действующие ограничения и планировать по реально применяемым значениям.
 
 <div class="nats-example" data-type="learn-deployment-sizing-and-resources-accountInfo" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You now have a sizing baseline for the ORDERS cluster:
+Вы получили исходный расчёт для ORDERS:
 
-- The four resources a node spends: CPU (20–30% headroom), memory
-  (`order-svc` ~128 MiB), disk (`max_file_store` pinned to the volume),
-  and FDs (two per stream).
-- The JetStream defaults named (memory and file storage both default to
-  75% of RAM and disk; 256 MB / 1 TB are only the can't-read fallbacks) and
-  `max_file_store` pinned to the real 10 GiB volume.
-- The account limits read live with `nats account info`, and the rule
-  that an un-tiered R3 stream costs `replicas × bytes`.
+- Четыре ресурса: CPU с запасом 20–30%, память (`order-svc` около 128 МиБ), диск с привязкой `max_file_store` к тому, FD — примерно два на поток.
+- Значения JetStream: по 75% RAM и диска; 256 МБ и 1 ТБ — лишь резервные варианты при невозможности определить ресурсы. `max_file_store` привязан к реальному тому 10 ГиБ.
+- Действующие ограничения из `nats account info` и правило стоимости R3 без уровней: `replicas × bytes`.
 
-The ORDERS R3 file stream fits the default 10 GiB volume, and `order-svc`
-fits in ~128 MiB. That baseline is what the next page deploys.
+Файловый поток ORDERS R3 помещается в стандартный том 10 ГиБ, а `order-svc` — примерно в 128 МиБ. Следующая страница развёртывает эту конфигурацию.
 
-## What's next
+## Что дальше {#whats-next}
 
-With the resources sized, the next page stands the cluster up: the NATS
-Helm chart, the StatefulSet that maps `nats-0..2` to `n1-east..n3-east`,
-and the NACK controller that declares the `ORDERS` stream as a CRD.
+После расчёта ресурсов создадим кластер: чарт NATS Helm, StatefulSet с соответствием `nats-0..2` узлам `n1-east..n3-east` и контроллер NACK, объявляющий `ORDERS` через CRD.
 
-Continue to [Kubernetes](/learn/deployment/kubernetes).
+Перейдите к [Kubernetes](/learn/deployment/kubernetes).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Configuration](/reference/config/jetstream) — every
-  JetStream limit key and its default.
-- [Reference → max_payload](/reference/config/max_payload) — the payload
-  and pending limits in full.
-- [Surviving node loss](/learn/jetstream/surviving-node-loss) — what R3
-  durability buys for the bytes it costs.
+- [Справочник → Конфигурация](/reference/config/jetstream) — все ограничения JetStream и значения по умолчанию.
+- [Справочник → max_payload](/reference/config/max_payload) — ограничения полезной нагрузки и ожидающих данных.
+- [Отказ узла](/learn/jetstream/surviving-node-loss) — устойчивость R3, за которую платят объёмом хранения.

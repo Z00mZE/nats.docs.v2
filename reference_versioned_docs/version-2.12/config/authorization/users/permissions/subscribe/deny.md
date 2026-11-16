@@ -1,11 +1,11 @@
-# deny
+# deny {#deny}
 
 <Reloadable state="reloadable" />
-List of subjects that are denied to the client.
+Список субъектов, запрещённых клиенту.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |

@@ -1,23 +1,16 @@
-# jwt_cookie
+# jwt_cookie {#jwt_cookie}
 
 <Reloadable state="not-reloadable" />
-Name of the HTTP cookie, that, if present, will be used as a client JWT.
-The cookie should be set by the HTTP server as described [here][cookie].
-This setting is useful when generating NATS `Bearer` client JWTs as the
-result of some authentication mechanism. The HTTP server after correct
-authentication can issue a JWT for the user, that is set securely
-preventing access by unintended scripts. Note these JWTs must be
-[NATS JWTs][jwt].
+Имя HTTP-cookie, которое при наличии используется как JWT клиента. HTTP-сервер должен устанавливать cookie, как описано [здесь][cookie]. Это полезно при создании клиентских JWT NATS типа `Bearer` в результате аутентификации. После успешной аутентификации HTTP-сервер может выдать JWT пользователя, безопасно сохранив его без доступа посторонних скриптов. Это должны быть [JWT NATS][jwt].
 
-**Note:** If the client specifies a JWT in the `CONNECT` protocol,
-this option is ignored.
+**Примечание:** если клиент передаёт JWT в протоколе `CONNECT`, этот параметр игнорируется.
 
 [cookie]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies
 [jwt]: https://docs.nats.io/nats-server/configuration/securing_nats/jwt
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

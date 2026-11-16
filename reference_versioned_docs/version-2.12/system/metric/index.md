@@ -1,32 +1,32 @@
-# Server Metrics
+# Метрики сервера {#server-metrics}
 
-Server metric messages provide telemetry data from the NATS server for monitoring and performance analysis.
+Сообщения метрик передают телеметрию сервера NATS для мониторинга и анализа производительности.
 
-## Overview
+## Обзор {#overview}
 
-Server metrics are published as events that can be subscribed to for real-time monitoring. These metrics help track:
-- Service response times
-- Request processing latency
-- System performance indicators
-- Resource utilization
+Метрики сервера публикуются как события, на которые можно подписаться для мониторинга в реальном времени. Они помогают отслеживать:
+- Время ответа сервисов
+- Задержку обработки запросов
+- Показатели производительности системы
+- Использование ресурсов
 
-## Available Metrics
+## Доступные метрики {#available-metrics}
 
-### [Service Latency](./service-latency.md)
-Measures the time taken to process service requests:
-- Request/response round-trip times
-- Processing latency distribution
-- Performance bottleneck identification
+### [Задержка сервиса](./service-latency.md) {#service-latency}
+Измеряет время обработки запросов сервиса:
+- Полное время запроса и ответа
+- Распределение задержки обработки
+- Выявление узких мест производительности
 
-## Subscribing to Metrics
+## Подписка на метрики {#subscribing-to-metrics}
 
-Metrics are published to specific subjects that follow the pattern:
-- `$SYS.SERVER.METRIC.>` - All server metrics
-- `$SYS.SERVER.METRIC.SERVICE.LATENCY` - Service latency metrics
+Метрики публикуются в темы следующих шаблонов:
+- `$SYS.SERVER.METRIC.>` — все метрики сервера
+- `$SYS.SERVER.METRIC.SERVICE.LATENCY` — метрики задержки сервисов
 
-## Best Practices
+## Рекомендации {#best-practices}
 
-- Use sampling to reduce metric overhead
-- Store metrics in time-series databases
-- Set up alerts for latency thresholds
-- Correlate metrics with system events
+- Используйте выборку для снижения накладных расходов
+- Сохраняйте метрики в базах временных рядов
+- Настройте оповещения по порогам задержки
+- Сопоставляйте метрики с системными событиями

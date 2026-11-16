@@ -1,14 +1,14 @@
-# Server Removed
+# Сервер удалён {#server-removed}
 
-Server removed from cluster.
+Сервер удалён из кластера.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import serverRemoved from '@site/src/schemas/vendor/v2.11/jsm/jetstream/advisory/v1/server_removed.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.SERVER.REMOVED`
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={serverRemoved} />

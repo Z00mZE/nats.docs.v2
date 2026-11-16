@@ -1,18 +1,17 @@
-# routes
+# routes {#routes}
 
 <Reloadable state="reloadable" note="Routes are diffed on reload: added ones are solicited and removed ones torn down. The cluster listener is not restarted." />
-A list of server URLs to cluster with. Self-routes are ignored. Should authentication via token or username/password
-be required, specify them as part of the URL.
+Список URL серверов для объединения в кластер. Маршруты к самому себе игнорируются. Если требуется аутентификация по токену или имени пользователя и паролю, укажите их в URL.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |
-## Examples
+## Examples {#examples}
 
-### Simple Route URLs
+### Простые URL маршрутов {#simple-route-urls}
 ```
 routes: [
   nats-route://localhost:6222,

@@ -1,276 +1,128 @@
 ---
 id: connecting
-title: "Connecting"
+title: "Подключение"
 sidebar_position: 2
-description: Open order-svc with a name, a server pool, and a connect timeout, and read the connect handshake
+description: "Именованное соединение order-svc, пул, тайм-аут и установление связи"
 ---
 
-# Connecting
+# Подключение {#connecting}
 
-Every resilient connection starts the same way: a client opens it. So far
-`order-svc` has connected with nothing but a server URL, a bare default
-connection. That works on a laptop, but it's the wrong starting point for
-production. The very first thing a connection does is also the part most
-likely to fail: the client has to reach a server and pass authentication
-before anything else works.
+Первый шаг устойчивости — открыть соединение. Одного URL хватало ноутбуку; при эксплуатации именно достижение сервера и аутентификация часто отказывают первыми.
 
-This page opens `order-svc`'s connection deliberately. It adds two things to
-the bare default: a small set of connection options that name the
-connection and point it at more than one server, and an understanding of the
-connect handshake, the short exchange between client and server
-before the first message moves. Once these are correct, every later mechanism
-in this chapter has a working connection to build on.
+Зададим параметры, имя и несколько серверов и рассмотрим протокол connect. Дальнейшие механизмы будут опираться на эту связь.
 
-## Connection options
+## Параметры соединения {#connection-options}
 
-A **connection option** is a setting you pass at connect time. It's fixed
-for the life of the connection: you choose it when you open the connection,
-not while messages flow. Three of them matter before anything else.
+Они задаются при connect на срок соединения. Сначала важны три.
 
-The first is the **connection name**. By default a connection is anonymous:
-the server sees a client, but can't tell which application it is. Naming the
-connection `order-svc` makes it identifiable in `nats server report
-connections` and in the server logs, so when something goes wrong you can
-find the right connection instead of guessing.
+**Имя** order-svc позволяет найти приложение в `nats server report
+connections` и журналах вместо анонимного клиента.
 
-The second is the **server pool**: the list of server URLs the client may
-connect to. With one URL, a client has one place to go, and if that server is
-unreachable the connect fails. With several URLs the client has choices. It
-tries them until one answers, which is failover at connect time, before a
-single message is sent.
+**Пул серверов** — допустимые URL. Несколько дают переключение уже при первом подключении, если один недоступен.
 
-Here's `order-svc` opening a named connection to a single server, the
-laptop setup from Core NATS:
+Начнём именованным соединением к одному серверу:
 
 <div class="nats-example" data-type="learn-resilient-clients-connecting-basic" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Every example on this page publishes the same canonical order event:
+Во всех примерах прежнее событие:
 
 ```json
 {"order_id":"ord_8w2k","customer":"acme-co","total_cents":4200,"ts":"2026-05-22T10:14:22Z"}
 ```
 
-## The server pool is randomized
+## Случайный порядок пула {#the-server-pool-is-randomized}
 
-Once `order-svc` runs against more than one server, the pool's *order*
-matters. By default the client **randomizes** the pool before it dials. Give
-it `n1`, `n2`, and `n3`, and one client may try `n2` first while another
-tries `n1`. That randomization spreads connections evenly across the servers
-instead of concentrating every client on whichever URL happens to be first in
-the list.
+По умолчанию URL перемешиваются: разные клиенты начинают с разных n1/n2/n3, распределяя нагрузку.
 
-You can turn randomization off with a single option (most clients call it
-some variant of `NoRandomize`; Python calls it `dont_randomize`, Rust
-`retain_servers_order`) when you deliberately want a
-preferred-server order. Most applications should leave it on so that a
-restart of every `order-svc` instance doesn't overload one server.
+Для намеренного порядка есть NoRandomize, Python dont_randomize, Rust retain_servers_order. Обычно оставляйте случайность против массового наплыва на первый узел.
 
-`order-svc` opens against the `n1`/`n2`/`n3` cluster, used here only as a
-pool of three URLs the client can reach, not as a thing this chapter
-explains:
+Подключение к трём адресам:
 
 <div class="nats-example" data-type="learn-resilient-clients-connecting-pool" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Why the cluster exists, and how those three servers coordinate behind the
-pool, belongs to [Topologies → Your first
-cluster](/learn/topologies/your-first-cluster). This chapter treats the pool
-as a fact: three URLs the client may dial.
+Устройство кластера — [Ваш первый кластер](/learn/topologies/your-first-cluster). Здесь это просто доступный пул.
 
-## Discovered servers
+## Обнаруженные серверы {#discovered-servers}
 
-Your configured URLs are one source for the pool; the cluster itself is the
-other. Each server tells clients about its peers: the `INFO` message it
-sends when a client connects (the [connect
-handshake](#the-connect-handshake) below walks through it) carries a
-`connect_urls` field listing the client addresses of the cluster
-members, and the server sends a fresh `INFO` whenever that list changes,
-for as long as the connection lives. This advertising is usually called
-**gossip**. The client merges each list into its pool, and a pool entry
-that arrived this way is a **discovered server**.
+INFO при [установлении связи](#the-connect-handshake) содержит connect_urls соседей, а изменения списка сообщаются весь срок связи. Это **gossip**; клиент добавляет адреса в пул как **обнаруженные**.
 
-Discovered URLs behave like configured ones. They follow the same
-randomization rule as the rest of the pool, and reconnect treats them as
-candidates, so after a failure `order-svc` can rejoin the cluster on a
-server no configuration ever named. The difference shows when the cluster
-shrinks: a configured URL stays in the pool for the life of the connection,
-while a discovered one can be dropped once the cluster stops advertising
-it. Give `order-svc` nothing but `n1`, and its pool still holds
-`n1`/`n2`/`n3` right after the first `INFO`.
+Они так же перемешиваются и используются при восстановлении. Настроенные остаются навсегда, обнаруженные могут удалиться после исчезновения объявления. Даже один n1 после INFO даёт n1/n2/n3.
 
-Merging is on by default in every client; turning it off is where they
-differ. Go (`IgnoreDiscoveredServers`), Java (`ignoreDiscoveredServers()`),
-and Rust (`ignore_discovered_servers`) name the opt-out after discovered
-servers; JavaScript calls it `ignoreClusterUpdates`. Python and C# have no
-opt-out — those two always merge. The usual reason to opt out is
-reachability: the cluster advertises addresses that may not be dialable
-from the network your client runs in.
+Объединение включено везде. Отключение: Go IgnoreDiscoveredServers, Java ignoreDiscoveredServers(), Rust ignore_discovered_servers, JavaScript ignoreClusterUpdates. Python и C# не отключают. Причина отказа от обнаружения — недостижимые из клиентской сети объявленные адреса.
 
-Some clients also signal when discovery adds a server to the pool. Go fires
-the `DiscoveredServersCB` callback, Python `discovered_server_cb`, and Java
-the `DISCOVERED_SERVERS` connection-listener event; JavaScript reports an
-`update` status carrying the added and deleted URLs. Rust and C# have no
-discovered-servers signal. The full set of connection callbacks is the
-subject of [Connection
-events](/learn/resilient-clients/connection-events) later in this chapter.
+Сигналы обнаружения: Go DiscoveredServersCB, Python discovered_server_cb, Java DISCOVERED_SERVERS, JavaScript update с добавленными/удалёнными. Rust/C# сигнала нет. Подробнее — [События](/learn/resilient-clients/connection-events).
 
-The CLI registers Go's callback for you: run any command with `--trace`,
-and when a server the client hasn't seen before joins the cluster, it logs
-`>>> Discovered new servers, known servers are now ...` with the whole
-pool:
+CLI с --trace выводит `>>> Discovered new servers, known servers are now ...`:
 
 <div class="nats-example" data-type="learn-resilient-clients-connecting-discovered" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-All of this depends on the operator leaving advertising on: with
-`no_advertise` set in the cluster configuration, `INFO` carries no
-`connect_urls` and the pool stays exactly what you configured. That switch,
-and the cluster behind it, belong to [Topologies → Your first
-cluster](/learn/topologies/your-first-cluster).
+При no_advertise сервер не отправляет connect_urls: останется заданный пул. См. [Топологии](/learn/topologies/your-first-cluster).
 
-## The connect timeout bounds the dial
+## Тайм-аут подключения {#the-connect-timeout-bounds-the-dial}
 
-Dialing a server isn't instant. The client resolves the hostname, opens a
-TCP socket, and waits for the server to answer. Any of those steps can hang:
-a wrong DNS entry, a firewall that drops packets, a server that's up but
-overloaded. Without a bound, the client waits indefinitely.
+DNS, TCP и ответ сервера могут зависнуть из-за адреса, межсетевого экрана или перегрузки. Ожидание должно быть ограничено.
 
-The **connect timeout** is that bound. It caps how long a single dial may
-block before the client gives up and tries the next URL in the pool. The
-default is two seconds in most clients — five in Rust, twenty in
-JavaScript — so check what yours uses. Two seconds is enough for a healthy
-network and quick to move past a dead server; set the timeout deliberately
-when your client's default is longer or your network is slower.
+**Connect timeout** ограничивает одну попытку до следующего URL. Обычно две секунды, в Rust пять, JavaScript двадцать. Проверьте библиотеку и задайте по сети осознанно.
 
-The timeout and a server pool complement each other. A pool gives the client
-other URLs to try, and the timeout decides how long it waits on one URL before
-trying the next. One unreachable server in the pool costs you one timeout, then
-the client moves on to the next URL.
+Пул даёт альтернативы, тайм-аут — время отказа от одной. Недоступный узел стоит один интервал, затем следующий.
 
-Here we cover only the options that change how a connection behaves under
-fault; the exact option names and defaults live in your client's API
-reference, while [Reference](/reference/) covers the wire protocol and server
-configuration.
+Точные клиентские API — в справке библиотеки, серверные параметры — в [справочнике](/reference/).
 
-## The connect handshake
+## Протокол установления связи {#the-connect-handshake}
 
-Naming a connection and pointing it at a pool decides which server the client
-goes to. The **connect handshake** is what happens once it gets
-there: the short exchange that turns a TCP socket into a working NATS
-connection.
+Параметры выбирают сервер, **handshake** превращает TCP в рабочую NATS-связь.
 
-It runs in four steps, in order:
+Четыре шага:
 
-1. **TCP dial.** The client opens a socket to the chosen server. The connect
-   timeout bounds this step.
-2. **Server INFO.** The server immediately sends an `INFO` message
-   describing itself: its `server_id`, its `max_payload`, whether
-   authentication is required (`auth_required`), whether TLS is required
-   (`tls_required`), and more.
-3. **Client CONNECT.** The client replies with a `CONNECT` message carrying
-   its name, any credentials, and the protocol features it supports, and
-   immediately follows it with a `PING`.
-4. **Server `PONG` or `-ERR`.** If the server accepts the connection it
-   answers the `PING` with a `PONG`, and the connection is **CONNECTED** and
-   messages may flow. If it rejects the connection it sends `-ERR` (for
-   example `Authorization Violation`) and closes the socket. In verbose mode
-   the server also acknowledges the `CONNECT` itself with `+OK`, but clients
-   turn verbose off by default, so the `PONG` is what confirms the
-   connection.
+1. **TCP** к выбранному серверу с ограниченным временем.
+2. **INFO** сервера: server_id, max_payload, auth_required, tls_required и другое.
+3. **CONNECT** клиента: имя, данные входа, возможности; затем PING.
+4. **PONG** означает CONNECTED. При отказе -ERR, например Authorization Violation, и закрытие сокета. Verbose также даёт +OK на CONNECT, но обычно выключен.
 
-Picture the handshake and the two end states it can reach, CONNECTED or
-rejected:
+Схема двух исходов — принятие и отказ:
 
 <div class="nats-flow" data-scenario="connectHandshakeAnimated" data-width="600" data-height="350"></div>
 
-Two fields in that `INFO` message change how the client behaves, so they're
-worth naming.
+Особенно важны поля:
 
-`auth_required` tells the client whether the server demands credentials. If
-it's true and the client has none, the handshake ends in `-ERR` and the
-connection never reaches CONNECTED. Supplying those credentials is the job of
-[TLS & Auth](/learn/resilient-clients/tls-and-auth) later in this chapter;
-here you only need to know the server announces the requirement up front, in
-the handshake.
+Auth_required заранее объявляет необходимость данных входа. Без них -ERR до CONNECTED; передача — [TLS и аутентификация](/learn/resilient-clients/tls-and-auth).
 
-`max_payload` is the largest single message the server will accept, one
-megabyte by default. The client reads it from `INFO` and enforces it
-locally: a publish larger than `max_payload` fails *before* it leaves the
-client, rather than being sent and rejected. That's why an oversized
-`orders.created` event fails fast — the client already knows the limit.
+Max_payload, стандартно мегабайт, проверяется клиентом до отправки. Слишком большой orders.created отклоняется локально.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Connecting fails in a few predictable ways. Each one happens before a single
-order moves, so catching it at connect time saves a confusing debugging
-session later. A failed connect also isn't always a dead socket: the server
-can accept the TCP connection and then reject it with an `-ERR` —
-`maximum connections exceeded` when it's at its connection limit, for
-example — so a retry loop around connect needs a wait between attempts,
-just like the reconnect backoff on the next page.
+Неудача возможна до первой публикации: сервер может принять TCP, но вернуть -ERR maximum connections exceeded. Повтор connect тоже требует задержки.
 
-**One URL is a single point of failure at connect time.** A connection
-opened against a single server has nowhere to go if that server is
-unreachable, and the connect fails. Don't hardcode one URL for a
-production client. Pass the whole pool (several URLs, or several IPs behind
-one name) so the client can fail over while it's still connecting.
+**Один URL — точка отказа первого входа.** Настройте несколько URL или IP за именем.
 
-**A one-URL configuration that depends on discovery fails where discovery
-is off.** Give a client a single URL against a cluster and it usually still
-fails over, because the first `INFO` filled its pool with the rest of the
-cluster. That safety holds only while the operator leaves advertising on
-and the advertised addresses are reachable from your client's network; with
-`no_advertise` set, or with addresses your client can't dial, the pool is
-one URL again — a single point of failure at connect and reconnect time.
-Configure every server you want the client to rely on, and treat discovered
-servers as additions.
+**Опора только на discovery ненадёжна.** Оно зависит от объявления и достижимости адресов. Задайте все обязательные серверы, найденные считайте дополнением.
 
-**A blocked dial with no timeout hangs the startup.** If DNS resolution or
-the TCP dial stalls and no connect timeout is set short, the client waits far
-longer than you expect, and a service that hangs on startup looks dead rather
-than slow. Do set a deliberate connect timeout, and pair it with a pool so a
-single slow server costs one timeout, not the whole startup.
+**Долгий dial тормозит запуск.** Явный короткий срок плюс пул ограничивает цену зависшего узла.
 
-**An oversized message fails the publish, not the connect.** A message larger
-than the server's `max_payload` (one megabyte by default) is refused by the
-client itself, before it's sent. The connection is fine; the publish is the
-thing that fails. Don't treat that error as a connection problem. Keep
-messages under `max_payload`, and for large bodies store the blob elsewhere
-and publish a reference.
+**Большое сообщение — ошибка publish, не connect.** Не лечите переподключением. Большой объект храните отдельно с передачей ссылки.
 
-Handle the connect failures at the boundary instead of letting them surface
-deep in the application. The handler branches on whether the client could
-reach any server in the pool at all:
+Обрабатывайте неудачный вход у границы приложения:
 
 <div class="nats-example" data-type="learn-resilient-clients-connecting-handle-connect-error" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-`order-svc` now opens its connection deliberately:
+Order-svc имеет:
 
-- It carries a name (`order-svc`), so the server can identify it.
-- It points at a server pool (`n1`/`n2`/`n3`), randomized by default, so
-  one unreachable server isn't fatal at connect time.
-- Its pool grows with the servers the cluster advertises in
-  `connect_urls`, so reconnect can land on a server you never configured.
-- It bounds each dial with a connect timeout, so a blocked server costs
-  one timeout and no more.
+- Имя.
+- Перемешиваемый n1/n2/n3.
+- Дополнение из connect_urls.
+- Ограничение времени каждой попытки.
 
-And you can read the connect handshake: TCP, the server's `INFO`, the
-client's `CONNECT`, and the `PONG` that confirms CONNECTED, plus what
-`auth_required` and `max_payload` in `INFO` mean for the client.
+Вы знаете TCP → INFO → CONNECT → PONG и значения auth_required/max_payload.
 
-## What's next
+## Что дальше {#whats-next}
 
-The connection is open. The next fault to survive is the server going away
-*after* it's open. [Reconnection](/learn/resilient-clients/reconnection)
-makes `order-svc` cycle the same pool with backoff and jitter, and buffer its
-publishes until it rejoins.
+[Переподключение](/learn/resilient-clients/reconnection) переживает потерю уже открытого канала с задержками и буфером.
 
-Continue to
-[Reconnection](/learn/resilient-clients/reconnection).
+Перейдите к [Переподключению](/learn/resilient-clients/reconnection).
 
-## See also
+## См. также {#see-also}
 
-- [Topologies → Your first cluster](/learn/topologies/your-first-cluster) —
-  what the `n1`/`n2`/`n3` pool actually is on the server side.
-- [TLS & Auth](/learn/resilient-clients/tls-and-auth) — supplying the
-  credentials the handshake may demand when `auth_required` is set.
+- [Ваш первый кластер](/learn/topologies/your-first-cluster) — серверная сторона пула.
+- [TLS и аутентификация](/learn/resilient-clients/tls-and-auth) — данные входа.

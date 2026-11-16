@@ -38,6 +38,7 @@
 
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
+const { localizeReferenceSidebar } = require("./localize-reference-sidebars.js");
 const path = require("node:path");
 const os = require("node:os");
 
@@ -475,7 +476,7 @@ function step_buildSidebar(version, paths) {
   // docs tree layout.
   const configCategory = stripDocIdPrefix(rawConfig, "reference/");
 
-  const sidebarItems = buildSidebarTemplate(schemaRefs, configCategory);
+  const sidebarItems = localizeReferenceSidebar(buildSidebarTemplate(schemaRefs, configCategory));
   const sidebarJson = { referenceSidebar: sidebarItems };
   const out = path.join(
     ROOT,
@@ -544,6 +545,7 @@ function generateOne(version, tmpDir, knownVersions) {
     step_runConfigGenerator(stagePaths, version.name, knownVersions);
     step_runSchemaRefs(version.name, stagePaths);
     step_pruneIndexRows(stagePaths);
+    runCmd("node", ["scripts/localize-reference-docs.js", stagePaths.outDocs]);
     stageOk = true;
   } finally {
     if (!stageOk) {

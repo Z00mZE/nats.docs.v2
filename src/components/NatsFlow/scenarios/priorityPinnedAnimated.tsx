@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // priorityPinnedAnimated
@@ -81,28 +82,25 @@ function PriorityPinnedAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Pinned client.</strong> The server pins one worker and
-                sends it everything; the rest stand by. If the pin goes quiet
-                past <span style={{ color: AMBER, fontWeight: 600 }}>PinnedTTL</span>,
-                a standby is pinned instead and the old one's stale pull gets a 423.
+                <strong>Закреплённый клиент.</strong> Сервер закрепляет одного обработчика и отправляет ему всё; остальные в резерве. Если закреплённый участник молчит дольше <span style={{ color: AMBER, fontWeight: 600 }}>PinnedTTL</span>, вместо него закрепляется резервный участник, а устаревший pull-запрос прежнего получает 423.
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "18px 16px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fafafa", width: "fit-content" }}>
                 {/* dispatch consumer with current pin */}
                 <div style={{ width: 130 }}>
                     <div style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-                        dispatch
+                        распределение
                     </div>
                     <div style={{ height: 50, borderRadius: 8, border: `2px solid ${receiving >= 0 ? CONSUMER_GREEN : AMBER}`, background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transition: "border-color 0.3s" }}>
                         <div style={{ fontSize: 11, color: "#6b7280" }}>Nats-Pin-Id</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: STREAM_BLUE }}>{pinId}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: STREAM_BLUE }}>{localizeDiagramContent(pinId)}</div>
                     </div>
                 </div>
 
                 {/* fan: active line goes to the receiving (pinned) worker, with
                     message dots flowing along it while delivery is happening */}
                 <svg width={FAN_W} height={COL_H} style={{ flex: "none", overflow: "visible" }}>
-                    {workers.map((_, i) => {
+                    {localizeDiagramContent(workers.map((_, i) => {
                         const active = i === receiving;
                         return (
                             <line
@@ -117,8 +115,8 @@ function PriorityPinnedAnimatedInner() {
                                 style={{ transition: "stroke 0.3s, stroke-width 0.3s" }}
                             />
                         );
-                    })}
-                    {receiving >= 0 &&
+                    }))}
+                    {localizeDiagramContent(receiving >= 0 &&
                         Array.from({ length: N_DOTS }, (_, d) => {
                             const f = (((elapsed % DOT_PERIOD) / DOT_PERIOD) + d / N_DOTS) % 1;
                             const y1 = workerCenterY(receiving);
@@ -131,12 +129,12 @@ function PriorityPinnedAnimatedInner() {
                                     fill={CONSUMER_GREEN}
                                 />
                             );
-                        })}
+                        }))}
                 </svg>
 
                 {/* workers */}
                 <div style={{ display: "flex", flexDirection: "column", gap: WBOX_GAP }}>
-                    {workers.map((w, i) => {
+                    {localizeDiagramContent(workers.map((w, i) => {
                         const s = styleFor(w.state);
                         const receivingNow = i === receiving;
                         return (
@@ -157,11 +155,11 @@ function PriorityPinnedAnimatedInner() {
                                     transition: "border-color 0.3s, background 0.3s, box-shadow 0.3s",
                                 }}
                             >
-                                <div style={{ fontSize: 12, fontWeight: 700, color: w.state === "standby" ? WORKER_NAVY : s.text }}>{w.label}</div>
-                                <div style={{ fontSize: 10, fontFamily: "monospace", color: s.text, marginTop: 1 }}>{subFor(w.state, i)}</div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: w.state === "standby" ? WORKER_NAVY : s.text }}>{localizeDiagramContent(w.label)}</div>
+                                <div style={{ fontSize: 10, fontFamily: "monospace", color: s.text, marginTop: 1 }}>{localizeDiagramContent(subFor(w.state, i))}</div>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
             </div>
 
@@ -169,14 +167,14 @@ function PriorityPinnedAnimatedInner() {
             <div style={{ marginTop: 12, width: 300 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#6b7280", marginBottom: 3, fontFamily: "monospace" }}>
                     <span>PinnedTTL</span>
-                    <span style={{ color: ttlFrac > 0.66 ? AMBER : STREAM_BLUE }}>{ttlFrac >= 1 ? "elapsed" : ttlFrac === 0 ? "reset by pulls" : `${Math.round(ttlFrac * 100)}%`}</span>
+                    <span style={{ color: ttlFrac > 0.66 ? AMBER : STREAM_BLUE }}>{localizeDiagramContent(ttlFrac >= 1 ? "elapsed" : ttlFrac === 0 ? "reset by pulls" : `${Math.round(ttlFrac * 100)}%`)}</span>
                 </div>
                 <div style={{ height: 8, borderRadius: 4, background: "#eef0f3", overflow: "hidden" }}>
                     <div style={{ width: `${ttlFrac * 100}%`, height: "100%", background: ttlFrac > 0.66 ? AMBER : STREAM_BLUE, transition: "width 0.2s linear, background 0.3s" }} />
                 </div>
             </div>
 
-            <div style={{ marginTop: 10, fontSize: 13, color: "#374151" }}>{status}</div>
+            <div style={{ marginTop: 10, fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</div>
         </div>
     );
 }

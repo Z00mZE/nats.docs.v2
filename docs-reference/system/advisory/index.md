@@ -1,48 +1,48 @@
-# Server Advisory
+# Уведомления сервера {#server-advisory}
 
-Server advisory messages are published by the NATS server to notify clients of significant events related to connections, accounts, and system state.
+Сервер NATS публикует уведомления о значимых событиях, связанных с соединениями, учётными записями и состоянием системы.
 
-## Overview
+## Обзор {#overview}
 
-Advisory messages provide real-time notifications about important server events. These messages are published to specific subjects in the `$SYS` hierarchy and can be subscribed to by clients with appropriate permissions.
+Уведомления сообщают о важных событиях сервера в реальном времени. Они публикуются в определённые темы иерархии `$SYS`; клиенты с нужными разрешениями могут подписаться на них.
 
-## Purpose
+## Назначение {#purpose}
 
-Server advisories enable:
-- **Connection Monitoring** - Track client connections and disconnections
-- **Account Management** - Monitor account limits and usage
-- **Audit Trails** - Log system events for compliance
-- **Alerting** - Trigger actions based on system events
-- **Debugging** - Troubleshoot connection issues
+Уведомления сервера позволяют:
+- **Следить за соединениями** — отслеживать подключения и отключения клиентов
+- **Управлять учётными записями** — отслеживать лимиты и использование
+- **Вести аудит** — записывать системные события для выполнения требований
+- **Оповещать** — запускать действия по системным событиям
+- **Отлаживать** — устранять проблемы соединений
 
-## Available Advisories
+## Доступные уведомления {#available-advisories}
 
-### Connection Events
+### События соединений {#connection-events}
 
-- [Client Connect](./client-connect.md) - Published when a client connects to the server
-  - Subject: `$SYS.ACCOUNT.{account}.CONNECT`
-  - Contains client ID, IP address, and metadata
+- [Подключение клиента](./client-connect.md) — публикуется при подключении клиента к серверу
+  - Тема: `$SYS.ACCOUNT.{account}.CONNECT`
+  - Содержит идентификатор клиента, IP-адрес и метаданные
 
-- [Client Disconnect](./client-disconnect.md) - Published when a client disconnects from the server
-  - Subject: `$SYS.ACCOUNT.{account}.DISCONNECT`
-  - Includes disconnect reason and statistics
+- [Отключение клиента](./client-disconnect.md) — публикуется при отключении клиента от сервера
+  - Тема: `$SYS.ACCOUNT.{account}.DISCONNECT`
+  - Содержит причину отключения и статистику
 
-### Account Events
+### События учётных записей {#account-events}
 
-- [Account Connections](./account-connections.md) - Published when account connection limits are reached
-  - Subject: `$SYS.ACCOUNT.{account}.CONNECTIONS`
-  - Alerts when approaching or exceeding limits
+- [Соединения учётной записи](./account-connections.md) — публикуется при достижении лимитов соединений
+  - Тема: `$SYS.ACCOUNT.{account}.CONNECTIONS`
+  - Оповещает о приближении к лимитам или их превышении
 
-## Subscription Requirements
+## Требования для подписки {#subscription-requirements}
 
-To receive advisory messages:
-1. Client must have permissions to subscribe to `$SYS.>` subjects
-2. System account privileges may be required for some advisories
-3. Account-scoped advisories require access to specific account subjects
+Чтобы получать уведомления:
+1. Клиенту нужны разрешения на подписку на темы `$SYS.>`
+2. Для некоторых уведомлений требуются привилегии системной учётной записи
+3. Для уведомлений конкретной учётной записи нужен доступ к её темам
 
-## Message Format
+## Формат сообщения {#message-format}
 
-All advisory messages follow a consistent JSON structure:
+Все уведомления используют согласованную структуру JSON:
 ```json
 {
   "type": "io.nats.server.advisory.v1.{event_type}",
@@ -55,15 +55,15 @@ All advisory messages follow a consistent JSON structure:
     "cluster": "cluster_name"
   },
   "data": {
-    // Event-specific data
+    // Данные конкретного события
   }
 }
 ```
 
-## Best Practices
+## Рекомендации {#best-practices}
 
-- Use queue groups when multiple consumers process advisories
-- Filter advisories at subscription level using subject wildcards
-- Store critical advisories for audit purposes
-- Set up alerts for connection limit warnings
-- Monitor advisory message rates to detect anomalies
+- Используйте группы очередей, если уведомления обрабатываются несколькими потребителями
+- Фильтруйте уведомления шаблонами тем на уровне подписки
+- Сохраняйте критически важные уведомления для аудита
+- Настройте оповещения о приближении к лимитам соединений
+- Отслеживайте частоту уведомлений для выявления аномалий

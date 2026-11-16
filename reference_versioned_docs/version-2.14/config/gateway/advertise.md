@@ -1,12 +1,11 @@
-# advertise
+# advertise {#advertise}
 
 <Reloadable state="not-reloadable" />
-`<host>:<port>` to advertise how this server can be contacted by
-other gateway members. This is useful in setups with NAT.
+Объявляемый адрес `<host>:<port>`, по которому другие участники шлюза могут подключиться к этому серверу. Полезно при использовании NAT.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,11 +1,11 @@
-# username
+# username {#username}
 
 <Reloadable state="not-reloadable" />
-User name for proxy authentication.
+Имя пользователя для аутентификации на прокси.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

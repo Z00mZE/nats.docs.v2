@@ -1,57 +1,39 @@
 ---
 id: observability
-title: "Observability"
+title: "Наблюдаемость"
 sidebar_position: 5
-description: Read the per-endpoint stats the framework keeps for you, and signal service errors that those stats record
+description: "Чтение статистики конечных точек, которую ведёт фреймворк, и возврат регистрируемых в ней ошибок сервиса"
 ---
 
-# Observability
+# Наблюдаемость {#observability}
 
-Your `OrderInventory` service answers on `orders.inventory.check`, and the
-[discovery page](/learn/services/discovery) lets you enumerate it and target a
-single instance by ID. So far you can find the service, and this page shows you
-how it's doing.
+Сервис `OrderInventory` отвечает на `orders.inventory.check`, а [страница об обнаружении](/learn/services/discovery) научила получать его сведения и обращаться к одному экземпляру по ID. Теперь сервис можно найти; здесь вы узнаете, как он работает.
 
-The framework keeps a running tally for every endpoint (how many requests it's
-handled, how many failed, how long each took) without a single line of metrics
-code on your part. This page reads that tally, then shows the one way a handler
-influences it: by returning a service error.
+Фреймворк ведёт статистику каждой конечной точки: сколько запросов обработано, сколько завершилось ошибкой и сколько времени занял каждый, без единой строки кода метрик с вашей стороны. Здесь мы прочитаем её, а затем рассмотрим способ, которым обработчик влияет на неё: возврат ошибки сервиса.
 
-There are two new ideas here: **per-endpoint stats** and the **service error**
-that the stats record.
+Новых понятий два: **статистика конечных точек** и учитываемая в ней **ошибка сервиса**.
 
-## Per-endpoint stats the framework keeps for you
+## Статистика конечных точек, которую ведёт фреймворк {#per-endpoint-stats-the-framework-keeps-for-you}
 
-Every endpoint you add carries a counter set that the framework updates on each
-request, under the service lock, before your handler ever sees the next one. You
-don't register the counter set, increment it, or flush it yourself. It's part of
-what `AddEndpoint` gives you.
+Каждая добавленная конечная точка получает набор счётчиков. Фреймворк обновляет их при каждом запросе под блокировкой сервиса до передачи следующего запроса обработчику. Вам не нужно регистрировать, увеличивать или сбрасывать их самостоятельно. Это часть возможностей `AddEndpoint`.
 
-Five fields matter for day-to-day work:
+В повседневной работе важны пять полей:
 
-- **`num_requests`**: total requests this endpoint has handled
-- **`num_errors`**: how many of those ended in a service error
-- **`last_error`**: the description string of the most recent error
-- **`processing_time`**: total handler time across all requests, in nanoseconds
-- **`average_processing_time`**: `processing_time` divided by `num_requests`,
-  in nanoseconds
+- **`num_requests`**: общее число запросов, обработанных конечной точкой.
+- **`num_errors`**: число запросов, завершившихся ошибкой сервиса.
+- **`last_error`**: строка описания последней ошибки.
+- **`processing_time`**: общее время работы обработчика для всех запросов в наносекундах.
+- **`average_processing_time`**: `processing_time`, делённое на `num_requests`, в наносекундах.
 
-You read them through the third discovery verb, **STATS**, on the `$SRV`
-prefix. The same three address levels from the discovery page apply:
-`$SRV.STATS` hits every service, `$SRV.STATS.OrderInventory` hits every instance
-of one service, and `$SRV.STATS.OrderInventory.<id>` hits one instance.
+Они читаются через третью команду обнаружения, **STATS**, с префиксом `$SRV`. Действуют те же три уровня адресации: `$SRV.STATS` обращается ко всем сервисам, `$SRV.STATS.OrderInventory` — ко всем экземплярам одного сервиса, а `$SRV.STATS.OrderInventory.<id>` — к одному экземпляру.
 
-Send a few requests to `orders.inventory.check`, then read the accumulated
-stats back:
+Отправьте несколько запросов на `orders.inventory.check`, затем прочитайте накопленную статистику:
 
 <div class="nats-example" data-type="learn-services-observability-serviceStats" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The response is one `stats_response` per instance, and each lists its endpoints
-with the five counters above. After three successful `check` requests you'd
-see `num_requests: 3`, `num_errors: 0`, and a non-zero `average_processing_time`
-that reflects how long your handler ran.
+Каждый экземпляр возвращает один `stats_response`, перечисляющий конечные точки с пятью счётчиками выше. После трёх успешных запросов `check` вы увидите `num_requests: 3`, `num_errors: 0` и ненулевое `average_processing_time`, отражающее время работы обработчика.
 
-The CLI has a shortcut that does the STATS query and formats the table for you:
+В CLI есть сокращённая команда, которая выполняет запрос STATS и форматирует таблицу:
 
 ```bash
 nats service stats OrderInventory
@@ -69,110 +51,54 @@ nats service stats OrderInventory
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-The counters tracked here are per endpoint, not per service: a service with
-`check` and a second endpoint keeps a separate row for each. That's the level
-where you reason about load, telling you which handler is busy and which one is
-slow.
+Эти счётчики относятся к конечной точке, а не ко всему сервису: сервис с `check` и второй точкой хранит отдельную строку для каждой. На этом уровне удобно анализировать нагрузку и видеть, какой обработчик занят, а какой работает медленно.
 
-[Reference](/reference/services/stats-response) documents the full set of
-fields in the STATS response, including the per-endpoint `queue_group` and an
-optional custom `data` blob. We only need the five counters here.
+[Справочник](/reference/services/stats-response) описывает все поля ответа STATS, включая `queue_group` конечной точки и необязательные пользовательские данные `data`. Здесь достаточно пяти счётчиков.
 
-## A service error increments the error count
+## Ошибка сервиса увеличивает счётчик ошибок {#a-service-error-increments-the-error-count}
 
-Of those five fields, four move on their own. Only `num_errors` and
-`last_error` depend on you: they move when a handler returns a service error
-instead of a normal response.
+Из этих пяти полей четыре меняются автоматически. Только `num_errors` и `last_error` зависят от вас: они обновляются, когда обработчик возвращает ошибку сервиса вместо обычного ответа.
 
-A service error is a response that carries two headers: `Nats-Service-Error`
-holds a human-readable description, and `Nats-Service-Error-Code` holds a short
-code string like `"400"`. You don't set those headers by hand. The handler
-calls `req.Error(code, description, data)`, and the framework attaches both
-headers, sends the response, and bumps `num_errors` and `last_error` for that
-endpoint in the same step.
+Ошибка сервиса — ответ с двумя заголовками: `Nats-Service-Error` содержит понятное человеку описание, а `Nats-Service-Error-Code` — короткую строку кода, например `"400"`. Вручную задавать заголовки не нужно. Обработчик вызывает `req.Error(code, description, data)`, а фреймворк добавляет оба заголовка, отправляет ответ и одновременно обновляет `num_errors` и `last_error` конечной точки.
 
-Here's the `check` handler returning a service error when the order total
-isn't a positive amount, followed by the stats showing the error recorded:
+Здесь обработчик `check` возвращает ошибку сервиса, если сумма заказа не положительна, после чего статистика показывает зарегистрированную ошибку:
 
 <div class="nats-example" data-type="learn-services-observability-serviceError" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Watch the stats accumulate as requests flow, and the one errored request bump
-the error counter while the rest tick the request counter:
+Проследите, как статистика накапливается с запросами, а один ошибочный запрос увеличивает счётчик ошибок, пока остальные увеличивают счётчик запросов:
 
 <div class="nats-flow" data-scenario="serviceStatsAnimated" data-width="600" data-height="350"></div>
 
-A service error is still a delivered reply, not a transport failure. The request
-reached the handler, the handler chose to answer with an error, and that answer
-came back over the same reply subject as any success. This is different from
-**no-responders**, where nothing is listening at all. That case belongs to
-request-reply itself and is covered in
-[request-reply](/learn/core-nats/request-reply).
+Ошибка сервиса остаётся доставленным ответом, а не транспортным сбоем. Запрос дошёл до обработчика, тот выбрал ответ с ошибкой, и ответ вернулся по тому же субъекту, что и успешный. Это отличается от **отсутствия обработчиков**, когда запрос вообще никто не слушает. Этот случай относится к механизму [запросов и ответов](/learn/core-nats/request-reply).
 
-When to return a service error is your call. Bad input is one reason to call
-`req.Error`, a downstream dependency that's unavailable is another, and a
-business rule that rejects the order is a third; calling `req.Error` means the
-failure is both reported to the caller and counted in the stats. A handler that
-responds normally instead of reporting the failure leaves `num_errors` at zero
-and hides the problem.
+Когда возвращать ошибку сервиса, решаете вы. Неверные входные данные — одна причина вызвать `req.Error`, недоступная зависимость — другая, бизнес-правило, отклоняющее заказ, — третья. Вызов `req.Error` сообщает об отказе клиенту и учитывает его в статистике. Если обработчик вместо этого отвечает как обычно, `num_errors` остаётся нулевым и проблема скрывается.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two traps catch people the first time they rely on service stats. Both have the
-same cause: a service error looks like a normal reply unless you check for it.
+При первом использовании статистики сервиса легко попасть в две ловушки. Причина одна: без явной проверки ошибка сервиса выглядит обычным ответом.
 
-**A service error arrives as headers, not as a failed call.** The framework
-sends the error response over the reply subject like any success, so the
-caller's `Request` returns a message with no transport error. If the caller
-only checks "did I get a reply," every service error reads as a success, and
-the `num_errors` you can see in stats is invisible to the code making the
-request. Do check `Nats-Service-Error-Code` on every response; do not treat a
-returned message as proof the request succeeded.
+**Ошибка сервиса приходит в заголовках, а не как ошибка вызова.** Фреймворк отправляет её по субъекту ответа так же, как успешный результат, поэтому `Request` вызывающей стороны возвращает сообщение без транспортной ошибки. Если клиент проверяет лишь наличие ответа, любая ошибка сервиса выглядит успехом, а видимое в статистике `num_errors` не отражается в коде запросов. Проверяйте `Nats-Service-Error-Code` в каждом ответе; получение сообщения ещё не доказывает успех запроса.
 
-Handling it takes one header read on the reply. The CLI shows the headers
-directly; in code you read `Nats-Service-Error-Code` and branch on whether
-it's set. Send a request the handler rejects, inspect the headers on the reply,
-and confirm the error in the stats:
+Для обработки достаточно прочитать заголовок ответа. CLI показывает заголовки напрямую; в коде прочитайте `Nats-Service-Error-Code` и выберите ветвь в зависимости от его наличия. Отправьте запрос, который обработчик отклонит, проверьте заголовки ответа и наличие ошибки в статистике:
 
 <div class="nats-example" data-type="learn-services-observability-serviceError" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**Stats are per instance, and `Reset()` zeroes them.** Each running instance
-keeps its own counters, so `$SRV.STATS.OrderInventory` returns one
-`stats_response` per instance and you must sum `num_requests` across IDs
-yourself to get a service-wide total; the server keeps no aggregate for you.
-And a call to `Reset()` on an instance sets its counters back to zero
-and resets the `started` timestamp, so a dashboard that assumes
-monotonically increasing counters will see a drop. Do aggregate across IDs in
-the reader; do not assume the numbers only ever grow.
+**Статистика ведётся по экземплярам, а `Reset()` обнуляет её.** Каждый работающий экземпляр хранит свои счётчики, поэтому `$SRV.STATS.OrderInventory` возвращает отдельный `stats_response` от каждого. Для общего числа по сервису нужно самостоятельно сложить `num_requests` разных ID; сервер не агрегирует их за вас. Вызов `Reset()` обнуляет счётчики экземпляра и сбрасывает временную метку `started`, поэтому панель, ожидающая монотонного роста, увидит падение. Агрегируйте данные разных ID при чтении и не считайте, что числа могут только увеличиваться.
 
-For richer observability, a custom `StatsHandler` can attach your own
-`data` blob to each endpoint's stats, and the server can emit
-service-latency advisories that measure round-trip time from outside the
-service. Both are separate mechanisms layered on top of the counters this
-page reads; their schemas live in [Reference](/reference/services/).
+Для более подробного наблюдения пользовательский `StatsHandler` может добавлять собственные `data` к статистике каждой конечной точки. Сервер также умеет публиковать уведомления о задержке сервиса, измеряющие время кругового обхода извне. Это отдельные механизмы поверх описанных счётчиков; их схемы находятся в [справочнике](/reference/services/).
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-`OrderInventory` now reports on itself. You can read its per-endpoint stats
-through `$SRV.STATS` or the `nats service stats` shortcut, you can see
-`num_requests` and `average_processing_time` move as traffic flows, and you can
-make a handler return a service error so `num_errors` and `last_error` record
-the failure. You also know to read `Nats-Service-Error-Code` on the caller side
-so an error never passes for a success.
+Теперь `OrderInventory` сообщает о своей работе. Статистика конечных точек читается через `$SRV.STATS` или сокращённую команду `nats service stats`. При запросах меняются `num_requests` и `average_processing_time`; ошибка сервиса обновляет `num_errors` и `last_error`. Вы также знаете, что на стороне клиента нужно читать `Nats-Service-Error-Code`, чтобы не принять ошибку за успех.
 
-## What's next
+## Что дальше {#whats-next}
 
-One service answering one request at a time is a single point of contention.
-The last mechanism is **scaling**: run more instances of `OrderInventory` and
-let the default queue group `"q"` spread requests across them, with no
-coordinator and no config change.
+Один сервис, обрабатывающий запросы последовательно, становится узким местом. Последний механизм — **масштабирование**: запустите больше экземпляров `OrderInventory`, и стандартная группа очереди `"q"` распределит запросы между ними без координатора и изменения конфигурации.
 
-Continue to [Scaling](/learn/services/scaling).
+Переходите к странице [Масштабирование](/learn/services/scaling).
 
-## See also
+## См. также {#see-also}
 
-- [Discovery](/learn/services/discovery) — the PING and INFO verbs that sit
-  alongside STATS on the `$SRV` prefix.
-- [Monitoring](/learn/monitoring) — exporting server and service metrics to
-  Prometheus and building dashboards on top of them.
-- [Reference](/reference/services/) — the full STATS response schema and every
-  field it carries.
+- [Обнаружение](/learn/services/discovery) — команды PING и INFO рядом со STATS под префиксом `$SRV`.
+- [Мониторинг](/learn/monitoring) — экспорт метрик сервера и сервиса в Prometheus и построение панелей.
+- [Справочник](/reference/services/) — полная схема ответа STATS со всеми полями.

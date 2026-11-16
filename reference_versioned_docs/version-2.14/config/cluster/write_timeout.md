@@ -1,12 +1,12 @@
-# write_timeout
+# write_timeout {#write_timeout}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" />
-What to do when a route misses its `write_deadline`.
+Действие при превышении `write_deadline` маршрута.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `default`, `close`, `retry` |

@@ -1,225 +1,126 @@
 ---
 id: where-next
-title: "Where to go next"
+title: "Куда двигаться дальше"
 sidebar_position: 12
-description: Recap the core NATS mental model and point to what comes after the foundation
+description: "Повторение модели Core NATS и переход к возможностям поверх базового слоя"
 ---
 
-# Where to go next
+# Куда двигаться дальше {#where-to-go-next}
 
-You started this chapter by opening one connection, then a single
-publish to `orders.created` with no guarantee anyone was subscribed. You
-end it with `notifications` and `analytics` reading `orders.created`, a
-regional analytics view on `orders.*.created` and an audit service on
-`orders.>`, an `inventory` service answering requests on
-`orders.inventory.check`, a `packers` queue group sharing the load on
-`orders.created`, and three `shipping.quote` providers answering one
-scatter-gather request. That's the whole Acme ORDERS world, built on
-core NATS alone.
+Вы начали с одного соединения и публикации `orders.created` без уверенности в наличии подписчиков. Теперь `notifications` и `analytics` читают `orders.created`, региональная аналитика — `orders.*.created`, аудит — `orders.>`, сервис `inventory` отвечает на `orders.inventory.check`, группа `packers` делит работу `orders.created`, а три поставщика `shipping.quote` отвечают на запрос scatter-gather. Вся платформа Acme ORDERS построена только на Core NATS.
 
-This page doesn't teach anything new. It collects the model you built
-into one place and points you at the chapters and Reference that take it
-further.
+Здесь нет новых понятий: страница собирает освоенную модель и направляет к следующим главам и справочнику.
 
-## The four core ideas
+## Четыре основные идеи {#the-four-core-ideas}
 
-Every pattern in this chapter circled the same four ideas.
+Все шаблоны главы опираются на четыре идеи.
 
-A **subject** is the address. A publisher publishes to a subject and
-never names a receiver. The subject is the only thing the publisher and
-the subscriber agree on, and wildcards let one subscription match a whole
-hierarchy of subjects at once.
+**Тема** — адрес. Издатель публикует в тему, не называя получателя. Тема — единственное соглашение издателя и подписчика, а подстановочные символы позволяют подписке охватить всю иерархию.
 
-**Interest** is what makes a message move. The server keeps an in-memory
-graph of which subscribers want which subjects, and a published message
-goes to every interested subscriber, or to nobody, in which case it's
-discarded. With no interest, no copy is made and nothing is recorded.
+**Интерес** приводит сообщение в движение. Сервер хранит в памяти граф нужных подписчикам тем; публикация направляется всем заинтересованным либо отбрасывается, если их нет. Без интереса копий и записей не создаётся.
 
-A **reply subject** turns one-way publish into a two-way exchange. The
-client subscribes to a unique `_INBOX` subject, sends it alongside the
-request, and the responder publishes the answer back to it. The same
-mechanism surfaces failure as a no-responders signal when no responder
-is subscribed.
+**Тема ответа** превращает одностороннюю публикацию в двусторонний обмен. Клиент подписывается на уникальную `_INBOX`, передаёт её с запросом, а сервис публикует туда ответ. Тот же механизм возвращает no responders при отсутствии отвечающего подписчика.
 
-A **queue group** is how many subscribers share one subject's load. Each
-message goes to exactly one member of the group, chosen by the server,
-with no broker or coordinator deciding for you.
+**Группа очереди** распределяет нагрузку одной темы между подписчиками. Сервер выбирает ровно одного участника на сообщение без отдельного брокера очередей или координатора.
 
-The four ideas are subject, interest, reply subject, and queue group.
-Scatter-gather is not a fifth idea. It is a reply subject with the
-first-answer-wins step removed, gathering every responder instead of
-one. Every messaging pattern in core NATS is those four mechanics
-arranged differently.
+Четыре идеи — тема, интерес, тема ответа и группа очереди. Scatter-gather не является пятой: это тема ответа без остановки на первом результате, со сбором всех ответов. Все шаблоны Core NATS — разные сочетания этих механизмов.
 
-## What core NATS does not store
+## Что Core NATS не хранит {#what-core-nats-does-not-store}
 
-Core NATS does not store messages: a message exists only while it's in
-flight to a live subscriber, then it's gone. That's the **at-most-once**
-delivery you met on the first page, and it's a deliberate choice that
-keeps a publisher from blocking on slow or offline subscribers. For Acme,
-though, an order that arrives while the warehouse is restarting is lost.
+Core NATS не хранит сообщения: они существуют в пути к активному подписчику, затем исчезают. Это намеренная **доставка не более одного раза**, знакомая с начала главы: издатель не блокируется на медленных и отключённых подписчиках. Но заказ Acme, пришедший во время перезапуска склада, теряется.
 
-The [JetStream deep dive](/learn/jetstream) adds a server-side store on
-top of the same subjects. Start with
-[Why a stream](/learn/jetstream/your-first-stream#why-a-stream): it picks
-up the Acme ORDERS world where this chapter leaves it.
+[Углублённый курс JetStream](/learn/jetstream) добавляет серверное хранилище поверх тех же тем. Начните с [Зачем нужен поток](/learn/jetstream/your-first-stream#why-a-stream): там история Acme ORDERS продолжается с этого места.
 
-## Where the details live now
+## Где искать точные сведения {#where-the-details-live-now}
 
-This chapter is unversioned and concept-first. For exact flags, defaults,
-and the byte-level `PUB`/`SUB`/`MSG` frames, see
-[Reference → Client protocol](/reference/protocols/client) and the
-[Reference root](/reference/).
+Глава не привязана к версии и объясняет понятия. Точные флаги, значения по умолчанию и кадры `PUB`/`SUB`/`MSG` см. в [Справочник → Клиентский протокол](/reference/protocols/client) и [основном справочнике](/reference/).
 
-## Sibling deep dives
+## Смежные углублённые курсы {#sibling-deep-dives}
 
-Core NATS is the foundation. The other chapters build directly on the
-four mechanics you just learned.
+Core NATS — фундамент. Другие главы напрямую используют четыре освоенных механизма.
 
-The [Services deep dive](/learn/services) takes the
-[request-reply](/learn/core-nats/request-reply) and
-[queue group](/learn/core-nats/queue-groups) patterns and wraps them in a
-framework that adds discovery, versioning, and built-in metrics. If you find
-yourself hand-rolling many request-reply responders, that's the chapter
-to read next. Start with
-[your first service](/learn/services/your-first-service).
+[Курс по сервисам](/learn/services) объединяет [запрос-ответ](/learn/core-nats/request-reply) и [группы очередей](/learn/core-nats/queue-groups) во фреймворк с обнаружением, версиями и встроенными метриками. Если вы вручную создаёте много отвечающих приложений, читайте его следующим. Начните с [первого сервиса](/learn/services/your-first-service).
 
-The [Resilient clients deep dive](/learn/resilient-clients) picks up
-where [Connection lifecycle](/learn/core-nats/connection-lifecycle)
-left off. That page introduced the drop-and-reconnect cycle; Resilient
-clients tunes it for production, covering reconnect backoff and retry
-limits, sizing the reconnect buffer, draining a connection cleanly, and
-handling a slow consumer. Its pages on
-[reconnection](/learn/resilient-clients/reconnection) and
-[slow consumers](/learn/resilient-clients/slow-consumers) matter the
-moment you move off a single local server.
+[Курс по устойчивым клиентам](/learn/resilient-clients) продолжает [Жизненный цикл соединения](/learn/core-nats/connection-lifecycle). Он настраивает восстановление для промышленной эксплуатации: интервалы и лимиты повторов, размер буфера, корректный drain и работу с медленным потребителем. Страницы о [переподключении](/learn/resilient-clients/reconnection) и [медленных потребителях](/learn/resilient-clients/slow-consumers) важны сразу после выхода за пределы одного локального сервера.
 
-The [Topologies deep dive](/learn/topologies) explains how
-the interest graph you met in
-[publish-subscribe](/learn/core-nats/publish-subscribe) stretches across
-clustered and geographically separated servers, including how a queue group
-prefers a local member when the same group spans regions — see
-[Super-clusters](/learn/topologies/super-clusters).
+[Курс по топологиям](/learn/topologies) объясняет распространение графа интереса из [публикации и подписки](/learn/core-nats/publish-subscribe) между кластерными и географически разделёнными серверами. Сюда входит предпочтение локального участника группы между регионами — см. [Суперкластеры](/learn/topologies/super-clusters).
 
-The [Security deep dive](/learn/security) covers who's allowed to
-publish or subscribe to which subjects. The subject hierarchy from
-[subjects & wildcards](/learn/core-nats/subjects-and-wildcards) is also the
-unit of permission, so the addressing you designed is the same thing you
-secure.
+[Курс по безопасности](/learn/security) определяет, кому разрешено публиковать и подписываться на темы. Иерархия из [Тем и подстановочных символов](/learn/core-nats/subjects-and-wildcards) также служит единицей разрешений: вы защищаете ту же адресацию, которую проектируете.
 
-## Where you are
+## Что уже сделано {#where-you-are}
 
-This is the end of the chapter. The whole arc is complete, and this
-page adds no new scenario state. Your local `nats-server`, the
-`notifications` and `analytics` subscribers, the regional analytics and
-audit views, the `inventory` service, the `packers` queue group, and the
-`shipping.quote` providers are all still as you left them. Keep
-experimenting, or stop the server when you're done: core NATS held
-nothing on disk, so there's nothing to clean up.
+Это конец главы; новых изменений сценария здесь нет. Локальный `nats-server`, подписчики `notifications` и `analytics`, региональная аналитика, аудит, сервис `inventory`, группа `packers` и поставщики `shipping.quote` остаются в прежнем состоянии. Экспериментируйте дальше или остановите сервер: Core NATS ничего не сохранял на диск, очищать нечего.
 
-## What's next
+## Что дальше {#whats-next}
 
-The most important link to follow is the
-[JetStream deep dive](/learn/jetstream), which is what core NATS becomes
-when a message needs to survive. It resumes the same Acme ORDERS story
-right where you are now.
+Главный следующий раздел — [углублённый курс JetStream](/learn/jetstream): возможности поверх Core NATS, когда сообщения должны сохраняться. История Acme ORDERS продолжается с текущего места.
 
-## Production checklist
+## Проверка перед промышленной эксплуатацией {#production-checklist}
 
-The pitfalls scattered across this chapter collapse into one list. Run
-through it before you put a core NATS service in front of real traffic.
-Each group links back to the page that explains the why.
+Подводные камни главы сведены в один список. Проверьте его до подключения сервиса Core NATS к реальному трафику. Каждая группа ссылается на объяснение.
 
-### Connecting — see [Pitfalls](/learn/core-nats/connecting#pitfalls)
+### Подключение — см. [Подводные камни](/learn/core-nats/connecting#pitfalls) {#connecting--see-pitfalls}
 
-- [ ] Open one connection per process and share it; don't connect per
-  message or per request.
-- [ ] Decide about echo up front: a service that publishes and subscribes
-  on the same subject receives its own messages unless it connects with
-  echo off.
+- [ ] Открывайте одно соединение на процесс и используйте совместно; не подключайтесь для каждого сообщения или запроса.
+- [ ] Заранее определите echo: публикующий и подписанный на тему сервис получает собственные сообщения, если не отключить echo при подключении.
 
-### Publish-subscribe — see [Pitfalls](/learn/core-nats/publish-subscribe#pitfalls)
+### Публикация и подписка — см. [Подводные камни](/learn/core-nats/publish-subscribe#pitfalls) {#publish-subscribe--see-pitfalls}
 
-- [ ] Ask the server for `max_payload` and keep payloads under it; pass a
-  reference for anything large.
-- [ ] Flush or drain before a short-lived publisher exits, so buffered
-  messages reach the server.
-- [ ] Process messages fast enough (or hand off to a worker) so a slow
-  subscriber isn't cut off.
+- [ ] Узнайте серверный `max_payload` и соблюдайте лимит; большие данные передавайте ссылкой.
+- [ ] Перед завершением короткоживущего издателя выполняйте flush или drain, чтобы буфер дошёл до сервера.
+- [ ] Обрабатывайте сообщения достаточно быстро или передавайте обработчику, чтобы медленный подписчик не отключался.
 
-### Subjects & wildcards — see [Pitfalls](/learn/core-nats/subjects-and-wildcards#pitfalls)
+### Темы и подстановочные символы — см. [Подводные камни](/learn/core-nats/subjects-and-wildcards#pitfalls) {#subjects--wildcards--see-pitfalls}
 
-- [ ] Put `>` only as the last token; use `*` for a free token in the
-  middle.
-- [ ] Publish a fully-qualified subject; never publish "to a wildcard."
-- [ ] Subscribe to the narrowest pattern that covers your need, not a
-  catch-all `orders.>`.
-- [ ] Keep whitespace out of subjects, and stay clear of `$` and `_INBOX`
-  prefixes.
+- [ ] Ставьте `>` только последним сегментом; для произвольного среднего используйте `*`.
+- [ ] Публикуйте в полную конкретную тему, никогда «в шаблон».
+- [ ] Подписывайтесь на самый узкий подходящий шаблон вместо общего `orders.>`.
+- [ ] Исключайте пробельные символы и избегайте префиксов `$` и `_INBOX`.
 
-### Request-reply — see [Pitfalls](/learn/core-nats/request-reply#pitfalls)
+### Запрос-ответ — см. [Подводные камни](/learn/core-nats/request-reply#pitfalls) {#request-reply--see-pitfalls}
 
-- [ ] Pass a timeout on every request, sized to the responder's work plus
-  the round-trip.
-- [ ] Branch on no responders separately from a timeout.
-- [ ] Gather explicitly when more than one service may answer; don't
-  assume exactly one reply.
-- [ ] Keep the reply path fast, or spread responders across a queue group.
+- [ ] Задавайте каждому запросу тайм-аут с учётом обработки и сетевого обмена.
+- [ ] Отличайте no responders от тайм-аута.
+- [ ] Явно собирайте ответы, если их может быть несколько.
+- [ ] Держите путь ответа быстрым или распределяйте сервисы через группу очереди.
 
-### Queue groups — see [Pitfalls](/learn/core-nats/queue-groups#pitfalls)
+### Группы очередей — см. [Подводные камни](/learn/core-nats/queue-groups#pitfalls) {#queue-groups--see-pitfalls}
 
-- [ ] Give every member the byte-for-byte identical queue group name.
-- [ ] Don't expect ordering or an even split; keep strictly-ordered work
-  on a single subscriber.
-- [ ] Make a member's work safe to repeat, since core NATS does not send
-  a message again after a hand-off.
+- [ ] Используйте побайтно одинаковое имя группы у всех участников.
+- [ ] Не ожидайте порядка и равного распределения; строго последовательную работу оставляйте одному подписчику.
+- [ ] Обеспечьте безопасную повторную обработку: Core NATS не повторяет доставку после передачи участнику.
 
-### Scatter-gather — see [Pitfalls](/learn/core-nats/scatter-gather#pitfalls)
+### Scatter-gather — см. [Подводные камни](/learn/core-nats/scatter-gather#pitfalls) {#scatter-gather--see-pitfalls}
 
-- [ ] Gather replies in a loop instead of taking the first reply.
-- [ ] Bound the wait with a deadline so a missing responder costs only the
-  timeout.
-- [ ] Treat the gathered set as unordered; compare every reply on its
-  merits, never by arrival order.
+- [ ] Собирайте ответы циклом вместо получения первого.
+- [ ] Ограничивайте сбор сроком, чтобы отсутствие сервиса стоило лишь тайм-аута.
+- [ ] Рассматривайте результат как неупорядоченный набор; оценивайте содержание, а не порядок прихода.
 
-### Message headers — see [Pitfalls](/learn/core-nats/headers#pitfalls)
+### Заголовки сообщений — см. [Подводные камни](/learn/core-nats/headers#pitfalls) {#message-headers--see-pitfalls}
 
-- [ ] Treat header keys as case-sensitive; read them back with the exact
-  case you set.
-- [ ] Budget headers into `max_payload`; keep bulk data in the payload,
-  not the headers.
+- [ ] Учитывайте регистр ключей и читайте в точности заданное написание.
+- [ ] Включайте размер заголовков в `max_payload`; большие данные храните в теле.
 
-### Subject mapping — see [Pitfalls](/learn/core-nats/subject-mapping#pitfalls)
+### Преобразование тем — см. [Подводные камни](/learn/core-nats/subject-mapping#pitfalls) {#subject-mapping--see-pitfalls}
 
-- [ ] Dry-run every mapping with `nats server mappings` before you deploy
-  it.
-- [ ] Make weighted destinations sum to 100 unless you intend to drop a
-  share.
-- [ ] Treat the partition count as part of the subject contract; changing
-  it reshuffles every key.
+- [ ] Проверяйте каждое правило через `nats server mappings` перед применением.
+- [ ] Сводите сумму весов назначений к 100, если не планируете отбрасывать долю.
+- [ ] Считайте число секций частью контракта: его изменение перераспределяет ключи.
 
-### Connection lifecycle — see [Pitfalls](/learn/core-nats/connection-lifecycle#pitfalls)
+### Жизненный цикл соединения — см. [Подводные камни](/learn/core-nats/connection-lifecycle#pitfalls) {#connection-lifecycle--see-pitfalls}
 
-- [ ] Wire the disconnect, reconnect, and async error callbacks first,
-  and keep them to a log line or a signal.
-- [ ] Log the drop from the disconnect handler and every failed attempt
-  from the reconnect-error callback.
-- [ ] Treat the reconnect buffer as best-effort client memory, not a
-  delivery guarantee.
+- [ ] Сначала подключайте callbacks disconnect, reconnect и async error; ограничивайте их записью в журнал или сигналом.
+- [ ] Записывайте разрыв в disconnect handler и каждую неудачную попытку в callback ошибок переподключения.
+- [ ] Рассматривайте буфер как временную память клиента, а не гарантию доставки.
 
-### Debugging delivery — see [Pitfalls](/learn/core-nats/debugging-delivery#pitfalls)
+### Отладка доставки — см. [Подводные камни](/learn/core-nats/debugging-delivery#pitfalls) {#debugging-delivery--see-pitfalls}
 
-- [ ] Don't leave a `>` wire tap running against production traffic.
-- [ ] Remember `nats trace` publishes its own test message; it doesn't
-  prove an earlier publish arrived.
-- [ ] Keep the monitoring port off the public network; it answers without
-  authentication.
+- [ ] Не оставляйте перехват `>` работающим на промышленном трафике.
+- [ ] Помните: `nats trace` отправляет собственное тестовое сообщение и не доказывает доставку прежнего.
+- [ ] Не открывайте порт мониторинга в публичной сети: он отвечает без аутентификации.
 
-## See also
+## См. также {#see-also}
 
-- [JetStream deep dive](/learn/jetstream) — the next chapter, which adds
-  persistence to the subjects you already use.
-- [Services deep dive](/learn/services) — request-reply and queue groups
-  wrapped in a framework with discovery and metrics.
-- [Reference](/reference/) — every flag, default, and the wire protocol,
-  versioned and exhaustive.
+- [Углублённый курс JetStream](/learn/jetstream) — долговременное хранение поверх знакомых тем.
+- [Углублённый курс сервисов](/learn/services) — запрос-ответ и группы очередей во фреймворке с обнаружением и метриками.
+- [Справочник](/reference/) — полный версионный каталог флагов, значений по умолчанию и протокола.

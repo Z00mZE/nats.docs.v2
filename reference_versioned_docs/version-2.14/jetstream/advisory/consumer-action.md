@@ -1,21 +1,21 @@
-# Consumer Action
+# Действие с потребителем {#consumer-action}
 
-Consumer lifecycle events.
+События жизненного цикла потребителя.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerAction from '@site/src/schemas/vendor/v2.14/jsm/jetstream/advisory/v1/consumer_action.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 ```
 $JS.EVENT.ADVISORY.CONSUMER.CREATED.{stream}.{consumer}
 $JS.EVENT.ADVISORY.CONSUMER.DELETED.{stream}.{consumer}
 ```
 
-Where:
-- `{stream}` is the stream name
-- `{consumer}` is the consumer name
+Где:
+- `{stream}` — имя потока
+- `{consumer}` — имя потребителя
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={consumerAction} />

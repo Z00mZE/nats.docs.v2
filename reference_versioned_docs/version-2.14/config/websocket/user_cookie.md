@@ -1,12 +1,11 @@
-# user_cookie
+# user_cookie {#user_cookie}
 
 <Reloadable state="not-reloadable" />
-Name of the HTTP cookie holding the user name, for clients that
-authenticate through a browser session.
+Имя HTTP-cookie с именем пользователя для клиентов, аутентифицирующихся через сеанс браузера.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

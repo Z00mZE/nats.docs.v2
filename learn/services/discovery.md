@@ -1,111 +1,71 @@
 ---
 id: discovery
-title: "Discovery"
+title: "Обнаружение"
 sidebar_position: 4
-description: Learn what services exist and what they answer using the $SRV discovery verbs
+description: "Поиск существующих сервисов и обслуживаемых ими запросов с помощью команд обнаружения $SRV"
 ---
 
-# Discovery
+# Обнаружение {#discovery}
 
-Your `OrderInventory` service answers on `orders.inventory.check`, and
-`ShippingQuote` answers on `shipping.quote`. To call them, you had to know
-those subjects in advance. This page removes that requirement.
+Ваш сервис `OrderInventory` отвечает на `orders.inventory.check`, а `ShippingQuote` — на `shipping.quote`. Для вызова приходилось заранее знать эти субъекты. Здесь это требование снимается.
 
-Every service the framework creates also answers a second, automatic set
-of subjects: the **discovery verbs**. Through them, a caller can ask the
-running system what services exist, what each one answers, and how it's
-doing, without anyone hard-coding a subject or maintaining a registry on
-the side.
+Каждый создаваемый фреймворком сервис автоматически отвечает ещё на один набор субъектов: **команды обнаружения**. Через них клиент может спросить работающую систему, какие сервисы существуют, на что каждый отвечает и как он работает, без жёстко заданных субъектов и отдельного реестра.
 
-You add no code to get this. The moment `AddService` returned on the
-`your-first-service` page, the framework subscribed to these subjects for
-you. This page shows how to use them.
+Для этого не нужно добавлять код. Как только `AddService` вернулся на странице `your-first-service`, фреймворк подписался на эти субъекты за вас. Здесь показано, как ими пользоваться.
 
-## The three discovery verbs
+## Три команды обнаружения {#the-three-discovery-verbs}
 
-Discovery is **learning what services exist and what they answer** through
-a fixed set of subjects under the `$SRV` prefix. Every service answers
-three verbs there:
+Обнаружение — **получение сведений о существующих сервисах и обслуживаемых ими запросах** через фиксированный набор субъектов с префиксом `$SRV`. Каждый сервис отвечает на три команды:
 
-- **PING**: checks whether a service is present. The reply carries the
-  service name, instance id, and version. Use it to find services and
-  measure round-trip time.
-- **INFO**: reports what a service answers. The reply adds the description
-  and the list of endpoints, each with its subject and queue group.
-- **STATS**: reports how a service is doing. The reply adds per-endpoint
-  counters. We read those on the next page; for now, it's enough to know
-  the verb exists.
+- **PING** проверяет наличие сервиса. Ответ содержит имя сервиса, идентификатор экземпляра и версию. Используется для поиска сервисов и измерения времени кругового обхода.
+- **INFO** сообщает, на что отвечает сервис. Ответ добавляет описание и список конечных точек с субъектами и группами очередей.
+- **STATS** сообщает, как работает сервис. Ответ добавляет счётчики по конечным точкам. Их прочитаем на следующей странице; пока достаточно знать о команде.
 
-The verbs are uppercase, and so are their subjects. A service doesn't
-publish to `$SRV` itself; it subscribes there and replies to your
-requests, the same request-reply you already know.
+Команды и их субъекты записываются прописными буквами. Сам сервис не публикует в `$SRV`: он подписывается там и отвечает на ваши запросы с помощью знакомого механизма запросов и ответов.
 
-## Three levels of address
+## Три уровня адресации {#three-levels-of-address}
 
-Each verb answers at three levels, narrowing from every service down to
-one instance:
+Каждая команда работает на трёх уровнях, сужая область от всех сервисов до одного экземпляра:
 
-| Subject | Who answers |
+| Субъект | Кто отвечает |
 |---|---|
-| `$SRV.INFO` | every service in the account |
-| `$SRV.INFO.OrderInventory` | every instance named `OrderInventory` |
-| `$SRV.INFO.OrderInventory.<id>` | the one instance with that id |
+| `$SRV.INFO` | Все сервисы аккаунта |
+| `$SRV.INFO.OrderInventory` | Все экземпляры с именем `OrderInventory` |
+| `$SRV.INFO.OrderInventory.<id>` | Один экземпляр с этим идентификатором |
 
-The same three levels work for `PING` and `STATS`. The first level is how
-you enumerate an unfamiliar system. The second narrows to one service
-name. The third reaches a single **instance**: one running copy of a
-service, identified by the **service id** the framework generated for it.
+Те же уровни работают для `PING` и `STATS`. Первый позволяет перечислить содержимое незнакомой системы. Второй ограничивает запрос одним именем сервиса. Третий обращается к одному **экземпляру** — работающей копии сервиса с **идентификатором**, сгенерированным фреймворком.
 
-Ask `OrderInventory` to describe itself at the name level, and read the
-endpoint list out of the reply:
+Попросите `OrderInventory` описать себя на уровне имени и прочитайте список конечных точек из ответа:
 
 <div class="nats-example" data-type="learn-services-discovery-discoverInfo" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The reply tells you the `check` endpoint listens on
-`orders.inventory.check` in queue group `"q"`. That's the same fact you
-configured by hand earlier, but now any caller can read it back from the
-live service instead of trusting documentation.
+Ответ сообщает, что конечная точка `check` слушает `orders.inventory.check` в группе очереди `"q"`. Раньше вы настроили это вручную, а теперь любой клиент может получить сведения от работающего сервиса, не полагаясь на документацию.
 
-The `$SRV.PING`/`INFO`/`STATS` wire format and JSON response schemas are
-documented in [Reference](/reference/services/). We only need the behavior here.
+Сетевой формат `$SRV.PING`/`INFO`/`STATS` и схемы ответов JSON описаны в [справочнике](/reference/services/). Здесь нам нужно только поведение.
 
-## Discovery is broadcast, not load-balanced
+## Обнаружение использует широковещательные запросы без балансировки {#discovery-is-broadcast-not-load-balanced}
 
-One detail on this page works differently than you might expect. The
-endpoints you built answer in a **queue group**, so each request goes to
-exactly one instance. The discovery verbs do **not**. A
-`$SRV.INFO.OrderInventory` request reaches *every* instance named
-`OrderInventory`, and every one of them replies.
+Одна деталь работает иначе, чем можно ожидать. Созданные конечные точки отвечают в **группе очереди**, поэтому каждый запрос получает ровно один экземпляр. Команды обнаружения **не используют** такую группу. Запрос `$SRV.INFO.OrderInventory` достигает *каждого* экземпляра `OrderInventory`, и каждый отвечает.
 
-That's deliberate. The point of discovery is to get a response from every
-instance, all three of them, not whichever one happened to answer first.
-So a caller doesn't wait for a single reply; it waits a short deadline and
-collects however many responses arrive in that window.
+Это намеренное поведение. Цель обнаружения — получить ответ от всех экземпляров, например от всех трёх, а не от первого ответившего. Поэтому клиент не ждёт один ответ: он задаёт короткое время ожидания и собирает все пришедшие за него ответы.
 
 <div class="nats-flow" data-scenario="serviceDiscoveryAnimated" data-width="600" data-height="350"></div>
 
-The animation shows it: one `$SRV.INFO.OrderInventory` request fans out to
-all three instances, and three INFO replies come back. The single targeted
-query at the end, `$SRV.STATS.OrderInventory.id2`, reaches only `id2`,
-because the third address level pins the request to one instance.
+Анимация показывает, как один запрос `$SRV.INFO.OrderInventory` расходится ко всем трём экземплярам и возвращаются три ответа INFO. Последний адресный запрос `$SRV.STATS.OrderInventory.id2` достигает только `id2`: третий уровень адресации направляет запрос одному экземпляру.
 
-## Targeting one instance
+## Обращение к одному экземпляру {#targeting-one-instance}
 
-When you already know an id (from a PING or INFO reply), you can address
-that instance alone. This is how you inspect or compare a single copy of a
-service that's running many.
+Если идентификатор уже известен из ответа PING или INFO, можно обратиться только к этому экземпляру. Так можно изучать или сравнивать отдельную копию сервиса среди множества работающих.
 
-The third level reaches exactly one instance, so you expect a single
-reply and don't need a deadline loop:
+Третий уровень достигает ровно одного экземпляра, поэтому ожидается один ответ и цикл сбора с ограничением по времени не нужен:
 
 <div class="nats-example" data-type="learn-services-discovery-targetInstance" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-## Collecting replies with the CLI
+## Сбор ответов через CLI {#collecting-replies-with-the-cli}
 
-For interactive use, the `nats` CLI wraps the broadcast loop. `nats
-service list` enumerates every service and instance it can find; `nats
-service info` formats one service's endpoints; `nats service ping`
-measures round-trip time to each responder:
+Для интерактивной работы CLI `nats` выполняет цикл сбора широковещательных ответов за вас. `nats
+service list` перечисляет все найденные сервисы и экземпляры; `nats
+service info` выводит конечные точки сервиса; `nats service ping` измеряет время кругового обхода до каждого отвечающего экземпляра:
 
 ```bash
 nats service list
@@ -113,61 +73,34 @@ nats service info OrderInventory
 nats service ping
 ```
 
-These run the same `$SRV` requests internally and gather the replies
-by deadline. They're the fastest way to see what's running while you
-develop; the programmatic verbs above are what your own tooling uses.
+Внутри выполняются те же запросы `$SRV`, а ответы собираются до истечения времени ожидания. При разработке это самый быстрый способ увидеть запущенные сервисы; ваши собственные инструменты используют программные команды, показанные выше.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two mistakes are common the first time you query discovery. Both come from
-the broadcast behavior above.
+При первых запросах обнаружения распространены две ошибки. Обе связаны с широковещательным поведением.
 
-**Discovery is broadcast: a single reply is not the whole answer.** A
-plain request returns the first response and stops. Against
-`$SRV.INFO.OrderInventory` that gives you one instance and silently hides
-the rest, so five running instances appear as one. Don't treat a discovery
-request like a normal request-reply call. Wait a deadline and collect
-every reply, exactly as the CLI does:
+**Обнаружение широковещательное: один ответ не даёт всей картины.** Обычный запрос возвращает первый ответ и завершает ожидание. Для `$SRV.INFO.OrderInventory` это показывает один экземпляр и незаметно скрывает остальные: пять работающих экземпляров выглядят как один. Не обрабатывайте обнаружение как обычный вызов запроса и ответа. Ждите до заданного срока и собирайте все ответы, как CLI:
 
 <div class="nats-example" data-type="learn-services-discovery-discoverInfo" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The reverse holds too: when you want one specific instance, use the
-`$SRV.STATS.OrderInventory.<id>` level instead of filtering a broadcast.
-It reaches that instance directly and returns one reply.
+Верно и обратное: если нужен определённый экземпляр, используйте уровень `$SRV.STATS.OrderInventory.<id>` вместо фильтрации широковещательных ответов. Он обращается к экземпляру напрямую и возвращает один ответ.
 
-**`$SRV` is a reserved subject prefix: do not publish to it yourself.**
-The framework owns the entire `$SRV` tree; services subscribe there to
-answer PING, INFO, and STATS. Publishing your own messages under `$SRV`
-collides with that machinery and corrupts what callers discover. Keep your
-own subjects under your own prefixes (`orders.*`, `shipping.*`) and let
-the framework own `$SRV`. Who may even see `$SRV` across account
-boundaries is a separate question, covered in
-[Security](/learn/security).
+**`$SRV` — зарезервированный префикс субъектов: не публикуйте туда собственные сообщения.** Всё дерево `$SRV` принадлежит фреймворку: сервисы подписываются там для ответов PING, INFO и STATS. Ваши публикации под `$SRV` мешают этому механизму и искажают результаты обнаружения. Используйте собственные префиксы (`orders.*`, `shipping.*`) и оставьте `$SRV` фреймворку. Кто может видеть `$SRV` через границы аккаунтов — отдельный вопрос из главы [Безопасность](/learn/security).
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You can now discover the system instead of memorizing it. With `$SRV`
-PING, INFO, and STATS, you can enumerate every service in the account,
-ask one service which endpoints it answers, and target a single instance
-by its id. You also know the catch: discovery is broadcast, so you gather
-replies by deadline rather than taking the first one.
+Теперь систему можно обнаруживать, а не запоминать. Команды PING, INFO и STATS под `$SRV` позволяют перечислить все сервисы аккаунта, узнать конечные точки сервиса и обратиться к одному экземпляру по идентификатору. Вы также знаете ограничение: обнаружение широковещательное, поэтому нужно собирать ответы до заданного срока, а не брать первый.
 
-`OrderInventory` and `ShippingQuote` are still running. Nothing about them
-changed; you just learned to ask them what they are.
+`OrderInventory` и `ShippingQuote` продолжают работать. Сами они не изменились; вы лишь научились спрашивать их о себе.
 
-## What's next
+## Что дальше {#whats-next}
 
-INFO told you *what* a service answers. The STATS verb tells you *how
-it's doing*: request counts, error counts, and processing time per
-endpoint. The next page reads those counters and shows how a handler
-records an error.
+INFO сообщает, *на что* отвечает сервис. STATS показывает, *как он работает*: число запросов, число ошибок и время обработки каждой конечной точки. На следующей странице прочитаем эти счётчики и посмотрим, как обработчик регистрирует ошибку.
 
-Continue to [Observability](/learn/services/observability).
+Переходите к странице [Наблюдаемость](/learn/services/observability).
 
-## See also
+## См. также {#see-also}
 
-- [Request-reply](/learn/core-nats/request-reply) — the mechanism every
-  `$SRV` reply rides on.
-- [Observability](/learn/services/observability) — what the STATS verb
-  reports and how to read it.
-- [Reference](/reference/services/) — the `$SRV` wire format and response schemas.
+- [Запросы и ответы](/learn/core-nats/request-reply) — механизм доставки каждого ответа `$SRV`.
+- [Наблюдаемость](/learn/services/observability) — сведения STATS и их чтение.
+- [Справочник](/reference/services/) — сетевой формат `$SRV` и схемы ответов.

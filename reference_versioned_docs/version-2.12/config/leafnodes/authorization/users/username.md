@@ -1,12 +1,12 @@
-# username
+# username {#username}
 
 <Aliases aliases="user" />
 <Reloadable state="not-reloadable" />
-Name of the user.
+Имя пользователя.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

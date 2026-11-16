@@ -1,11 +1,11 @@
-# domain
+# domain {#domain}
 
 <Reloadable state="not-reloadable" />
-The JetStream domain the server is part of.
+Домен JetStream, к которому принадлежит сервер.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

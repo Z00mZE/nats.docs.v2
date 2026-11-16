@@ -1,12 +1,11 @@
-# max_closed_clients
+# max_closed_clients {#max_closed_clients}
 
 <Reloadable state="not-reloadable" />
-How many closed connections the server keeps for `/connz`
-reporting.
+Число закрытых соединений, сохраняемых сервером для отчётов `/connz`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

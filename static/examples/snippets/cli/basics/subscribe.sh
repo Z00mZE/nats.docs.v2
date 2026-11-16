@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# Subscribe to messages on the "weather.updates" subject
+# Подписаться на сообщения в теме "weather.updates"
 nats sub "weather.updates"

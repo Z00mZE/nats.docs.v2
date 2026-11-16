@@ -1,11 +1,11 @@
-# trusted_keys
+# trusted_keys {#trusted_keys}
 
 <Reloadable state="not-reloadable" />
-One or more operator public keys to trust.
+Один или несколько доверенных открытых ключей операторов.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |

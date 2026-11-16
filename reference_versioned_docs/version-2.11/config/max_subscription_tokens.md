@@ -1,10 +1,10 @@
-# max_subscription_tokens
+# max_subscription_tokens {#max_subscription_tokens}
 
 <Aliases aliases="max_sub_tokens" />
 <Reloadable state="not-reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

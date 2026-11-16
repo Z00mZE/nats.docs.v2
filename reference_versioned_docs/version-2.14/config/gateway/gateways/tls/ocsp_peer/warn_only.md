@@ -1,11 +1,11 @@
-# warn_only
+# warn_only {#warn_only}
 
 <Reloadable state="reloadable" />
-Log revocation failures instead of rejecting the connection.
+Записывать ошибки проверки отзыва в журнал вместо отклонения соединения.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

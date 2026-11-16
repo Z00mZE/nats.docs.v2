@@ -1,4 +1,9 @@
-import type { NatsFlow as NatsFlowComponent } from '../components/NatsFlow';
+import type { NatsFlow as NatsFlowComponent,
+  MqttBridgeAnimated as MqttBridgeAnimatedComponent,
+  MqttRetainedAnimated as MqttRetainedAnimatedComponent,
+  WsUpgradeAnimated as WsUpgradeAnimatedComponent,
+  WsLeafNodeAnimated as WsLeafNodeAnimatedComponent,
+} from '../components/NatsFlow';
 import type {
   publishSubscribeScenario,
   requestReplyScenario,
@@ -189,6 +194,10 @@ declare global {
       CrossAccountExportAnimated: typeof CrossAccountExportAnimatedComponent;
       ResolverPushAnimated: typeof ResolverPushAnimatedComponent;
       TlsFirstHandshakeAnimated: typeof TlsFirstHandshakeAnimatedComponent;
+      MqttBridgeAnimated: typeof MqttBridgeAnimatedComponent;
+      MqttRetainedAnimated: typeof MqttRetainedAnimatedComponent;
+      WsUpgradeAnimated: typeof WsUpgradeAnimatedComponent;
+      WsLeafNodeAnimated: typeof WsLeafNodeAnimatedComponent;
       scenarios: {
         publishSubscribe: typeof publishSubscribeScenario;
         requestReply: typeof requestReplyScenario;

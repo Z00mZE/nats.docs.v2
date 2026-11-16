@@ -1,23 +1,21 @@
-# ocsp
+# ocsp {#ocsp}
 
 <Reloadable state="reloadable" />
-OCSP Stapling is honored by default for certificates that have the
-`status_request` `Must-Staple` flag. If explicitly disabled, the
-server will not request staples even if `Must-Staple` is present.
+OCSP Stapling по умолчанию применяется для сертификатов с флагом `status_request` `Must-Staple`. При явном отключении сервер не запрашивает прикрепляемые ответы даже при наличии `Must-Staple`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` |  | `true`, `false` |
-| `object` | An object with a set of explicit properties that can be set. | - |
-## Properties
+| `object` | Объект с набором явно задаваемых свойств. | - |
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`mode`](./mode.md) | The OCSP stapling mode to adhere to. | `string` | - | Yes |
-| [`url`](./url.md) | An explicit override URL to request staples. | `string` | - | Yes |
-| [`urls`](./urls.md) | An explicit list of override URLs to request staples. | `string` | - | Yes\* |
+| [`mode`](./mode.md) | Режим OCSP Stapling. | `string` | - | Да |
+| [`url`](./url.md) | Явный альтернативный URL для запроса прикрепляемых ответов OCSP. | `string` | - | Да |
+| [`urls`](./urls.md) | Явный список альтернативных URL для запроса прикрепляемых ответов OCSP. | `string` | - | Да\* |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

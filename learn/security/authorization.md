@@ -1,61 +1,33 @@
 ---
 id: authorization
-title: "Authorization"
+title: "Авторизация"
 sidebar_position: 3
-description: Subject permissions, allow and deny lists, and the rule that an allow-list closes everything else
+description: "Права тем, allow и deny: разрешённый список закрывает всё остальное"
 ---
 
-# Authorization
+# Авторизация {#authorization}
 
-By the end of [Authentication
-basics](/learn/security/authentication-basics), `order-svc` and
-`analytics-reader` can prove who they are. The server checks their
-authentication data (e.g., passwords) and admits the connections.
+[Основы аутентификации](/learn/security/authentication-basics) позволили order-svc и analytics-reader доказать личность и подключиться.
 
-That's authentication: the server knows _who_ each connection is, but
-nothing limits _what_ it can do. Right now `order-svc` can publish to any
-subject on the server and subscribe to any subject.
+Сервер знает _кто_, но ещё не ограничил _что_: order-svc пока публикует и подписывается везде.
 
-This page adds those limits. Authorization is what a user may do, and
-in NATS that's always expressed as a set of subjects.
+Авторизация задаёт разрешённые действия через темы.
 
-## Permissions are about subjects
+## Права относятся к темам {#permissions-are-about-subjects}
 
-A **permission** is a grant to publish to, or subscribe to, a set of
-subjects. There's no separate notion of an admin
-role or a resource type. Every right a user has is a subject it may
-publish to or a subject it may subscribe to.
+**Право** разрешает публикацию или подписку на набор тем. Отдельных ролей администратора и типов ресурсов нет: доступ выражается темами.
 
-This follows from how NATS works. Everything a client does travels
-over a subject: a publish names a subject, a subscribe names a subject,
-and a request/reply is a publish plus a subscribe on a reply subject.
-Because of that, controlling the subjects controls everything the user
-can reach.
+Все операции проходят через темы; request/reply — публикация и подписка на ответ. Их ограничение контролирует всё достижимое клиентом.
 
-So a user's authorization is two lists: the subjects it may publish
-to, and the subjects it may subscribe to. The two are independent. A
-user can be allowed to publish to a subject it can't subscribe to, or
-the reverse.
+Есть независимые списки публикаций и подписок. Разрешение одного не даёт другого.
 
-Permissions use the same subject wildcards you already know from
-[Core Concepts → Subjects](/concepts/subjects). `*` matches one token;
-`>` matches one or more trailing tokens. `orders.>` covers
-`orders.created`, `orders.shipped`, and `orders.canceled`, all in one grant.
-(Here, using `orders.*` would work equally well, but would not match a subject
-such as `orders.at.northpole`, where `orders.>` does match it.)
+Подстановки как в [темах](/concepts/subjects): * — один токен, > — один или больше конечных. orders.> включает также orders.at.northpole, в отличие от orders.*.
 
-## Restricting order-svc
+## Ограничение order-svc {#restricting-order-svc}
 
-`order-svc` exists to publish order events: `orders.created`,
-`orders.shipped`, and `orders.canceled`. It also makes the occasional
-request — a lookup before confirming an order — and a request needs a
-reply, which arrives on a temporary inbox subject under `_INBOX.`.
-That's its whole footprint: publish under `orders.`, subscribe to its
-own inboxes.
+Сервис публикует orders.created/shipped/canceled и иногда делает запросы. Ответы приходят во временные `_INBOX.`. Значит нужны публикации orders. и собственные inbox.
 
-In the config from [Authentication
-basics](/learn/security/authentication-basics), `order-svc` was a bare
-user with a password. Now it gets a `permissions` block:
+Добавьте permissions к прежнему пользователю:
 
 ```conf
 authorization {
@@ -77,49 +49,29 @@ authorization {
 }
 ```
 
-The `publish` permission has an `allow` list with one entry,
-`orders.>`. `order-svc` may publish to any subject under `orders.`.
+Publish allow orders.> разрешает события заказов.
 
-The `subscribe` permission allows `_INBOX.>`, the prefix where request
-replies arrive. Allowing the prefix lets
-`order-svc` receive replies and nothing else. (The inbox prefix is
-configurable, but `_INBOX.` is the default.)
+Subscribe allow `_INBOX.>` разрешает ответы. Префикс настраиваем, это стандарт.
 
-`analytics-reader` has no `permissions` block, so it stays
-unrestricted for now. The next section explains why that's the rule.
+У analytics-reader блока нет, пока он не ограничен.
 
-## An allow-list closes everything else
+## Allow закрывает остальное {#an-allow-list-closes-everything-else}
 
-The moment you write an `allow` list, every subject not on it is
-denied.
+Всё вне заданного allow запрещено.
 
-So `publish: { allow: ["orders.>"] }` grants `orders.>` and at the same
-time denies everything else, from `billing.charge` to the JetStream API
-under `$JS.API.>`.
+`publish: { allow: ["orders.>"] }` закрывает billing.charge и `$JS.API.>`.
 
-This is why a permission with no `allow` and no `deny` means
-unrestricted. That's `analytics-reader` right now: a user with no
-`permissions` block can do anything on the server.
+Без allow и deny доступ не ограничен, как у analytics-reader.
 
-One warning: an empty allow list is not a lock-down. `publish: []`
-parses as no list at all, so the user can publish anywhere. To block
-all publishes, write `publish: { deny: [">"] }`.
+Пустой список не запрет: `publish: []` разбирается как отсутствие списка. Запретить всё — `publish: { deny: [">"] }`.
 
-There's also a fallback for users you haven't scoped yet. A
-`default_permissions` block inside `authorization {}` applies to every
-user that has no `permissions` block of its own. A user with its own
-block ignores the defaults entirely — the two are never merged. The
-fields are in [Reference →
-default_permissions](/reference/config/authorization/default_permissions).
+`default_permissions` внутри authorization действует только на пользователей без собственного блока. Собственные права полностью заменяют стандарт, не сливаются. См. [справочник](/reference/config/authorization/default_permissions).
 
-Authorization is opt-in: you opt in by writing an `allow` list.
+Ограничение включается явным allow.
 
-## Deny beats allow
+## Deny сильнее allow {#deny-beats-allow}
 
-Sometimes you want "all of `orders.>`, except one subject." You could
-craft a precise allow-list that enumerates everything but the
-exception, but that's brittle. Instead you allow the broad pattern and
-deny the exception:
+Для исключения из широкого orders.> не нужно перечислять все остальные темы:
 
 ```conf
 publish: {
@@ -128,21 +80,13 @@ publish: {
 }
 ```
 
-When a subject matches both lists, deny wins. The server checks
-`allow` first, then checks `deny`, and a match in `deny` overrides the
-allow. With this block `order-svc` could publish `orders.created` and
-`orders.shipped` but never `orders.secret`, even though the wildcard
-covers it.
+Сервер проверяет allow, затем deny. Совпавший запрет отменяет разрешение: orders.created/shipped доступны, orders.secret — нет.
 
-You rarely need both lists, but when you do, an explicit deny is what
-the server applies last.
+При сочетании списков последнее слово за deny.
 
-## Observing a denial
+## Наблюдение отказа {#observing-a-denial}
 
-Restart the server with the config above and connect as `order-svc`. A
-publish to `orders.created` is on the allow-list and goes through. A
-publish to `billing.charge` isn't on the allow-list, so the server
-rejects it.
+Перезапустите с конфигурацией. orders.created разрешён, billing.charge отклоняется.
 
 <div class="nats-example" data-type="learn-security-authorization-denied" data-languages="cli"></div>
 
@@ -151,88 +95,44 @@ rejects it.
 nats: error: nats: permissions violation: Permissions Violation for Publish to "billing.charge"
 ```
 
-The first publish reports its 91 bytes delivered and exits 0. The
-second exits 1 with the error above. On the wire, the server's raw
-protocol message is `-ERR 'Permissions Violation for Publish to
-"billing.charge"'`; the CLI wraps it in its own prefix.
+Первый pub сообщает 91 байт и код 0, второй — код 1. Сырой ответ: `-ERR 'Permissions Violation for Publish to
+"billing.charge"'`.
 
-The rejection is reported, not silent. The server sends the client an
-error and, for a publish, drops the message. The error is asynchronous
-and the connection stays open, so the client can keep working. Clients
-surface it differently: some log it, some raise it on the next
-operation, and some expose it through an async error handler.
+Ошибка асинхронна, сообщение отбрасывается, соединение остаётся. Библиотеки журналируют, передают следующей операции или вызывают обработчик ошибок.
 
-One shape of denial does look silent: a denied request. A request is a
-pairing of publish with a reply "inbox" subscribe;
-so when the publish is denied, no responder ever sees it and
-the requester just times out waiting for the expected reply.
-Every JetStream API call is a request
-under the hood, so a locked-down user running `nats stream info` fails
-with `context deadline exceeded` rather than a permission error. When a
-request times out for no clear reason, check the server log — every
-violation is recorded there:
+Запрещённый request выглядит как тайм-аут: никто не получил публикацию, ответ не придёт. API JetStream тоже запросы, поэтому nats stream info может вернуть context deadline exceeded. Смотрите серверный журнал:
 
 ```
 [ERR] 127.0.0.1:57456 - cid:6 - "v1.51.0:go:NATS CLI Version v0.4.0" - "$G/user:order-svc" - Publish Violation - Subject "billing.charge"
 ```
 
-The log line names the user — still in the global account `$G` — and
-the subject, which is usually all you need to find the missing grant.
+Там указаны пользователь, $G и тема для поиска недостающего права.
 
-## The same model under decentralized auth
+## Та же модель в JWT {#the-same-model-under-decentralized-auth}
 
-Later in this chapter the same `allow` and `deny` lists move out of the
-config file and into signed JWTs — that's [Decentralized
-authentication](/learn/security/decentralized-auth). There you edit the
-lists with the `nats auth` CLI instead of a text editor:
+В [децентрализованной модели](/learn/security/decentralized-auth) списки находятся в подписанных JWT и меняются nats auth:
 
 ```bash
 nats auth user edit order-svc ORDERS --pub-allow "orders.>"
 ```
 
-One caveat to remember when you get there: each flag replaces that
-entire list, so always pass the complete set of subjects. And with
-scoped signing keys — the recommended setup — the user's JWT carries
-empty publish and subscribe lists, and the permissions live in the
-account's signing-key scope instead. The server enforces the same two
-rules either way.
+Каждый флаг заменяет список целиком: передавайте полный набор. Со scoped signing keys списки пользователя пусты, права заданы областью ключа записи. Правила сервера те же.
 
-## What we're leaving out
+## За рамками {#what-were-leaving-out}
 
-Three related grants belong to authorization but aren't needed to scope
-`order-svc`, so we name them and move on.
+Ещё три вида прав:
 
-- **Response permissions** (`allow_responses`) — let a service reply to
-  requests without a broad publish allow; the server tracks each reply
-  subject it handed out and permits exactly that one reply. Used once a
-  request/reply service exists.
-- **Queue-group permissions** — scope a subscription to a named queue
-  group. A subscribe entry of the form `"orders.created billing-workers"`
-  permits subscribing to `orders.created` only as a member of the
-  `billing-workers` queue group; a plain subscribe to the same subject
-  stays denied. The matching rules are in [Reference →
-  permissions](/reference/config/authorization/users/permissions).
-- **Import and export permissions** — govern subjects shared across
-  account boundaries. Those are a property of an account, not a user,
-  and the [Cross-account](/learn/security/cross-account) page covers
-  them once accounts exist.
+- **Ответы**, allow_responses: разрешение конкретного выданного reply без широкого publish.
+- **Группы очередей**: `"orders.created billing-workers"` позволяет только подписку в указанной группе, не обычную. См. [permissions](/reference/config/authorization/users/permissions).
+- **Импорт/экспорт** — связь учётных записей, не пользователя; см. [Межаккаунтный обмен](/learn/security/cross-account).
 
-The full set of permission fields is documented in [Reference →
-permissions](/reference/config/authorization/users/permissions). We use
-only `publish`, `subscribe`, `allow`, and `deny` here.
+Все поля — в [permissions](/reference/config/authorization/users/permissions). Здесь publish, subscribe, allow, deny.
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Four failures cover most of the ways the two rules above go wrong.
+Четыре основные ловушки:
 
-**A subscribe deny silently breaks request-reply.** A request needs a
-reply, and the reply lands on a temporary inbox subject the client
-subscribes to before it publishes. A user with
-`subscribe: { deny: [">"] }` can never create that subscription, so the
-reply has nowhere to go. Adding `allow: ["_INBOX.>"]` next to the deny
-doesn't help — deny beats allow, and the violation persists. The fix is
-to replace the deny with the allow, which is exactly what `order-svc`'s
-config on this page does.
+**Subscribe deny ломает ответы.** `subscribe: { deny: [">"] }` запрещает inbox. Добавленный allow не поможет: deny сильнее. Замените запрет на allow `_INBOX.>`.
 
 <div class="nats-example" data-type="learn-security-authorization-inbox-timeout" data-languages="cli"></div>
 
@@ -240,13 +140,8 @@ config on this page does.
 14:20:30 Sending request on "orders.lookup"
 ```
 
-In the broken state that first line is all the CLI prints: it waits out
-its timeout and exits 0, with no error at all. The denial shows up only
-in the server log, as `Subscription Violation - Subject
-"_INBOX.<random>", SID 1`. Client libraries surface it more clearly:
-they raise a timeout error on the request. After the subscribe section is replaced with
-`allow: ["_INBOX.>"]` and a responder is listening, the same request
-completes:
+CLI в ошибочной схеме может просто ждать и завершиться 0; журнал показывает `Subscription Violation - Subject
+"_INBOX.<random>", SID 1`. Библиотеки возвращают тайм-аут. После исправления и запуска отвечающего запрос проходит:
 
 ```
 14:20:11 Sending request on "orders.lookup"
@@ -254,37 +149,14 @@ completes:
 {"order_id":"ord_8w2k","status":"shipped"}
 ```
 
-The same problem exists in the other direction: a service that answers
-requests must be able to *publish* to the reply subject it was handed.
-`allow_responses`, named above, is the clean way to grant that.
+Отвечающему также нужен publish в reply. Для этого предназначен allow_responses.
 
-**An allow-list that forgets a needed subject closes it off too.**
-Because an `allow` list denies everything not on it, a missing entry is
-a silent block, not a warning. The day `order-svc` needs to publish
-`orders.refunded`, a `publish: { allow: ["orders.>"] }` already covers
-it, but a narrower `allow: ["orders.created", "orders.shipped"]` would
-reject it with a `Permissions Violation` and no other signal. Prefer
-the wildcard that matches the user's real subject space over an
-enumerated list you must remember to grow.
+**Пропущенная тема тоже закрыта.** orders.> уже включает orders.refunded, а перечисление только created/shipped — нет. Выбирайте шаблон реального пространства пользователя.
 
-**An over-broad `>` grants every subject on the server.** Granting
-`publish: { allow: [">"] }` or `subscribe: { allow: [">"] }` to save
-typing gives the user every subject, including, when JetStream is on,
-the `$JS.API.>` control plane. That's the same "no permissions means
-anything" gap from earlier, written out explicitly. Scope each user to
-the subject prefix it actually uses: `orders.>` for `order-svc`, never
-`>`.
+**Слишком широкий > открывает всё**, включая JetStream `$JS.API.>`. Ограничивайте префиксом, например orders.>.
 
-**A deny can be invisible under a wildcard subscription.** A literal
-subscribe to a denied subject is rejected loudly: under
-`subscribe: { allow: ["orders.>"], deny: ["orders.audit.>"] }`, a
-`nats sub orders.audit.entry` fails with `Permissions Violation for
-Subscription to "orders.audit.entry"`. But a wildcard subscription that
-merely overlaps the deny is accepted, and the server filters the denied
-subjects out at delivery time. The same user subscribed to `orders.>`
-receives `orders.created` and `orders.shipped` but never
-`orders.audit.entry` — no error, no gap marker. If a subscriber seems
-to miss messages, check its deny lists before suspecting the publisher.
+**Запрет незаметен под wildcard-подпиской.** При allow orders.> и deny orders.audit.> точная подписка orders.audit.entry даёт `Permissions Violation for
+Subscription to "orders.audit.entry"`. Широкая orders.> принимается, но audit фильтруется без ошибки и маркера пропуска. При потерях проверяйте deny.
 
 <div class="nats-example" data-type="learn-security-authorization-wildcard-deny-filter" data-languages="cli"></div>
 
@@ -293,9 +165,7 @@ to miss messages, check its deny lists before suspecting the publisher.
 nats: error: nats: permissions violation: Permissions Violation for Subscription to "orders.audit.entry"
 ```
 
-The literal subscribe exits 1 with the violation above. The wildcard
-subscribe is accepted, and with both subjects published while it runs,
-only one message arrives:
+Точная подписка завершается 1, широкая принимает только разрешённое:
 
 ```
 18:02:45 Subscribing on orders.>
@@ -303,46 +173,27 @@ only one message arrives:
 {"order_id":"ord_8w2k","status":"created"}
 ```
 
-The publish to `orders.audit.entry` reports success, but the server
-drops it at delivery: no client error, and — unlike the literal
-subscribe — no violation line in the server log either.
+Публикация audit успешна, но доставка отфильтрована без ошибки клиента и без строки нарушения в журнале.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-`order-svc` is now scoped to exactly what it does:
+Order-svc ограничен задачей:
 
-- It may publish to `orders.>` and subscribe to `_INBOX.>`, nothing
-  else.
-- A publish to any other subject returns a `Permissions Violation` and
-  is dropped.
-- `analytics-reader` is still unrestricted, and both users still share
-  one subject space: the global account `$G`.
+- Публикация orders.>, подписка `_INBOX.>`.
+- Остальные публикации отклоняются и теряются.
+- Analytics-reader пока не ограничен; оба в $G.
 
-You also have the two rules that govern every permission you'll ever
-write: an `allow` list closes everything else off, and `deny` beats
-`allow` on overlap. The same model applies whether the lists live in
-config or in a JWT.
+Два правила одинаковы для конфигурации и JWT: allow закрывает остальное, deny сильнее allow.
 
-## What's next
+## Что дальше {#whats-next}
 
-`order-svc` is scoped, but both users still operate in one shared
-subject space — anything one can reach, an unrestricted user can reach
-too. The next page gives each service its own account, with a subject
-space nobody else can see into.
+Пользователи ещё делят пространство тем. Создадим независимые учётные записи.
 
-Continue to [Accounts &
-multitenancy](/learn/security/accounts-and-multitenancy).
+Перейдите к [учётным записям и изоляции](/learn/security/accounts-and-multitenancy).
 
-## See also
+## См. также {#see-also}
 
-- [Reference →
-  permissions](/reference/config/authorization/users/permissions) —
-  every permission field and its defaults.
-- [Reference →
-  default_permissions](/reference/config/authorization/default_permissions)
-  — fallback permissions for users without their own block.
-- [Core Concepts → Subjects](/concepts/subjects) — the wildcard rules
-  that permissions are built on.
-- [Accounts &
-  multitenancy](/learn/security/accounts-and-multitenancy) — giving
-  each user its own subject space.
+- [permissions](/reference/config/authorization/users/permissions) — поля.
+- [default_permissions](/reference/config/authorization/default_permissions) — стандартные права.
+- [Темы](/concepts/subjects) — подстановки.
+- [Учётные записи](/learn/security/accounts-and-multitenancy) — независимые пространства.

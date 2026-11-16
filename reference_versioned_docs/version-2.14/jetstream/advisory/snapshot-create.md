@@ -1,16 +1,16 @@
-# Snapshot Started
+# Создание снимка начато {#snapshot-started}
 
-Stream snapshot initiated.
+Инициировано создание снимка потока.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import snapshotCreate from '@site/src/schemas/vendor/v2.14/jsm/jetstream/advisory/v1/snapshot_create.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.STREAM.SNAPSHOT_CREATE.{stream}`
 
-Where `{stream}` is the stream name.
+Где `{stream}` — имя потока.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={snapshotCreate} />

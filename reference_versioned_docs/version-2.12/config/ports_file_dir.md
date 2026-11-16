@@ -1,9 +1,9 @@
-# ports_file_dir
+# ports_file_dir {#ports_file_dir}
 
 <Reloadable state="reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

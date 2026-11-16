@@ -1,13 +1,13 @@
-# operator
+# operator {#operator}
 
 <Aliases aliases="operators, root, roots, root_operator, root_operators" />
 <Reloadable state="not-reloadable" />
-One or more operator JWTs, either in files or inlined.
+Один или несколько JWT оператора в файлах или непосредственно в конфигурации.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` |  | - |
 | `[ string ]` |  | - |

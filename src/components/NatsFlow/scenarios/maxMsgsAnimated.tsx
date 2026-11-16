@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // maxMsgsAnimated
@@ -37,9 +38,8 @@ function MaxMsgsAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>MaxMsgs.</strong>{" "}
-                <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>ORDERS</span> holds at
-                most <strong>5</strong> messages. The 6th publish discards the oldest.
+                <strong>MaxMsgs.</strong>{localizeDiagramContent(" ")}
+                <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>ORDERS</span> хранит не более <strong>5</strong> сообщений. Шестая публикация отбрасывает самое старое.
             </div>
 
             <div
@@ -68,17 +68,17 @@ function MaxMsgsAnimatedInner() {
                         opacity: 0.55 + 0.45 * (1 - p),
                     }}
                 >
-                    publish ✓
+                    публикация ✓
                 </div>
 
                 {/* the stream: 5 fixed slots, newest on the left */}
                 <div>
                     <div style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace", color: rolling ? RED : STREAM_BLUE }}>{size}/5</span>
+                        <span style={{ fontFamily: "monospace", color: rolling ? RED : STREAM_BLUE }}>{localizeDiagramContent(size)}/5</span>
                     </div>
                     <div style={{ display: "flex", gap: SLOT_GAP }}>
-                        {Array.from({ length: MAX_MSGS }).map((_, slot) => {
+                        {localizeDiagramContent(Array.from({ length: MAX_MSGS }).map((_, slot) => {
                             const filled = slot < size;
                             const id = filled ? n - slot : undefined;
                             const isNewest = slot === 0 && filled;
@@ -99,20 +99,20 @@ function MaxMsgsAnimatedInner() {
                                         transition: "border-color 0.2s, background 0.2s",
                                     }}
                                 >
-                                    {filled && (
+                                    {localizeDiagramContent(filled && (
                                         <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color }}>
-                                            #{id! + 1}
+                                            #{localizeDiagramContent(id! + 1)}
                                         </span>
-                                    )}
+                                    ))}
                                 </div>
                             );
-                        })}
+                        }))}
                     </div>
                 </div>
 
                 {/* discard ghost flies off the right */}
                 <div style={{ width: 56, height: 40, position: "relative", flex: "none" }}>
-                    {evictedId !== null && (
+                    {localizeDiagramContent(evictedId !== null && (
                         <div
                             style={{
                                 position: "absolute",
@@ -131,10 +131,10 @@ function MaxMsgsAnimatedInner() {
                                 justifyContent: "center",
                             }}
                         >
-                            <div style={{ fontSize: 9, color: RED, fontWeight: 700 }}>discard</div>
-                            <div style={{ fontSize: 10, fontFamily: "monospace", color: RED }}>#{evictedId + 1}</div>
+                            <div style={{ fontSize: 9, color: RED, fontWeight: 700 }}>отбрасывание</div>
+                            <div style={{ fontSize: 10, fontFamily: "monospace", color: RED }}>#{localizeDiagramContent(evictedId + 1)}</div>
                         </div>
-                    )}
+                    ))}
                 </div>
             </div>
 
@@ -154,9 +154,9 @@ function MaxMsgsAnimatedInner() {
                         cursor: "pointer",
                     }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

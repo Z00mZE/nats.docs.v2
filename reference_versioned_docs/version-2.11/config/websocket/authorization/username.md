@@ -1,13 +1,12 @@
-# username
+# username {#username}
 
 <Aliases aliases="user" />
 <Reloadable state="not-reloadable" />
-Specifies a global user name that clients can use to authenticate
-the server (requires `password`, exclusive of `token`).
+Задаёт глобальное имя пользователя для аутентификации клиентов на сервере (требует `password`, не используется одновременно с `token`).
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

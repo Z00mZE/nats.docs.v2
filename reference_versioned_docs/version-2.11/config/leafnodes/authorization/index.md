@@ -1,18 +1,18 @@
-# authorization
+# authorization {#authorization}
 
 <Reloadable state="not-reloadable" />
-Authorization scoped to accepting leaf node connections.
+Авторизация для приёма соединений листовых узлов.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`username`](./username.md) | User name the connecting server authenticates with (requires `password`). | `string` | - | No |
-| [`password`](./password.md) | Password the connecting server authenticates with (requires `username`). | `string` | - | No |
-| [`users`](./users/index.md) | A list of multiple users with different credentials. | `object` | - | No\* |
-| [`timeout`](./timeout.md) | Maximum number of seconds to wait for a client to authenticate. | `float` | `1` | No |
-| [`account`](./account.md) | Account that leaf nodes authenticating with these credentials are bound to. | `string` | - | No |
-| [`nkey`](./nkey.md) | Public user nkey a connecting leaf node must sign for. | `string` | - | No |
+| [`username`](./username.md) | Имя пользователя для аутентификации подключающегося сервера (требует `password`). | `string` | - | Нет |
+| [`password`](./password.md) | Пароль для аутентификации подключающегося сервера (требует `username`). | `string` | - | Нет |
+| [`users`](./users/index.md) | Список пользователей с разными учётными данными. | `object` | - | Нет\* |
+| [`timeout`](./timeout.md) | Максимальное время ожидания аутентификации клиента в секундах. | `float` | `1` | Нет |
+| [`account`](./account.md) | Аккаунт, к которому привязываются листовые узлы, прошедшие аутентификацию с этими учётными данными. | `string` | - | Нет |
+| [`nkey`](./nkey.md) | Открытый nkey пользователя, владение которым подключающийся листовой узел должен подтвердить подписью. | `string` | - | Нет |
 
-\* See the property page for reload caveats.
+\* Ограничения перезагрузки описаны на странице параметра.

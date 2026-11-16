@@ -1,11 +1,11 @@
-# password
+# password {#password}
 
 <Reloadable state="not-reloadable" />
-Password for proxy authentication.
+Пароль для аутентификации на прокси.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

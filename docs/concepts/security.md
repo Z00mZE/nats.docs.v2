@@ -1,68 +1,38 @@
 ---
 id: security
-title: Security
-description: Authentication, authorization, and encryption in NATS
+title: "Безопасность"
+description: "Аутентификация, авторизация и шифрование в NATS"
 ---
 
-# Security
+# Безопасность {#security}
 
-NATS security rests on three independent pillars: authentication, authorization,
-and encryption. For each of these, NATS provides flexible options to fit a wide
-range of use cases, from simple development environments to complex production
-deployments.
+Безопасность NATS опирается на три независимых механизма: аутентификацию, авторизацию и шифрование. Для каждого из них NATS предлагает гибкие возможности — от простых сред разработки до сложных промышленных развёртываний.
 
-For a runnable, step-by-step treatment, see the [Security deep dive](/learn/security).
+Пошаговое практическое руководство см. в разделе [углублённого изучения безопасности](/learn/security).
 
-## Accounts and Users
+## Учётные записи и пользователи {#accounts-and-users}
 
-NATS is multi-tenant by design. Each NATS user belongs to an account — a
-self-contained tenant with its own isolated subject space, users, and
-permissions. Multiple tenants can share a single NATS deployment without ever
-seeing each other's traffic. Unrelated tenants can use the same subject
-names without any risk of collision.
+NATS изначально рассчитан на многопользовательскую изоляцию. Каждый пользователь NATS принадлежит учётной записи (account) — независимому арендатору с собственным изолированным пространством тем, пользователями и разрешениями. Несколько арендаторов могут совместно использовать одно развёртывание NATS и при этом не видеть трафик друг друга. Независимые арендаторы могут использовать одинаковые имена тем без риска конфликтов.
 
 <img src="/img/concepts/security-accounts-isolation.png" alt="NATS account isolation" class="security-image" />
 
-Cross-account communication is possible but requires explicit configuration.
+Взаимодействие между учётными записями возможно, но требует явной настройки.
 
-## Authentication
+## Аутентификация {#authentication}
 
-Authentication verifies the identity of clients connecting to the NATS server.
-NATS doesn't require it by default, so production deployments should always
-configure one of the three methods below:
+Аутентификация проверяет подлинность клиентов, подключающихся к серверу NATS. По умолчанию она не обязательна, поэтому для промышленной эксплуатации всегда следует настроить один из трёх способов:
 
-- **Config-based authentication**: Define accounts, users, and credentials
-  directly in the server configuration file. This is the simplest option for
-  development and smaller deployments. There are several supported credential
-  types, including username/password, token authentication, NKeys, and TLS
-  client certificates.
-- **Decentralized authentication (operator mode)**: NATS uses a hierarchical
-  trust chain — an **operator** signs **accounts**, and each **account** signs
-  its own **users**. Credentials are JWTs signed with NKey (Ed25519) keypairs.
-  The server only needs to trust the operator's public key — everything else
-  verifies cryptographically, with no server-side user list. Because accounts
-  can issue and revoke their own users independently, operator mode scales
-  naturally to multi-tenant or large deployments where centralized credential
-  management isn't practical.  You choose a resolver model, for the server to
-  locate account information.
-- **Auth callouts**: Delegate the authentication decision to an
-  application-defined NATS service that returns a signed JWT. This is useful for
-  advanced setups, like integrating with external identity providers (e.g.,
-  OIDC, LDAP) or implementing custom authentication logic.
+- **Аутентификация через конфигурацию**: задайте учётные записи, пользователей и учётные данные непосредственно в конфигурации сервера. Это самый простой вариант для разработки и небольших развёртываний. Поддерживаются имя пользователя и пароль, токены, NKeys и клиентские сертификаты TLS.
+- **Децентрализованная аутентификация (режим оператора)**: NATS использует иерархическую цепочку доверия — **оператор** подписывает **учётные записи**, а каждая **учётная запись** подписывает своих **пользователей**. Учётные данные представлены JWT, подписанными парами ключей NKey (Ed25519). Серверу достаточно доверять открытому ключу оператора: всё остальное проверяется криптографически, без серверного списка пользователей. Поскольку учётные записи могут независимо создавать и отзывать своих пользователей, режим оператора естественно масштабируется на большие развёртывания и множество арендаторов, где централизованное управление учётными данными неудобно. Вы выбираете модель resolver, с помощью которой сервер получает сведения об учётных записях.
+- **Внешняя аутентификация (auth callout)**: передайте решение об аутентификации сервису NATS, определённому приложением и возвращающему подписанный JWT. Это полезно в сложных сценариях, например для интеграции с внешними поставщиками удостоверений (OIDC, LDAP) или реализации собственной логики аутентификации.
 
-## Authorization
+## Авторизация {#authorization}
 
-Authorization controls what authenticated clients are allowed to do. NATS uses a
-permissions model based on subjects. You can specify which subjects a user can
-publish to, subscribe to, or both. Permissions support the same wildcards as
-subjects themselves.
+Авторизация определяет, что разрешено аутентифицированным клиентам. NATS использует модель разрешений на основе тем. Можно задать темы, в которые пользователь вправе публиковать сообщения, темы для подписки или оба вида разрешений. В разрешениях поддерживаются те же подстановочные символы, что и в темах.
 
-Permissions are defined per user — either on the user in the server
-configuration, or embedded in the user's JWT. This allows for fine-grained
-access control, enabling you to restrict clients to only the subjects they need
-to interact with.
+Разрешения задаются для каждого пользователя: в конфигурации сервера или внутри JWT пользователя. Это позволяет точно управлять доступом, ограничивая клиента только темами, которые ему нужны.
 
-A permissions block looks like this in the server config file:
+Блок разрешений в конфигурации сервера выглядит так:
 
 ```conf
 permissions: {
@@ -74,41 +44,26 @@ permissions: {
 }
 ```
 
-In this example, the user can publish to subjects under `orders.>` or exactly
-`users.signup` — anything else is denied, because the presence of an allow list
-closes off the rest. On the subscribe side, the user can read anything under
-`events.>`, except subjects under `events.audit.>`, since deny takes precedence
-over allow.
+В этом примере пользователь может публиковать сообщения в темы, соответствующие `orders.>`, и в точную тему `users.signup`. Всё остальное запрещено: наличие списка разрешений закрывает доступ к остальным темам. Подписываться можно на любые темы `events.>`, кроме `events.audit.>`, поскольку запрет имеет приоритет над разрешением.
 
-## Encryption
+## Шифрование {#encryption}
 
-NATS encrypts data in transit with TLS. Each connection type in a NATS
-deployment can be secured independently:
+NATS шифрует передаваемые данные с помощью TLS. Каждый тип соединения можно защитить независимо:
 
-- Client ↔ server — the connection between applications and NATS servers.
-- Server ↔ server (cluster) — the routes that exchange messages between servers
-  within a single cluster.
-- Leaf nodes — connections from edge or downstream NATS servers to a parent
-  cluster.
-- Gateways — the connections between clusters in a super-cluster topology.
+- Клиент ↔ сервер — соединение между приложениями и серверами NATS.
+- Сервер ↔ сервер (кластер) — маршруты, по которым серверы одного кластера обмениваются сообщениями.
+- Листовые узлы — соединения периферийных или нижестоящих серверов NATS с родительским кластером.
+- Шлюзы — соединения между кластерами в топологии суперкластера.
 
-Each connection type has its own TLS configuration, with support for certificate
-pinning, CA certificate pools, custom cipher suites, and mutual TLS
-(mTLS). mTLS proves the client holds a certificate signed by a trusted
-CA. Add the `verify_and_map` setting and the server maps the
-certificate's identity (its SAN or DN) to a configured user, tying the
-encryption layer into the authentication model.
+Для каждого типа соединения предусмотрена отдельная конфигурация TLS с поддержкой закрепления сертификатов, наборов доверенных сертификатов УЦ, собственных наборов шифров и взаимной аутентификации TLS (mTLS). mTLS подтверждает, что клиент владеет сертификатом, подписанным доверенным удостоверяющим центром. При включении `verify_and_map` сервер сопоставляет удостоверение из сертификата (SAN или DN) с настроенным пользователем, связывая шифрование с моделью аутентификации.
 
-### Encryption at Rest
+### Шифрование хранимых данных {#encryption-at-rest}
 
-Beyond in-transit encryption, JetStream streams can be encrypted on disk using
-AES or ChaCha20-Poly1305 ciphers. This protects message data persisted to disk
-against attackers with filesystem or physical access to the server. See
-JetStream encryption at rest for configuration.
+Помимо шифрования при передаче, потоки JetStream можно шифровать на диске с помощью AES или ChaCha20-Poly1305. Это защищает сохранённые сообщения от злоумышленников с доступом к файловой системе или физическим доступом к серверу. Настройка описана в материалах о шифровании хранимых данных JetStream.
 
-## Try It Yourself
+## Попробуйте сами {#try-it-yourself}
 
-Save the following as `nats.conf`:
+Сохраните следующую конфигурацию в `nats.conf`:
 
 ```conf
 accounts {
@@ -123,25 +78,25 @@ accounts {
 }
 ```
 
-Start a server with this config:
+Запустите сервер с этой конфигурацией:
 
 ```bash
 nats-server -c nats.conf
 ```
 
-Now try publishing a message — you'll see permissions in action:
+Теперь попробуйте опубликовать сообщение и проверьте действие разрешений:
 
 ```bash
-# works — alice can publish to orders.>
+# Успешно: alice может публиковать в orders.>
 nats pub --user alice --password s3cret orders.created "hello"
 
-# fails — alice has no publish permission for billing.*
+# Ошибка: у alice нет права публикации в billing.*
 nats pub --user alice --password s3cret billing.invoice "nope"
 ```
 
-## Next steps
+## Следующие шаги {#next-steps}
 
-- [Security deep dive](/learn/security) — secure a deployment end to end
-- [Encryption & TLS](/learn/security/encryption) — secure connections in transit
-- [Operator mode](/learn/security/operator-mode) — decentralized JWT-based auth
-- [Subjects](./subjects.md) — the addressing system permissions are built on
+- [Углублённое изучение безопасности](/learn/security) — защита развёртывания от начала до конца
+- [Шифрование и TLS](/learn/security/encryption) — защита передаваемых данных
+- [Режим оператора](/learn/security/operator-mode) — децентрализованная аутентификация на основе JWT
+- [Темы](./subjects.md) — система адресации, на которой основаны разрешения

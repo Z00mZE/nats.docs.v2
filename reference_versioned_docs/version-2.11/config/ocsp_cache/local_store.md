@@ -1,11 +1,11 @@
-# local_store
+# local_store {#local_store}
 
 <Reloadable state="reloadable" />
-Directory for the local cache.
+Каталог локального кэша.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

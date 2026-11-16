@@ -1,114 +1,63 @@
 ---
 id: index
-title: Clustering & Replication Deep Dive
+title: "Подробно о кластеризации и репликации"
 sidebar_position: 1
-description: How a NATS cluster agrees and replicates — routes, RAFT, quorum commits, placement, and peers
+description: "Как кластер NATS согласует и реплицирует данные: маршруты, RAFT, фиксация кворумом, размещение и участники"
 ---
 
-# Clustering & Replication Deep Dive
+# Подробно о кластеризации и репликации {#clustering--replication-deep-dive}
 
-A NATS cluster involves more than three servers wired together. Beneath
-that wiring is a mechanism by which the servers find each other, elect
-leaders, agree on every write, and keep replicas in step. This chapter
-covers that mechanism, taught one layer at a time the way you'd learn it
-by running a real cluster and watching it work.
+Кластер NATS — больше, чем три соединённых сервера. Под связями работает механизм поиска соседей, выборов лидеров, согласования записей и синхронизации реплик. Эта глава разбирает его послойно, как при запуске настоящего кластера и наблюдении за ним.
 
-The [Topologies](/learn/topologies) chapter stood up the shapes (one
-server growing into the `east` cluster, then a super-cluster, then leaf
-nodes) and deliberately left the internals for here. The
-[JetStream](/learn/jetstream) chapter gave you one page on
-[surviving node loss](/learn/jetstream/surviving-node-loss): set `R=3`,
-lose a server, keep serving. This chapter explains how both of those
-work. We go beneath the shapes to the agreement and replication that make
-them work.
+[Топологии](/learn/topologies) создали формы: от одного сервера к `east`, суперкластеру и листовым узлам, оставив внутреннее устройство для этой главы. [JetStream](/learn/jetstream) кратко показал [устойчивость к потере узла](/learn/jetstream/surviving-node-loss): задать `R=3`, потерять сервер и продолжить работу. Здесь объясняется механизм согласования и репликации, обеспечивающий эти возможности.
 
-## By the end you'll have
+## Что вы получите {#by-the-end-youll-have}
 
-- A live three-server cluster (`n1-east`, `n2-east`, `n3-east`, the same
-  `east` cluster from Topologies) that discovered itself from a single
-  seed route.
-- The `ORDERS` stream running at `R=3`, with a write you can trace from
-  `order-svc` publishing `orders.created`, through the leader's log, to a
-  quorum commit that survives one server dying.
-- A working mental model of the five moving parts: **routes** form the
-  mesh, **RAFT groups** agree, a **quorum** commits each write,
-  **placement** decides where replicas live, and **peer management**
-  grows or shrinks the set safely.
-- The commands to inspect all of it (leaders, replicas, lag) and the
-  failure modes to watch for when you operate it for real.
+- Работающий кластер `east` из `n1-east`, `n2-east`, `n3-east`, обнаруживших друг друга через один начальный маршрут.
+- Поток `ORDERS` с `R=3` и запись, прослеженную от публикации `order-svc` в `orders.created` через журнал лидера до фиксации кворумом, переживающей отказ сервера.
+- Модель пяти механизмов: **маршруты** формируют сеть, **группы RAFT** согласуют, **кворум** фиксирует записи, **размещение** выбирает серверы реплик, **управление участниками** безопасно меняет состав.
+- Команды просмотра лидеров, реплик и отставания, а также понимание отказов при эксплуатации.
 
-## Who this is for
+## Для кого эта глава {#who-this-is-for}
 
-You've read the [Core Concepts](/concepts/what-is-nats) primers and,
-ideally, the [JetStream](/learn/jetstream) and
-[Topologies](/learn/topologies) deep dives. You know what a stream, a
-consumer, a route, and a cluster are. This chapter doesn't re-teach
-them.
+Вы прочитали [основные понятия](/concepts/what-is-nats), желательно также [JetStream](/learn/jetstream) и [топологии](/learn/topologies). Потоки, потребители, маршруты и кластеры предполагаются известными.
 
-You don't need to know anything about consensus or replication
-specifically. We start from "what is a route and how does one server
-find another" and build up to placement and peer management from there.
+Знание алгоритмов согласования и репликации не требуется. Начнём с поиска одного сервера другим и постепенно перейдём к размещению и управлению участниками.
 
-## How to read it
+## Как читать главу {#how-to-read-it}
 
-Each page introduces at most two new concepts and carries the cluster
-forward. You stand up `n1-east`, `n2-east`, and `n3-east` on the first
-page and keep them running: later pages elect a leader on that same
-cluster, replicate a write to it, place the stream on tagged servers,
-and add or remove a peer. The server names, the `ORDERS` stream, and the
-payload never change.
+Каждая страница вводит не больше двух понятий и продолжает работу с тем же кластером. Сначала вы запускаете `n1-east`, `n2-east`, `n3-east`, затем выбираете лидера, реплицируете запись, размещаете поток по меткам и добавляете или удаляете участника. Имена серверов, `ORDERS` и полезная нагрузка не меняются.
 
-The vocabulary here is dense: leader, follower, term, quorum, commit,
-apply. Every term is defined before it's used, so read the pages in
-order rather than jumping. Where a feature has a long list of knobs or
-timer values, the page teaches only what you need to understand the
-mechanism and links to [Reference](/reference/) for the rest.
+Терминов много: лидер, ведомый, срок, кворум, фиксация, применение. Каждый определяется до использования, поэтому читайте по порядку. Длинные списки параметров и таймеров оставлены в [справочнике](/reference/); здесь объясняется необходимое для механизма.
 
-This chapter is replication *within one cluster*. Replication *across*
-clusters (gateways, geo-affinity, super-cluster traffic) stays in
-[Super-clusters](/learn/topologies/super-clusters).
+Глава посвящена репликации *внутри одного кластера*. Обмен *между* кластерами — шлюзы, географическая привязка, трафик суперкластера — остаётся в [Суперкластерах](/learn/topologies/super-clusters).
 
-## Map
+## Карта главы {#map}
 
-| Page | What you learn |
+| Страница | Что вы узнаете |
 |---|---|
-| [Forming a cluster](/learn/clustering/forming-a-cluster) | Routes (explicit seed vs implicit gossip) and how one seed grows into a full mesh |
-| [Raft and leaders](/learn/clustering/raft-and-leaders) | RAFT groups, the meta leader and stream leaders, and how an election picks one |
-| [Replication and R=3](/learn/clustering/replication-and-r3) | How a quorum commits a write, then followers apply it, and the consistency you get |
-| [Placement](/learn/clustering/placement) | Constrain replicas to a cluster and tagged servers, and move a stream's leader to a chosen server |
-| [Scaling and peer management](/learn/clustering/scaling-and-peers) | Grow the group with catchup, move a replica off a server safely, and never lose quorum doing it |
-| [Desired state and evacuation](/learn/clustering/desired-state) | Read a reconfiguration in flight, evacuate a server in one command, and roll a move back |
-| [Where to go next](/learn/clustering/where-next) | A recap of the whole mechanism and a production checklist |
+| [Формирование кластера](/learn/clustering/forming-a-cluster) | Явные начальные маршруты, неявное обнаружение и рост до полносвязной сети |
+| [RAFT и лидеры](/learn/clustering/raft-and-leaders) | Группы RAFT, лидеры метаданных и потоков, выборы |
+| [Репликация и R=3](/learn/clustering/replication-and-r3) | Фиксация записи кворумом, применение ведомыми и гарантии согласованности |
+| [Размещение](/learn/clustering/placement) | Ограничение реплик кластером и метками, перенос лидера |
+| [Масштабирование и управление участниками](/learn/clustering/scaling-and-peers) | Добавление с синхронизацией и безопасный вывод реплик без потери кворума |
+| [Желаемое состояние и эвакуация](/learn/clustering/desired-state) | Наблюдение за изменением состава, освобождение сервера одной командой и откат |
+| [Куда двигаться дальше](/learn/clustering/where-next) | Итоги механизма и контрольный список |
 
-In summary, servers form a mesh, elect leaders, replicate
-every write, place the replicas where you want them, and let you scale
-the peer set without losing agreement.
+Серверы образуют сеть, выбирают лидеров, реплицируют записи, размещают реплики на нужных узлах и позволяют менять состав без потери согласованности.
 
-## Prerequisites
+## Предварительные условия {#prerequisites}
 
-You'll need:
+Вам понадобятся:
 
-- Three local `nats-server` processes with JetStream enabled, which the
-  first page stands up as the `east` cluster. A single server isn't
-  enough here: RAFT needs a majority, so the mechanism only appears once
-  three servers are talking.
-- The `nats` CLI installed. Most of this chapter is server config and
-  `nats` operator commands; a few stream operations also show the
-  JavaScript, Go, Python, Java, Rust, and C# client form, since every
-  client sets the same replica count and placement.
-- A system account (`$SYS`) to run the `nats server` operator commands
-  against. These configs don't set one up; add a system user (the
-  [Security deep dive](/learn/security) covers it) and connect with its
-  credentials before the first `nats server list`, `info`, or `report`.
+- Три локальных процесса `nats-server` с JetStream, которые первая страница объединит в `east`. Один сервер не показывает работу согласования: для большинства нужно взаимодействие нескольких узлов.
+- CLI `nats`. Большинство примеров — конфигурация и команды администратора; для некоторых операций показаны JavaScript, Go, Python, Java, Rust и C#, задающие одинаковые реплики и размещение.
+- Системная учётная запись (`$SYS`) для команд `nats server`. Конфигурации главы её не создают: добавьте системного пользователя по [главе безопасности](/learn/security) и используйте его данные перед первым `nats server list`, `info` или `report`.
 
-Open a terminal and turn to
-[Forming a cluster](/learn/clustering/forming-a-cluster).
+Откройте терминал и перейдите к [формированию кластера](/learn/clustering/forming-a-cluster).
 
-## See also
+## См. также {#see-also}
 
-- [Topologies deep dive](/learn/topologies) — the shapes this chapter
-  runs beneath, including the `east` cluster it reuses.
-- [JetStream → surviving node loss](/learn/jetstream/surviving-node-loss)
-  — the one-page replica intro this chapter goes deeper than.
-- [Reference](/reference/) — the exhaustive config, protocol, and
-  monitoring detail behind every mechanism here.
+- [Топологии](/learn/topologies) — внешнее устройство, включая повторно используемый `east`.
+- [JetStream → Отказ узла](/learn/jetstream/surviving-node-loss) — краткое введение в реплики.
+- [Справочник](/reference/) — полные параметры, протоколы и поля мониторинга.

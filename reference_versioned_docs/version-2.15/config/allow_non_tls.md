@@ -1,11 +1,11 @@
-# allow_non_tls
+# allow_non_tls {#allow_non_tls}
 
 <Reloadable state="not-reloadable" />
-Allow mixed TLS and non-TLS on the same port.
+Разрешить TLS и незашифрованные соединения на одном порту.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

@@ -1,174 +1,86 @@
 ---
 id: scaling
-title: "Scaling"
+title: "Масштабирование"
 sidebar_position: 6
-description: Run N instances of a service and let the default queue group balance the load, then stop one cleanly
+description: "Запуск N экземпляров сервиса с балансировкой стандартной группой очереди и корректная остановка одного экземпляра"
 ---
 
-# Scaling
+# Масштабирование {#scaling}
 
-`OrderInventory` answers every request, reports its endpoints through
-discovery, and keeps per-endpoint stats. So far one instance does all of
-that. This page runs more than one.
+`OrderInventory` отвечает на запросы, сообщает конечные точки через обнаружение и ведёт их статистику. Пока всё это делает один экземпляр. Здесь запустим несколько.
 
-This page assumes you've read the [Core NATS](/learn/core-nats) deep dive:
-you know how [request-reply](/learn/core-nats/request-reply) and
-[queue groups](/learn/core-nats/queue-groups) work. Scaling needs nothing on top
-of that. The framework already put every endpoint into a queue group when you
-created the service (you saw this happen on the
-[first page](/learn/services/your-first-service)). That queue group is the entire
-scaling story. You start more copies of the service, and the server spreads
-requests across them.
+Предполагается, что вы прочитали подробную главу [Core NATS](/learn/core-nats) и знаете [запросы и ответы](/learn/core-nats/request-reply) и [группы очередей](/learn/core-nats/queue-groups). Для масштабирования ничего сверх этого не нужно. При создании сервиса фреймворк уже поместил каждую конечную точку в группу очереди, как показано на [первой странице](/learn/services/your-first-service). Эта группа и обеспечивает масштабирование: запускаете больше копий, а сервер распределяет между ними запросы.
 
-This page teaches two things: how running N instances load-balances with no
-extra configuration, and how to stop an instance without dropping the work it's
-holding.
+Здесь рассмотрены две задачи: как N экземпляров балансируют нагрузку без дополнительной настройки и как остановить экземпляр, не потеряв принятую им работу.
 
-## Run more instances
+## Запуск дополнительных экземпляров {#run-more-instances}
 
-**Horizontal scaling** means running more than one copy of the same service.
-Each copy is an **instance**: one running service with its own service ID. All
-instances of `OrderInventory` share the same service name and the same version;
-only the auto-generated service ID differs.
+**Горизонтальное масштабирование** — запуск нескольких копий одного сервиса. Каждая копия — **экземпляр**: работающий сервис со своим идентификатором. Все экземпляры `OrderInventory` имеют одно имя и версию; различается лишь автоматически созданный идентификатор сервиса.
 
-You don't register instances anywhere. You don't configure a load balancer.
-You start a second instance the same way you started the first, with the same
-`Name`, `Version`, and endpoint. The framework auto-generates a fresh service ID
-and the new instance joins the work.
+Регистрировать экземпляры или настраивать балансировщик не нужно. Запустите второй так же, как первый, с теми же `Name`, `Version` и конечной точкой. Фреймворк создаст новый идентификатор сервиса, и экземпляр присоединится к работе.
 
-What makes the requests spread is the **default queue group `"q"`**. Every
-endpoint joins it unless you override it. When several instances subscribe to
-`orders.inventory.check` under the same queue group, the server delivers each
-request to exactly one member of that group. With two instances, one incoming
-request is handled by one of them. This is the queue-group behavior from Core
-NATS, now applied automatically across instances; the mechanics live on
-[Queue groups](/learn/core-nats/queue-groups).
+Запросы распределяет **группа очереди по умолчанию `"q"`**. Каждая конечная точка входит в неё, если вы не переопределили настройку. Когда несколько экземпляров подписаны на `orders.inventory.check` в одной группе, сервер доставляет каждый запрос ровно одному участнику. При двух экземплярах один входящий запрос обрабатывает один из них. Это поведение групп очередей Core NATS, автоматически применённое к экземплярам; механизм описан на странице [Группы очередей](/learn/core-nats/queue-groups).
 
-Start a second instance, send a burst of orders, and watch them spread:
+Запустите второй экземпляр, отправьте серию заказов и посмотрите распределение:
 
 <div class="nats-example" data-type="learn-services-scaling-runInstances" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Six requests across two instances land roughly three and three. The split isn't
-a round-robin you control: the server delivers each message to whichever
-queue-group member is ready. Add a third instance and the same six spread three
-ways. No coordinator decides this; the queue group does it on the server, per
-request.
+Шесть запросов распределятся между двумя экземплярами примерно по три. Это не управляемый вами round-robin: сервер доставляет каждое сообщение готовому участнику группы. Добавьте третий экземпляр — те же шесть запросов распределятся между тремя. Координатора нет; группа очереди на сервере решает это для каждого запроса.
 
 <div class="nats-flow" data-scenario="serviceScalingAnimated" data-width="600" data-height="350"></div>
 
-The animation shows five `OrderInventory` instances sharing queue group `"q"`.
-Each request lights exactly one instance, and the next request can light a
-different one. That's the whole scaling model: more members in the same group,
-with one delivery per request.
+Анимация показывает пять экземпляров `OrderInventory` в группе `"q"`. Каждый запрос подсвечивает ровно один экземпляр, а следующий может попасть другому. Вся модель масштабирования: больше участников одной группы и одна доставка на запрос.
 
-Disabling the queue group breaks this. You met `WithEndpointQueueGroupDisabled`
-on [endpoints and groups](/learn/services/endpoints-and-groups): with it, an
-endpoint subscribes plainly instead of joining a group, so every instance
-receives every request. That's broadcast rather than scaling: it's useful for
-fan-out work, but wrong for load balancing. Keep the queue group on when you
-want to scale.
+Отключение группы нарушает эту модель. С `WithEndpointQueueGroupDisabled` вы познакомились на странице [Конечные точки и группы](/learn/services/endpoints-and-groups): конечная точка становится обычной подпиской, и каждый экземпляр получает каждый запрос. Это широковещательная доставка, полезная для рассылки всем участникам, но не для балансировки. Для масштабирования оставляйте группу очереди включённой.
 
-## Stop an instance cleanly
+## Корректная остановка экземпляра {#stop-an-instance-cleanly}
 
-Scaling up is only part of the job. Scaling down (or rolling out a new version,
-or shutting an instance for maintenance) means stopping an instance. Stopping it
-abruptly drops any request it was mid-handle.
+Увеличение числа экземпляров — лишь часть задачи. Уменьшение, развёртывание новой версии или обслуживание требуют остановки экземпляра. Резкая остановка теряет запросы, которые он обрабатывал.
 
-The framework gives you a graceful stop. Calling `Stop()` on a service
-**drains** each endpoint subscription: it removes the endpoint's queue-group
-interest right away, so the server stops routing new requests to this instance,
-then unsubscribes the `$SRV` discovery verbs. Requests the instance already
-accepted keep processing in the background. `Stop()` returns before that
-background processing finishes, so don't exit the process the moment it returns:
-keep the instance alive (drain the connection, or wait on the framework's
-`DoneHandler`) until the in-flight work completes, or you drop it after all.
+Фреймворк поддерживает корректную остановку. Вызов `Stop()` сервиса выполняет **drain** подписки каждой конечной точки: сразу удаляет её интерес в группе очереди, поэтому сервер больше не направляет сюда новые запросы, затем отменяет подписки обнаружения `$SRV`. Уже принятые запросы продолжают обрабатываться в фоне. `Stop()` возвращается до завершения этой обработки, поэтому не завершайте процесс сразу: поддерживайте экземпляр работающим (выполните drain соединения или дождитесь `DoneHandler` фреймворка) до завершения текущей работы, иначе она всё же потеряется.
 
-Because the endpoint leaves the queue group as part of the stop, the remaining
-instances pick up every new request automatically. There's no window where a
-request lands on a queue group whose only member just vanished. Stop one
-instance and the others absorb the load:
+Поскольку при остановке конечная точка выходит из группы очереди, оставшиеся экземпляры автоматически получают все новые запросы. Нет промежутка, когда запрос попадает в группу, чей единственный участник только что исчез. Остановите экземпляр — остальные примут нагрузку:
 
 <div class="nats-example" data-type="learn-services-scaling-stopService" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-After the stop, a PING returns one fewer reply, and `nats service stats`
-aggregates the survivors. Roll a new version by starting fresh instances, then
-stopping the old ones one at a time; at every moment at least one instance is
-in the queue group answering orders.
+После остановки PING возвращает на один ответ меньше, а `nats service stats` агрегирует оставшиеся экземпляры. Для постепенного обновления версии сначала запускайте новые экземпляры, затем по одному останавливайте старые; в каждый момент хотя бы один участник группы отвечает на заказы.
 
-When a service needs durable state to survive a stop (a count that must not
-reset, a queue of work that must outlive the process), that state doesn't
-belong in the instance. A service stores nothing; it's at-most-once
-request-reply. Put durable state behind [JetStream](/learn/jetstream). Draining
-the connection itself on shutdown, beyond the framework's `Stop()`, belongs to
-[resilient clients](/learn/resilient-clients).
+Если сервису нужно долговременное состояние, переживающее остановку (несбрасываемый счётчик или очередь работ, живущая дольше процесса), оно не должно храниться в экземпляре. Сервис ничего не сохраняет: это запросы и ответы с доставкой не более одного раза. Храните долговременное состояние в [JetStream](/learn/jetstream). Выполнение drain самого соединения при завершении, помимо `Stop()` фреймворка, рассматривается в главе об [устойчивых клиентах](/learn/resilient-clients).
 
-You'll find the full set of service lifecycle and queue-group fields in
-[Reference](/reference/). We only need the behavior here.
+Все поля жизненного цикла сервиса и групп очередей приведены в [справочнике](/reference/). Здесь достаточно поведения.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Scaling out turns one easy-to-miss assumption into a bug: that only one instance
-is running. Each instance runs the same handler on its own connection, and they
-don't share memory. Two problems follow from that.
+При масштабировании легко пропустить предположение, превращающееся в ошибку: будто запущен только один экземпляр. Каждый выполняет тот же обработчик на собственном соединении, и общей памяти у них нет. Отсюда две проблемы.
 
-**Instances don't share memory — protect external state.** If a handler
-increments a counter, caches a value, or reserves stock in a local variable,
-each instance keeps its own copy. Run three instances and each one has its own
-independent counter, its own cache, and its own view of "remaining stock," and
-they drift apart. Don't assume one instance holds the correct value. Keep
-handlers stateless, and when work genuinely needs shared state, push it into an
-external store: a database, or a [JetStream](/learn/jetstream) stream or
-key-value bucket that all instances read and write through. The instances stay
-interchangeable; the state lives in one place that all of them use.
+**У экземпляров нет общей памяти — защищайте внешнее состояние.** Если обработчик увеличивает счётчик, кэширует значение или резервирует запас в локальной переменной, у каждого экземпляра своя копия. При трёх экземплярах получаются три независимых счётчика, кэша и представления об остатке товара, которые расходятся. Не предполагайте, что один экземпляр хранит правильное значение. Делайте обработчики без состояния, а необходимое общее состояние переносите во внешнее хранилище: базу данных, поток [JetStream](/learn/jetstream) или бакет ключей и значений, через который читают и пишут все экземпляры. Экземпляры остаются взаимозаменяемыми, а состояние хранится в общем месте.
 
-**A blocking handler stops its instance from serving other requests.** Handlers
-run synchronously on the service's connection. While one handler blocks (a slow
-database call, a sleep, a lock it can't get), that instance answers no other
-request. The queue group masks this for a while by sending requests to the busy
-instance's peers instead, but if every instance blocks, the whole service
-stalls. Don't do slow work inline in a handler. Keep handlers fast, move long
-work off the request path, and add more instances so the rest absorb a momentary
-stall on one.
+**Блокирующий обработчик мешает экземпляру обслуживать другие запросы.** Обработчики выполняются синхронно на соединении сервиса. Пока один блокируется на медленном запросе к базе, ожидании или блокировке, экземпляр не отвечает на другие запросы. Группа очереди некоторое время скрывает это, отправляя запросы другим участникам, но если заблокируются все, остановится весь сервис. Не выполняйте медленную работу непосредственно в обработчике. Поддерживайте быстрые обработчики, выносите длительные задачи из пути запроса и добавляйте экземпляры, чтобы остальные компенсировали краткую задержку одного.
 
-The fix for both is the same: instances are disposable, so make stopping one
-safe. A graceful stop drains in-flight work and hands new requests to the
-survivors, which is what you want when an instance is slow, overloaded, or being
-replaced. Stop one and the rest carry on:
+Решение общее: экземпляры должны быть заменяемыми, а их остановка — безопасной. Корректная остановка завершает текущую работу и передаёт новые запросы оставшимся участникам. Это нужно при замедлении, перегрузке или замене экземпляра. Остановите один — остальные продолжат:
 
 <div class="nats-example" data-type="learn-services-scaling-stopService" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-If the request after the stop still gets an answer, the queue group rebalanced
-cleanly and no order was dropped.
+Если запрос после остановки получает ответ, группа очереди перераспределила нагрузку корректно и заказ не потерян.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- More than one `OrderInventory` instance, all sharing the name, version, and
-  default queue group `"q"`.
-- Requests spreading across instances with no coordinator: one delivery per
-  request, decided on the server.
-- A graceful `Stop()` that drains in-flight work and leaves the queue group, so
-  the survivors absorb the load with nothing dropped.
+- Несколько экземпляров `OrderInventory` с одинаковыми именем, версией и стандартной группой очереди `"q"`.
+- Распределение запросов без координатора: сервер выбирает одну доставку на запрос.
+- Корректный `Stop()`, завершающий текущую работу и выводящий экземпляр из группы очереди, чтобы оставшиеся приняли нагрузку без потерь.
 
-Scaling up means running more instances and letting the queue group balance the
-load. Scaling down means stopping one instance cleanly so the rest pick up its
-work.
+Для увеличения масштаба запустите дополнительные экземпляры и дайте группе балансировать нагрузку. Для уменьшения корректно остановите один, чтобы остальные приняли его работу.
 
-## What's next
+## Что дальше {#whats-next}
 
-That's the framework end to end: a named, versioned service with endpoints and
-groups, made discoverable and observable through `$SRV`, and scaled by running
-more instances. The last page recaps all of this and points to where the
-remaining details live.
+Теперь рассмотрен весь фреймворк: именованный сервис с версией, конечными точками и группами; обнаружение и наблюдение через `$SRV`; масштабирование запуском экземпляров. Последняя страница подводит итоги и указывает, где искать остальные подробности.
 
-Continue to [Where to go next](/learn/services/where-next).
+Переходите к странице [Куда двигаться дальше](/learn/services/where-next).
 
-## See also
+## См. также {#see-also}
 
-- [Queue groups](/learn/core-nats/queue-groups) — the load-balancing mechanism
-  the default queue group `"q"` is built on.
-- [JetStream](/learn/jetstream) — durable state for work that must survive an
-  instance stopping.
-- [Reference](/reference/) — the full set of service lifecycle and queue-group
-  configuration fields.
+- [Группы очередей](/learn/core-nats/queue-groups) — механизм балансировки, лежащий в основе стандартной группы `"q"`.
+- [JetStream](/learn/jetstream) — долговременное состояние для работ, которые должны пережить остановку экземпляра.
+- [Справочник](/reference/) — все поля жизненного цикла сервиса и конфигурации групп очередей.

@@ -1,22 +1,22 @@
 ---
-title: JetStream API
+title: "API JetStream"
 ---
 
-# JetStream API
+# API JetStream {#jetstream-api}
 
-The JetStream API provides programmatic access to manage and interact with NATS JetStream resources. These APIs enable you to create, configure, and manage streams and consumers, as well as perform administrative operations.
+API JetStream предоставляет программный доступ к управлению ресурсами NATS JetStream и работе с ними. Через API можно создавать, настраивать и обслуживать потоки и потребителей, а также выполнять административные операции.
 
-## API Categories
+## Категории API {#api-categories}
 
-- [Account](./account/index.md) - Account-level JetStream management
-- [Consumer](./consumer/index.md) - Consumer management operations
-- [Stream](./stream/index.md) - Stream management and data operations
-- [Meta](./meta/index.md) - Metadata and cluster management operations
+- [Учётная запись](./account/index.md) — управление JetStream на уровне учётной записи
+- [Потребитель](./consumer/index.md) — операции управления потребителями
+- [Поток](./stream/index.md) — управление потоками и операции с данными
+- [Метаданные](./meta/index.md) — управление метаданными и кластером
 
-## Request/Response Pattern
+## Шаблон запроса и ответа {#requestresponse-pattern}
 
-All JetStream API operations follow a request/response pattern over standard NATS subjects. Requests are sent to specific API subjects, and responses are returned containing either the requested data or error information.
+Все операции API JetStream используют запрос и ответ через обычные темы NATS. Запрос отправляется в определённую тему API, а ответ содержит запрошенные данные или сведения об ошибке.
 
-## Authentication and Authorization
+## Аутентификация и авторизация {#authentication-and-authorization}
 
-JetStream API access is controlled through standard NATS authentication and authorization mechanisms. Users must have appropriate permissions to perform operations on streams and consumers.
+Доступ к API JetStream контролируется стандартными механизмами аутентификации и авторизации NATS. Для операций с потоками и потребителями пользователю необходимы соответствующие разрешения.

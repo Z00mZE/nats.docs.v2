@@ -1,11 +1,11 @@
-# cert_file
+# cert_file {#cert_file}
 
 <Reloadable state="reloadable" />
-Certificate file for this pair.
+Файл сертификата для этой пары.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

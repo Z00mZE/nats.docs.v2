@@ -1,11 +1,11 @@
-# allow
+# allow {#allow}
 
 <Reloadable state="reloadable" />
-List of subjects that are allowed to the client.
+Список субъектов, разрешённых клиенту.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `[ string ]` | - | - |

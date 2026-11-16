@@ -1,11 +1,11 @@
-# port
+# port {#port}
 
 <Reloadable state="not-reloadable" />
-Port for cluster route connections.
+Порт маршрутных соединений кластера.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

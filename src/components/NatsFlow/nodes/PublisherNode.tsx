@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { BaseNode, nodeLabel, nodeStack } from './BaseNode';
@@ -10,7 +11,7 @@ export function PublisherNode({ data, selected }: NodeProps) {
     <BaseNode selected={selected}>
       <div style={nodeStack}>
         <NatsIcon width={24} height={24} />
-        <div style={nodeLabel}>{nodeData.label}</div>
+        <div style={nodeLabel}>{localizeDiagramContent(nodeData.label)}</div>
       </div>
       {/* Default handle for publish scenarios */}
       <Handle

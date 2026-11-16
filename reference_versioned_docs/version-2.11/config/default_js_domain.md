@@ -1,11 +1,11 @@
-# default_js_domain
+# default_js_domain {#default_js_domain}
 
 <Reloadable state="not-reloadable" />
-Account to domain name mapping.
+Отображение аккаунтов на доменные имена.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `{ string: string }` | - | - |

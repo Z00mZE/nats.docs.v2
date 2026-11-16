@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -197,7 +198,7 @@ function JetStreamContrastAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Mode:
+                    Режим:
                 </span>
                 <button
                     onClick={() => handleModeChange("core")}
@@ -224,7 +225,7 @@ function JetStreamContrastAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -244,7 +245,7 @@ function JetStreamContrastAnimatedInner({
                     <Background />
                 </ReactFlow>
 
-                {isJetStream && (
+                {localizeDiagramContent(isJetStream && (
                     <div
                         style={{
                             position: "absolute",
@@ -262,9 +263,9 @@ function JetStreamContrastAnimatedInner({
                             letterSpacing: "2px",
                         }}
                     >
-                        Pending: {streamDots}
+                        Ожидают: {localizeDiagramContent(streamDots)}
                     </div>
-                )}
+                ))}
             </div>
 
             {/* Status */}
@@ -275,7 +276,7 @@ function JetStreamContrastAnimatedInner({
                     color: "#6b7280",
                 }}
             >
-                {description}
+                {localizeDiagramContent(description)}
             </div>
         </div>
     );

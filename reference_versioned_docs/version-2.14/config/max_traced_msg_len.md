@@ -1,11 +1,11 @@
-# max_traced_msg_len
+# max_traced_msg_len {#max_traced_msg_len}
 
 <Reloadable state="reloadable" />
-Set a limit to the trace of the payload of a message.
+Ограничить объём полезной нагрузки сообщения, записываемый в трассировку.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

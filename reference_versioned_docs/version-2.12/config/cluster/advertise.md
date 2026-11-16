@@ -1,15 +1,12 @@
-# advertise
+# advertise {#advertise}
 
 <Aliases aliases="cluster_advertise" />
 <Reloadable state="reloadable" />
-Advertised cluster `<host>:<port>`. Useful for cluster setups since
-behind NAT. When using TLS this is important to set to control the
-hostname that clients will use when discovering the route so TLS
-hostname verification does not fail.
+Объявляемый адрес кластера `<host>:<port>`. Полезен для кластеров за NAT. При использовании TLS этот параметр задаёт имя хоста, которое будет использоваться при обнаружении маршрута, чтобы проверка имени в TLS не завершилась ошибкой.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

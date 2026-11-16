@@ -1,18 +1,18 @@
-# Max Deliveries Exceeded
+# Превышен лимит доставок {#max-deliveries-exceeded}
 
-Message exceeded max delivery attempts.
+Сообщение превысило максимальное число попыток доставки.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import maxDeliver from '@site/src/schemas/vendor/v2.11/jsm/jetstream/advisory/v1/max_deliver.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.{stream}.{consumer}`
 
-Where:
-- `{stream}` is the stream name
-- `{consumer}` is the consumer name
+Где:
+- `{stream}` — имя потока
+- `{consumer}` — имя потребителя
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={maxDeliver} />

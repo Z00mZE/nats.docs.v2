@@ -1,82 +1,82 @@
 ---
-title: Upgrade to NATS 2.12
-sidebar_label: Upgrade to 2.12
-description: What changes when you move a NATS deployment from 2.11.x to 2.12 — new features, upgrade considerations, and downgrade steps.
+title: "Обновление до NATS 2.12"
+sidebar_label: "Обновление до 2.12"
+description: "Что меняется при переходе развёртывания NATS с 2.11.x на 2.12: новые возможности, особенности обновления и возврата к предыдущей версии."
 ---
 
-# Upgrade to NATS 2.12
+# Обновление до NATS 2.12 {#upgrade-to-nats-212}
 
-This guide is for existing NATS users upgrading from version 2.11.x. It summarizes what's new and what to watch for, with links to pages that cover each feature in depth.
+Это руководство предназначено для пользователей NATS, переходящих с версии 2.11.x. Оно кратко описывает нововведения и важные нюансы и содержит ссылки на подробный разбор каждой возможности.
 
-For the complete changelog, see the [v2.12.0 release notes on GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.12.0). For the story behind the release, see the [announcement post](https://nats.io/blog/nats-server-2.12-release/).
+Полный журнал изменений см. в [примечаниях к выпуску v2.12.0 на GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.12.0). О причинах появления новых возможностей рассказывает [анонс выпуска](https://nats.io/blog/nats-server-2.12-release/).
 
-## Features
+## Новые возможности {#features}
 
-### Streams
+### Потоки {#streams}
 
-* **Atomic batch publish:** The `AllowAtomicPublish` stream configuration option allows to atomically publish N messages into a stream. This includes support for replicated and non-replicated streams, as well as doing per-message consistency checks prior to committing the batch. See [Advanced publishing](/learn/jetstream/advanced-publishing) and [ADR-50](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-50.md).
+* **Атомарная пакетная публикация:** параметр потока `AllowAtomicPublish` позволяет атомарно опубликовать N сообщений в поток. Поддерживаются реплицируемые и нереплицируемые потоки, а также проверки согласованности каждого сообщения до фиксации пакета. См. [Расширенная публикация](/learn/jetstream/advanced-publishing) и [ADR-50](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-50.md).
 
-* **Distributed Counter CRDT:** The `AllowMsgCounter` stream configuration option allows increment/decrement counter semantics on a stream. These counter streams can also be mirrored or aggregated through stream mirroring and sourcing. More information is available in [ADR-49](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-49.md).
+* **Распределённый CRDT-счётчик:** параметр потока `AllowMsgCounter` включает операции увеличения и уменьшения счётчика в потоке. Такие потоки счётчиков можно зеркалировать и агрегировать с помощью зеркал и источников. Подробности — в [ADR-49](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-49.md).
 
-* **Delayed Message Scheduling:** The `AllowMsgSchedules` stream configuration option allows the scheduling of messages. Users can use this feature for delayed publishing/scheduling of messages. More information is available in [ADR-51](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-51.md).
+* **Отложенная отправка по расписанию:** параметр потока `AllowMsgSchedules` позволяет планировать сообщения. Эту возможность можно использовать для отложенной публикации и отправки по расписанию. Подробности — в [ADR-51](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-51.md).
 
-### Consumers
+### Потребители {#consumers}
 
-* **Prioritized pull consumer policy:** In addition to the consumer policies like overflow or client pinning, a new `prioritized` policy has been added. In contrast with the overflow policy, this allows a consumer to receive messages sooner instead of delaying failover, but at the cost of potentially flip-flopping work between clients. See [Priority groups](/learn/jetstream/priority-groups) and [ADR-42](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-42.md#prioritized-policy).
+* **Приоритетная политика pull-потребителя:** к политикам overflow и закрепления клиента добавлена политика `prioritized`. В отличие от overflow, она позволяет потребителю раньше начать получать сообщения вместо задержки переключения, но работа при этом может чаще переходить между клиентами. См. [Приоритетные группы](/learn/jetstream/priority-groups) и [ADR-42](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-42.md#prioritized-policy).
 
-### Operations
+### Эксплуатация {#operations}
 
-* **Server metadata:** Similar to `server_tags` which contains a set of tags describing the server, `server_metadata` is a map containing string keys and values describing metadata of the server.
+* **Метаданные сервера:** в дополнение к набору описательных тегов `server_tags` появилась карта `server_metadata` со строковыми ключами и значениями метаданных сервера.
 
-* **Promoting mirrors:** A stream that's mirroring can now be promoted to be the primary, enabling new disaster recovery methodology. The current primary stream should be deleted or have its configured subjects removed prior to promoting mirrors, before configuring the promoted mirrors to start listening on those subjects. See [Disaster recovery](/learn/backup-recovery/disaster-recovery).
+* **Повышение зеркала до основного потока:** зеркальный поток теперь можно сделать основным, что открывает новые способы аварийного восстановления. Перед повышением зеркала следует удалить текущий основной поток или убрать из его конфигурации темы и только затем настроить повышенное зеркало на приём сообщений из этих тем. См. [Аварийное восстановление](/learn/backup-recovery/disaster-recovery).
 
-* **Exponential backoff on route and gateway connections:** Cluster routes and gateways can now use exponential backoff on reconnection attempts by setting `connect_backoff`. If `true`, will start exponential backoff at 1 second up to 30 seconds. This can slow down the speed of reconnection but significantly reduces the amount of DNS queries and general connection attempts during server restarts or outages.
+* **Экспоненциальные паузы при переподключении маршрутов и шлюзов:** параметр `connect_backoff` включает экспоненциальное увеличение интервала повторных подключений маршрутов кластера и шлюзов. При значении `true` интервал растёт от 1 до 30 секунд. Это может замедлить переподключение, но значительно сокращает число DNS-запросов и попыток соединения при перезапусках и сбоях серверов.
 
-* **Offline assets:** When downgrading to an older version, the server can now recognize new features were used and puts the stream and/or consumer into an unsupported/offline mode. For more information, read also the downgrade considerations. More information is available in [ADR-44](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-44.md#offline-assets).
+* **Ресурсы в режиме offline:** при возврате к старой версии сервер теперь распознаёт использование новых возможностей и переводит соответствующий поток или потребителя в неподдерживаемый режим offline. См. также особенности возврата к прежней версии ниже и [ADR-44](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-44.md#offline-assets).
 
-* **Stream/consumer scaleup and reset disk/state protection:** The server now has better protections against leader elections based on empty state. This also improves reliability of replicated in-memory streams. Usually a quorum of servers needs to be online and contain data. Now all but one server can be restarted and the in-memory stream's data can reliably be caught back up. However, during such a scenario all servers involved with replication of that stream will need to be available, not just what's needed for quorum. This lets the servers decide the best course of action to preserve all data.
+* **Защита состояния потоков и потребителей при увеличении числа реплик и сбросе диска или состояния:** сервер лучше защищён от выборов лидера с пустым состоянием. Это также повышает надёжность реплицируемых потоков в памяти. Обычно требуется, чтобы кворум серверов был доступен и содержал данные. Теперь можно перезапустить все серверы, кроме одного, и надёжно восстановить данные потока в памяти на остальных. Однако в таком сценарии должны быть доступны все серверы, реплицирующие поток, а не только достаточное для кворума число. Так серверы могут выбрать способ сохранить все данные.
 
-## Improvements
+## Улучшения {#improvements}
 
-* **Async stream flushing:** Replicated streams will now asynchronously flush data to the underlying store on disk, resulting in a significant improvement in performance. Writes to a replicated stream are still persisted synchronously in the Raft log prior to committing them, so the improved performance has no downsides with respect to consistency.
+* **Асинхронная запись потока в хранилище:** реплицируемые потоки теперь асинхронно записывают данные в основное дисковое хранилище, что значительно повышает производительность. До фиксации записи по-прежнему синхронно сохраняются в журнале Raft, поэтому согласованность не страдает.
 
-* **Elastic pointers in the filestore:** File-based streams now use elastic pointers for its write-through caches. This allows the server to better respond during garbage collection, these caches can be evicted early to avoid out-of-memory conditions (see upgrade considerations below).
+* **Эластичные указатели в файловом хранилище:** потоки на диске теперь используют эластичные указатели для кешей со сквозной записью. Сервер лучше реагирует на сборку мусора: кеши могут быть освобождены заранее для предотвращения нехватки памяти (см. особенности обновления ниже).
 
-* **Use cipher suites from `crypto/tls`:** New cipher suites are now automatically added. Additionally, insecure cipher suites are disabled by default, but can be allowed when enabling `allow_insecure_cipher_suites`.
+* **Наборы шифров из `crypto/tls`:** новые наборы шифров теперь добавляются автоматически. Небезопасные наборы по умолчанию отключены, но их можно разрешить параметром `allow_insecure_cipher_suites`.
 
-* **System events for the `$G` account:** The global account (`$G`) will now also produce system events, such as connect and disconnect events.
+* **Системные события для учётной записи `$G`:** глобальная учётная запись (`$G`) теперь также создаёт системные события, например о подключении и отключении.
 
-* **`GOMAXPROCS` and `GOMEMLIMIT` in server stats:** The server stats already contained the CPU and memory usage of the server but now also contains the effective Go limits.
+* **`GOMAXPROCS` и `GOMEMLIMIT` в статистике сервера:** к использованию процессора и памяти добавлены фактически действующие ограничения Go.
 
-* **New subject transforms: `partition(n)` and `random(n)`:** In addition to `partition(n, …)` which allows to determine a partition number based on tokens at specified indices, `partition(n)` and `random(n)` are convenience functions to create a partition or random number up to `n` based on the whole subject.
+* **Новые преобразования тем: `partition(n)` и `random(n)`:** в дополнение к `partition(n, …)`, вычисляющей номер секции по сегментам на заданных позициях, появились удобные функции `partition(n)` и `random(n)` для получения номера секции или случайного числа до `n` по всей теме.
 
-* **Account name and user logging:** Any logging related to a client connection, for example when reaching maximum connections or for authentication errors, will now include the account name and user of that client connection. Connection closed logging now includes the remote server name.
+* **Учётная запись и пользователь в журналах:** записи о клиентском соединении, например о достижении лимита соединений или ошибках аутентификации, теперь включают имя учётной записи и пользователя. Запись о закрытии соединения содержит имя удалённого сервера.
 
-* **Isolated leaf node property:** In a large deployment with lots of leaf nodes, propagating east-west interest can result in a lot of traffic, which is wasted if leaf nodes don't need to be able to publish/subscribe to each other directly. Instead of the workaround of setting the cluster name of those leaf nodes to be the same, the `isolate_leafnode_interest` property can now be used.
+* **Изоляция интереса листовых узлов:** в большом развёртывании с множеством листовых узлов распространение интереса между ними может создавать значительный лишний трафик, если им не нужен прямой обмен сообщениями. Вместо обходного решения с одинаковыми именами кластеров листовых узлов теперь можно использовать `isolate_leafnode_interest`.
 
-* **Disable leaf node connection through config reload:** This allows disabling a remote leaf node using configuration reload, when using `disabled: true`. If changed from false to true, a solicited leaf node will be disconnected and will not reconnect. If changed from true to false, the leafnode will be solicited again.
+* **Отключение соединения листового узла при перезагрузке конфигурации:** параметр `disabled: true` позволяет отключить удалённое соединение листового узла без перезапуска сервера. При смене значения с false на true инициируемое исходящее соединение разрывается и больше не восстанавливается. При смене с true на false попытки подключения возобновляются.
 
-## Upgrade considerations
+## Особенности обновления {#upgrade-considerations}
 
-### Memory usage
+### Использование памяти {#memory-usage}
 
-With the new elastic pointers in the filestore, it is expected that a NATS Server running 2.12 may show a different memory usage pattern to before. In some systems this may result in lower resident set size (RSS) reported, in others it may result in higher, depending on the number of assets and publish/access patterns.
+Из-за эластичных указателей в файловом хранилище характер потребления памяти сервером NATS 2.12 может отличаться от прежнего. В одних системах резидентная память (RSS) может уменьшиться, в других — увеличиться: это зависит от числа ресурсов и сценариев публикации и доступа.
 
-For the first time, the server will be able to respond to memory pressure by freeing filestore caches on demand and returning the memory to the operating system. This reduces the chance that sudden spikes in utilisation will result in an out-of-memory (OOM) kill. However, this means that the server can more optimistically retain caches in memory when available resources allow in order to facilitate improved read access times.
+Впервые сервер сможет отвечать на нехватку памяти, освобождая кеши файлового хранилища по необходимости и возвращая память операционной системе. Это снижает вероятность завершения процесса из-за нехватки памяти (OOM) при резких всплесках потребления. При этом сервер может активнее удерживать кеши, когда ресурсов достаточно, чтобы ускорить чтение.
 
-This behaviour is largely controlled by the GC thresholds as set by the `GOMEMLIMIT` [environment variable](https://tip.golang.org/doc/gc-guide#Memory_limit). You may wish to tune this value in your environment based on available system memory, or in the case of Kubernetes environments, memory reservations.
+Это поведение в значительной степени определяется порогами сборки мусора, задаваемыми [переменной окружения](https://tip.golang.org/doc/gc-guide#Memory_limit) `GOMEMLIMIT`. Подберите значение с учётом доступной памяти системы или зарезервированной памяти в Kubernetes.
 
-### Strict JetStream API
+### Строгая проверка API JetStream {#strict-jetstream-api}
 
-Starting from version v2.11, the server would start logging the following statement if an invalid JetStream request was received:
+Начиная с v2.11 сервер записывал следующее сообщение в журнал при получении некорректного запроса JetStream:
 
 ```
 [WRN] Invalid JetStream request '$G > $JS.API.STREAM.CREATE.test-stream': json: unknown field "unknown"
 ```
 
-Starting from version v2.12, the server will not only log, but also return an error to the client as "strict mode" is now enabled by default. This means invalid JetStream requests will be rejected by default.
+Начиная с v2.12 сервер не только записывает сообщение в журнал, но и возвращает ошибку клиенту: строгий режим теперь включён по умолчанию. Поэтому некорректные запросы JetStream по умолчанию отклоняются.
 
-If the above log message is observed, please make sure that the application or client is sending correct requests to the server and that NATS client libraries are up-to-date. Strict mode can be temporarily disabled in the server configuration, allowing you more time to fix the issue:
+Если вы видите такую запись, убедитесь, что приложение или клиент отправляет корректные запросы, а клиентские библиотеки NATS обновлены. Строгий режим можно временно отключить в конфигурации сервера, чтобы получить время на исправление:
 
 ```
 jetstream {
@@ -84,10 +84,10 @@ jetstream {
 }
 ```
 
-## Downgrade considerations
+## Особенности возврата к предыдущей версии {#downgrade-considerations}
 
-### Stream state
+### Состояние потока {#stream-state}
 
-When downgrading from v2.12 to v2.11, the stream state files on disk will be rebuilt due to a change in the format of these files in v2.12. This requires re-scanning all stream message blocks, which may use higher CPU than usual and will likely take longer for the restarted node to report healthy. This will only happen on the first restart after downgrading and will not result in data loss.
+При переходе с v2.12 на v2.11 файлы состояния потока на диске будут перестроены из-за изменения формата в v2.12. Для этого потребуется повторно просканировать все блоки сообщений потока, что может увеличить нагрузку на процессор и время до восстановления здорового состояния перезапущенного узла. Это происходит только при первом запуске после возврата к прежней версии и не приводит к потере данных.
 
-When downgrading, only downgrade to v2.11.9 or higher. Starting from this version, the server will recognize the use of new v2.12 features and will safely put the stream and/or consumer that uses these new features into an unsupported/offline mode. Importantly, this will both protect the data as well as the server itself from accessing unsupported features or data.
+Возвращайтесь только к v2.11.9 или более новой версии. Начиная с неё сервер распознаёт использование возможностей v2.12 и безопасно переводит соответствующий поток или потребителя в неподдерживаемый режим offline. Это защищает данные и сам сервер от обращения к неподдерживаемым функциям и форматам.

@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -66,13 +67,13 @@ function StreamNode({ data }: NodeProps) {
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <NatsIcon width={16} height={16} />
                 <span style={{ fontWeight: 600, fontSize: 13, color: "#374151" }}>
-                    Stream ORDERS
+                    Поток ORDERS
                 </span>
             </div>
 
             {/* What it accepts. */}
             <div style={{ fontSize: 11, color: "#6b7280", marginTop: 7 }}>
-                accepts <code style={{ fontSize: 12, color: NAVY }}>orders.&gt;</code>
+                принимает <code style={{ fontSize: 12, color: NAVY }}>orders.&gt;</code>
             </div>
 
             {/* What it holds. */}
@@ -86,8 +87,8 @@ function StreamNode({ data }: NodeProps) {
             >
                 <DbCylinder color={storing ? ACK_COLOR : NAVY} />
                 <span style={{ fontSize: 12, color: "#374151" }}>
-                    stored · last seq{" "}
-                    <strong>{d.seq ?? 0}</strong>
+                    сохранено · последний номер{localizeDiagramContent(" ")}
+                    <strong>{localizeDiagramContent(d.seq ?? 0)}</strong>
                 </span>
             </div>
 
@@ -251,13 +252,13 @@ function PublishAckAnimatedInner({
                 <span
                     style={{ fontSize: "13px", color: "#6b7280", marginRight: "4px" }}
                 >
-                    Step:
+                    Шаг:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <span key={s} style={stepStyle(stage === s)}>
-                        {s}
+                        {localizeDiagramContent(s)}
                     </span>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -271,7 +272,7 @@ function PublishAckAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -302,9 +303,9 @@ function PublishAckAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

@@ -1,10 +1,10 @@
-# no_system_account
+# no_system_account {#no_system_account}
 
 <Aliases aliases="no_system, no_sys_acc" />
 <Reloadable state="not-reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

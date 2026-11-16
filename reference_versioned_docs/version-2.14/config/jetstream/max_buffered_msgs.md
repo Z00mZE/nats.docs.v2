@@ -1,12 +1,11 @@
-# max_buffered_msgs
+# max_buffered_msgs {#max_buffered_msgs}
 
 <Reloadable state="not-reloadable" />
-Messages the server buffers for a stream whose storage is
-temporarily unavailable, before it starts discarding.
+Число сообщений, буферизуемых сервером для потока с временно недоступным хранилищем до начала отбрасывания.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `integer` | - | - |

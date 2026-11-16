@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Terminal 1: Audit logger (sees all messages)
+# Терминал 1: журнал аудита, получающий все сообщения
 nats sub "orders.>"
 
-# Terminal 2: Worker 1 in queue group
+# Терминал 2: обработчик 1 в группе очереди
 nats sub "orders.new" --queue workers
 
-# Terminal 3: Worker 2 in queue group
+# Терминал 3: обработчик 2 в группе очереди
 nats sub "orders.new" --queue workers
 
-# Terminal 4: Publish messages
+# Терминал 4: публикация сообщений
 nats pub orders.new "Order 123"
-# Audit logger sees it
-# One worker processes it
+# Сообщение попадает в журнал аудита
+# Его обрабатывает один обработчик

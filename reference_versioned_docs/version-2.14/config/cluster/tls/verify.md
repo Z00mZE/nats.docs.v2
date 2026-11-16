@@ -1,11 +1,11 @@
-# verify
+# verify {#verify}
 
 <Reloadable state="noop" note="Setting verify:false changes nothing; client cert verification is always required for routes." />
-If true, require and verify client certificates. Does not apply to monitoring.
+Если true, требует и проверяет сертификаты клиентов. К мониторингу не применяется.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

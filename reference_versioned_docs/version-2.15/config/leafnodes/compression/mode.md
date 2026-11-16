@@ -1,9 +1,9 @@
-# mode
+# mode {#mode}
 
 <Reloadable state="reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `string` | The compression mode dictates if and how compression is applied for a connection.  The value of `accept` indicates it will inherit the mode of the server it is connecting to. If both have `accept`, no compression will be used.  The `s2_fast`, `s2_better`, and `s2_best` modes indicate the level of S2 compression used.  `s2_auto` will dynamically change the compression level based on RTT thresholds. | `disabled`, `off`, `enabled`, `on`, `accept`, `s2_fast`, `s2_better`, `s2_best`, `s2_auto` |
+| `string` | Режим сжатия определяет, применяется ли сжатие к соединению и каким образом. Значение `accept` означает наследование режима сервера, к которому устанавливается соединение. Если обе стороны используют `accept`, сжатие не применяется. Режимы `s2_fast`, `s2_better` и `s2_best` задают уровень сжатия S2. `s2_auto` динамически меняет уровень сжатия по порогам RTT. | `disabled`, `off`, `enabled`, `on`, `accept`, `s2_fast`, `s2_better`, `s2_best`, `s2_auto` |

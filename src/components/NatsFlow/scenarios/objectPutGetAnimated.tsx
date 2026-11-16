@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -257,7 +258,7 @@ function ObjectPutGetAnimatedInner({
             >
                 invoice.pdf
             </span>
-            {Array.from({ length: CHUNK_COUNT }, (_, i) => i).map((i) => {
+            {localizeDiagramContent(Array.from({ length: CHUNK_COUNT }, (_, i) => i).map((i) => {
                 const filled = true;
                 const lit = chunksActive && filled;
                 const ok = verified && filled;
@@ -288,11 +289,11 @@ function ObjectPutGetAnimatedInner({
                             transition: "all 0.35s ease",
                         }}
                     >
-                        {i + 1}
+                        {localizeDiagramContent(i + 1)}
                     </div>
                 );
-            })}
-            {verified && (
+            }))}
+            {localizeDiagramContent(verified && (
                 <span
                     style={{
                         marginLeft: 4,
@@ -303,7 +304,7 @@ function ObjectPutGetAnimatedInner({
                 >
                     ✓
                 </span>
-            )}
+            ))}
         </div>
     );
 
@@ -326,17 +327,17 @@ function ObjectPutGetAnimatedInner({
                         marginRight: "4px",
                     }}
                 >
-                    Stage:
+                    Этап:
                 </span>
-                {STAGE_ORDER.map((s) => (
+                {localizeDiagramContent(STAGE_ORDER.map((s) => (
                     <button
                         key={s}
                         onClick={() => setStage(s)}
                         style={buttonStyle(stage === s)}
                     >
-                        {s}
+                        {localizeDiagramContent(s)}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -350,7 +351,7 @@ function ObjectPutGetAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -369,7 +370,7 @@ function ObjectPutGetAnimatedInner({
                 >
                     <Background />
                 </ReactFlow>
-                {chunkSlots}
+                {localizeDiagramContent(chunkSlots)}
             </div>
 
             {/* Caption */}
@@ -382,9 +383,9 @@ function ObjectPutGetAnimatedInner({
                 }}
             >
                 <strong style={{ color: "#374151" }}>
-                    {stageNum}/{STAGE_ORDER.length}
-                </strong>{" "}
-                {CAPTION[stage]}
+                    {localizeDiagramContent(stageNum)}/{localizeDiagramContent(STAGE_ORDER.length)}
+                </strong>{localizeDiagramContent(" ")}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

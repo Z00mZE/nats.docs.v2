@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // workerPoolAnimated
@@ -80,16 +81,15 @@ function WorkerPoolAnimatedInner() {
                     fontStyle: "italic",
                 }}
             >
-                Three workers share the one{" "}
+                Три обработчика используют один{localizeDiagramContent(" ")}
                 <span style={{ color: CONSUMER_GREEN, fontWeight: 600 }}>
                     shipping
-                </span>{" "}
-                consumer. Its single read position sweeps the{" "}
+                </span>{localizeDiagramContent(" ")}
+                потребителя. Его единственная позиция чтения проходит по{localizeDiagramContent(" ")}
                 <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>
                     ORDERS
-                </span>{" "}
-                backlog, handing each order round-robin to one worker. The
-                tallies stay even, and acked orders stay in the stream.
+                </span>{localizeDiagramContent(" ")}
+                по очереди выдавая каждый заказ одному обработчику. Счётчики растут равномерно, а подтверждённые заказы остаются в потоке.
             </div>
 
             <div
@@ -116,11 +116,11 @@ function WorkerPoolAnimatedInner() {
                             marginBottom: 6,
                         }}
                     >
-                        ORDERS stream
+                        поток ORDERS
                     </div>
 
                     <div style={{ display: "flex", gap: SLOT_GAP }}>
-                        {Array.from({ length: N_ORDERS }, (_, i) => {
+                        {localizeDiagramContent(Array.from({ length: N_ORDERS }, (_, i) => {
                             const read = idx >= 0 && i < idx;
                             const current = i === idx && delivering;
                             const shippedNow = done || read || current;
@@ -157,10 +157,10 @@ function WorkerPoolAnimatedInner() {
                                             "background 0.25s, color 0.25s, border-color 0.25s",
                                     }}
                                 >
-                                    #{i + 1}
+                                    #{localizeDiagramContent(i + 1)}
                                 </div>
                             );
-                        })}
+                        }))}
                     </div>
 
                     {/* shipping read position */}
@@ -172,7 +172,7 @@ function WorkerPoolAnimatedInner() {
                             marginTop: 2,
                         }}
                     >
-                        {idx >= 0 && (
+                        {localizeDiagramContent(idx >= 0 && (
                             <div key={cycleIndex}>
                                 <div
                                     style={{
@@ -205,10 +205,10 @@ function WorkerPoolAnimatedInner() {
                                         color: CONSUMER_GREEN,
                                     }}
                                 >
-                                    read #{readPos}
+                                    прочитано #{localizeDiagramContent(readPos)}
                                 </div>
                             </div>
-                        )}
+                        ))}
                     </div>
                 </div>
 
@@ -218,7 +218,7 @@ function WorkerPoolAnimatedInner() {
                     height={COL_H}
                     style={{ flex: "none", overflow: "visible" }}
                 >
-                    {Array.from({ length: N_WORKERS }, (_, w) => {
+                    {localizeDiagramContent(Array.from({ length: N_WORKERS }, (_, w) => {
                         const active = w === activeWorker;
                         return (
                             <line
@@ -234,7 +234,7 @@ function WorkerPoolAnimatedInner() {
                                 }}
                             />
                         );
-                    })}
+                    }))}
                 </svg>
 
                 {/* Workers */}
@@ -245,7 +245,7 @@ function WorkerPoolAnimatedInner() {
                         gap: WBOX_GAP,
                     }}
                 >
-                    {Array.from({ length: N_WORKERS }, (_, w) => {
+                    {localizeDiagramContent(Array.from({ length: N_WORKERS }, (_, w) => {
                         const active = w === activeWorker;
                         return (
                             <div
@@ -279,7 +279,7 @@ function WorkerPoolAnimatedInner() {
                                             : WORKER_NAVY,
                                     }}
                                 >
-                                    Worker {w + 1}
+                                    Обработчик {localizeDiagramContent(w + 1)}
                                 </div>
                                 <div
                                     style={{
@@ -289,14 +289,14 @@ function WorkerPoolAnimatedInner() {
                                         marginTop: 1,
                                     }}
                                 >
-                                    {active
+                                    {localizeDiagramContent(active
                                         ? `shipping #${idx + 1}`
-                                        : "waiting"}{" "}
-                                    · sent {shipped[w]}
+                                        : "waiting")}{localizeDiagramContent(" ")}
+                                    · отправлено {localizeDiagramContent(shipped[w])}
                                 </div>
                             </div>
                         );
-                    })}
+                    }))}
                 </div>
             </div>
 
@@ -308,19 +308,19 @@ function WorkerPoolAnimatedInner() {
                     color: "#6b7280",
                 }}
             >
-                {idx < 0
+                {localizeDiagramContent(idx < 0
                     ? "Backlog stored, workers waiting to pull."
                     : done
                     ? "Backlog cleared. Each worker shipped an even share; every order is still in ORDERS."
                     : (
                         <>
-                            Order <strong>#{idx + 1}</strong> → {" "}
+                            Заказ <strong>#{localizeDiagramContent(idx + 1)}</strong> → {localizeDiagramContent(" ")}
                             <strong style={{ color: CONSUMER_GREEN }}>
-                                Worker {activeWorker + 1}
+                                Обработчик {localizeDiagramContent(activeWorker + 1)}
                             </strong>
-                            {"  ·  next order goes to the next worker in line."}
+                            {localizeDiagramContent("  ·  next order goes to the next worker in line.")}
                         </>
-                    )}
+                    ))}
             </div>
         </div>
     );

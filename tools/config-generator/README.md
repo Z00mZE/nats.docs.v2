@@ -1,36 +1,44 @@
-# NATS Config Generator
+<a id="nats-config-generator"></a>
 
-The NATS server configuration represented as a superset of JSON, consisting of a top-level set of properties (keys) having values which may be primitive types, arrays, or objects.
+# Генератор конфигурации NATS
 
-## Built-in Types
+Конфигурация сервера NATS представлена как расширение JSON: набор свойств верхнего уровня, значения которых могут быть примитивами, массивами или объектами.
 
-**Primitive types**
+<a id="built-in-types"></a>
+
+## Встроенные типы
+
+**Примитивные типы**
 
 - `string`
 - `float`
 - `integer`
 - `boolean`
 
-**Semantic types**
+**Семантические типы**
 
-- `duration` - The base type is string corresponds to a [Go time.Duration](https://pkg.go.dev/time#ParseDuration) value.
-- `bytes` - The base type is either a string, with a supported suffix unit, or an integer in bytes.
+- `duration` — строка, соответствующая значению [Go time.Duration](https://pkg.go.dev/time#ParseDuration).
+- `bytes` — строка с поддерживаемым суффиксом единицы измерения либо целое число байтов.
 
-**Container types**
+**Контейнерные типы**
 
-- `array(T)` - An array type supports one or more elements having type `T`.
-- `map(T)` - A map type represents a set of key/value pairs where keys are strings and the value is of type `T`.
-- `object` - An object type represents a set of key/value pairs where keys are strings and each value can be individually defined.
+- `array(T)` — массив из одного или нескольких элементов типа `T`.
+- `map(T)` — набор пар ключ/значение, где ключи являются строками, а значения имеют тип `T`.
+- `object` — набор пар ключ/значение со строковыми ключами; тип каждого значения определяется отдельно.
 
-## Custom Types
+<a id="custom-types"></a>
 
-Custom types are declared in a YAML file under a top-level key named `types`. See [`./types`](./types) for examples.
+## Пользовательские типы
 
-## Multiple Types
+Пользовательские типы объявляются в файле YAML в ключе верхнего уровня `types`. Примеры находятся в [`./types`](./types).
 
-Some object properties require support for multiple types. For example, the top-level `jetstream` property can be a boolean `true` or `false`, a string expressing `enable` or `disable` (or in the past tense), or an `object` having a set of properties.
+<a id="multiple-types"></a>
 
-In the top-level config, it is declared as follows:
+## Несколько допустимых типов
+
+Некоторые свойства объектов могут принимать значения нескольких типов. Например, свойство верхнего уровня `jetstream` может быть логическим `true` или `false`, строкой `enable` или `disable` (либо формами `enabled` и `disabled`) или объектом `object` с набором свойств.
+
+В конфигурации верхнего уровня это объявляется так:
 
 ```yaml
 jetstream:
@@ -40,15 +48,17 @@ jetstream:
     - jetstream
 ```
 
-### Type Resolution
+<a id="type-resolution"></a>
 
-For the purpose of authoring and maintaining this server config reference, the top-level config file and type definition files are separated. Types can be referenced from other files one or more times.
+### Разрешение типов
 
-For example, the top-level `authorization` property references the `authorization` type in another file. Similarily, the handful of places `tls` properties can be defined, there is a shared `tls` _type_ that is referenced to reduce redudancy of managing these types.
+Для удобства написания и сопровождения справочника конфигурация верхнего уровня и определения типов хранятся в разных файлах. На тип можно ссылаться из других файлов один или несколько раз.
 
-When the config and types files are loaded, they are parsed and types must be dereferenced for the purpose of documentation or config generation.
+Например, свойство верхнего уровня `authorization` ссылается на тип `authorization` в другом файле. Аналогично, для нескольких мест, где разрешены свойства `tls`, используется общий _тип_ `tls`. Это позволяет избежать дублирования при сопровождении определений.
 
-Given the above `jetstream` example, we would expect the dereferenced `jetstream` property to have the following set of value options:
+При загрузке файлы конфигурации и типов разбираются, после чего ссылки на типы раскрываются для генерации документации или конфигурации.
+
+Для приведённого выше примера `jetstream` после раскрытия ссылок ожидается следующий набор вариантов значения:
 
 ```yaml
 jetstream:
@@ -67,6 +77,6 @@ jetstream:
              ...
 ```
 
-These represent the _terminal_ options for this property. For deferenced `object` types having their own properties, those properties will be recursively dereferenced. These will be modeled as `sections` with properties.
+Это _конечные_ варианты значения свойства. Если раскрываемый тип `object` имеет собственные свойства, ссылки в них раскрываются рекурсивно. Такие свойства представляются разделами `sections`.
 
-In the context of documentation generation, only the terminal options will be rendered on a page. Nested properties will be linked and presented on their own page.
+При генерации документации на странице отображаются только конечные варианты. Вложенные свойства представлены ссылками на отдельные страницы.

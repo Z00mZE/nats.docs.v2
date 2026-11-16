@@ -1,12 +1,11 @@
-# cert_store
+# cert_store {#cert_store}
 
 <Reloadable state="reloadable" />
-Load the certificate from an OS certificate store rather than a
-file. Windows only.
+Загружать сертификат из хранилища сертификатов ОС вместо файла. Только Windows.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

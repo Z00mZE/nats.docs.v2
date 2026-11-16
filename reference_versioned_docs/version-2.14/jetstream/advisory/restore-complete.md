@@ -1,16 +1,16 @@
-# Restore Complete
+# Восстановление завершено {#restore-complete}
 
-Stream restore completed.
+Восстановление потока завершено.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import restoreComplete from '@site/src/schemas/vendor/v2.14/jsm/jetstream/advisory/v1/restore_complete.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.STREAM.RESTORE_COMPLETE.{stream}`
 
-Where `{stream}` is the stream name.
+Где `{stream}` — имя потока.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={restoreComplete} />

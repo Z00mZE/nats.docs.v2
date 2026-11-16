@@ -1,11 +1,11 @@
-# name
+# name {#name}
 
 <Reloadable state="not-reloadable" />
-Name of the gateway being connected to.
+Имя шлюза, к которому выполняется подключение.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,154 +1,90 @@
 ---
 id: where-next
-title: "Where to go next"
+title: "Куда двигаться дальше"
 sidebar_position: 7
-description: Recap the Services mental model and point to the chapters and Reference that take it further
+description: "Повторение модели сервисов и ссылки на главы и справочник для дальнейшего изучения"
 ---
 
-# Where to go next
+# Куда двигаться дальше {#where-to-go-next}
 
-You started this chapter with a hand-rolled request-reply responder: a
-subscriber on `orders.inventory.check` that read a request and published a
-reply. You end it with `OrderInventory`, a named, versioned service that
-answers the same subject, announces itself on `$SRV`, counts every request,
-and load-balances across as many instances as you start. The behavior on the
-wire never changed; the framework added everything around it.
+Вы начали главу с обработчика запросов и ответов, написанного вручную: подписчик на `orders.inventory.check` читал запрос и публиковал ответ. Теперь у вас `OrderInventory` — именованный сервис с версией, отвечающий на тот же субъект, объявляющий себя через `$SRV`, считающий запросы и распределяющий нагрузку между любым числом экземпляров. Сетевое поведение не изменилось; фреймворк добавил всё вокруг него.
 
-This page doesn't teach anything new. It collects the model you built into
-one place and points you at the chapters and Reference that take it further.
+Эта страница не вводит новых понятий. Она собирает построенную модель в одном месте и направляет к главам и справочнику для дальнейшего изучения.
 
-## The core idea
+## Основная идея {#the-core-idea}
 
-Every page in this chapter circled the same idea, which is worth restating on
-its own.
+Каждая страница главы возвращалась к одной идее; повторим её отдельно.
 
-A **service** is a request-reply responder the framework formalizes. You
-hand it a name and a version, and it auto-generates a unique service ID,
-subscribes the discovery verbs, and tracks stats for you. The responder you
-already knew how to write now has an identity.
+**Сервис** — обработчик запросов и ответов, оформленный средствами фреймворка. Вы передаёте имя и версию, а он генерирует уникальный идентификатор сервиса, подписывается на команды обнаружения и ведёт статистику. Знакомый обработчик теперь обладает идентичностью.
 
-An **endpoint** is a named handler on a subject, and a **group** is a
-subject-prefix namespace that organizes endpoints. One service can expose
-many endpoints; a group makes them answer on `{prefix}.{endpoint}`. This is
-how one running service covers more than one subject.
+**Конечная точка** — именованный обработчик на субъекте, а **группа** — пространство имён с префиксом субъектов, упорядочивающее конечные точки. Один сервис может предоставлять много точек; группа заставляет их отвечать на `{prefix}.{endpoint}`. Так один работающий сервис обслуживает несколько субъектов.
 
-The three **discovery verbs** on `$SRV` (PING, INFO, and STATS) make a
-service discoverable and observable without extra wiring. Ask `$SRV.INFO`
-and every matching instance tells you its endpoints; ask `$SRV.STATS` and it
-tells you its counters.
+Три **команды обнаружения** под `$SRV` (PING, INFO и STATS) обеспечивают обнаружение и наблюдение без дополнительной настройки. Запросите `$SRV.INFO`, и каждый подходящий экземпляр сообщит конечные точки; запросите `$SRV.STATS` — получите его счётчики.
 
-The default **queue group** `"q"` scales the service. Run more instances with
-the same name and version, and the server delivers each request to exactly
-one of them. There's no coordinator and no config; you scale by running more
-instances.
+Стандартная **группа очереди** `"q"` масштабирует сервис. Запустите больше экземпляров с тем же именем и версией, и сервер доставит каждый запрос ровно одному. Координатор и конфигурация не нужны: масштаб увеличивается запуском экземпляров.
 
-Those four pieces are the service, the endpoint and group, discovery, and the
-queue group. Everything else in this chapter is a refinement of them.
+Это четыре составляющие: сервис, конечные точки и группы, обнаружение и группа очереди. Остальное в главе уточняет их работу.
 
-## Where the reference details live
+## Где искать справочные подробности {#where-the-reference-details-live}
 
-This chapter is unversioned and concept-first. The exact config fields, their
-valid ranges, and the wire format of the discovery verbs live in
-**Reference**, which is versioned and exhaustive. When you need the precise
-type of a service config field, the full endpoint option list, or the JSON
-schema of an INFO response, that's where to look.
+Эта глава не привязана к версии и прежде всего объясняет понятия. Точные поля конфигурации, допустимые диапазоны и сетевой формат команд обнаружения находятся в полном **справочнике**, разделённом по версиям. Там ищите точный тип поля конфигурации сервиса, полный список параметров конечной точки или схему JSON ответа INFO.
 
-The [Reference root](/reference/) is the entry point. The handoff phrases
-throughout this chapter ("the full set of service configuration fields is
-documented in Reference") all point into it. The `$SRV` wire format and its
-PING, INFO, and STATS response schemas live under
-[the services reference](/reference/services/).
+Начните с [корня справочника](/reference/). Ссылки по всей главе вроде «полный набор полей конфигурации сервиса приведён в справочнике» ведут туда. Сетевой формат `$SRV` и схемы ответов PING, INFO и STATS находятся в [справочнике сервисов](/reference/services/).
 
-## Sibling deep dives
+## Связанные подробные главы {#sibling-deep-dives}
 
-A service is built on top of pieces other chapters teach in full, and it
-leaves gaps that other chapters fill. Follow whichever one matches the
-question you're asking now.
+Сервис построен на механизмах, полностью описанных в других главах, и оставляет задачи, которые решаются там. Выберите главу под текущий вопрос.
 
-The [Core NATS deep dive](/learn/core-nats) covers the lower layer this one
-builds on. [Request-reply](/learn/core-nats/request-reply) is the mechanism
-every endpoint uses, and [queue groups](/learn/core-nats/queue-groups) are
-exactly the load balancing that the default group `"q"` gives you. If anything
-in this chapter seemed to skip a step, that step is covered there.
+[Подробная глава о Core NATS](/learn/core-nats) описывает нижний слой. [Запросы и ответы](/learn/core-nats/request-reply) используются каждой конечной точкой, а [группы очередей](/learn/core-nats/queue-groups) обеспечивают ту самую балансировку стандартной группы `"q"`. Если здесь какой-то шаг казался пропущенным, он рассмотрен там.
 
-The [JetStream deep dive](/learn/jetstream) is where you go when a service
-needs to remember something. A service is at-most-once request-reply: it
-stores nothing, and when an instance stops, its in-flight work is gone. The
-moment your handler needs durable state, say an order that must survive a
-restart, that state belongs in a stream, not in the service.
+[Подробная глава о JetStream](/learn/jetstream) нужна, когда сервис должен что-то помнить. Сервис использует запросы и ответы с доставкой не более одного раза: он ничего не хранит, и при остановке экземпляра незавершённая работа теряется. Как только обработчику требуется долговременное состояние, например заказ, переживающий перезапуск, его место в потоке, а не в сервисе.
 
-The [Resilient Clients deep dive](/learn/resilient-clients) covers the
-connection underneath every instance: reconnect, drain beyond the framework's
-`Stop()`, slow-consumer handling, and error callbacks. This chapter assumed a
-healthy local connection; production connections aren't always healthy.
+[Глава об устойчивых клиентах](/learn/resilient-clients) рассматривает соединение каждого экземпляра: переподключение, drain помимо `Stop()` фреймворка, обработку медленных потребителей и обратные вызовы ошибок. Здесь предполагалось исправное локальное соединение; в эксплуатации оно не всегда исправно.
 
-The [Security deep dive](/learn/security) covers subject isolation for `$SRV`
-subjects, account access control, and cross-account service placement.
+[Глава о безопасности](/learn/security) объясняет изоляцию субъектов `$SRV`, управление доступом аккаунтов и размещение сервисов между аккаунтами.
 
-The [Monitoring deep dive](/learn/monitoring) goes past per-endpoint stats to
-the server-side view: exporting metrics to Prometheus and building the
-dashboards that tell you a service is slow before a caller complains. The
-service-latency advisory schema itself lives in
-[Reference](/reference/services/).
+[Глава о мониторинге](/learn/monitoring) переходит от статистики конечных точек к представлению на стороне сервера: экспорту метрик в Prometheus и панелям, сообщающим о замедлении сервиса до жалобы клиента. Схема уведомления о задержке сервиса находится в [справочнике](/reference/services/).
 
-The [Topologies deep dive](/learn/topologies) covers running services across
-more than one server: how `$SRV` and service subjects propagate across leaf
-nodes and gateways, and how to place instances in more than one region.
+[Глава о топологиях](/learn/topologies) рассматривает сервисы на нескольких серверах: распространение `$SRV` и субъектов сервисов через листовые узлы и шлюзы, а также размещение экземпляров в разных регионах.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-This is the end of the chapter. The whole arc is complete, and no new
-scenario state is introduced here. Your `OrderInventory` service (with its
-`check` endpoint on `orders.inventory.check`) and your `ShippingQuote`
-service (with its `quote` endpoint on `shipping.quote`) are still running in
-your session exactly as you left them on the previous page, load-balancing
-across whatever instances you started. You can keep experimenting, or stop
-them gracefully when you're done; each `Stop()` drains in-flight requests
-and unsubscribes the discovery verbs.
+Глава завершена; новых изменений в сценарии здесь нет. Ваш `OrderInventory` с конечной точкой `check` на `orders.inventory.check` и `ShippingQuote` с точкой `quote` на `shipping.quote` по-прежнему работают в сеансе, как на предыдущей странице, и балансируют нагрузку между запущенными экземплярами. Продолжайте эксперименты или корректно остановите их по завершении: каждый `Stop()` завершает текущие запросы и отменяет подписки обнаружения.
 
-You hold the core model: a service is a named, versioned, discoverable
-request-reply responder; endpoints and groups organize it; the `$SRV` verbs
-make it discoverable and observable; and the queue group scales it. That model
-is the foundation for everything else you'll build on the framework.
+У вас есть основная модель: сервис — именованный обработчик запросов и ответов с версией и обнаружением; конечные точки и группы задают его структуру; команды `$SRV` обеспечивают обнаружение и наблюдение; группа очереди — масштабирование. На этой модели строится дальнейшая работа с фреймворком.
 
-## Production checklist
+## Проверки перед эксплуатацией {#production-checklist}
 
-Every page in this chapter closed with a Pitfalls section. This collects the
-action items from all of them in one place: a last pass before you trust a
-service with real orders. Each group links back to the page that explains the
-why.
+Каждая страница завершалась разделом с подводными камнями. Здесь собраны необходимые действия перед тем, как доверить сервису реальные заказы. Каждая группа ссылается на страницу с объяснением причин.
 
-### Your first service — see [Pitfalls](/learn/services/your-first-service#pitfalls)
+### Первый сервис — см. [Подводные камни](/learn/services/your-first-service#pitfalls) {#your-first-service--see-pitfalls}
 
-- [ ] Unmarshal `req.Data()` inside the handler and respond with a service error on bad input, rather than letting a malformed request crash the handler.
-- [ ] Pick a `Name` that matches the allowed character set and a `Version` that's valid SemVer; an invalid value fails service creation outright.
+- [ ] Разбирайте `req.Data()` внутри обработчика и возвращайте ошибку сервиса при неверных данных, не допуская сбоя обработчика из-за некорректного запроса.
+- [ ] Выберите `Name` с допустимыми символами и `Version` в формате SemVer: неверное значение сразу препятствует созданию сервиса.
 
-### Endpoints and groups — see [Pitfalls](/learn/services/endpoints-and-groups#pitfalls)
+### Конечные точки и группы — см. [Подводные камни](/learn/services/endpoints-and-groups#pitfalls) {#endpoints-and-groups--see-pitfalls}
 
-- [ ] Override an endpoint's queue group only when you mean to change who load-balances with whom; the change is silent and easy to get wrong.
-- [ ] Remember that disabling the queue group turns an endpoint into broadcast (every instance answers) instead of load balancing.
-- [ ] Treat endpoints and metadata as immutable once added; there's no remove, so name and shape them deliberately the first time.
+- [ ] Переопределяйте группу очереди точки, только если намерены изменить состав участников балансировки: изменение происходит незаметно, и ошибиться легко.
+- [ ] Помните, что отключение группы очереди включает широковещательную доставку (отвечают все экземпляры) вместо балансировки.
+- [ ] Считайте конечные точки и метаданные неизменяемыми после добавления: удаления нет, поэтому сразу выбирайте имена и структуру осознанно.
 
-### Discovery — see [Pitfalls](/learn/services/discovery#pitfalls)
+### Обнаружение — см. [Подводные камни](/learn/services/discovery#pitfalls) {#discovery--see-pitfalls}
 
-- [ ] Collect discovery responses with a deadline-or-count loop; discovery is broadcast, so a single request returns only one instance, not all of them.
-- [ ] Treat `$SRV` as a reserved subject prefix; never publish to it yourself, or you collide with the framework's control plane.
+- [ ] Собирайте ответы обнаружения в цикле до заданного срока или числа ответов: обнаружение широковещательное, а обычный одиночный запрос вернёт только один экземпляр.
+- [ ] Считайте `$SRV` зарезервированным префиксом субъектов; не публикуйте туда собственные сообщения, чтобы не мешать управляющему обмену фреймворка.
 
-### Observability — see [Pitfalls](/learn/services/observability#pitfalls)
+### Наблюдаемость — см. [Подводные камни](/learn/services/observability#pitfalls) {#observability--see-pitfalls}
 
-- [ ] Check `Nats-Service-Error-Code` on every reply; a service error rides in headers, not as a transport failure, so an unchecked failed call looks like success.
-- [ ] Aggregate stats across instance IDs yourself; counters are per-instance, and `Reset()` zeroes them.
+- [ ] Проверяйте `Nats-Service-Error-Code` в каждом ответе: ошибка сервиса передаётся в заголовках, а не как транспортный сбой, поэтому без проверки ошибочный вызов выглядит успешным.
+- [ ] Самостоятельно агрегируйте статистику разных идентификаторов экземпляров; счётчики ведутся отдельно, а `Reset()` обнуляет их.
 
-### Scaling — see [Pitfalls](/learn/services/scaling#pitfalls)
+### Масштабирование — см. [Подводные камни](/learn/services/scaling#pitfalls) {#scaling--see-pitfalls}
 
-- [ ] Protect any external state your instances share (a database or a stream) rather than assuming a single instance; the framework holds no shared memory across instances.
-- [ ] Keep handlers non-blocking, or run more instances; a blocking handler stalls every other request on that instance.
+- [ ] Защищайте внешнее состояние, общее для экземпляров (базу данных или поток), и не предполагайте единственность экземпляра: фреймворк не предоставляет общей памяти.
+- [ ] Делайте обработчики неблокирующими или запускайте больше экземпляров: блокирующий обработчик задерживает все другие запросы своего экземпляра.
 
-## See also
+## См. также {#see-also}
 
-- [Reference](/reference/) — every service config field, endpoint option,
-  and `$SRV` wire schema, versioned and exhaustive.
-- [Core NATS deep dive](/learn/core-nats) — the request-reply and queue-group
-  foundation this chapter is built on.
-- [JetStream deep dive](/learn/jetstream) — where service state goes when it
-  has to survive a restart.
+- [Справочник](/reference/) — все поля конфигурации сервисов, параметры конечных точек и сетевые схемы `$SRV`, полно и с разделением по версиям.
+- [Подробная глава о Core NATS](/learn/core-nats) — запросы и ответы и группы очередей, на которых построена эта глава.
+- [Подробная глава о JetStream](/learn/jetstream) — хранение состояния сервиса, которое должно пережить перезапуск.

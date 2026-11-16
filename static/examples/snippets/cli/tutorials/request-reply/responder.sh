@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start a responder on the subject "time". `nats reply` subscribes to the
-# subject and, for every request it receives, runs the command and sends its
-# output back on the request's private reply subject. Leave this running.
+# Запустите отвечающий сервис в теме "time". `nats reply` подписывается на
+# тему и для каждого запроса выполняет команду, отправляя её
+# вывод в отдельную тему ответа запроса. Оставьте сервис работать.
 nats reply time --command "date"

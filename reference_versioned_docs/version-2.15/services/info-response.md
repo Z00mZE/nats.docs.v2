@@ -1,18 +1,18 @@
-# Info Response
+# Ответ Info {#info-response}
 
-Service information and metadata response.
+Ответ с информацией и метаданными сервиса.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import infoResponse from '@site/src/schemas/vendor/v2.15/jsm/micro/v1/info_response.json';
 
-## Request Subject
+## Тема запроса {#request-subject}
 
 `$SRV.INFO`
 
-Services respond to info requests on their specific subjects:
-- `$SRV.INFO.{service}` - Info for all instances of a service
-- `$SRV.INFO.{service}.{id}` - Info for a specific service instance
+Сервисы отвечают на запросы информации в следующих темах:
+- `$SRV.INFO.{service}` — информация обо всех экземплярах сервиса
+- `$SRV.INFO.{service}.{id}` — информация об определённом экземпляре сервиса
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={infoResponse} />

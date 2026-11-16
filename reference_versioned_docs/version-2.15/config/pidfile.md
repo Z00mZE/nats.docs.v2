@@ -1,10 +1,10 @@
-# pidfile
+# pidfile {#pidfile}
 
 <Aliases aliases="pid_file" />
 <Reloadable state="reloadable" />
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

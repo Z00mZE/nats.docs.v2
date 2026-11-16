@@ -1,12 +1,11 @@
-# lame_duck_grace_period
+# lame_duck_grace_period {#lame_duck_grace_period}
 
 <Reloadable state="not-reloadable" />
-This is the duration the server waits, after entering
-lame duck mode, before starting to close client connections
+Время ожидания сервера после перехода в режим lame duck до начала закрытия клиентских соединений.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
-| `duration` | Duration as a string with units such as 100ms, 10s, 5m, or 2h. | - |
+| `duration` | Длительность в виде строки с единицами измерения, например 100ms, 10s, 5m или 2h. | - |

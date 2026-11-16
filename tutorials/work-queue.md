@@ -1,83 +1,70 @@
 ---
 id: work-queue
-title: "3. Share work across workers"
+title: "3. Распределение работы между обработчиками"
 sidebar_position: 4
-description: Use a queue group to split a workload across two workers, so each message goes to exactly one of them
+description: "Распределите нагрузку между двумя обработчиками с помощью группы очереди так, чтобы каждое сообщение получал только один из них"
 ---
 
-In this tutorial you'll run two workers that share one subject and watch
-the server split the work between them. You'll publish six messages to
-`tasks`, and each one goes to exactly one worker — never both. That's a
-**queue group**: a pool of subscribers that share a name and divide the
-load.
+В этом руководстве вы запустите два обработчика с общей темой и увидите, как сервер распределяет между ними работу. Вы опубликуете шесть сообщений в `tasks`, и каждое попадёт ровно одному обработчику, а не обоим. Это **группа очереди** — пул подписчиков с общим именем, которые делят нагрузку.
 
 <div class="nats-flow" data-scenario="queueGroupAnimated" data-width="600" data-height="350"></div>
 
-## What you'll need
+## Что понадобится {#what-youll-need}
 
-- `nats-server` and the `nats` CLI installed. If you haven't installed
-  them yet, do the [Hello NATS](/tutorials/hello-nats) tutorial first.
-- Four terminal windows: one for the server, two for the workers, and one
-  to publish.
+- Установленные `nats-server` и CLI `nats`. Если их ещё нет, сначала пройдите руководство [Привет, NATS](/tutorials/hello-nats).
+- Четыре окна терминала: одно для сервера, два для обработчиков и одно для публикации.
 
-## Step 1: Start the server
+## Шаг 1: запустите сервер {#step-1-start-the-server}
 
-In the first terminal, start `nats-server`:
+В первом терминале запустите `nats-server`:
 
 ```bash
 nats-server
 ```
 
-You should see startup logs ending with a ready line:
+Журнал запуска должен заканчиваться строкой о готовности:
 
 ```
 [INF] Server is ready
 ```
 
-Leave it running.
+Оставьте сервер работающим.
 
-## Step 2: Start the first worker
+## Шаг 2: запустите первый обработчик {#step-2-start-the-first-worker}
 
-In the second terminal, subscribe to the `tasks` subject as a member of
-the `workers` queue group. The `--queue` flag is what makes this a queue
-group member instead of a plain subscriber:
+Во втором терминале подпишитесь на тему `tasks` как участник группы очереди `workers`. Именно флаг `--queue` делает подписчика участником группы очереди, а не обычным подписчиком:
 
 <div class="nats-example" data-type="tutorials-work-queue-worker" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see the worker waiting for messages:
+Обработчик должен перейти в ожидание сообщений:
 
 ```
 17:42:10 Subscribing on tasks
 ```
 
-Leave it running.
+Оставьте его работающим.
 
-## Step 3: Start the second worker
+## Шаг 3: запустите второй обработчик {#step-3-start-the-second-worker}
 
-In the third terminal, run the exact same command. Because it names the
-same queue group `workers` on the same subject `tasks`, it joins the same
-group:
+В третьем терминале выполните ту же команду. Поскольку в ней указаны та же группа очереди `workers` и та же тема `tasks`, обработчик присоединится к той же группе:
 
 <div class="nats-example" data-type="tutorials-work-queue-worker" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see the same waiting line:
+Вы должны увидеть такую же строку ожидания:
 
 ```
 17:42:18 Subscribing on tasks
 ```
 
-You now have two workers in one group. Both terminals are idle; neither
-has received anything yet.
+Теперь в группе два обработчика. Оба терминала ожидают: сообщений пока не было.
 
-## Step 4: Publish the work
+## Шаг 4: опубликуйте задания {#step-4-publish-the-work}
 
-In the fourth terminal, publish six messages to `tasks`. The `--count`
-flag repeats the publish six times, and the CLI replaces `{{ Count }}`
-with the message number:
+В четвёртом терминале опубликуйте шесть сообщений в `tasks`. Флаг `--count` повторяет публикацию шесть раз, а CLI заменяет `{{ Count }}` номером сообщения:
 
 <div class="nats-example" data-type="tutorials-work-queue-publish" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You should see the publisher confirm one line per message:
+Издатель должен вывести по одной строке подтверждения на сообщение:
 
 ```
 17:42:30 Published 6 bytes to "tasks"
@@ -88,11 +75,9 @@ You should see the publisher confirm one line per message:
 17:42:30 Published 6 bytes to "tasks"
 ```
 
-## Step 5: Watch the split
+## Шаг 5: посмотрите на распределение {#step-5-watch-the-split}
 
-Look at your two worker terminals. The six messages are split between
-them: each worker receives some, and no message appears in both. One
-terminal might show:
+Посмотрите на терминалы двух обработчиков. Шесть сообщений распределены между ними: каждый получает часть, и ни одно сообщение не появляется в обоих терминалах. Один терминал может показать:
 
 ```
 [#1] Received on "tasks"
@@ -105,7 +90,7 @@ task 3
 task 5
 ```
 
-and the other:
+а другой:
 
 ```
 [#1] Received on "tasks"
@@ -118,27 +103,19 @@ task 4
 task 6
 ```
 
-The server picks one member per message, so the exact split varies. What
-never varies: every message goes to exactly one worker.
+Для каждого сообщения сервер выбирает одного участника, поэтому точное распределение меняется. Неизменно одно: каждое сообщение получает ровно один обработчик.
 
-Publish again to see it balance once more:
+Повторите публикацию, чтобы ещё раз увидеть распределение:
 
 <div class="nats-example" data-type="tutorials-work-queue-publish" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The new batch spreads across the two workers the same way. Press Ctrl-C
-in each terminal to stop.
+Новая партия так же распределяется между двумя обработчиками. Нажмите Ctrl-C в каждом терминале для остановки.
 
-## What you built
+## Что вы создали {#what-you-built}
 
-Two workers shared the `tasks` subject through the `workers` queue group,
-and the server delivered each message to exactly one of them. Add a third
-worker with the same command and the group resizes itself. The work
-spreads across all three with no extra setup.
+Два обработчика совместно подписались на тему `tasks` через группу очереди `workers`, и сервер доставил каждое сообщение только одному из них. Добавьте третий обработчик той же командой: размер группы изменится автоматически, а работа распределится между тремя без дополнительных настроек.
 
-## Next
+## Дальше {#next}
 
-- Build a stream that keeps messages so a worker can replay them later:
-  [First stream](/tutorials/first-stream).
-- Understand how the server picks a member, how groups resize live, and
-  when to reach for a durable work queue instead:
-  [Queue groups deep dive](/learn/core-nats/queue-groups).
+- Создайте поток, который сохраняет сообщения для последующего чтения обработчиком: [Первый поток](/tutorials/first-stream).
+- Узнайте, как сервер выбирает участника, как меняется состав групп во время работы и когда нужна долговременная очередь заданий: [Углублённое изучение групп очередей](/learn/core-nats/queue-groups).

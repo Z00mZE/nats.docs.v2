@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // purgeStreamAnimated
@@ -68,23 +69,22 @@ function PurgeStreamAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Purge the stream.</strong> Every message goes at once, but the stream
-                stays. New orders pick up at{" "}
-                <span style={{ color: GREEN, fontWeight: 600 }}>#6</span>, never back at #1.
+                <strong>Очистите поток.</strong> Все сообщения исчезают сразу, но поток остаётся. Новые заказы продолжают с{localizeDiagramContent(" ")}
+                <span style={{ color: GREEN, fontWeight: 600 }}>#6</span>, а не снова с #1.
             </div>
 
             {/* command / publish pill */}
             <div style={{ height: 28, marginBottom: 8 }}>
-                {purging && (
+                {localizeDiagramContent(purging && (
                     <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: 6, background: RED, color: "white", fontSize: 11, fontWeight: 700, fontFamily: "monospace" }}>
                         nats stream purge ORDERS
                     </span>
-                )}
-                {publishing && (
+                ))}
+                {localizeDiagramContent(publishing && (
                     <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: 6, background: GREEN, color: "white", fontSize: 11, fontWeight: 700, fontFamily: "monospace", opacity: 0.6 + 0.4 * p }}>
                         nats pub --jetstream orders.created …
                     </span>
-                )}
+                ))}
             </div>
 
             <div
@@ -101,10 +101,10 @@ function PurgeStreamAnimatedInner() {
                 <div>
                     <div style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 8, display: "flex", justifyContent: "space-between", gap: 24 }}>
                         <span>ORDERS</span>
-                        <span style={{ fontFamily: "monospace", color: purging ? RED : STREAM_BLUE }}>{count} msgs · first seq {firstSeq}</span>
+                        <span style={{ fontFamily: "monospace", color: purging ? RED : STREAM_BLUE }}>{localizeDiagramContent(count)} сообщений · первый номер {localizeDiagramContent(firstSeq)}</span>
                     </div>
                     <div style={{ display: "flex", gap: SLOT_GAP }}>
-                        {[...OLD, ...NEW].map((seq) => {
+                        {localizeDiagramContent([...OLD, ...NEW].map((seq) => {
                             const isOld = seq <= 5;
                             const isNew = !isOld;
                             const newIndex = seq - 5;
@@ -134,13 +134,13 @@ function PurgeStreamAnimatedInner() {
                                         }}
                                     >
                                         <span style={{ fontSize: 13, fontFamily: "monospace", fontWeight: 700, color: renderEmpty ? "#cbd0d6" : purging ? RED : color }}>
-                                            {renderEmpty ? "·" : `#${seq}`}
+                                            {localizeDiagramContent(renderEmpty ? "·" : `#${seq}`)}
                                         </span>
                                     </div>
-                                    <span style={{ fontSize: 9, fontFamily: "monospace", color: "#9ca3af" }}>seq {seq}</span>
+                                    <span style={{ fontSize: 9, fontFamily: "monospace", color: "#9ca3af" }}>номер {localizeDiagramContent(seq)}</span>
                                 </div>
                             );
-                        })}
+                        }))}
                     </div>
                 </div>
             </div>
@@ -150,9 +150,9 @@ function PurgeStreamAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${STREAM_BLUE}`, background: "white", color: STREAM_BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

@@ -1,14 +1,13 @@
-# default_permissions
+# default_permissions {#default_permissions}
 
 <Reloadable state="noop" note="Parsed and thrown away; there is no gateway permissions field in the server at any version." />
-The default permissions applied to users, if permissions are
-not explicitly defined for them.
+Разрешения по умолчанию для пользователей, если для них явно не заданы разрешения.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`publish`](./publish/index.md) | A single subject, list of subjects, or a allow-deny map of subjects for publishing. Specifying a single subject or list of subjects denotes an *allow* and implcitly denies publishing to all other subjects. | `(multiple)` | - | Ignored |
-| [`subscribe`](./subscribe/index.md) | A single subject, list of subjects, or a allow-deny map of subjects for subscribing. Note, that the subject permission can have an optional second value declaring a queue name. | `(multiple)` | - | Ignored |
-| [`allow_responses`](./allow_responses/index.md) |  | `(multiple)` | - | Ignored |
+| [`publish`](./publish/index.md) | Один субъект, список субъектов или объект с разрешёнными и запрещёнными субъектами для публикации. Один субъект или список задаёт *разрешение* и неявно запрещает публикацию во все остальные субъекты. | `(multiple)` | - | Игнорируется |
+| [`subscribe`](./subscribe/index.md) | Один субъект, список субъектов или объект с разрешёнными и запрещёнными субъектами для подписки. Разрешение на субъект может содержать второе необязательное значение — имя группы очереди. | `(multiple)` | - | Игнорируется |
+| [`allow_responses`](./allow_responses/index.md) |  | `(multiple)` | - | Игнорируется |

@@ -1,14 +1,12 @@
-# account
+# account {#account}
 
 <Aliases aliases="local" />
 <Reloadable state="reloadable" />
-Account name or public NKey identifying the *local* account
-to bind to this remote server. Any traffic locally on
-this account will be forwarded to the remote server.
+Имя аккаунта или открытый NKey, задающий *локальный* аккаунт для привязки к этому удалённому серверу. Весь локальный трафик этого аккаунта пересылается на удалённый сервер.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

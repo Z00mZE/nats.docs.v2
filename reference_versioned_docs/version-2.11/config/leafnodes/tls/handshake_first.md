@@ -1,16 +1,14 @@
-# handshake_first
+# handshake_first {#handshake_first}
 
 <Aliases aliases="first, immediate" />
 <Reloadable state="reloadable" note="Accept side only; applies to newly accepted connections." />
-Force the leafnode connection to use a TLS-first handshake prior
-to the remote sending the `INFO` protocol message.
+Заставляет соединение листового узла выполнять рукопожатие TLS до отправки удалённой стороной сообщения протокола `INFO`.
 
-Note, this option must be set to true on both the remote server
-accepting the leafnode connections as well as the leafnode itself.
+Параметр должен быть включён и на удалённом сервере, принимающем соединения листовых узлов, и на самом листовом узле.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

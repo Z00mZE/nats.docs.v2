@@ -1,13 +1,13 @@
-# Accountz
+# Accountz {#accountz}
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import accountzRequest from '@site/src/schemas/vendor/v2.14/server/monitor/v1/accountz_request.json';
 import accountzResponse from '@site/src/schemas/vendor/v2.14/server/monitor/v1/accountz_response.json';
 
-## Request Schema
+## Схема запроса {#request-schema}
 
 <JSONSchema schema={accountzRequest} />
 
-## Response Schema
+## Схема ответа {#response-schema}
 
 <JSONSchema schema={accountzResponse} />

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Request to a subject with no subscribers
+# Запрос в тему без подписчиков
 nats request no.such.service "test"
 
-# Error: no responders available for request
+# Ошибка: no responders available for request

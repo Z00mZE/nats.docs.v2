@@ -1,12 +1,12 @@
-# logfile
+# logfile {#logfile}
 
 <Aliases aliases="log_file" />
 <Reloadable state="reloadable" note="Ignored if `-l` or `--log` was passed at startup — the flag value is re-applied over the config on every reload." />
-Log file name.
+Имя файла журнала.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

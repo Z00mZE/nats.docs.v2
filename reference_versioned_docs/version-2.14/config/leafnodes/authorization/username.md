@@ -1,13 +1,12 @@
-# username
+# username {#username}
 
 <Aliases aliases="user" />
 <Reloadable state="not-reloadable" />
-User name the connecting server authenticates with
-(requires `password`).
+Имя пользователя для аутентификации подключающегося сервера (требует `password`).
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

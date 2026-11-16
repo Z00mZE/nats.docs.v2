@@ -1,13 +1,12 @@
-# allow_insecure_cipher_suites
+# allow_insecure_cipher_suites {#allow_insecure_cipher_suites}
 
 <Since version="2.12" />
 <Reloadable state="reloadable" />
-Permit cipher suites Go considers insecure to be named in
-`cipher_suites`. Without it those names are rejected.
+Разрешить указывать в `cipher_suites` наборы шифров, считающиеся небезопасными в Go. Без этого их имена отклоняются.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` | - | `true`, `false` |

@@ -1,12 +1,11 @@
-# advertise
+# advertise {#advertise}
 
 <Reloadable state="not-reloadable" />
-Hostport to advertise how this sever be contacted
-by leaf nodes. This is useful for setups with a NAT.
+Объявляемые хост и порт, по которым листовые узлы могут подключиться к этому серверу. Полезно при использовании NAT.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

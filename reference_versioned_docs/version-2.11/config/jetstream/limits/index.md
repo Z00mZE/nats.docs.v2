@@ -1,14 +1,14 @@
-# limits
+# limits {#limits}
 
 <Reloadable state="not-reloadable" note="Starting in 2.15, a change to this block no longer aborts the reload; see the individual keys below it." />
-Default cross-account JetStream limits.
+Лимиты JetStream по умолчанию для аккаунтов.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`max_ack_pending`](./max_ack_pending.md) | Defines the maximum number of in-flight messages allowed to be configured on consumers. | `integer` | - | No |
-| [`max_ha_assets`](./max_ha_assets.md) | The maximum number of JetStream assets that can exist at any given time having more than one replica. | `integer` | - | No |
-| [`max_request_batch`](./max_request_batch.md) | The maximum request batch size allowed to be configured on pull consumers. | `integer` | - | No |
-| [`duplicate_window`](./duplicate_window.md) | The maximum duplication window period allowed to be configured on a stream. | `duration` | - | No |
+| [`max_ack_pending`](./max_ack_pending.md) | Задаёт максимальное число сообщений в обработке, которое можно настроить для потребителей. | `integer` | - | Нет |
+| [`max_ha_assets`](./max_ha_assets.md) | Максимальное число одновременно существующих ресурсов JetStream с более чем одной репликой. | `integer` | - | Нет |
+| [`max_request_batch`](./max_request_batch.md) | Максимальный размер запрашиваемого пакета, который можно настроить для pull-потребителей. | `integer` | - | Нет |
+| [`duplicate_window`](./duplicate_window.md) | Максимальная длительность окна дедупликации, которую можно настроить для потока. | `duration` | - | Нет |

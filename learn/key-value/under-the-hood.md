@@ -1,185 +1,91 @@
 ---
 id: under-the-hood
-title: Under the hood
+title: "Внутреннее устройство"
 sidebar_position: 6
-description: The KV_INVENTORY stream behind the bucket, the direct read path, and delete versus purge
+description: "Поток KV_INVENTORY под бакетом, прямое чтение и различие удаления и очистки"
 ---
 
-# Under the hood
+# Внутреннее устройство {#under-the-hood}
 
-You've built a whole `INVENTORY` bucket: keys with values, a watcher, safe
-decrements with compare-and-swap, and a TTL'd key that expires on its own. Every
-one of those used the key-value API and never mentioned a stream. This
-page shows the underlying mechanism. The bucket was a JetStream stream the whole
-time, and seeing it lets you understand how KV works internally.
+Вы создали полноценный бакет `INVENTORY`: ключи и значения, наблюдатель, безопасное уменьшение через сравнение с заменой, автоматически истекающий ключ. Всё это использовало KV API без упоминания потока. Здесь раскрывается внутренний механизм: бакет всё время был потоком JetStream. Это помогает понять устройство KV.
 
-This page first proves the bucket is a stream and traces one
-key down to the message that holds it. It then covers the one operation where
-the abstraction behaves differently depending on what you ask for: delete versus purge.
+Сначала проверим, что бакет — поток, и проследим один ключ до хранящего его сообщения. Затем рассмотрим операцию, чьё поведение зависит от запроса: удаление delete и очистку purge.
 
-## A bucket is a stream
+## Бакет — это поток {#a-bucket-is-a-stream}
 
-The index page stated it; here you can check it. A bucket is a JetStream stream
-named `KV_<bucket>` whose subjects are `$KV.<bucket>.>`. A key is the last token
-of that subject, and a value is a message on it. For `INVENTORY` the backing
-stream is `KV_INVENTORY`, its subjects are `$KV.INVENTORY.>`, and the key
-`widget-blue` is the message on `$KV.INVENTORY.widget-blue`.
+Во введении это утверждалось; теперь можно проверить. Бакет — поток JetStream с именем `KV_<bucket>` и темами `$KV.<bucket>.>`. Ключ — последний токен темы, значение — сообщение в ней. Для `INVENTORY` базовый поток — `KV_INVENTORY`, темы — `$KV.INVENTORY.>`, а ключ `widget-blue` — сообщение в `$KV.INVENTORY.widget-blue`.
 
-The KV commands don't show the stream name, but the stream commands report it
-directly. Ask the server for the stream behind the bucket:
+Команды KV не показывают имя потока, но команды потоков сообщают его напрямую. Запросите у сервера поток за бакетом:
 
 <div class="nats-example" data-type="learn-key-value-under-the-hood-streamInfoOfBucket" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The configuration the server prints back is every KV claim from this chapter,
-written in stream terms:
+Выведенная конфигурация выражает все свойства KV из этой главы в терминах потока:
 
-- **Subjects: `$KV.INVENTORY.>`**. There is one subject branch, with one key per token under it.
-- **Maximum Per Subject: `10`**. This *is* the history depth. You raised it to 10
-  on the history page to keep prior revisions; the bucket's history is the stream
-  keeping more than one message per subject.
-- **Discard Policy: `New`**. Once the bucket hits a limit, it rejects the
-  newest write rather than silently dropping older messages to make room. This is
-  why limits reject: the bucket keeps the messages it already holds rather than
-  evicting them.
-- **Direct Get: `true`**. Get doesn't open a consumer. More on that next.
-- **Allows Rollups: `true`**. Purge replaces a key's whole subject with one
-  message. More on that below.
-- **Allows Msg Delete: `false`**. This maps to the stream's `deny_delete`
-  setting: the stream refuses the JetStream message-delete API, so raw stream ops
-  can't remove entries behind the KV API's back.
+- **Subjects: `$KV.INVENTORY.>`**. Одна ветвь тем с ключами под ней.
+- **Maximum Per Subject: `10`**. Это и есть глубина истории, увеличенная до 10 для прошлых ревизий. История бакета — хранение потоком нескольких сообщений на тему.
+- **Discard Policy: `New`**. При достижении лимита бакет отклоняет новую запись, а не молча удаляет старые для освобождения места. Поэтому лимиты отклоняют: существующие сообщения сохраняются.
+- **Direct Get: `true`**. Get не открывает потребителя; подробнее ниже.
+- **Allows Rollups: `true`**. Purge заменяет всю тему ключа одним сообщением; подробнее ниже.
+- **Allows Msg Delete: `false`**. Это соответствует `deny_delete`: поток запрещает JetStream API удаления сообщений, чтобы прямые операции не удаляли записи в обход KV API.
 
-This is the same stream-storage model the JetStream chapter drew. The animation
-below is the one from that chapter, reused on purpose: the layer under your
-bucket is exactly the stream described there.
+Это та же модель хранения, что в главе JetStream. Анимация ниже намеренно взята оттуда: слой под бакетом — именно описанный там поток.
 
 <div class="nats-flow" data-scenario="jetStreamContrastAnimated" data-width="600" data-height="350"></div>
 
-The full set of stream configuration the server reports here is documented in
-[Reference → Create Stream](/reference/jetstream/api/stream/create). You didn't
-set any of these by hand; the client mapped your bucket settings onto them.
+Все параметры потока из этого вывода описаны в разделе [Справочник → Создание потока](/reference/jetstream/api/stream/create). Вручную вы их не задавали: клиент отобразил на них настройки бакета.
 
-## Get reads the last message, with no consumer
+## Get читает последнее сообщение без потребителя {#get-reads-the-last-message-with-no-consumer}
 
-Reading a value doesn't replay the stream and doesn't open a consumer. It uses
-**direct get**: the server returns the last message on a subject straight from
-storage. The request goes to `$JS.API.DIRECT.GET.<stream>.<subject>` (for our
-key, `$JS.API.DIRECT.GET.KV_INVENTORY.$KV.INVENTORY.widget-blue`), and the
-server answers with the latest message there. That last message is the current
-value, its sequence is the revision, and its store time is the entry timestamp.
+Чтение значения не воспроизводит поток и не открывает потребителя. Используется **direct get**: сервер возвращает последнее сообщение темы прямо из хранилища. Запрос идёт в `$JS.API.DIRECT.GET.<stream>.<subject>`, для нашего ключа — `$JS.API.DIRECT.GET.KV_INVENTORY.$KV.INVENTORY.widget-blue`. Сервер отвечает последним сообщением: его данные — текущее значение, порядковый номер — ревизия, время сохранения — временная метка записи.
 
-This is why `nats kv get INVENTORY widget-blue` is fast and stateless. There's no
-position to track, no message to acknowledge, and no consumer to clean up, so a get
-is one request and one reply. It's the reason a bucket behaves as a key-value
-store even though it's built from an append-only log: the bucket interface hides
-the stream, so you see key-value pairs rather than messages. Each get returns the last
-message per subject, served directly.
+Поэтому `nats kv get INVENTORY widget-blue` работает быстро и без состояния. Нет позиции для отслеживания, подтверждения сообщения или потребителя для очистки: один get — один запрос и один ответ. Так бакет ведёт себя как хранилище ключей и значений, хотя построен из журнала только с добавлением: интерфейс скрывает поток и показывает пары ключ/значение. Каждый get напрямую возвращает последнее сообщение темы.
 
-`Direct Get: true` in the stream config is what enables this path. It's set
-for you when the bucket is created. The exhaustive direct-read API lives in
-[Reference → Get Stream Message](/reference/jetstream/api/stream/msg-get); here
-you only need its shape, which is the last message for a subject, with no consumer.
+Этот путь включает `Direct Get: true` в конфигурации потока. Параметр задаётся автоматически при создании бакета. Полное API прямого чтения находится в разделе [Справочник → Получение сообщения потока](/reference/jetstream/api/stream/msg-get); здесь достаточно понимать, что читается последнее сообщение темы без потребителя.
 
-## Delete versus purge
+## Удаление и очистка {#delete-versus-purge}
 
-Removing a key is the one operation where the abstraction behaves differently
-depending on what you ask for, because "gone" can mean two different things underneath.
+Удаление ключа — операция, где результат зависит от запроса: на нижнем уровне отсутствие значения может означать две разные вещи.
 
-A **delete** leaves a non-destructive **marker**: a message with a
-`KV-Operation: DEL` header. The key now reads empty, but every prior revision the
-bucket still keeps — up to its history depth — stays in the stream and readable
-through history. Delete is the common case
-when you want a key to read as absent but don't need its past erased. (The
-marker is what other systems call a tombstone; after this paragraph we'll call it
-a marker.)
+**Delete** оставляет неразрушающий **маркер** — сообщение с заголовком `KV-Operation: DEL`. Ключ читается как отсутствующий, но все прежние ревизии в пределах глубины истории остаются в потоке и доступны через history. Это обычный выбор, когда ключ должен отсутствовать, а стирать прошлое не требуется. В других системах такой маркер называют tombstone; далее используем слово «маркер».
 
-A **purge** is destructive. It writes a marker with a `KV-Operation: PURGE`
-header *and* a `Nats-Rollup: sub` header. The rollup tells the stream to drop
-every earlier message on that subject and keep only this one marker. History
-collapses to a single entry; the prior values are gone from disk. Reach for purge
-when you must actually remove the old values (for size, or because they were
-sensitive), not just hide them.
+**Purge** уничтожает прошлые значения. Он пишет маркер с `KV-Operation: PURGE` *и* `Nats-Rollup: sub`. Свёртка заставляет поток удалить все более ранние сообщения темы и оставить только маркер. История сокращается до одной записи, прежние значения исчезают с диска. Используйте purge, если нужно действительно удалить прошлые значения, например ради места или из-за чувствительных данных.
 
 <div class="nats-example" data-type="learn-key-value-under-the-hood-deleteVsPurge" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Both make a `get` report the key as gone. The difference is entirely in what
-history can still show you afterward: delete keeps the prior revisions, while
-purge erases them.
+Обе операции заставляют `get` сообщить об отсутствии ключа. Разница лишь в последующей истории: delete сохраняет прежние ревизии, purge стирает их.
 
-A bucket's `Replicas` field (how many servers hold a copy) is named here for
-completeness, because it shows up in the stream config too. Replication, leader
-election, and placement belong to [Clustering](/learn/clustering) and aren't
-taught in this chapter.
+Для полноты назовём поле бакета `Replicas` — число серверов с копией; оно тоже видно в конфигурации потока. Репликация, выборы лидера и размещение рассматриваются в главе [Кластеризация](/learn/clustering), а не здесь.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Once you can see the stream, a few mistakes become tempting. Most come from
-treating the backing stream as something you operate directly.
+Когда базовый поток стал видимым, хочется управлять им напрямую. Отсюда большинство ошибок.
 
-**Delete does not remove history; only purge does.** It's easy to read "I
-deleted the key" as "the old values are gone." They are not. A deleted key still
-has every prior revision available through history, because delete only appends a
-marker. If you delete `widget-blue` to scrub a wrong count and assume the bad
-value is unrecoverable, it's sitting one `nats kv history` away. To actually
-drop prior values, purge.
+**Delete не удаляет историю; это делает только purge.** Легко понять удаление ключа как исчезновение прежних значений, но это неверно. Все прошлые ревизии остаются доступны через историю, поскольку delete лишь добавляет маркер. Если удалить `widget-blue`, чтобы убрать неверный остаток, и считать его невосстановимым, значение по-прежнему доступно одной командой `nats kv history`. Для уничтожения прежних значений нужен purge.
 
-The example above is the proof: delete `widget-blue`, then read its
-history and see the old revisions still there; purge `widget-red`, then read its
-history and see it collapsed to a single marker. Choose the operation by what you
-need to keep, the prior revisions or the disk space they occupy.
+Пример выше это доказывает: после delete `widget-blue` история по-прежнему содержит прошлые ревизии; после purge `widget-red` остаётся только маркер. Выбирайте операцию по тому, что требуется сохранить: прежние ревизии или занимаемое ими место.
 
-**Do not operate the backing stream directly.** The bucket is a managed stream.
-Don't hand-edit `KV_INVENTORY`'s configuration, and don't publish to
-`$KV.INVENTORY.>` with raw `nats pub`. The KV API sets the headers that make the
-store correct: the expected-revision header for compare-and-swap, the
-`KV-Operation` and `Nats-Rollup` headers for delete and purge. A raw publish
-writes a bare message with none of them, so a watcher can't tell it from a real
-put and a purge you meant never happens. The stream is built with `deny_delete`
-on so raw stream operations can't remove entries behind the KV API's back, but
-that setting doesn't stop a raw publish — which is exactly why you avoid one. Use
-`nats kv put`, not `nats pub`; use `nats kv del` and `nats kv purge`, not stream
-message deletion.
+**Не управляйте базовым потоком напрямую.** Бакет — управляемый поток. Не меняйте вручную конфигурацию `KV_INVENTORY` и не публикуйте в `$KV.INVENTORY.>` через обычный `nats pub`. KV API устанавливает заголовки корректной работы: ожидаемую ревизию для сравнения с заменой, `KV-Operation` и `Nats-Rollup` для delete и purge. Прямая публикация пишет сообщение без них: наблюдатель не отличит его от настоящего put, а задуманная очистка не произойдёт. Поток создан с `deny_delete`, чтобы прямые операции не удаляли записи в обход KV API, но эта настройка не запрещает обычную публикацию. Поэтому используйте `nats kv put`, а не `nats pub`; `nats kv del` и `nats kv purge`, а не удаление сообщений потока.
 
-**A key has to be a legal subject token.** Now that you can see a key becomes
-the last token of `$KV.INVENTORY.<key>`, the name rules make sense: a key may
-contain only letters, digits, and `-`, `/`, `_`, `=`, and `.`, with no leading
-or trailing dot and no two dots in a row, because anything else would be an
-illegal subject. An order id like `ord:8w2k` carries a colon, so it can't be a
-key, and the bucket rejects the write instead of storing a broken key. This is
-the same validation introduced on
-[Your first bucket](/learn/key-value/your-first-bucket#pitfalls); the backing
-stream is why it exists.
+**Ключ должен соответствовать правилам токенов темы.** Теперь понятно, почему: ключ становится последней частью `$KV.INVENTORY.<key>`. Допускаются только буквы, цифры и `-`, `/`, `_`, `=`, `.`, без точки в начале или конце и без двух точек подряд. Другие варианты дают недопустимую тему. Заказ `ord:8w2k` содержит двоеточие и не подходит для ключа: запись отклоняется, а не сохраняется с неверным именем. Это та же проверка со страницы [Первый бакет](/learn/key-value/your-first-bucket#pitfalls); её причина — базовый поток.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- The same `INVENTORY` bucket you built across the first four pages, from
-  [Your first bucket](./your-first-bucket.md) through
-  [TTL and limits](./ttl-and-limits.md), plus the ability to inspect it as the
-  `KV_INVENTORY` stream it's always been.
-- A map from every KV operation to its stream mechanism: put is a message, get is
-  a direct read of the last message per subject, history is messages kept per
-  subject, a revision is a sequence number, a watch is a consumer.
-- A clear distinction between delete (marker, history kept) and purge (rollup
-  marker, history dropped), and the rule never to operate the backing stream
-  directly.
+- Прежний бакет `INVENTORY` со страниц от [Первого бакета](./your-first-bucket.md) до [TTL и лимитов](./ttl-and-limits.md) и возможность изучить его как поток `KV_INVENTORY`, которым он всегда был.
+- Соответствие операций KV механизмам потока: put — сообщение, get — прямое чтение последнего сообщения темы, history — сохранённые сообщения темы, ревизия — порядковый номер, watch — потребитель.
+- Чёткое различие delete (маркер с сохранением истории) и purge (маркер свёртки с удалением истории), а также правило не управлять базовым потоком напрямую.
 
-The abstraction is no longer opaque. It's a stream presented through the KV API,
-and you can now see both the KV interface and the stream beneath it.
+Абстракция больше не скрывает устройство: это поток, представленный через KV API. Теперь вы видите и интерфейс KV, и лежащий под ним поток.
 
-## What's next
+## Что дальше {#whats-next}
 
-The last page steps back: it recaps the whole chapter, points you at where the
-exhaustive details live, and collects every page's pitfalls into one
-pre-production checklist.
+Последняя страница подводит итоги главы, указывает, где искать полные подробности, и собирает подводные камни в список проверок перед эксплуатацией.
 
-Continue to [Where to go next](/learn/key-value/where-next).
+Переходите к странице [Куда двигаться дальше](/learn/key-value/where-next).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Get Stream Message](/reference/jetstream/api/stream/msg-get) — the
-  direct-get read path in full.
-- [JetStream Deep Dive](/learn/jetstream) — the stream and consumer model this
-  bucket is built on.
-- [Clustering](/learn/clustering) — replicas, placement, and leader election for
-  the backing stream.
+- [Справочник → Получение сообщения потока](/reference/jetstream/api/stream/msg-get) — полный путь прямого чтения.
+- [Углублённый курс JetStream](/learn/jetstream) — модель потоков и потребителей, на которой построен бакет.
+- [Кластеризация](/learn/clustering) — реплики, размещение и выборы лидера базового потока.

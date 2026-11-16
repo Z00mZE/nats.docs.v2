@@ -1,44 +1,25 @@
 ---
 id: monitoring-endpoints
-title: "Monitoring endpoints"
+title: "Конечные точки мониторинга"
 sidebar_position: 2
-description: "The HTTP monitoring port :8222 and its on-demand JSON — /varz, /connz, /routez, and the /jsz JetStream lens"
+description: "HTTP-порт мониторинга :8222 и JSON по запросу: /varz, /connz, /routez и представление JetStream через /jsz"
 ---
 
-# Monitoring endpoints
+# Конечные точки мониторинга {#monitoring-endpoints}
 
-Every number this chapter reads comes from a read-only
-HTTP port on each NATS server. Before you reach for Prometheus or
-Grafana, you can ask a running node what it sees, right now, with a
-plain `curl`. This page covers where the numbers come from on the wire.
+Все показатели этой главы доступны через HTTP-порт каждого сервера NATS, предназначенный только для чтения. Прежде чем брать Prometheus или Grafana, можно обычным `curl` спросить работающий узел, что он видит прямо сейчас. Эта страница показывает источники данных на уровне протокола.
 
-We observe the `east` cluster you already have running (`n1-east`,
-`n2-east`, `n3-east`) and nothing more. You'll query one node's
-monitoring port, read who's connected and how the cluster is wired,
-and meet `/jsz`, which reports JetStream state and which the next page builds on.
+Мы наблюдаем за уже работающим кластером `east` (`n1-east`, `n2-east`, `n3-east`). Вы запросите порт мониторинга одного узла, узнаете о подключённых клиентах и связях кластера, затем познакомитесь с `/jsz`, сообщающим состояние JetStream и служащим основой следующей страницы.
 
-## The monitoring port serves JSON on demand
+## Порт мониторинга выдаёт JSON по запросу {#the-monitoring-port-serves-json-on-demand}
 
-Each NATS server can serve a **monitoring port**, separate from the
-`:4222` clients use. It's off until you turn it on: set `http_port: 8222`
-in the node's config, or pass `-m 8222` on the command line. `8222` is the
-conventional choice, but the port is whatever you set. It speaks plain
-HTTP, and it answers only when you ask; nothing is pushed. You send a
-`GET`, the server returns a JSON snapshot of its state at that instant, and
-the connection closes. The model is a synchronous request answered by an
-on-demand response.
+Каждый сервер NATS может предоставлять **порт мониторинга**, отдельный от клиентского `:4222`. По умолчанию он выключен: включите его параметром `http_port: 8222` в конфигурации или флагом `-m 8222`. Число `8222` общепринято, но порт выбираете вы. Он работает по обычному HTTP и отвечает только на запросы, ничего не отправляя самостоятельно. Вы посылаете `GET`, сервер возвращает JSON-снимок состояния на этот момент, затем соединение закрывается. Это синхронная модель «запрос — ответ по требованию».
 
-A **monitoring endpoint** is one HTTP path on that port. Each path
-returns a different slice of state. The four you'll use most are
-`/varz` (the server itself), `/connz` (its clients), `/routez` (its
-cluster routes), and `/jsz` (its JetStream). Each one is an HTTP path,
-not a call into a client library, so any HTTP tool can reach it.
+**Конечная точка мониторинга** — отдельный HTTP-путь этого порта. Каждый путь возвращает свою часть состояния. Чаще всего нужны `/varz` (сам сервер), `/connz` (клиенты), `/routez` (маршруты кластера) и `/jsz` (JetStream). Это HTTP-пути, а не вызовы клиентской библиотеки, поэтому подойдёт любой HTTP-инструмент.
 
 <div class="nats-flow" data-scenario="monitoringEndpointsAnimated" data-width="600" data-height="350"></div>
 
-Start with the server itself. `/varz` returns a snapshot of the
-process: its version, uptime, memory, and a handful of counters that
-matter more than the rest.
+Начните с сервера. `/varz` возвращает снимок процесса: версию, время работы, память и несколько наиболее значимых счётчиков.
 
 ```bash
 curl -s http://localhost:8222/varz | jq
@@ -56,29 +37,15 @@ curl -s http://localhost:8222/varz | jq
 }
 ```
 
-Three counters are worth a second look. `connections` is how many clients
-are connected *right now*: here, the four Acme services. The
-`total_connections` next to it is the count since the server started, so
-it only ever goes up. And `slow_consumers` is the number of clients the
-server has disconnected for not keeping up; on a healthy node it stays
-at `0`. The difference between those first two is easy to get wrong, and the
-Pitfalls section returns to it.
+Обратите внимание на три показателя. `connections` — число клиентов, подключённых *прямо сейчас*: здесь это четыре сервиса Acme. Соседний `total_connections` считает соединения с момента запуска сервера и только растёт. `slow_consumers` — число клиентов, отключённых сервером из-за неспособности успевать за потоком; на здоровом узле оно остаётся `0`. Первые два счётчика легко перепутать; к этому мы вернёмся в разделе типичных ошибок.
 
-The full set of `/varz` fields is documented in
-[Reference → varz](/reference/system/monitor/varz). We only need the
-connection counters and `slow_consumers` here.
+Полный список полей `/varz` описан в [Справочнике → varz](/reference/system/monitor/varz). Здесь нужны только счётчики соединений и `slow_consumers`.
 
-## Every endpoint takes query parameters
+## Все конечные точки принимают параметры запроса {#every-endpoint-takes-query-parameters}
 
-A bare endpoint returns everything, which on a busy server is a lot.
-Each one accepts **query parameters** to filter, page, and sort the
-result, so you fetch only the slice you care about.
+Без параметров конечная точка возвращает всё, что на нагруженном сервере даёт большой объём. **Параметры запроса** позволяют фильтровать, разбивать на страницы и сортировать результат, получая лишь нужную часть.
 
-`/connz` lists the connected clients. On its own it returns every
-connection on the node. Scope it to the `ORDERS` account with `?acc=`,
-ask for each connection's subscriptions with `?subs=true`, and add
-`?auth=true`, which is what fills in the account and user each connection
-authenticated as:
+`/connz` перечисляет подключённых клиентов. Без параметров возвращаются все соединения узла. Ограничьте результат учётной записью `ORDERS` через `?acc=`, запросите подписки каждого соединения через `?subs=true` и добавьте `?auth=true`, чтобы заполнить сведения об учётной записи и пользователе, прошедших аутентификацию:
 
 ```bash
 curl -s 'http://localhost:8222/connz?acc=ORDERS&subs=true&auth=true' | jq
@@ -108,38 +75,19 @@ curl -s 'http://localhost:8222/connz?acc=ORDERS&subs=true&auth=true' | jq
 }
 ```
 
-Each entry names one client: its connection id (`cid`), the account and
-user it authenticated as, its round-trip time (`rtt`), and how many
-bytes are queued for it (`pending_bytes`). This is where you confirm
-that the `ORDERS` account's services, connecting as `order-svc`, are
-actually connected, and which subjects each one holds interest in.
+Каждая запись описывает одного клиента: идентификатор соединения (`cid`), учётную запись и пользователя, время кругового обмена (`rtt`), а также объём ожидающих отправки данных (`pending_bytes`). Здесь можно убедиться, что сервисы учётной записи `ORDERS`, входящие как `order-svc`, действительно подключены, и узнать темы их подписок.
 
-The two counts at the top describe the response. `num_connections` is how many
-connections this response actually returned; `total` is how many matched
-the query in all. They're equal here because four connections fit in
-one response, but once you add `?limit` and `?offset` to page a long
-list, `total` stays put while `num_connections` shrinks to the page
-size.
+Два верхних счётчика описывают ответ. `num_connections` — число соединений, фактически возвращённых в этом ответе; `total` — общее число совпавших с запросом. Здесь они равны, поскольку четыре соединения помещаются в один ответ. При разбиении длинного списка через `?limit` и `?offset` значение `total` остаётся прежним, а `num_connections` ограничивается размером страницы.
 
-When a node carries hundreds of connections, page through them. `?limit`
-caps the result, `?offset` skips ahead, and `?sort` orders the list by
-idle time, pending bytes, or subscription count:
+Если на узле сотни соединений, используйте страницы. `?limit` ограничивает размер ответа, `?offset` пропускает начало, а `?sort` сортирует по времени бездействия, ожидающим байтам или числу подписок:
 
 ```bash
 curl -s 'http://localhost:8222/connz?sort=pending&limit=10' | jq
 ```
 
-That returns the ten connections with the most data queued: the
-clients most likely to fall behind. The full set of `/connz`
-parameters is documented in
-[Reference → connz](/reference/system/monitor/connz). We use only
-`acc`, `subs`, `sort`, and `limit` here.
+Этот запрос возвращает десять соединений с наибольшей очередью данных — клиентов, которые вероятнее всего отстанут. Полный список параметров `/connz` приведён в [Справочнике → connz](/reference/system/monitor/connz). Здесь используются только `acc`, `subs`, `sort` и `limit`.
 
-`/routez` answers the cluster question. Each entry is one **route**:
-the link from this node to another node in `east`. It reports the
-remote node's name (`remote_name`) alongside its generated server id
-(`remote_id`), the link's round-trip time, and how much data is
-pending on it:
+`/routez` отвечает на вопросы о кластере. Каждая запись — **маршрут**, то есть связь этого узла с другим узлом `east`. Она содержит имя удалённого узла (`remote_name`), его сгенерированный идентификатор (`remote_id`), время кругового обмена и объём ожидающих данных:
 
 ```bash
 curl -s http://localhost:8222/routez | jq
@@ -155,21 +103,11 @@ curl -s http://localhost:8222/routez | jq
 }
 ```
 
-Since 2.10, routes are pooled: each peer contributes several route entries
-(a connection pool of three plus a dedicated system-account route), so a
-default three-node cluster shows eight entries on `n1-east`, four per peer
-— the array above is trimmed to one entry per peer. Health isn't a raw
-count, then, but presence: group by `remote_name` and confirm both
-`n2-east` and `n3-east` are still there. A peer that vanishes entirely, or
-a climbing `rtt`, is your first sign a node has dropped off the mesh. *Why*
-a route breaks, and how leadership moves when it does, belongs to
-[Clustering](/learn/clustering); the endpoint only tells you *that* it broke.
+Начиная с 2.10 маршруты объединены в пулы: каждому соседу соответствуют несколько записей — пул из трёх соединений плюс выделенный маршрут системной учётной записи. Поэтому стандартный кластер из трёх узлов показывает восемь записей на `n1-east`, по четыре на соседа; массив выше сокращён до одной записи на каждого. Проверять нужно наличие соседей: сгруппируйте записи по `remote_name` и убедитесь, что есть и `n2-east`, и `n3-east`. Полностью исчезнувший сосед или растущий `rtt` — первый признак выпадения узла из сети кластера. *Почему* рвётся маршрут и как перемещается лидерство, объясняет [кластеризация](/learn/clustering); конечная точка лишь сообщает о разрыве.
 
-## /jsz reports JetStream state
+## /jsz сообщает состояние JetStream {#jsz-reports-jetstream-state}
 
-The last endpoint is `/jsz`. It reports the JetStream state on a node:
-how many streams and consumers it holds, which node is the JetStream
-meta leader, and the per-stream and per-consumer numbers underneath.
+Последняя конечная точка — `/jsz`. Она сообщает состояние JetStream на узле: число потоков и потребителей, имя лидера метаданных JetStream и показатели каждого потока и потребителя.
 
 ```bash
 curl -s 'http://localhost:8222/jsz?acc=ORDERS&streams=true' | jq
@@ -191,21 +129,11 @@ curl -s 'http://localhost:8222/jsz?acc=ORDERS&streams=true' | jq
 }
 ```
 
-That `last_seq: 1000` and the consumer numbers under it are the raw
-material for **lag**: how far behind the `shipping` consumer is. This
-page only points out that `/jsz` reports JetStream state. Reading lag,
-in-flight, and redelivery out of it is the work of the next page,
-[JetStream health](/learn/monitoring/jetstream-health). The full set of
-`/jsz` fields and parameters is documented in
-[Reference → jsz](/reference/system/monitor/jsz).
+Поле `last_seq: 1000` и показатели потребителя под ним — исходные данные для **отставания**: насколько далеко позади находится `shipping`. Здесь достаточно знать, что `/jsz` выдаёт состояние JetStream. Вычисление отставания, числа неподтверждённых и повторных доставок рассматривается на следующей странице, [Состояние JetStream](/learn/monitoring/jetstream-health). Полный список полей и параметров `/jsz` приведён в [Справочнике → jsz](/reference/system/monitor/jsz).
 
-## A note on /healthz
+## Несколько слов о /healthz {#a-note-on-healthz}
 
-One more endpoint is worth knowing now, even though it doesn't return
-state to read. A **health check** is a `/healthz` query whose answer is
-just ok or error: a `200` when the node is healthy, a `503` when it
-isn't. It's built for an orchestrator (a Kubernetes liveness probe, a
-load balancer) that wants a yes/no, not JSON to parse.
+Полезно знать ещё одну конечную точку, хотя она не выдаёт подробное состояние. **Проверка работоспособности** — запрос `/healthz`, ответ на который означает успех или ошибку: `200` для исправного узла, `503` для неисправного. Она предназначена для оркестратора — например, Kubernetes liveness probe или балансировщика, — которому нужен ответ «да/нет».
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8222/healthz
@@ -215,33 +143,15 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8222/healthz
 200
 ```
 
-`/healthz` takes parameters that narrow what "healthy" means
-(JetStream-only, this-server-only, a specific stream or consumer), and
-those distinctions matter for cluster checks. We meet them again on the
-[Prometheus and dashboards](/learn/monitoring/prometheus-and-dashboards)
-page, where a check that asks the wrong question is its own Pitfall. The
-full set of `/healthz` parameters is documented in
-[Reference → healthz](/reference/system/monitor/healthz).
+Параметры `/healthz` уточняют смысл исправности: только JetStream, только текущий сервер, конкретный поток или потребитель. Эти различия важны для проверки кластера. Мы вернёмся к ним на странице [Prometheus и панели](/learn/monitoring/prometheus-and-dashboards), где неверно выбранная проверка станет отдельным примером ошибки. Полный список параметров `/healthz` приведён в [Справочнике → healthz](/reference/system/monitor/healthz).
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-Two traps catch people the first time they query the monitoring port,
-plus one pointer you must not skip. Each is scoped to this page: the
-endpoints and their parameters.
+При первом обращении к порту мониторинга часто встречаются две ловушки и одно важное упущение. Все они касаются конечных точек и их параметров.
 
-**Alert on `connections`, not `total_connections`.** The two counters
-on `/varz` look interchangeable and are not. `connections` is the live
-count; `total_connections` is every connection since the process
-started and only climbs. A client that reconnects in a loop (a crash
-loop, a flaky network) barely moves `connections` but inflates
-`total_connections` fast. Alert on the lifetime counter and you page
-someone at 3am for a number that was always going to grow. Alert on
-`connections` for capacity, and watch `slow_consumers` for clients the
-server is dropping.
+**Настраивайте пороги по `connections`, а не по `total_connections`.** Счётчики `/varz` выглядят взаимозаменяемыми, но означают разное. `connections` — текущее число, а `total_connections` — все соединения с момента запуска процесса. Клиент, постоянно переподключающийся из-за падений или нестабильной сети, почти не меняет `connections`, но быстро увеличивает `total_connections`. Порог по накопительному счётчику может разбудить дежурного в три часа ночи из-за закономерного роста. Для оценки вместимости используйте `connections`, а для клиентов, отключаемых сервером, следите за `slow_consumers`.
 
-You can read both in one query and compare them yourself. A large gap
-between the live count and the lifetime count, especially with
-`slow_consumers` above zero, is connection flapping, not load:
+Оба значения можно прочитать одним запросом и сравнить. Большой разрыв между текущим и накопленным числом, особенно при ненулевом `slow_consumers`, указывает на постоянные переподключения, а не на нагрузку:
 
 ```bash
 curl -s http://localhost:8222/varz \
@@ -252,53 +162,29 @@ curl -s http://localhost:8222/varz \
 { "live": 4, "lifetime": 118, "dropped": 0 }
 ```
 
-**An unscoped `/jsz` is slow at scale.** Asking for full detail
-(`/jsz?accounts=true&streams=true&consumers=true`) walks every account,
-stream, and consumer on the node and serializes the lot. On the four
-Acme entities that's instant; on a node with thousands of consumers it
-can take long enough that a scrape times out and you get *no* data. Do
-not fetch the whole tree on a schedule. Scope to one account with
-`?acc=ORDERS`, and page large results with `?offset` and `?limit`.
+**Неограниченный `/jsz` медленно работает на больших системах.** Запрос подробностей `/jsz?accounts=true&streams=true&consumers=true` обходит каждую учётную запись, поток и потребителя узла, затем сериализует всё. Для четырёх сущностей Acme это мгновенно; для тысяч потребителей может истечь тайм-аут сбора, и вы *вообще* не получите данных. Не запрашивайте всё дерево по расписанию. Ограничивайте запрос одной учётной записью через `?acc=ORDERS`, а большие ответы разбивайте с помощью `?offset` и `?limit`.
 
-**The monitoring port is unauthenticated by default.** Anyone who can
-reach `:8222` can read `/connz` and see your users, subjects, and
-traffic. That's acceptable on a laptop, but in production it exposes that
-data to anyone who can reach the port. Locking the
-port down (TLS, an allow-list, system-account access) is a security
-concern, not a monitoring one, and it's covered in
-[Security](/learn/security). Name it now so you don't expose `:8222`
-to the open internet by accident.
+**Порт мониторинга по умолчанию не требует аутентификации.** Любой имеющий доступ к `:8222` может прочитать `/connz` и увидеть пользователей, темы и трафик. На ноутбуке это допустимо, но при эксплуатации раскрывает данные всем, кто может обратиться к порту. Защита порта — TLS, список разрешений, доступ через системную учётную запись — относится к [безопасности](/learn/security). Учитывайте это, чтобы случайно не открыть `:8222` в интернет.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-You can now query a node in the `east` cluster on its monitoring port and
-read its state on demand:
+Теперь вы можете по запросу читать состояние узла кластера `east` через порт мониторинга:
 
-- `/varz` for the server: version, live `connections`, `slow_consumers`
-- `/connz?acc=ORDERS` for the clients: who's connected, as which user,
-  holding interest in which subjects
-- `/routez` for the cluster: the routes from this node to its peers
-- `/jsz` for JetStream: the streams and consumers, and the raw numbers
-  the next page turns into lag
+- `/varz` — сервер: версия, текущие `connections`, `slow_consumers`.
+- `/connz?acc=ORDERS` — клиенты: кто подключён, под каким пользователем и на какие темы подписан.
+- `/routez` — кластер: маршруты от текущего узла к соседям.
+- `/jsz` — JetStream: потоки, потребители и исходные показатели для расчёта отставания на следующей странице.
 
-You also know that every endpoint takes parameters to filter and page
-the result, that `/healthz` answers a yes/no health check, and that the
-port, once enabled, is unauthenticated until you lock it down.
+Вы также знаете о параметрах фильтрации и разбиения на страницы, о проверке «да/нет» через `/healthz` и о том, что включённый порт остаётся без аутентификации, пока вы его не защитите.
 
-## What's next
+## Что дальше {#whats-next}
 
-`/jsz` handed you a stream's `last_seq` and a consumer's numbers but
-left them unexplained. The next page reads the `shipping` consumer's
-state in full and turns those raw fields into the one number that says
-"the shipping consumer is behind": lag.
+`/jsz` показал `last_seq` потока и поля потребителя, но пока без объяснения. Следующая страница подробно читает состояние `shipping` и превращает исходные поля в один показатель: отставание.
 
-Continue to [JetStream health](/learn/monitoring/jetstream-health).
+Перейдите к [состоянию JetStream](/learn/monitoring/jetstream-health).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → monitoring endpoints](/reference/system/monitor) — the
-  exhaustive field-by-field layer behind every number on this page.
-- [Reference → http_port](/reference/config/http_port) — configuring the
-  monitoring port itself.
-- [Topologies → your first cluster](/learn/topologies/your-first-cluster)
-  — the `east` cluster these endpoints observe.
+- [Справочник → конечные точки мониторинга](/reference/system/monitor) — полное описание каждого поля.
+- [Справочник → http_port](/reference/config/http_port) — настройка порта мониторинга.
+- [Топологии → ваш первый кластер](/learn/topologies/your-first-cluster) — кластер `east`, состояние которого мы читаем.

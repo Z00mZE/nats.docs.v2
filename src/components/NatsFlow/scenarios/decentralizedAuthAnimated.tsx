@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 import {
     Background,
@@ -292,15 +293,15 @@ function DecentralizedAuthAnimatedInner({
                     flexWrap: "wrap",
                 }}
             >
-                {STAGES.map((s, i) => (
+                {localizeDiagramContent(STAGES.map((s, i) => (
                     <button
                         key={s}
                         onClick={() => handleStep(i)}
                         style={buttonStyle(stage === s)}
                     >
-                        {STEP_LABELS[s]}
+                        {localizeDiagramContent(STEP_LABELS[s])}
                     </button>
-                ))}
+                )))}
             </div>
 
             {/* Diagram */}
@@ -314,7 +315,7 @@ function DecentralizedAuthAnimatedInner({
                     position: "relative",
                 }}
             >
-                <ReactFlow
+                <ReactFlow ariaLabelConfig={diagramAriaLabels}
                     nodes={nodes}
                     edges={edges}
                     nodeTypes={nodeTypes}
@@ -350,7 +351,7 @@ function DecentralizedAuthAnimatedInner({
                         whiteSpace: "nowrap",
                     }}
                 >
-                    No user list on the server
+                    На сервере нет списка пользователей
                 </div>
             </div>
 
@@ -363,7 +364,7 @@ function DecentralizedAuthAnimatedInner({
                     minHeight: "34px",
                 }}
             >
-                {CAPTION[stage]}
+                {localizeDiagramContent(CAPTION[stage])}
             </div>
         </div>
     );

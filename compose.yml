@@ -1,0 +1,11 @@
+name: nats-docs-ru
+
+services:
+  site:
+    build:
+      context: .
+    ports:
+      - '127.0.0.1:${SITE_PORT:-3000}:80'
+    restart: unless-stopped
+    logging:
+      driver: none

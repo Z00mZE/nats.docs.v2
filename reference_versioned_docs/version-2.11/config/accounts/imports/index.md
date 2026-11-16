@@ -1,14 +1,14 @@
-# imports
+# imports {#imports}
 
 <Reloadable state="reloadable" note="Fully re-resolved, but every reload tears down and re-creates ALL of the account's service-import subscriptions, so there is a short window where imported service subjects have no subscriber and requests arriving in it are dropped." />
-A list of imports for this account.
+Список импортов этого аккаунта.
 
 
-## Properties
+## Свойства {#properties}
 
-| Name | Description | Type | Default | Reloadable |
+| Имя | Описание | Тип | По умолчанию | Перезагрузка |
 | :--- | :---------- | :--- | :------ | :--------- |
-| [`stream`](./stream/index.md) | Stream import source configuration. Exclusive of `service`. | `object` | - | Yes |
-| [`service`](./service/index.md) | Stream import source configuration. Exclusive of `stream`. | `object` | - | Yes |
-| [`prefix`](./prefix.md) | A local subject prefix mapping for the imported stream. Applicable to `stream`. | `string` | - | Yes |
-| [`to`](./to.md) | A local subject mapping for the imported service. Applicable to `service`. | `string` | - | Yes |
+| [`stream`](./stream/index.md) | Конфигурация источника импорта потока. Не используется одновременно с `service`. | `object` | - | Да |
+| [`service`](./service/index.md) | Конфигурация источника импорта потока. Не используется одновременно со `stream`. | `object` | - | Да |
+| [`prefix`](./prefix.md) | Локальный префикс субъектов импортируемого потока. Применяется к `stream`. | `string` | - | Да |
+| [`to`](./to.md) | Локальное отображение субъекта импортируемого сервиса. Применяется к `service`. | `string` | - | Да |

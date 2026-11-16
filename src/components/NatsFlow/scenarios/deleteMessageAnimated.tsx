@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // deleteMessageAnimated
@@ -70,23 +71,22 @@ function DeleteMessageAnimatedInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 12, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                <strong>Delete one message.</strong>{" "}
-                <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>rmm ORDERS 3</span> removes
-                sequence 3 and leaves a hole. New orders climb past it — they never reuse 3.
+                <strong>Удалите одно сообщение.</strong>{localizeDiagramContent(" ")}
+                <span style={{ color: STREAM_BLUE, fontWeight: 600 }}>rmm ORDERS 3</span> удаляет номер 3 и оставляет пропуск. Новые заказы получают следующие номера, не переиспользуя 3.
             </div>
 
             {/* command / publish pill */}
             <div style={{ height: 28, marginBottom: 8 }}>
-                {(targeting || erasing) && (
+                {localizeDiagramContent((targeting || erasing) && (
                     <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: 6, background: erasing ? RED : "#1f2937", color: "white", fontSize: 11, fontWeight: 700, fontFamily: "monospace", transition: "background 0.2s" }}>
                         nats stream rmm ORDERS 3
                     </span>
-                )}
-                {publishing && (
+                ))}
+                {localizeDiagramContent(publishing && (
                     <span style={{ display: "inline-block", padding: "4px 10px", borderRadius: 6, background: GREEN, color: "white", fontSize: 11, fontWeight: 700, fontFamily: "monospace", opacity: 0.6 + 0.4 * p }}>
                         nats pub --jetstream orders.created …
                     </span>
-                )}
+                ))}
             </div>
 
             <div
@@ -103,10 +103,10 @@ function DeleteMessageAnimatedInner() {
                 <div>
                     <div style={{ fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
                         <span>ORDERS</span>
-                        {gapShown && <span style={{ fontFamily: "monospace", color: RED }}>seq 3 empty</span>}
+                        {localizeDiagramContent(gapShown && <span style={{ fontFamily: "monospace", color: RED }}>номер 3 пуст</span>)}
                     </div>
                     <div style={{ display: "flex", gap: SLOT_GAP }}>
-                        {[...OLD, ...NEW].map((seq) => {
+                        {localizeDiagramContent([...OLD, ...NEW].map((seq) => {
                             const isOld = seq <= 5;
                             const isTarget = seq === TARGET;
                             const isGap = isTarget && gapShown;
@@ -141,15 +141,15 @@ function DeleteMessageAnimatedInner() {
                                         }}
                                     >
                                         <span style={{ fontSize: 13, fontFamily: "monospace", fontWeight: 700, color: isGap ? "#9ca3af" : present ? (flashing ? RED : color) : "transparent" }}>
-                                            {isGap ? "—" : `#${seq}`}
+                                            {localizeDiagramContent(isGap ? "—" : `#${seq}`)}
                                         </span>
                                     </div>
                                     <span style={{ fontSize: 9, fontFamily: "monospace", color: isGap ? RED : "#9ca3af" }}>
-                                        {isGap ? "gap" : `seq ${seq}`}
+                                        {localizeDiagramContent(isGap ? "gap" : `seq ${seq}`)}
                                     </span>
                                 </div>
                             );
-                        })}
+                        }))}
                     </div>
                 </div>
             </div>
@@ -159,9 +159,9 @@ function DeleteMessageAnimatedInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${STREAM_BLUE}`, background: "white", color: STREAM_BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

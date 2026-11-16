@@ -1,181 +1,88 @@
 ---
 id: policies
-title: "Stream and consumer policies"
+title: "Политики потоков и потребителей"
 sidebar_position: 22
-description: Every stream and consumer policy in one place, what each decides, and which ones you can still change
+description: "Все политики, их назначение и возможность последующего изменения"
 ---
 
-# Stream and consumer policies
+# Политики потоков и потребителей {#stream-and-consumer-policies}
 
-Much of what you configured in this chapter came down to policies. A
-**policy** is a config field that takes one value from a short, fixed
-list, and each policy answers one question about how the stream or the
-consumer behaves. You met most of them one page at a time as the
-`ORDERS` walkthrough grew; this page lines up all nine in one place.
+**Политика** — поле с выбором из фиксированного списка, отвечающее за один аспект поведения. Соберём девять политик, встречавшихся в ORDERS.
 
-Two things are true of every policy. Each has a default, and the
-defaults are safe to start with: `ORDERS` ran for most of the chapter
-without you touching them. And five of the nine are fixed the moment
-the stream or consumer exists. The server refuses the update, and the
-only way to change your mind is to recreate the object. The table near
-the end shows which ones.
+У всех есть пригодное для начала значение по умолчанию. Пять фиксируются при создании: смена требует пересоздания. Таблицы ниже показывают какие.
 
-## Stream policies
+## Политики потока {#stream-policies}
 
-Five policies shape a stream.
+Их пять.
 
-**Retention** decides when a message leaves the stream. `limits` keeps
-messages until a cap removes them. `interest` and `workqueue` remove
-messages once consumers have acked them. `ORDERS` stayed on `limits`,
-and the `FULFILLMENT` work queue ran on `workqueue`. Choosing among
-the three is covered on
-[Retention policies](/learn/jetstream/retention-policies).
+**Retention** — причины удаления. limits оставляет до пределов, interest и workqueue удаляют после ack. ORDERS — limits, FULFILLMENT — workqueue. См. [Политики хранения](/learn/jetstream/retention-policies).
 
-**Discard** decides what happens when a stream at its limit receives
-one more message. `old` deletes the oldest messages to make room; `new`
-refuses the publish. `ORDERS` kept the default, `old`;
-[Shaping the stream](/learn/jetstream/shaping-the-stream) covers when
-`new` is worth the rejected publishes.
+**Discard** — действие при заполнении: old удаляет старое, new отклоняет новое. ORDERS использует old; см. [Настройка потока](/learn/jetstream/shaping-the-stream).
 
-**Storage** decides where messages live. `file` writes them to disk and
-they survive a server restart. `memory` keeps them only in RAM: faster,
-and gone on restart. The choice applies to the whole stream, replicas
-included. How storage and replicas together decide what survives a
-failure is covered on
-[Surviving node loss](/learn/jetstream/surviving-node-loss).
+**Storage** — file на диске с переживанием рестарта, memory в RAM, быстрее и без сохранения после рестарта. Одинакова для всех реплик; см. [Отказ узла](/learn/jetstream/surviving-node-loss).
 
-**Compression** is one this chapter didn't need. Setting it to `s2`
-(from the default `none`) makes a file-storage stream compress message
-blocks on disk, spending CPU to cut disk usage. Repetitive payloads
-such as JSON compress well; already-compressed payloads such as images
-don't. Set it at creation with `--compression s2` on `nats stream add`.
-Editing it later is allowed, but the new setting waits until the
-stream's store restarts, on a server restart or a leader change, and
-blocks already on disk stay as they are.
+**Compression** здесь не требовалась. s2 вместо none сжимает файловые блоки за CPU. JSON сжимается хорошо, изображения обычно уже сжаты. `--compression s2` задаётся при создании. Изменение разрешено, но вступает после перезапуска хранилища или смены лидера; старые блоки прежние.
 
-**Persist mode** decides when the server acknowledges a publish
-relative to writing it out. By default, the message is flushed to
-storage first and the `PubAck` follows. On `async`, the server
-acknowledges first and flushes in the background. That buys a higher
-ingest rate in exchange for a window in which a crash can lose messages
-the server already acked, so it fits data that arrives in volume and
-tolerates a lost tail, such as metrics — not an order log. `async` is
-only accepted on a file-storage stream with a single replica, and an
-`async` stream refuses the atomic batch publishing from
-[Advanced publishing](/learn/jetstream/advanced-publishing).
+**Persist mode** — момент PubAck относительно записи. По умолчанию сначала сброс в хранилище, затем ответ. async подтверждает до фоновой записи, повышая скорость с риском потери подтверждённого хвоста. Подходит метрикам, не заказам. Разрешён только File с одной репликой и несовместим с [атомарными пакетами](/learn/jetstream/advanced-publishing).
 
-Every stream field, with each policy's values described inline, is in
-[Reference → Stream Configuration](/reference/jetstream/api/stream/create).
+Все поля — в [Конфигурации потока](/reference/jetstream/api/stream/create).
 
-## Consumer policies
+## Политики потребителя {#consumer-policies}
 
-Four policies shape a consumer.
+Их четыре.
 
-**Deliver policy** decides where a consumer starts reading, once, at
-creation. `billing` was created with `all`, which is also the default:
-start at the stream's first message. `last` starts at the newest
-message and continues live. `new` delivers only messages that arrive
-after the consumer is created. `by_start_sequence` and `by_start_time`
-start at a sequence or a point in time (`--deliver 1000`,
-`--deliver 1h` for an hour back). The remaining value,
-`last_per_subject`, starts with the newest message *for each subject*
-the consumer matches. That gives a latest-state view per subject, and
-it's what [Key-Value](/learn/key-value) watches are built on. Don't
-confuse it with the `--last-per-subject` flag of
-[Reading messages directly](/learn/jetstream/get-direct). The two are
-different features that share a name: one is a consumer's start
-position, the other a one-shot read.
+**Deliver policy** — начало при создании. all, стандарт billing, начинает с первого. last — с последнего и далее живые. new — только поступившие после создания. by_start_sequence и by_start_time задают номер и время (`--deliver 1000`, `--deliver 1h`). last_per_subject начинает с последнего каждой подходящей темы и лежит в основе [KV watch](/learn/key-value). Это не одноимённый флаг разового [Direct Get](/learn/jetstream/get-direct).
 
-**Ack policy** decides what the server needs before it considers a
-delivered message handled. `shipping` used `explicit`; the others are
-`none`, `all`, and `flow_control`, covered in
-[Ack responses and redelivery](/learn/jetstream/acknowledgment).
+**Ack policy** — критерий обработки: explicit у shipping, также none, all, flow_control. См. [Виды подтверждений](/learn/jetstream/acknowledgment).
 
-**Replay policy** decides the pace of delivery. Every consumer in this
-chapter ran on the default, `instant`, which
-[Reading back the stream](/learn/jetstream/reading-back) introduced:
-messages arrive as fast as the reader takes them. The other value,
-`original`, spaces deliveries to match the gaps between the original
-timestamps. A long quiet stretch in the stream is replayed as a long
-quiet wait.
+**Replay policy** — скорость. instant отдаёт по готовности читателя, original сохраняет исходные интервалы, включая долгое молчание. См. [Чтение потока](/learn/jetstream/reading-back).
 
-**Priority policy** decides which of a consumer's clients gets served.
-The default, `none`, applies no steering: pulls are served as they
-come. `overflow`, `pinned_client`, and `prioritized` each steer
-differently, and they're covered on
-[Priority groups](/learn/jetstream/priority-groups).
+**Priority policy** — выбор клиента. none обслуживает поступившие pull, overflow, pinned_client и prioritized задают предпочтения. См. [Группы приоритетов](/learn/jetstream/priority-groups).
 
-The consumer fields, including the start-position options the deliver
-policy uses, are in
-[Reference → Consumer Configuration](/reference/jetstream/api/consumer/create).
+Поля и начала чтения — в [Конфигурации потребителя](/reference/jetstream/api/consumer/create).
 
-## What you can change later
+## Что можно изменить {#what-you-can-change-later}
 
-Five of the nine policies are fixed at creation. The server enforces
-this on update, so settle these before you create anything you'll keep:
+Пять политик фиксируются при создании:
 
-| Stream policy | On a live stream |
+| Политика потока | Изменение |
 | --- | --- |
-| Retention | `limits` ↔ `interest` allowed, though the switch re-applies to messages already stored; to or from `workqueue` refused |
-| Discard | Can change |
-| Storage | Fixed at creation |
-| Compression | Can change; takes effect after a server or leader restart |
-| Persist mode | Fixed at creation |
+| Retention | limits ↔ interest с воздействием на историю; workqueue неизменяем |
+| Discard | разрешено |
+| Storage | запрещено |
+| Compression | после рестарта хранилища или лидера |
+| Persist mode | запрещено |
 
-| Consumer policy | On a live consumer |
+| Политика потребителя | Изменение |
 | --- | --- |
-| Deliver policy | Fixed at creation |
-| Ack policy | Fixed at creation |
-| Replay policy | Fixed at creation |
-| Priority policy | Can change; `nats consumer edit` has no flag for it, so pass a config file with `--config` |
+| Deliver | запрещено |
+| Ack | запрещено |
+| Replay | запрещено |
+| Priority | через `--config`, отдельного флага edit нет |
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-**Changing a fixed policy means recreating the object.** The server is
-explicit about it: editing a stream's storage type fails with `stream
-configuration update can not change storage type`, and updating a
-consumer's start position fails with `deliver policy can not be
-updated`. Recreating a stream means moving the data too. A
-[mirror](/learn/jetstream/mirrors-and-sources) can copy the messages
-across, but a mirror is read-only, and turning it into a publishable
-replacement takes steps of its own. Recreating a consumer loses the
-saved position: the new consumer starts wherever its deliver policy
-says, not where the old one stopped. Do settle the fixed policies
-before creating anything durable. Don't count on `nats stream edit` or
-`nats consumer edit` to fix them later.
+**Смена фиксированной политики требует пересоздания.** Ошибки: `stream
+configuration update can not change storage type`, `deliver policy can not be
+updated`. Потоку потребуется перенос данных; [зеркало](/learn/jetstream/mirrors-and-sources) только читает и для превращения в основной нужны отдельные шаги. Потребитель потеряет прежнюю позицию и начнёт по новой Deliver policy. Решайте заранее.
 
-**Expecting `new` to skip the backlog on every restart.** A deliver
-policy applies once, when the consumer is created. A durable created
-with `new` starts with the messages that arrive after that moment, and
-it keeps a saved position like any other durable. When your client
-restarts and attaches to it, it resumes from that position, backlog
-included. Do use `new` to define where a consumer's history begins.
-Don't use it hoping each reconnect jumps to live traffic.
+**New не пропускает очередь при каждом рестарте.** Начало определяется один раз. Долговременный потребитель затем возобновляет сохранённую позицию с накопленным, не прыгает к живому трафику.
 
-**Two features answer to "last per subject".** The deliver policy value
-gives a consumer a standing latest-per-subject view; the Direct Get
-flag fetches the same shape once, with no consumer. Do check which
-feature a flag or value belongs to before copying it. Don't assume the
-phrase means the same thing in both places.
+**Два last per subject.** Политика задаёт начало продолжающегося чтения; Direct Get делает один снимок без потребителя. Проверяйте контекст.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-`ORDERS` and its consumers are unchanged. You now have:
+ORDERS и потребители прежние. Вы знаете:
 
-- the nine policies mapped, most to the page where you used them
-- compression and persist mode placed, the two `ORDERS` never set
-- the five policies that are fixed at creation, and what the server
-  says when you try to change one
+- Девять политик и страницы применения.
+- Compression и Persist mode, не понадобившиеся ORDERS.
+- Пять фиксированных и ошибки попытки изменения.
 
-## What's next
+## Что дальше {#whats-next}
 
-That's the full policy map. [Where to go
-next](/learn/jetstream/where-next) recaps the model you built and
-points to the chapters that take it further.
+[Куда двигаться дальше](/learn/jetstream/where-next) подводит итоги модели.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Stream Configuration](/reference/jetstream/api/stream/create)
-  — every stream field, its type, range, and default.
-- [Reference → Consumer Configuration](/reference/jetstream/api/consumer/create)
-  — every consumer field, its type, range, and default.
+- [Конфигурация потока](/reference/jetstream/api/stream/create) — поля и значения.
+- [Конфигурация потребителя](/reference/jetstream/api/consumer/create) — поля и значения.

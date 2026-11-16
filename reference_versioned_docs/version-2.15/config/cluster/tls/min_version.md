@@ -1,11 +1,11 @@
-# min_version
+# min_version {#min_version}
 
 <Reloadable state="reloadable" />
-Lowest TLS version the server will negotiate.
+Минимальная версия TLS, согласуемая сервером.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | `1.2`, `1.3` |

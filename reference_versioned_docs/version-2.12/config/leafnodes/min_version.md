@@ -1,12 +1,11 @@
-# min_version
+# min_version {#min_version}
 
 <Reloadable state="not-reloadable" />
-The minimum server version required of the connecting
-leaf node. This must be at least version `2.8.0`.
+Минимальная требуемая версия сервера подключающегося листового узла. Должна быть не ниже `2.8.0`.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

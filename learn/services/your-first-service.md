@@ -1,168 +1,84 @@
 ---
 id: your-first-service
-title: "Your first service"
+title: "Первый сервис"
 sidebar_position: 2
-description: Promote the Core NATS inventory responder into a named, versioned OrderInventory service with one endpoint
+description: "Превращение обработчика inventory из Core NATS в именованный сервис OrderInventory с версией и одной конечной точкой"
 ---
 
-# Your first service
+# Первый сервис {#your-first-service}
 
-In the Core NATS chapter you built an inventory responder. It subscribed
-to `orders.inventory.check`, read each request, and published an answer
-back. It worked, but it was anonymous: nothing on the network knew its
-name, its version, or which subjects it served.
+В главе Core NATS вы создали обработчик проверки запасов. Он подписывался на `orders.inventory.check`, читал каждый запрос и публиковал ответ. Он работал, но оставался безымянным: в сети никто не знал его имени, версии или обслуживаемых субъектов.
 
-This page promotes that responder into a **service**: the same answering
-behavior, now wrapped by the micro framework so it gains a name, a
-version, and a built-in identity. The bytes on the wire stay the same.
-The responder becomes a first-class thing the network can name and, on
-later pages, discover, observe, and scale.
+Здесь этот обработчик становится **сервисом**: поведение остаётся прежним, а фреймворк micro добавляет имя, версию и встроенную идентичность. Передаваемые по сети байты не меняются. Обработчик становится полноценной сущностью с именем, которую на следующих страницах можно будет обнаруживать, наблюдать и масштабировать.
 
-You need a local `nats-server` running and you should already be
-comfortable with [request-reply](/learn/core-nats/request-reply). This
-page covers the two things the framework adds on top of how a reply
-finds its way back, rather than re-teaching that.
+Нужен работающий локальный `nats-server` и знакомство с [запросами и ответами](/learn/core-nats/request-reply). Вместо повторного объяснения пути ответа эта страница рассматривает две возможности, добавляемые фреймворком поверх этого механизма.
 
-## A service is a named responder
+## Сервис — именованный обработчик запросов {#a-service-is-a-named-responder}
 
-A **service** is a request-reply responder that the framework formalizes.
-You create one by calling `AddService` with three values: a `Name`, a
-`Version`, and a `Description`. The framework takes those, opens the
-necessary subscriptions, and hands you back a handle to manage it.
+**Сервис** — обработчик запросов и ответов, оформленный средствами фреймворка. Для создания вызовите `AddService` с тремя значениями: `Name`, `Version` и `Description`. Фреймворк использует их, открывает необходимые подписки и возвращает объект для управления сервисом.
 
-The `Name` is shared by every copy of this service you ever run. Here it
-is `OrderInventory`. The `Version` is a SemVer string, `1.0.0` for our
-first cut. The `Description` is free text for humans.
+`Name` одинаково у всех запускаемых копий этого сервиса. Здесь это `OrderInventory`. `Version` — строка SemVer, для первого варианта `1.0.0`. `Description` — произвольное описание для людей.
 
-When you create the service, the framework also generates a unique
-**service ID** for this one running copy, an auto-generated NUID like
-`IcpremQQGTYS0fK1iyfQ86`. You never set it. The **service name**
-identifies the kind of service; the **service ID** identifies this one
-instance of it. That distinction is what later lets you run five copies
-of `OrderInventory` and still talk to exactly one of them.
+При создании сервиса фреймворк также генерирует уникальный **идентификатор сервиса** для этой работающей копии: NUID наподобие `IcpremQQGTYS0fK1iyfQ86`. Вы не задаёте его вручную. **Имя сервиса** обозначает вид сервиса, а **идентификатор сервиса** — конкретный экземпляр. Благодаря этому позже можно запустить пять копий `OrderInventory` и обратиться ровно к одной из них.
 
-A service on its own answers nothing yet. It needs an **endpoint**: a
-named handler bound to a subject. This is where the inventory logic
-lives. Add one endpoint, `check`, on the subject `orders.inventory.check`
-(the same subject the Core NATS responder used) and give it the handler
-that answers the in-stock question.
+Сам по себе сервис пока ни на что не отвечает. Ему нужна **конечная точка**: именованный обработчик, привязанный к субъекту. Именно в ней находится логика проверки запасов. Добавьте конечную точку `check` на субъекте `orders.inventory.check` (том же, что использовал обработчик Core NATS) и передайте ей обработчик, отвечающий на вопрос о наличии товара.
 
 <div class="nats-example" data-type="learn-services-your-first-service-addService" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-Two details matter. First, the endpoint joins the framework's
-default **queue group**, `"q"`, automatically. That's the same queue
-group mechanism from [Core NATS](/learn/core-nats/queue-groups): if you
-run more than one copy of this service, each request goes to exactly one
-of them. You get load balancing for free, and the [scaling](/learn/services/scaling)
-page builds on it.
+Важны две детали. Во-первых, конечная точка автоматически входит в **группу очереди** фреймворка по умолчанию `"q"`. Это тот же механизм [Core NATS](/learn/core-nats/queue-groups): если запущено несколько копий сервиса, каждый запрос получает ровно одна из них. Балансировка нагрузки доступна сразу; на неё опирается страница о [масштабировании](/learn/services/scaling).
 
-Second, creating the service quietly subscribes it to a set of
-**discovery** subjects under `$SRV`: the verbs that let callers find it
-and read its stats. You don't see them here; the
-[discovery](/learn/services/discovery) page is where they are used. For
-now, know that they exist the moment the service starts.
+Во-вторых, при создании сервис автоматически подписывается на набор субъектов **обнаружения** с префиксом `$SRV`: команды, позволяющие найти его и прочитать статистику. Здесь они не показаны; их использование рассматривается на странице [обнаружения](/learn/services/discovery). Пока достаточно знать, что они существуют с момента запуска сервиса.
 
-The full set of service configuration fields and their valid ranges is
-documented in [Reference](/reference/). We only need the behavior here.
+Полный набор полей конфигурации сервиса и допустимых диапазонов приведён в [справочнике](/reference/). Здесь нам нужно только поведение.
 
-## The handler contract
+## Контракт обработчика {#the-handler-contract}
 
-Inside an endpoint, the **handler** is the function that processes a
-request. Its contract is the request-reply you already know, with the
-framework managing the connection. Each request hands you a request
-object. You read the incoming bytes with `Data()` and you send the answer
-with `Respond()`.
+Внутри конечной точки **обработчик** — функция обработки запроса. Его контракт — уже знакомый обмен запросами и ответами, но соединением управляет фреймворк. Каждый вызов передаёт объект запроса. Входящие байты читаются через `Data()`, а ответ отправляется через `Respond()`.
 
-That covers the whole shape, `Data()` to read and `Respond()` to answer.
-The framework took care of subscribing on `orders.inventory.check`,
-joining the queue group, reading the reply subject off the incoming
-message, and publishing your answer to it. The handler doesn't touch a
-reply subject or an inbox; the framework does, the same work the raw
-responder performed manually.
+Это весь контракт: `Data()` для чтения и `Respond()` для ответа. Фреймворк подписался на `orders.inventory.check`, присоединился к группе очереди, прочитал субъект ответа из входящего сообщения и опубликовал туда ваш ответ. Обработчик не работает с субъектом ответа или inbox: фреймворк выполняет ту же работу, которую обычный обработчик делал вручную.
 
-With the service running, a caller asks the same question as before. The
-`order-svc` client sends the canonical order payload to the `check`
-endpoint and waits for one reply:
+Когда сервис работает, вызывающая сторона задаёт прежний вопрос. Клиент `order-svc` отправляет стандартную полезную нагрузку заказа конечной точке `check` и ждёт один ответ:
 
 <div class="nats-example" data-type="learn-services-your-first-service-requestService" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The request travels to `orders.inventory.check`, the framework routes it
-into the `check` endpoint's queue subscription, your handler runs, and
-the response flows back to the caller's reply subject. Here's the round
-trip with the framework wrapper in place:
+Запрос направляется в `orders.inventory.check`, фреймворк передаёт его подписке группы очереди конечной точки `check`, запускается ваш обработчик, а ответ возвращается в субъект ответа вызывающей стороны. Вот полный цикл с фреймворком:
 
 <div class="nats-flow" data-scenario="serviceRequestAnimated" data-width="600" data-height="350"></div>
 
-The orange arrow is the request out on `orders.inventory.check`. The
-green arrow is the answer coming back. Underneath, it's plain
-request-reply over a queue group; the framework gave the responder a name
-and an identity.
+Оранжевая стрелка — исходящий запрос на `orders.inventory.check`. Зелёная — возвращающийся ответ. В основе остаётся обычный обмен запросами и ответами через группу очереди; фреймворк добавил обработчику имя и идентичность.
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two mistakes are common when building your first service. Both are about
-validation: the framework names your responder and sets up its
-subscriptions, but it doesn't validate the data that flows through it.
+При создании первого сервиса распространены две ошибки. Обе относятся к проверке данных: фреймворк именует обработчик и настраивает подписки, но не проверяет проходящие через него данные.
 
-**Validate the request body; never let bad input crash the handler.** The
-framework hands your handler whatever bytes the caller sent. If your
-handler blindly parses them and the caller sent garbage, the parse fails
-and, depending on the language, the handler can panic, return nothing,
-or leave the caller waiting out a timeout. Don't assume the payload is
-well-formed. Parse it, and on failure respond with a **service error**
-instead: a response that carries `Nats-Service-Error` and a
-`Nats-Service-Error-Code` header whose value is always safe to parse as a
-number (use `400` for bad input). The caller then sees
-a clear "bad request" rather than a hang, and the service stays up for
-the next caller.
+**Проверяйте тело запроса; неверные данные не должны приводить к сбою обработчика.** Фреймворк передаёт обработчику любые байты, отправленные вызывающей стороной. Если обработчик разбирает их без проверки, некорректные данные вызывают ошибку; в зависимости от языка обработчик может аварийно завершиться, ничего не вернуть или оставить клиента ждать тайм-аута. Не считайте полезную нагрузку корректной заранее. Разберите её, а при ошибке верните **ошибку сервиса**: ответ с заголовками `Nats-Service-Error` и `Nats-Service-Error-Code`, значение которого всегда можно безопасно прочитать как число (для неверных входных данных используйте `400`). Тогда клиент увидит понятную ошибку запроса вместо зависания, а сервис продолжит работу.
 
-Send a deliberately malformed body and watch the service answer with the
-error rather than fall over:
+Отправьте намеренно некорректное тело и убедитесь, что сервис отвечает ошибкой, а не падает:
 
 <div class="nats-example" data-type="learn-services-your-first-service-validateInput" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-The full mechanics of reading that error code back live on the
-[observability](/learn/services/observability#pitfalls) page; here the
-point is only that the handler must produce it.
+Полная процедура чтения кода ошибки описана на странице [наблюдаемости](/learn/services/observability#pitfalls); здесь важно лишь, что обработчик должен его возвращать.
 
-**A service `Name` and `Version` are validated at creation.** The `Name`
-must match the framework's character rule (letters, digits, hyphens,
-underscores; no dots or spaces), and the `Version` must be valid SemVer.
-A `Name` of `Order Inventory` (with a space) or a `Version` of `v1`
-(not SemVer) fails the `AddService` call outright; the service never
-starts. Don't discover this in production: pick a valid `Name` and a
-real SemVer `Version` (`1.0.0`) the first time. The same goes for any
-`Metadata` you attach. It's immutable once set, so there's no editing
-it after creation; you stop the service and start a new one. The full
-character rules are in [Reference](/reference/).
+**Поля сервиса `Name` и `Version` проверяются при создании.** `Name` должно соответствовать правилам фреймворка: буквы, цифры, дефисы и подчёркивания, без точек и пробелов. `Version` должно быть корректной версией SemVer. Значение `Name`, равное `Order Inventory` (с пробелом), или `Version`, равное `v1` (не SemVer), сразу приводит к ошибке `AddService`: сервис не запускается. Проверяйте это до эксплуатации: сразу выберите допустимое `Name` и настоящее значение SemVer для `Version` (`1.0.0`). То же относится к добавляемым `Metadata`: после установки они неизменяемы. Для изменения нужно остановить сервис и запустить новый. Полные правила символов приведены в [справочнике](/reference/).
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-The Acme world now has its first real service:
+В мире Acme теперь есть первый полноценный сервис:
 
-- `OrderInventory`, version `1.0.0`, with a unique service ID assigned by
-  the framework.
-- One endpoint, `check`, answering on `orders.inventory.check` in the
-  default queue group `"q"`.
-- The same in-stock behavior as the Core NATS responder, now named and
-  wrapped, plus discovery subscriptions running quietly under `$SRV`.
+- `OrderInventory` версии `1.0.0` с уникальным идентификатором сервиса, назначенным фреймворком.
+- Одна конечная точка `check`, отвечающая на `orders.inventory.check` в группе очереди по умолчанию `"q"`.
+- Прежняя проверка наличия товара из обработчика Core NATS, получившая имя и обёртку фреймворка, а также автоматически работающие подписки обнаружения под `$SRV`.
 
-Nothing about the payload or the subject changed; the responder became a
-service.
+Полезная нагрузка и субъект не изменились: обработчик стал сервисом.
 
-## What's next
+## Что дальше {#whats-next}
 
-One service with one endpoint is the smallest useful shape. Real services
-expose several endpoints and organize them under subject prefixes called
-groups. The next page adds a second endpoint and a second service.
+Сервис с одной конечной точкой — минимальная полезная структура. Настоящие сервисы предоставляют несколько конечных точек и объединяют их префиксами субъектов, называемыми группами. Следующая страница добавляет вторую конечную точку и второй сервис.
 
-Continue to [Endpoints and groups](/learn/services/endpoints-and-groups).
+Переходите к странице [Конечные точки и группы](/learn/services/endpoints-and-groups).
 
-## See also
+## См. также {#see-also}
 
-- [Core NATS → Request-reply](/learn/core-nats/request-reply) — how the
-  reply actually finds its way back, which this page assumes.
-- [Core NATS → Queue groups](/learn/core-nats/queue-groups) — the default
-  `"q"` group that an endpoint joins.
-- [Reference](/reference/) — every service configuration field and its
-  valid range.
+- [Core NATS → Запросы и ответы](/learn/core-nats/request-reply) — как ответ возвращается вызывающей стороне; здесь предполагается знание этого механизма.
+- [Core NATS → Группы очередей](/learn/core-nats/queue-groups) — группа по умолчанию `"q"`, в которую входит конечная точка.
+- [Справочник](/reference/) — все поля конфигурации сервиса и их допустимые диапазоны.

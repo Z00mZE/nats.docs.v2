@@ -1,11 +1,11 @@
-# timeout
+# timeout {#timeout}
 
 <Reloadable state="reloadable" note="Takes effect only for route connections created after the reload." />
-Maximum number of seconds to wait for a client to authenticate.
+Максимальное время ожидания аутентификации клиента в секундах.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `float` | - | - |

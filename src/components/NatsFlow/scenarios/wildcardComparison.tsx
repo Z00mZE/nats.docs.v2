@@ -1,3 +1,4 @@
+import { localizeDiagramContent, diagramAriaLabels } from "../../../i18n/diagrams";
 import React from 'react';
 import { MarkerType, ReactFlow, Background, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -278,7 +279,7 @@ function WildcardComparisonInner({
           fontStyle: 'italic',
         }}
       >
-        Comparing <code>*</code> (single token) vs <code>&gt;</code> (multiple tokens) wildcards
+        Сравнение <code>*</code> (один токен) и <code>&gt;</code> (несколько токенов)
       </div>
 
       {/* Flow diagram */}
@@ -292,7 +293,7 @@ function WildcardComparisonInner({
           position: 'relative',
         }}
       >
-        <ReactFlow
+        <ReactFlow ariaLabelConfig={diagramAriaLabels}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -328,32 +329,32 @@ function WildcardComparisonInner({
         }}
       >
         {/* Header row */}
-        <div style={{ color: '#000000' }}><strong>Subject</strong></div>
+        <div style={{ color: '#000000' }}><strong>Тема</strong></div>
         <div style={{ color: '#000000' }}><strong>sensor.alarm.*</strong></div>
         <div style={{ color: '#000000' }}><strong>sensor.*.*.critical</strong></div>
-        <div style={{ color: '#000000' }}><strong>{'sensor.>'}</strong></div>
+        <div style={{ color: '#000000' }}><strong>{localizeDiagramContent('sensor.>')}</strong></div>
 
         {/* sensor.alarm.smoke */}
         <div style={{ color: '#10b981' }}><strong>sensor.alarm.smoke</strong></div>
         <div style={{ color: '#10b981' }}>✓</div>
-        <div style={{ color: '#9ca3af' }}>✗ (too few tokens)</div>
+        <div style={{ color: '#9ca3af' }}>✗ (слишком мало токенов)</div>
         <div style={{ color: '#10b981' }}>✓</div>
 
         {/* sensor.alarm.smoke.critical */}
         <div style={{ color: '#dc2626' }}><strong>sensor.alarm.smoke.critical</strong></div>
-        <div style={{ color: '#9ca3af' }}>✗ (too many tokens)</div>
+        <div style={{ color: '#9ca3af' }}>✗ (слишком много токенов)</div>
         <div style={{ color: '#dc2626' }}>✓</div>
         <div style={{ color: '#dc2626' }}>✓</div>
 
         {/* sensor.alarm.water */}
         <div style={{ color: '#2563eb' }}><strong>sensor.alarm.water</strong></div>
         <div style={{ color: '#2563eb' }}>✓</div>
-        <div style={{ color: '#9ca3af' }}>✗ (too few tokens)</div>
+        <div style={{ color: '#9ca3af' }}>✗ (слишком мало токенов)</div>
         <div style={{ color: '#2563eb' }}>✓</div>
 
         {/* sensor.alarm.water.critical */}
         <div style={{ color: '#f59e0b' }}><strong>sensor.alarm.water.critical</strong></div>
-        <div style={{ color: '#9ca3af' }}>✗ (too many tokens)</div>
+        <div style={{ color: '#9ca3af' }}>✗ (слишком много токенов)</div>
         <div style={{ color: '#f59e0b' }}>✓</div>
         <div style={{ color: '#f59e0b' }}>✓</div>
 

@@ -1,84 +1,47 @@
 ---
 id: under-the-hood
-title: Under the hood
+title: Внутреннее устройство
 sidebar_position: 6
-description: See the OBJ_INVOICES stream, the chunk and metadata subjects, and rollup versus soft delete
+description: Поток OBJ_INVOICES, темы фрагментов и метаданных, свёртка и мягкое удаление
 ---
 
-# Under the hood
+# Внутреннее устройство {#under-the-hood}
 
-Four pages in, the `INVOICES` bucket has invoices, a 3 MB multi-chunk
-invoice, metadata, a label link, and an `analytics` service watching it.
-You've driven all of that through the friendly object API (`put`, `get`,
-`list`, `watch`, `link`) without ever seeing a stream.
+После предыдущих страниц `INVOICES` содержит счета, крупный счёт на 3 МБ, метаданные, ссылку этикетки; сервис `analytics` наблюдает за изменениями. Всё это выполнялось через API (`put`, `get`, `list`, `watch`, `link`) без обращения к потоку.
 
-There's been a stream the whole time. This page explains the one stream your
-bucket really is, the two subject spaces objects map onto, and the single
-header that keeps the bucket from accumulating a history.
+Поток существовал всё время. Здесь рассмотрим его, два пространства тем для объекта и заголовок, не позволяющий накапливать историю метаданных.
 
-## The bucket is a stream named OBJ_INVOICES
+## Бакет — поток OBJ_INVOICES {#the-bucket-is-a-stream-named-obj_invoices}
 
-A bucket isn't a new kind of storage. When you ran `nats object add
-INVOICES`, the server created a JetStream stream and named it by convention:
-`OBJ_<bucket>`. Your `INVOICES` bucket is the stream `OBJ_INVOICES`. Every
-`put` was a publish to that stream; every `get` was a read from it.
+Бакет не является новым видом хранения. При `nats object add
+INVOICES` сервер создал поток JetStream с именем по соглашению `OBJ_<bucket>`. Ваш бакет `INVOICES` — поток `OBJ_INVOICES`. Каждый `put` публиковал в него, каждый `get` читал из него.
 
-Ask the server about that stream directly and you can see its configuration:
+Запросите поток у сервера напрямую, чтобы увидеть конфигурацию:
 
 <div class="nats-example" data-type="learn-object-store-under-the-hood-streamInfo" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-You're reading an ordinary stream, the same construct from the
-[JetStream Deep Dive](/learn/jetstream). What a stream *is*, how a consumer
-tracks its position, and how direct get works are all taught there; this page
-only points at the stream, it doesn't re-explain it.
+Это обычный поток из [углублённого курса JetStream](/learn/jetstream). Понятие потока, позиция потребителя и прямое чтение объясняются там; здесь мы лишь показываем базовый поток.
 
-What's new is the shape of this particular stream. It captures two subject
-spaces, and an object is split across both of them:
+Новое здесь — его структура. Он захватывает два пространства тем, и объект занимает оба:
 
-- `$O.INVOICES.C.>` holds the **chunk** messages: the bytes of every
-  object, one message per chunk.
-- `$O.INVOICES.M.>` holds the **metadata** messages: one `ObjectInfo` per
-  object, describing its name, size, chunk count, and digest. That digest is the
-  SHA-256 from the put, stored as `SHA-256=<base64url(hash)>`, the exact string
-  a get re-computes the reassembled bytes against.
+- `$O.INVOICES.C.>` содержит сообщения **фрагментов**: байты объектов, по сообщению на часть.
+- `$O.INVOICES.M.>` содержит сообщения **метаданных**: по `ObjectInfo` на объект с именем, размером, числом частей и хешем. SHA-256 записывается как `SHA-256=<base64url(hash)>`; с этой строкой get сравнивает хеш собранных байтов.
 
-So a single object is several chunk messages on the `.C.` subjects plus one
-metadata message on the `.M.` subjects. The chunk subject ends in a
-per-put identity, `$O.INVOICES.C.<object-nuid>`, which is why a re-put never
-collides with old chunks. The metadata subject ends in the object name,
-base64url-encoded as `$O.INVOICES.M.<base64url(name)>`, so any object name,
-spaces and slashes included, becomes a safe NATS subject.
+Объект состоит из нескольких сообщений в темах `.C.` и одного в `.M.`. Тема фрагментов заканчивается идентичностью конкретного put — `$O.INVOICES.C.<object-nuid>`, поэтому повторная запись не сталкивается с прежними частями. Тема метаданных заканчивается именем в base64url: `$O.INVOICES.M.<base64url(name)>`. Любое имя, включая пробелы и косые черты, становится допустимой темой NATS.
 
-That base64url metadata subject matters for the next section: each object
-name maps to exactly one metadata subject.
+Это важно для свёртки: каждое имя объекта соответствует ровно одной теме метаданных.
 
-## Rollup keeps the latest metadata, not a history
+## Свёртка сохраняет последние метаданные без истории {#rollup-keeps-the-latest-metadata-not-a-history}
 
-Put an object twice under the same name and you might expect two metadata
-messages to pile up: a history of the object, like the revisions a
-[Key-Value Store](/learn/key-value) keeps per key. The object store doesn't
-work that way. It keeps exactly one current `ObjectInfo` per name. The
-mechanism is **rollup**.
+После двух записей одного имени можно ожидать две записи метаданных, как ревизии ключа в [KV](/learn/key-value). Но хранилище объектов сохраняет ровно один текущий `ObjectInfo` на имя. Механизм называется **свёрткой**.
 
-Every metadata publish carries one header, `Nats-Rollup: sub`. That header
-tells the stream: when this message lands, purge every earlier message on the
-same subject and keep only this one. Because each object name maps to one
-metadata subject, a rollup on a re-put deletes the prior `ObjectInfo` for that
-name and leaves the new one as the single current `ObjectInfo`.
+Каждая публикация метаданных содержит `Nats-Rollup: sub`. Заголовок указывает потоку удалить все предыдущие сообщения той же темы и оставить это. Поскольку имени соответствует одна тема, повторный put удаляет прежний `ObjectInfo`, оставляя новый единственным текущим.
 
 <div class="nats-flow" data-scenario="objectRollupAnimated" data-width="600" data-height="350"></div>
 
-This is why the store is rollup-latest, not multi-revision. A re-put gives you
-a new current object; it doesn't give you the object's past. When you do want
-the past (many small values with a full revision history per key), that's
-the [Key-Value Store](/learn/key-value), not this one. The contrast the index
-described applies down to the header level.
+Поэтому хранилище сохраняет последнее состояние, а не ревизии. Повторный put создаёт новый текущий объект без доступа к прошлому. Для множества небольших значений с историей предназначено [хранилище ключей и значений](/learn/key-value). Это различие реализовано на уровне заголовков.
 
-The backing stream is configured to make rollup possible. `AllowRollup` is
-true so the header is honored; the discard policy is set to `new` so the stream
-rejects writes when full rather than dropping old chunks; `AllowDirect` is true
-so a get can read the latest metadata without a consumer. Here's the shape of
-that configuration:
+Конфигурация потока поддерживает механизм: `AllowRollup` включён для обработки заголовка; политика `new` отклоняет записи при заполнении вместо удаления старых фрагментов; `AllowDirect` позволяет get читать последние метаданные без потребителя. Конфигурация выглядит так:
 
 ```json
 {
@@ -94,89 +57,47 @@ that configuration:
 }
 ```
 
-You never write this config by hand; `nats object add` writes it for you.
-The full set of stream configuration equivalents, including how to raise
-`num_replicas` for durability, is documented in
-[JetStream](/learn/jetstream). All you need here is to recognize the shape.
+Вручную её писать не нужно: это делает `nats object add`. Соответствия настройкам потока, включая увеличение `num_replicas` для надёжности, описаны в [JetStream](/learn/jetstream). Здесь достаточно узнавать структуру.
 
-## Soft delete is a rollup that marks the object gone
+## Мягкое удаление — свёртка с признаком отсутствия {#soft-delete-is-a-rollup-that-marks-the-object-gone}
 
-Deleting an object uses the same rollup mechanism for a different purpose. The
-store doesn't drop the name. It writes one more metadata message,
-a **soft delete**, that marks the object `Deleted=true`, sets `Size` and
-`Chunks` to zero, and clears the digest. Because that message carries the
-rollup header, it replaces the object's current `ObjectInfo`, and the object's
-chunk messages are then purged from the stream.
+Удаление использует ту же свёртку. Имя не исчезает: записываются метаданные **мягкого удаления**, где `Deleted=true`, `Size` и `Chunks` равны нулю, хеш очищен. Заголовок свёртки заменяет текущий `ObjectInfo`, после чего сообщения фрагментов удаляются из потока.
 
 <div class="nats-example" data-type="learn-object-store-under-the-hood-status" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-After a soft delete the name resolves to an `ObjectInfo` that says "gone,"
-so a get fails with a not-found error and the bytes are reclaimed. The name
-itself still has one metadata message (the soft-delete marker saying it's
-gone), which is what lets `watch` tell a subscriber that an object disappeared.
+Теперь имя разрешается в `ObjectInfo` с признаком отсутствия: get возвращает ошибку, байты освобождаются. Одно сообщение метаданных — маркер удаления — остаётся у имени, позволяя `watch` сообщить подписчику об исчезновении объекта.
 
-Securing these subjects (limiting who can publish to `$O.INVOICES.C.>` or
-read `$O.INVOICES.M.>`, or exporting the bucket to another account) is a
-security concern, not an object-store one. It's covered in
-[Security](/learn/security).
+Защита тем — ограничение публикации в `$O.INVOICES.C.>`, чтения `$O.INVOICES.M.>` или экспорт бакета другой учётной записи — относится к главе [Безопасность](/learn/security).
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two mistakes are common the first time you examine the backing stream. Both
-come from expecting the backing stream to behave differently than it does.
+При первом изучении базового потока распространены две ошибки, связанные с неверными ожиданиями от его поведения.
 
-**A soft delete does not reclaim disk the instant you call it.** A delete
-writes the soft-delete metadata message and then purges the object's chunks.
-The purge is what frees the bytes, and on a busy file-backed stream the
-on-disk space is reclaimed as the stream cleans up, not synchronously at the
-call. Don't delete a large object and immediately assert the disk is smaller.
-Do confirm the object is gone the right way — a plain get or `info` returns
-the not-found error, and a `watch` reports the delete event. The tombstone
-that records `Deleted=true` and `Size=0` is hidden by default; to read it you
-pass the client's show-deleted option (`GetObjectInfoShowDeleted` or
-`ListObjectsShowDeleted` in Go), which the `nats` CLI doesn't expose:
+**Мягкое удаление не освобождает диск мгновенно.** Сначала записывается маркер, затем очищаются фрагменты. Байты освобождает очистка, а на загруженном файловом потоке место возвращается по мере обслуживания хранилища, а не синхронно с вызовом. Не проверяйте уменьшение диска сразу после удаления крупного объекта. Подтверждайте удаление через get или `info` с ошибкой отсутствия и событие `watch`. Маркер с `Deleted=true` и `Size=0` по умолчанию скрыт. Для чтения используйте параметр показа удалённых записей: `GetObjectInfoShowDeleted` или `ListObjectsShowDeleted` в Go. CLI `nats` их не предоставляет:
 
 <div class="nats-example" data-type="learn-object-store-under-the-hood-status" data-languages="cli,js,go,python,java,rust,csharp"></div>
 
-**A re-put after a delete is a new object identity, not a restored history.**
-Because each put gets a fresh per-put identity and rollup keeps only the
-latest metadata, putting `invoice-ord_8w2k.pdf` again after deleting it
-doesn't bring back the old chunks or the old `ObjectInfo`. It creates a
-brand-new object that happens to share the name. Don't reach for the object
-store when you need the *previous* version after an overwrite; that history
-lives in the [Key-Value Store](/learn/key-value). Do treat every put as
-authoritative for the current object and nothing more.
+**Повторный put после удаления создаёт новую идентичность, а не восстанавливает историю.** Каждая запись получает новую идентичность, свёртка оставляет только последние метаданные. Новый put `invoice-ord_8w2k.pdf` не возвращает прежние фрагменты или `ObjectInfo`, а создаёт новый объект с тем же именем. Для *предыдущей* версии после перезаписи нужно [KV](/learn/key-value). Каждый put определяет только текущее состояние объекта.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- The bucket revealed as the stream `OBJ_INVOICES`, captured with
-  `nats stream info`.
-- The two subject spaces named: `$O.INVOICES.C.>` for chunks and
-  `$O.INVOICES.M.>` for metadata, with the metadata subject base64url-encoding
-  the object name.
-- The rollup header explained: why a re-put leaves one current `ObjectInfo`
-  and not a history.
-- Soft delete explained: a rollup metadata write that marks the object gone
-  and purges its chunks.
+- Представление бакета как потока `OBJ_INVOICES`, полученное через `nats stream info`.
+- Два пространства тем: `$O.INVOICES.C.>` для частей и `$O.INVOICES.M.>` для метаданных, где имя кодируется base64url.
+- Понимание заголовка свёртки: повторный put оставляет текущий `ObjectInfo` без истории.
+- Понимание мягкого удаления: метаданные помечают объект удалённым, а его фрагменты очищаются.
 
-The friendly API and the stream underneath now fit together. The object store
-is chunks plus rollup metadata on a JetStream stream.
+API и внутренний поток теперь связаны: хранилище объектов — фрагменты и сворачиваемые метаданные в потоке JetStream.
 
-## What's next
+## Что дальше {#whats-next}
 
-That's the whole mechanism. The last page is navigation: a recap of the
-chapter, a checklist that collects every pitfall in this chapter, and pointers
-to where the deeper details (replicas, security, backup, monitoring) actually
-live.
+Механизм рассмотрен полностью. Последняя страница подводит итоги, собирает подводные камни в список проверок и указывает, где изучать реплики, безопасность, резервное копирование и мониторинг.
 
-Continue to [Where to go next](/learn/object-store/where-next).
+Переходите к странице [Куда двигаться дальше](/learn/object-store/where-next).
 
-## See also
+## См. также {#see-also}
 
-- [JetStream Deep Dive](/learn/jetstream) — what the backing stream is, and
-  the stream config equivalents for replicas and retention.
-- [Key-Value Store](/learn/key-value/under-the-hood) — the multi-revision
-  store, for when you need the history rollup doesn't keep.
-- [Security](/learn/security) — securing or exporting the bucket's subjects.
+- [Углублённый курс JetStream](/learn/jetstream) — базовый поток, реплики и политики хранения.
+- [Хранилище ключей и значений](/learn/key-value/under-the-hood) — история ревизий, которую не сохраняет свёртка.
+- [Безопасность](/learn/security) — защита и экспорт тем бакета.

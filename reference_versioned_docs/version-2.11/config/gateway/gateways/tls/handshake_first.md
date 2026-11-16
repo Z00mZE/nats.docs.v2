@@ -1,15 +1,13 @@
-# handshake_first
+# handshake_first {#handshake_first}
 
 <Aliases aliases="first, immediate" />
 <Reloadable state="reloadable" />
-Send the TLS handshake before the `INFO` protocol message rather
-than after. A duration string instead of `true` waits that long for
-a client that may not support it before falling back.
+Выполнять рукопожатие TLS до сообщения протокола `INFO`, а не после. Строка длительности вместо `true` задаёт время ожидания клиента, который может не поддерживать этот режим, до перехода к обычному порядку.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `boolean` |  | `true`, `false` |
 | `string` |  | - |

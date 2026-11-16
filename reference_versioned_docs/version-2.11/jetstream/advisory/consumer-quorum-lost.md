@@ -1,18 +1,18 @@
-# Consumer Quorum Lost
+# Потеря кворума потребителя {#consumer-quorum-lost}
 
-Consumer lost quorum.
+Потребитель потерял кворум.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import consumerQuorumLost from '@site/src/schemas/vendor/v2.11/jsm/jetstream/advisory/v1/consumer_quorum_lost.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$JS.EVENT.ADVISORY.CONSUMER.QUORUM_LOST.{stream}.{consumer}`
 
-Where:
-- `{stream}` is the stream name
-- `{consumer}` is the consumer name
+Где:
+- `{stream}` — имя потока
+- `{consumer}` — имя потребителя
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={consumerQuorumLost} />

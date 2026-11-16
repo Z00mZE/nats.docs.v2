@@ -1,11 +1,11 @@
-# pass_cookie
+# pass_cookie {#pass_cookie}
 
 <Reloadable state="not-reloadable" />
-Name of the HTTP cookie holding the password.
+Имя HTTP-cookie с паролем.
 
 
-## Types
+## Типы {#types}
 
-| Type | Description | Choices |
+| Тип | Описание | Варианты |
 | :--- | :---------- | :------ |
 | `string` | - | - |

@@ -1,175 +1,92 @@
 ---
 id: history-and-revisions
-title: "History and revisions"
+title: "История и ревизии"
 sidebar_position: 4
-description: Track a key's revisions, read its history, and decrement safely with compare-and-swap
+description: "Ревизии ключа, чтение истории и безопасное уменьшение через сравнение с заменой"
 ---
 
-# History and revisions
+# История и ревизии {#history-and-revisions}
 
-So far every write to a key has been a `put`: the new value replaces the old
-one, and you never had to think about who wrote last. That works
-until two writers touch the same key at the same time.
+До сих пор каждая запись ключа была операцией `put`: новое значение заменяло старое, и не приходилось думать, кто записал последним. Это работает, пока два автора не меняют один ключ одновременно.
 
-This page adds the two ideas that make concurrent writes safe. The first
-is the revision: a number the bucket assigns to every write, in sequence,
-and `history` keeps a key's prior ones. The second is compare-and-swap
-(CAS): a write that only succeeds if the key still holds the revision you
-read. Together they let the inventory service decrement `widget-blue` from
-41 to 40 without ever losing a sale.
+Здесь добавляются два понятия, делающие одновременные записи безопасными. Первое — ревизия: последовательный номер каждой записи, назначаемый бакетом, а `history` сохраняет предыдущие ревизии ключа. Второе — сравнение с заменой (CAS): запись проходит, только если ключ всё ещё имеет прочитанную вами ревизию. Вместе они позволяют сервису inventory уменьшить `widget-blue` с 41 до 40 без потери продажи.
 
-You still have the `INVENTORY` bucket from the first page. After the live
-update on the watching page, `widget-blue` holds 41, and the warehouse
-dashboard from that page is still attached. This page builds on both of
-those.
+Бакет `INVENTORY` с первой страницы остаётся у вас. После обновления на странице наблюдения `widget-blue` равен 41, а складская панель продолжает наблюдать. Здесь используем оба результата.
 
-## Revisions and history
+## Ревизии и история {#revisions-and-history}
 
-A **revision** is the number the server assigns to a write. The bucket
-keeps one counter across all of its keys, and every write — to any key —
-takes the next number. So a revision always increases when you write a key,
-but not by one each time: writes to other keys advance the counter in
-between. You don't set the revision; the server assigns it, and `get`
-returns it alongside the value as part of the **entry**.
+**Ревизия** — номер, назначаемый сервером записи. У бакета один счётчик на все ключи, и каждая запись любого ключа получает следующий номер. Ревизия ключа при записи растёт, но не обязательно на единицу: между записями счётчик двигают другие ключи. Ревизию назначаете не вы, а сервер; `get` возвращает её вместе со значением как часть **записи**.
 
-The entry you got back on the first page already carried it. Your put of
-`widget-blue 42` landed at revision 1, the first write to an empty bucket.
-The put of `41` over it on the watching page landed at revision 2. The
-puts to `widget-red` and `gadget-pro` that followed took their own numbers,
-so `widget-blue`'s next write won't be revision 3. What matters for a safe
-write is only that the revision you read names the exact version you saw,
-which you'll use in a moment.
+Запись с первой страницы уже содержала ревизию. Put `widget-blue 42` получил ревизию 1 как первая запись пустого бакета. Put `41` со страницы наблюдения получил ревизию 2. Последующие записи `widget-red` и `gadget-pro` взяли собственные номера, поэтому следующая запись `widget-blue` не получит ревизию 3. Для безопасной записи важно лишь, что прочитанная ревизия точно определяет увиденную версию; сейчас мы это используем.
 
-The bucket also keeps the **history**: the prior revisions of a key, up to
-the bucket's history depth. You set that depth when you created the bucket
-with `--history`, and `INVENTORY` was created with `--history 1`, which
-keeps only the latest value of each key. Raise it now so a key remembers
-where it's been:
+Бакет также хранит **историю**: прежние ревизии ключа в пределах глубины истории. Глубина задавалась при создании через `--history`; `INVENTORY` создан с `--history 1`, сохраняющим только последнее значение ключа. Увеличьте её, чтобы ключ помнил прошлые значения:
 
 ```bash
 nats kv edit INVENTORY --history 10
 ```
 
-The depth caps at 64. Raising it keeps every future write to a key, up to
-ten revisions deep. The values written before the raise are already gone,
-because at depth 1 each new write dropped the one before it.
+Максимальная глубина — 64. После увеличения новые записи будут сохраняться в пределах десяти ревизий. Значения, записанные до увеличения, уже потеряны: при глубине 1 каждая новая запись удаляла предыдущую.
 
-## Compare-and-swap: writing without locks
+## Сравнение с заменой: запись без блокировок {#compare-and-swap-writing-without-locks}
 
-Consider a problem `put` can't solve. Two copies of the inventory
-service both sell a `widget-blue`. Each reads the count as 41, computes
-40, and puts 40. Two sales happened, but the count only dropped by one.
-One write overwrote the other, and a unit of stock was lost from the
-count.
+Рассмотрим задачу, которую `put` не решает. Две копии сервиса inventory одновременно продают `widget-blue`. Обе читают 41, вычисляют 40 и записывают 40. Продаж две, а остаток уменьшился на единицу: одна запись затёрла другую, и учёт потерял единицу товара.
 
-The fix is **optimistic concurrency**, which uses no locks and no waiting. Instead, each
-writer reads the current revision, then writes *on the condition* that the
-revision hasn't changed since. If another writer got there first, the
-condition fails and the write is rejected; nothing is overwritten. The
-rejected writer reads the fresh value and tries again.
+Решение — **оптимистическое управление конкурентным доступом**, без блокировок и ожидания. Каждый автор читает текущую ревизию и записывает *при условии*, что она не изменилась. Если другой успел первым, условие не выполняется, запись отклоняется, ничего не затирая. Отклонённый автор читает свежее значение и повторяет попытку.
 
-The mechanism behind that condition is **compare-and-swap (CAS)**: you
-hand the server the revision you expect the key to be at, and the server
-swaps in your new value only if the key is still at that revision. NATS
-exposes CAS through two operations:
+Условие реализует **сравнение с заменой (CAS)**: вы передаёте ожидаемую ревизию, и сервер заменяет значение, только если ключ всё ещё имеет эту ревизию. В NATS CAS доступно через две операции:
 
-- **create** writes a key only if it doesn't exist yet. It's CAS against
-  the expectation "this key is at revision 0" (no value present).
-- **update** writes a key only if it's at the revision you name. It's
-  CAS against "this key is still at the revision I read."
+- **create** записывает ключ, только если его ещё нет. Это CAS с ожиданием «ключ имеет ревизию 0», то есть значение отсутствует.
+- **update** записывает ключ, только если его ревизия совпадает с указанной. Это CAS с ожиданием «ревизия ключа всё ещё та, которую я прочитал».
 
-To decrement `widget-blue` safely, the inventory service reads the entry,
-takes its revision, computes the new count, and calls update with that
-revision. If the key is still at the revision it read, the write lands. If
-not, the write is rejected and nothing is lost.
+Для безопасного уменьшения `widget-blue` сервис inventory читает запись, берёт ревизию, вычисляет новое количество и вызывает update с этой ревизией. Если она не изменилась, запись проходит. Иначе отклоняется, и ничего не теряется.
 
 <div class="nats-example" data-type="learn-key-value-history-and-revisions-casUpdate" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-This is the read-modify-write you use whenever the new value depends
-on the old one, such as a decrement, an increment, or a status transition. The
-revision is what makes the write safe.
+Это цикл чтения, изменения и записи, нужный везде, где новое значение зависит от старого: уменьшение, увеличение, переход состояния. Ревизия делает его безопасным.
 
 <div class="nats-flow" data-scenario="kvCasRetryAnimated" data-width="600" data-height="350"></div>
 
-The animation shows the conflict: the service gets `widget-blue` at
-revision 7 and calls update expecting 7, but a concurrent writer has
-already bumped the key to revision 8. The server rejects the update on the
-revision mismatch. The service re-gets (now revision 8) and retries with
-the fresh revision, which the server accepts. No write was lost, and the
-service never held a lock.
+Анимация показывает конфликт: сервис читает `widget-blue` с ревизией 7 и вызывает update с ожиданием 7, но другой автор уже повысил ревизию до 8. Сервер отклоняет обновление. Сервис снова читает ключ с ревизией 8 и повторяет попытку с новым номером, после чего сервер принимает запись. Ничего не потеряно, блокировка не использовалась.
 
-## Read the history back
+## Чтение истории {#read-the-history-back}
 
-With the depth raised, the trail behind `widget-blue` is now visible. Read
-its history:
+После увеличения глубины видны предыдущие значения `widget-blue`. Прочитайте историю:
 
 <div class="nats-example" data-type="learn-key-value-history-and-revisions-keyHistory" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You see two revisions: `41` from the watching page and `40` from the
-decrement you just made. Their revision numbers aren't consecutive — the
-puts to `widget-red` and `gadget-pro` took the numbers in between — which
-is the revision counter being bucket-wide, not per key. Each entry is one
-line: the key, its revision, the operation, when it was written, and the
-value. The `42` written before the raise isn't here; depth 1 had already
-dropped it.
+Видны две ревизии: `41` со страницы наблюдения и `40` после уменьшения. Номера не последовательны: записи `widget-red` и `gadget-pro` получили промежуточные номера, поскольку счётчик общий для бакета. Каждая строка содержит ключ, ревизию, операцию, время записи и значение. Ранее записанного `42` нет: глубина 1 уже удалила его.
 
-History holds the prior revisions of a single key, up to the depth. It
-isn't an audit log of the whole bucket, and it doesn't grow without bound:
-once a key has more revisions than the depth allows, the oldest one is
-removed. The full set of bucket configuration options is documented in
-[Reference → Create Stream](/reference/jetstream/api/stream/create).
+История сохраняет прошлые ревизии одного ключа в пределах глубины. Это не журнал аудита всего бакета, и она не растёт бесконечно: при превышении глубины удаляется самая старая ревизия ключа. Все параметры бакета описаны в разделе [Справочник → Создание потока](/reference/jetstream/api/stream/create).
 
-## Pitfalls
+## Подводные камни {#pitfalls}
 
-Two mistakes are common the first time you rely on revisions. Both come
-from treating a CAS write like an unconditional one.
+При первом использовании ревизий распространены две ошибки. Обе возникают, если считать запись CAS безусловной.
 
-**A rejected update is dropped rather than queued, and you must retry.**
-Optimistic concurrency doesn't wait. When update finds the key
-at a different revision than you named, the server returns an error and
-your value is not written. If you fire-and-forget an update, a conflict silently
-loses the write. Don't assume an update succeeded; check the result, and
-on a revision mismatch, re-get the key and try again with the fresh
-revision. That re-get-and-retry loop is what CAS exists to support. Without
-that loop you have the same lost-write bug `put` had.
+**Отклонённое обновление отбрасывается, а не ставится в очередь: повторять нужно вам.** Оптимистическое управление не ждёт. Если update находит другую ревизию, сервер возвращает ошибку и не записывает значение. Если отправить update без проверки результата, конфликт незаметно потеряет запись. Проверяйте результат; при несовпадении ревизии снова читайте ключ и повторяйте с новым номером. Именно для этого цикла существует CAS. Без него остаётся та же ошибка потерянной записи, что и при `put`.
 
-Here's the handling: get the current revision, attempt the update, and on
-a mismatch re-get and retry once with the new revision.
+Обработка выглядит так: прочитать текущую ревизию, попытаться обновить, при несовпадении снова прочитать и один раз повторить с новой ревизией.
 
 <div class="nats-example" data-type="learn-key-value-history-and-revisions-casConflictRetry" data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-**Do not use put for a read-modify-write.** Put is unconditional: it
-writes no matter what the key holds now, so it will overwrite a
-value a concurrent writer just stored. Put is correct when the new value
-doesn't depend on the old one, such as setting a SKU's count to a known
-absolute number from an inventory recount. When the new value
-is computed *from* the current value, like a decrement on a sale, use
-update with the revision instead. Use put to set a key to a given value, and
-update to change it from the value it currently holds.
+**Не используйте put для цикла чтения, изменения и записи.** Put безусловен: записывает независимо от текущего содержимого и может затереть значение другого автора. Он подходит, когда новое значение не зависит от старого, например при установке известного абсолютного остатка после инвентаризации. Если значение вычисляется *из* текущего, как уменьшение при продаже, используйте update с ревизией. Put устанавливает заданное значение, update безопасно меняет его относительно текущего.
 
-## Where you are
+## Текущее состояние {#where-you-are}
 
-You now have:
+Теперь у вас есть:
 
-- An `INVENTORY` bucket whose `widget-blue` key has been decremented from
-  41 to 40 with a CAS update, not a blind put.
-- The ability to read a key's history and reason about its revision.
-- A working model of optimistic concurrency: read the revision, write on
-  that condition, retry on mismatch.
+- Бакет `INVENTORY`, где `widget-blue` уменьшен с 41 до 40 обновлением CAS, а не безусловным put.
+- Умение читать историю ключа и понимать ревизии.
+- Модель оптимистического управления: прочитать ревизию, записать при этом условии, повторить при несовпадении.
 
-The warehouse dashboard from the watching page saw that decrement arrive
-live, the same as any other change.
+Складская панель увидела уменьшение в реальном времени, как любое другое изменение.
 
-## What's next
+## Что дальше {#whats-next}
 
-The next page gives a key its own lifetime with a per-key **TTL**,
-and bounds the whole bucket with limits.
+Следующая страница задаёт одному ключу собственный **TTL** и ограничивает весь бакет лимитами.
 
-Continue to [TTL and limits](/learn/key-value/ttl-and-limits).
+Переходите к странице [TTL и лимиты](/learn/key-value/ttl-and-limits).
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Create Stream](/reference/jetstream/api/stream/create) —
-  every bucket configuration option, including history depth.
-- [Watching](/learn/key-value/watching) — how a watcher receives the
-  changes you make with update.
+- [Справочник → Создание потока](/reference/jetstream/api/stream/create) — все параметры бакета, включая глубину истории.
+- [Наблюдение](/learn/key-value/watching) — получение изменений, внесённых через update.

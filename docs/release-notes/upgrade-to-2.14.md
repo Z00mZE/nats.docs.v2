@@ -1,81 +1,81 @@
 ---
-title: Upgrade to NATS 2.14
-sidebar_label: Upgrade to 2.14
-description: What changes when you move a NATS deployment from 2.12.x to 2.14 — new features, upgrade considerations, and downgrade steps.
+title: "Обновление до NATS 2.14"
+sidebar_label: "Обновление до 2.14"
+description: "Что меняется при переходе развёртывания NATS с 2.12.x на 2.14: новые возможности, особенности обновления и возврата к предыдущей версии."
 ---
 
-# Upgrade to NATS 2.14
+# Обновление до NATS 2.14 {#upgrade-to-nats-214}
 
-This guide is for existing NATS users upgrading from version 2.12.x. It summarizes what's new and what to watch for, with links to pages that cover each feature in depth. Note that version 2.13 was skipped: 2.14 is the direct successor of 2.12.
+Это руководство предназначено для пользователей NATS, переходящих с версии 2.12.x. Оно кратко описывает нововведения и важные нюансы и содержит ссылки на подробный разбор каждой возможности. Обратите внимание: версия 2.13 была пропущена, и 2.14 — прямой преемник 2.12.
 
-For the complete changelog, see the [v2.14.0 release notes on GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.14.0). For the story behind the release, see the [announcement post](https://nats.io/blog/nats-server-2.14-release/).
+Полный журнал изменений см. в [примечаниях к выпуску v2.14.0 на GitHub](https://github.com/nats-io/nats-server/releases/tag/v2.14.0). О причинах появления новых возможностей рассказывает [анонс выпуска](https://nats.io/blog/nats-server-2.14-release/).
 
-## Features
+## Новые возможности {#features}
 
-### Streams
+### Потоки {#streams}
 
-* **Fast batch publish:** The `AllowBatchPublish` stream configuration option allows for high throughput and flow controlled publishing into a stream. This includes support for replicated and non-replicated streams, as well as doing per-message consistency checks without intermediate staging of messages (like with atomic batch publish). See [Advanced publishing](/learn/jetstream/advanced-publishing) and [ADR-50](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-50.md#fast-ingest-batch-publishing).
+* **Быстрая пакетная публикация:** параметр потока `AllowBatchPublish` позволяет публиковать сообщения с высокой пропускной способностью и управлением потоком данных. Поддерживаются реплицируемые и нереплицируемые потоки, а также проверки согласованности каждого сообщения без промежуточного накопления, используемого при атомарной пакетной публикации. См. [Расширенная публикация](/learn/jetstream/advanced-publishing) и [ADR-50](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-50.md#fast-ingest-batch-publishing).
 
-* **Recurring schedules:** The `AllowMsgSchedules` stream configuration option now also allows the usage of recurring schedules, either based on a simple interval, or with Cron. More information is available in [ADR-51](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-51.md#cron-like-schedules).
+* **Повторяющиеся расписания:** параметр потока `AllowMsgSchedules` теперь поддерживает повторяющиеся расписания с простым интервалом или Cron. Подробности — в [ADR-51](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-51.md#cron-like-schedules).
 
-* **Scheduled subject sampling:** The `AllowMsgSchedules` stream configuration option now also allows to source the data of the last message matching the subject in the scheduled message. Useful for downsampling data on an interval. More information is available in [ADR-51](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-51.md#subject-sampling).
+* **Выборка по теме по расписанию:** параметр `AllowMsgSchedules` теперь позволяет брать для запланированного сообщения данные последнего сообщения, соответствующего теме. Это удобно для прореживания данных с заданным интервалом. Подробности — в [ADR-51](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-51.md#subject-sampling).
 
-* **Reliable WorkQueue and Interest mirroring/sourcing:** Sourcing or mirroring from a WorkQueue or Interest retention stream is now supported. A durable consumer, as opposed to an ephemeral one, will automatically be used to perform the async replication. A new ack policy of `AckFlowControl` is used to acknowledge messages after they were persisted, based on flow control. See [Mirrors and sources](/learn/jetstream/mirrors-and-sources) and [ADR-60](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-60.md), plus the upgrade considerations below.
+* **Надёжные зеркала и источники для WorkQueue и Interest:** теперь поддерживается использование потоков с политиками хранения WorkQueue и Interest в качестве источников и зеркалируемых потоков. Для асинхронной репликации автоматически используется долговременный потребитель вместо временного. Новая политика подтверждений `AckFlowControl` подтверждает сообщения после сохранения на основе управления потоком данных. См. [Зеркала и источники](/learn/jetstream/mirrors-and-sources), [ADR-60](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-60.md) и особенности обновления ниже.
 
-### Consumers
+### Потребители {#consumers}
 
-* **Consumer reset API:** Consumer delivery state can now be reset back to the acknowledgement floor, or to an arbitrary sequence (while still respecting start sequences etc). The consumer state after reset equals what would otherwise be a consumer delete and recreate at a specific starting sequence. More information is available in [ADR-60](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-60.md#consumer-delivery-state-reset-api).
+* **API сброса потребителя:** состояние доставки потребителя теперь можно сбросить к границе подтверждённых сообщений или произвольному порядковому номеру с учётом начальных номеров и других ограничений. Результат эквивалентен удалению потребителя и повторному созданию с заданной начальной позицией. Подробности — в [ADR-60](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-60.md#consumer-delivery-state-reset-api).
 
-### Operations
+### Эксплуатация {#operations}
 
-* **Leafnode remote config reload:** The leaf node remotes section can now be added and removed via a configuration reload, without requiring a server restart.
+* **Перезагрузка конфигурации удалённых соединений листовых узлов:** раздел удалённых соединений листового узла теперь можно добавлять и удалять при перезагрузке конфигурации без перезапуска сервера.
 
-* **Filestore I/O error handling:** Previously, not all filestore I/O errors were properly handled, allowing the stream and server to continue to run. These errors will now be surfaced in the logs and show up in the health check, as well as freeze the stream to prevent further updates (see upgrade considerations below).
+* **Обработка ошибок ввода-вывода файлового хранилища:** ранее не все такие ошибки обрабатывались корректно, и поток с сервером могли продолжать работу. Теперь ошибки выводятся в журнал, отражаются в проверке работоспособности и замораживают поток, предотвращая дальнейшие изменения (см. особенности обновления ниже).
 
-* **Raft overrun protection:** The server now recognizes if its Raft layer is being overrun by proposals, bounding the number of memory and disk resources the server is allowed to use during such an event (see upgrade considerations below).
+* **Защита Raft от перегрузки:** сервер теперь распознаёт перегрузку слоя Raft предложениями и ограничивает объём памяти и диска, который может использоваться в такой ситуации (см. особенности обновления ниже).
 
-## Improvements
+## Улучшения {#improvements}
 
-* **Deduplication changes when using stream sourcing:** Streams with sources now allow deduplication to be disabled. Additionally, sourcing streams can now perform deduplication when fanning in multiple sources.
+* **Дедупликация при использовании источников потока:** в потоках с источниками теперь можно отключать дедупликацию. Также потоки могут выполнять дедупликацию при объединении нескольких источников.
 
-* **Atomic batch publish, EOB commit support:** Atomic batches can now be committed through an EOB (End of Batch) message without persisting this final message. This is also supported when using the new fast batch publish. See [Advanced publishing](/learn/jetstream/advanced-publishing).
+* **Фиксация атомарного пакета через EOB:** атомарные пакеты теперь можно фиксировать сообщением EOB (End of Batch), не сохраняя само завершающее сообщение. Это поддерживается и при новой быстрой пакетной публикации. См. [Расширенная публикация](/learn/jetstream/advanced-publishing).
 
-* **Scheduled subject rollups:** The `Nats-Schedule-Rollup` header can now be used to place a rollup on the scheduled message, similar to the `Nats-Schedule-TTL` header.
+* **Свёртка тем по расписанию:** заголовок `Nats-Schedule-Rollup` теперь позволяет применять свёртку к запланированному сообщению, аналогично заголовку `Nats-Schedule-TTL`.
 
-* **Feature flags:** The server now supports a `feature_flags` field in the config which allows users to opt-in or opt-out to specific fixes or improvements prior to them becoming the default in a future release.
+* **Флаги возможностей:** поле конфигурации `feature_flags` позволяет включать и отключать отдельные исправления и улучшения до того, как они станут поведением по умолчанию в будущем выпуске.
 
-* **Domain-aware acknowledgement and flow control subjects:** The server now supports both v1 and v2 of the consumer acknowledgement and flow control subjects. More information is available in [ADR-15](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-15.md#jsack).
+* **Темы подтверждений и управления потоком с учётом домена:** сервер теперь поддерживает форматы v1 и v2 для тем подтверждений потребителей и управления потоком данных. Подробности — в [ADR-15](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-15.md#jsack).
 
-* **Traceparent header:** The `traceparent` header is no longer modified by the message tracing.
+* **Заголовок traceparent:** трассировка сообщений больше не изменяет заголовок `traceparent`.
 
-* **Asynchronous stream state snapshots for replicated streams:** Allows stream state snapshots to be taken and written without pausing stream processing, improving tail latencies. This is particularly impactful in cases where the stream has a large number of interior deletes.
+* **Асинхронные снимки состояния реплицируемых потоков:** снимки состояния теперь создаются и записываются без приостановки обработки потока, что уменьшает задержки в хвосте распределения. Особенно заметен эффект для потоков с большим числом удалённых сообщений внутри диапазона.
 
-## Upgrade considerations
+## Особенности обновления {#upgrade-considerations}
 
-### Reliable WorkQueue and Interest mirroring/sourcing
+### Надёжные зеркала и источники для WorkQueue и Interest {#reliable-workqueue-and-interest-mirroringsourcing}
 
-Version 2.14 adds support for sourcing and mirroring from WorkQueue or Interest streams. During an upgrade or downgrade, the server could temporarily log the following message:
+Версия 2.14 добавляет поддержку источников и зеркалирования для потоков WorkQueue и Interest. Во время обновления или возврата к прежней версии сервер может временно выводить следующее сообщение:
 
 ```
 [WRN] Invalid JetStream request '$G > $JS.API.CONSUMER.CREATE.O': json: unknown field "sourcing"
 ```
 
-This means that an upgraded server tried to create the 'new-style' sourcing consumer but the older target server didn't recognize it and logged a warning. The upgraded server will automatically respond to this error and will send the request again using the 'old-style' sourcing consumer. It is expected that these logs could temporarily occur during upgrades/downgrades, but these should resolve once the whole system is upgraded.
+Это означает, что обновлённый сервер попытался создать потребителя-источник нового типа, но старый целевой сервер не распознал его и записал предупреждение. Обновлённый сервер автоматически обработает ошибку и повторит запрос с потребителем старого типа. Такие записи ожидаемы во время смены версий и должны исчезнуть после обновления всей системы.
 
-### Domain-aware acknowledgement and flow control subjects
+### Темы подтверждений и управления потоком с учётом домена {#domain-aware-acknowledgement-and-flow-control-subjects}
 
-The server now supports both v1 and v2 acknowledgement and flow control reply subjects documented in [ADR-15](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-15.md#jsack). The v2 format includes a domain and account hash to deconflict stream and consumer names across domains and accounts:
+Сервер теперь поддерживает форматы v1 и v2 тем ответов для подтверждений и управления потоком, описанные в [ADR-15](https://github.com/nats-io/nats-architecture-and-design/blob/main/adr/ADR-15.md#jsack). Формат v2 включает домен и хеш учётной записи, устраняя конфликты имён потоков и потребителей между доменами и учётными записями:
 
 ```
 v1: $JS.ACK.<stream name>.<consumer name>.<num delivered>.<stream sequence>.<consumer sequence>.<timestamp>.<num pending>
 v2: $JS.ACK.<domain>.<account hash>.<stream name>.<consumer name>.<num delivered>.<stream sequence>.<consumer sequence>.<timestamp>.<num pending>
 ```
 
-While both v1 and v2 formats will be supported starting from 2.14, v1 remains the default. However, in version 2.16 the default will change to be the v2 format. Users that have defined account imports/exports or subject permissions containing the `$JS.ACK.<stream>.>` or `$JS.FC.<stream>.>` (or more granular) subjects **will be required to update their ACLs and/or account imports/exports before the 2.16 release** to allow the same stream and consumer names to be used in different domains or accounts without them conflicting with each other.
+Начиная с 2.14 поддерживаются оба формата, но по умолчанию остаётся v1. В версии 2.16 форматом по умолчанию станет v2. Если импорты и экспорты учётных записей или разрешения на темы содержат `$JS.ACK.<stream>.>` или `$JS.FC.<stream>.>` (либо более точные шаблоны), **необходимо обновить ACL и/или импорты и экспорты до выпуска 2.16**, чтобы одинаковые имена потоков и потребителей могли использоваться в разных доменах и учётных записях без конфликтов.
 
-If you have not defined such account imports/exports or subject permissions, for example if you use JetStream only within a single account, or you defined them as the "catch-all wildcard" `$JS.ACK.>` or `$JS.FC.>` then you will not need to make any changes. The default will change in version 2.16 and there should be no impact.
+Если вы не задавали такие импорты, экспорты или разрешения — например, используете JetStream только внутри одной учётной записи — либо используете общие шаблоны `$JS.ACK.>` и `$JS.FC.>`, изменений не требуется. Смена значения по умолчанию в 2.16 не должна повлиять на вашу систему.
 
-To ease the migration path, the server now supports feature flags to test and enable this at your own convenience. Not specifying the feature flag means "use the server default" which for 2.14 will be the v1 format. Setting it to `true` will use the v2 format (also the v1 format will still be supported) and setting it to `false` will use the v1 format but still support v2.
+Для упрощения перехода сервер поддерживает флаги возможностей, позволяющие проверить и включить новый формат в удобное время. Отсутствие флага означает использование серверного значения по умолчанию, то есть v1 в версии 2.14. Значение `true` включает v2 при сохранении поддержки v1; `false` выбирает v1, сохраняя поддержку v2.
 
 ```
 feature_flags {
@@ -83,26 +83,26 @@ feature_flags {
 }
 ```
 
-### Filestore I/O error handling
+### Обработка ошибок ввода-вывода файлового хранилища {#filestore-io-error-handling}
 
-Previously, not all filestore I/O errors were appropriately handled, allowing the stream and server to continue to run. In 2.14, these errors are surfaced: an affected stream freezes, logs the error, and reports an unhealthy state in health checks. Other streams on the same server remain unaffected, and for replicated streams another replica picks up the work transparently.
+Ранее не все ошибки ввода-вывода файлового хранилища обрабатывались корректно, и поток с сервером могли продолжать работу. В 2.14 эти ошибки становятся явными: затронутый поток замораживается, ошибка записывается в журнал, а проверки работоспособности сообщают о проблеме. Остальные потоки сервера не затрагиваются; для реплицируемых потоков другая реплика прозрачно принимает работу на себя.
 
-This change introduces a new operational condition to watch for: if I/O errors are encountered, each stream affected by it will stop making progress. NATS core traffic is not affected by I/O errors, so the server keeps functioning, but will require a restart to recover from these I/O issues. This condition can be observed by the health check failing and reporting an I/O related error, the error message will contain `write error` and which error was encountered.
+Появляется новое состояние, за которым нужно следить: при ошибках ввода-вывода каждый затронутый поток прекращает продвижение. Трафик Core NATS от этих ошибок не зависит, и сервер продолжает работу, но для восстановления после проблем ввода-вывода потребуется перезапуск. Это состояние видно по неуспешной проверке работоспособности и ошибке ввода-вывода, содержащей `write error` и описание конкретного сбоя.
 
-### Raft overrun protection
+### Защита Raft от перегрузки {#raft-overrun-protection}
 
-A new back-pressure mechanism in the Raft consensus layer prevents unbounded memory growth in overloaded clusters. In prior versions, there could be situations where entries would be written to the Raft write-ahead log faster than they could be committed and applied, resulting in increased memory and disk usage.
+Новый механизм обратного давления на уровне консенсуса Raft предотвращает неограниченный рост памяти в перегруженных кластерах. Ранее записи могли поступать в журнал предварительной записи Raft быстрее, чем фиксироваться и применяться, увеличивая расход памяти и диска.
 
-In 2.14, this condition is recognized and gives the relevant servers room to catch up. Leaders that detect they are falling behind step down so that a healthier peer can take over. If a majority of peers are equally overloaded, the system remains in this degraded state. The protection is a safety net for transient overload, not a substitute for adequate capacity, but it will allow the system to continue in a degraded but functional mode instead of allowing the system to become overloaded further.
+В 2.14 это состояние распознаётся, и соответствующим серверам даётся возможность наверстать отставание. Лидеры, обнаружившие собственное отставание, уступают роль более здоровому участнику. Если одинаково перегружено большинство участников, система остаётся в деградированном состоянии. Эта защита рассчитана на временную перегрузку и не заменяет достаточную производительность оборудования, но позволяет продолжать работу с ограниченными возможностями вместо дальнейшего роста перегрузки.
 
-## Downgrade considerations
+## Особенности возврата к предыдущей версии {#downgrade-considerations}
 
-### Reliable WorkQueue and Interest mirroring/sourcing
+### Надёжные зеркала и источники для WorkQueue и Interest {#reliable-workqueue-and-interest-mirroringsourcing-1}
 
-The same consideration as mentioned above under the upgrade considerations holds here as well. The `Invalid JetStream request` log line may be observed during a downgrade. Additionally, stream sourcing or mirroring might temporarily be unable to function until all servers are downgraded to the 2.12 version.
+Здесь действуют те же замечания, что и при обновлении выше. Во время возврата к прежней версии в журнале может появляться `Invalid JetStream request`. Кроме того, источники и зеркалирование потоков могут временно не работать, пока все серверы не будут переведены на 2.12.
 
-If you've started using stream sourcing or mirroring on WorkQueue or Interest streams after upgrading, this will still seem to function but will operate under the less reliable ephemeral consumer mode. Additionally, any durable consumers created using the new configuration of `AckFlowControl` will be marked as "offline" and will not be usable until upgraded back to 2.14.
+Если после обновления вы включили источники или зеркалирование потоков WorkQueue или Interest, они могут продолжить работу, но в менее надёжном режиме временного потребителя. Долговременные потребители, созданные с новой политикой `AckFlowControl`, будут помечены как offline и недоступны до повторного обновления до 2.14.
 
-### Feature flags
+### Флаги возможностей {#feature-flags}
 
-If you have defined the `feature_flags` field in your server config, you'll need to remove this prior to downgrading, since prior server versions will not recognize this field.
+Если в конфигурации сервера есть поле `feature_flags`, удалите его перед возвратом к прежней версии: старые версии сервера его не распознают.

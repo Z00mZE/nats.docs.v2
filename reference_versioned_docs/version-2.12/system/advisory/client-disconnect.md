@@ -1,16 +1,16 @@
-# Client Disconnect
+# Отключение клиента {#client-disconnect}
 
-Client disconnection events.
+События отключения клиентов.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import clientDisconnect from '@site/src/schemas/vendor/v2.12/jsm/server/advisory/v1/client_disconnect.json';
 
-## Subscription Subject
+## Тема подписки {#subscription-subject}
 
 `$SYS.ACCOUNT.{account}.DISCONNECT`
 
-Where `{account}` is the account name.
+Где `{account}` — имя учётной записи.
 
-## Event Schema
+## Схема события {#event-schema}
 
 <JSONSchema schema={clientDisconnect} />

@@ -1,74 +1,49 @@
 ---
 id: delivery-and-acknowledgment
-title: "Delivery and acknowledgment"
+title: "Доставка и подтверждение"
 sidebar_position: 6
-description: How a message is delivered and held in flight, what an ack and a double ack do, and how an unacked message comes back
+description: "Неподтверждённые сообщения, обычное и двойное подтверждение и повторная доставка"
 ---
 
-# Delivery and acknowledgment
+# Доставка и подтверждение {#delivery-and-acknowledgment}
 
-The [reading-back](/learn/jetstream/reading-back) and
-[filtering](/learn/jetstream/filtering) pages created consumers —
-`billing` to read the stream back, then `analytics` to filter it — and
-acked each message on the happy path,
-where every message succeeded. This page is the part those pages took for
-granted: what an acknowledgment actually does, and what happens to a message
-that's delivered but never acked.
+[Чтение](/learn/jetstream/reading-back) создало `billing`, [фильтрация](/learn/jetstream/filtering) — `analytics`. Все сообщения успешно подтверждались. Теперь разберём, что делает ack и что будет без него.
 
-That's the **ack/redeliver loop**, and it's one of the pieces that give
-JetStream its **at-least-once** delivery: a message stays available and is
-redelivered until a reader confirms it, so it's handled at least once even
-when things fail. A reader can crash mid-message, a handler can throw, a
-process can be killed — and the message it was working on comes back instead
-of vanishing. (At-least-once also leans on the durable stream from the earlier
-pages; the ack loop is the consumer half.)
+**Цикл подтверждения и повторной доставки** обеспечивает потребительскую часть гарантии **не менее одного раза**. Читатель может упасть, обработчик — выбросить ошибку, процесс — завершиться, но сообщение вернётся. Вторая составляющая гарантии — долговременный поток предыдущих страниц.
 
-You already have the orders in `ORDERS` and the `billing` and `analytics`
-consumers from the previous pages.
+Заказы и потребители `billing`, `analytics` уже существуют.
 
-## A consumer to experiment with
+## Потребитель для экспериментов {#a-consumer-to-experiment-with}
 
-The demos below deliberately skip an ack to watch a message come back, so
-they're easier to follow on a consumer of their own. Create one named
-`shipping` — a pull consumer with explicit ack, the same kind you made on the
-previous pages:
+Создадим отдельный `shipping`, чтобы намеренно пропускать подтверждения. Это pull-потребитель с явным ack, как ранее:
 
 <div class="nats-example"
      data-type="learn-jetstream-your-first-consumer-create"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-It starts at the beginning of `ORDERS`, so it has the stored orders to work
-through.
+Он начинает с начала ORDERS и может читать сохранённые заказы.
 
-## The delivery lifecycle
+## Жизненный цикл доставки {#the-delivery-lifecycle}
 
-A message moves through a few states on a consumer:
+Состояния сообщения у потребителя:
 
-1. **Delivered, in flight.** The consumer hands the message to a reader. The
-   message stays in the stream, and the consumer's **acknowledgment floor** —
-   how far it has confirmed handling — hasn't moved past it. The message is in
-   flight: out with a reader, not yet confirmed.
-2. **Acked.** The reader processes the message and sends an **ack**. The floor
-   advances past it; the message is done as far as this consumer is concerned.
-3. **Redelivered.** If no ack arrives within the **Ack Wait** deadline, the
-   server assumes the reader failed and delivers the message again — to the
-   same reader or another one on the same consumer.
+1. **Доставлено, ожидает подтверждения.** Читатель получил сообщение, данные остаются в потоке. **Граница подтверждений** ещё не прошла его.
+2. **Подтверждено.** После обработки клиент отправляет **ack**; граница продвигается, работа этого потребителя завершена.
+3. **Повторно доставлено.** Без ack за **Ack Wait** сервер предполагает сбой и выдаёт сообщение тому же или другому читателю этого потребителя.
 
 <div class="nats-flow" data-scenario="jetStreamConsumersAnimated" data-width="600" data-height="380"></div>
 
-The gap between what's been delivered and what's been acked is the set of
-in-flight messages. The rest of this page opens and closes that gap on
-purpose.
+Разрыв между доставкой и подтверждением — сообщения в обработке. Сейчас мы намеренно создадим и закроем его.
 
-## Acknowledge a message
+## Подтвердите сообщение {#acknowledge-a-message}
 
-Pull one message from `shipping` and ack it:
+Запросите и подтвердите одно сообщение shipping:
 
 <div class="nats-example"
      data-type="learn-jetstream-your-first-consumer-pullAndAck"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-You get the first stored order, and the ack confirms it:
+Первый сохранённый заказ получен и подтверждён:
 
 ```
 [10:14:52] subj: orders.created / tries: 1 / cons seq: 1 / str seq: 1 / pending: 2
@@ -78,8 +53,7 @@ You get the first stored order, and the ack confirms it:
 Acknowledged message
 ```
 
-`tries: 1` is the delivery count — this is the first time the message has gone
-out. Check the consumer:
+`tries: 1` — первая доставка. Проверьте потребителя:
 
 ```
 State:
@@ -90,50 +64,33 @@ State:
     Redelivered Messages: 0
 ```
 
-Both cursors advanced to sequence 1: delivered, then acked, with nothing left
-in flight. You read the `tries`, sequences, and pending count off the
-delivered message itself — no `nats consumer info` call needed, as the
-previous pages noted. The full `State` block is here only to show the floor
-moving.
+Оба курсора дошли до 1: доставка и ack, ничего не ожидает подтверждения. `tries`, номера и остаток доступны в метаданных сообщения без отдельного `nats consumer info`. Полное состояние здесь лишь показывает продвижение границы.
 
-## Double ack: make sure the ack landed
+## Двойное подтверждение: убедитесь, что ack принят {#double-ack-make-sure-the-ack-landed}
 
-A plain ack is fire-and-forget. The client sends it and moves on without
-waiting to hear that the server recorded it. Almost always that's fine. But if
-the ack is lost on the way to the server — a connection drops at the wrong
-moment — the server never advances the floor, Ack Wait elapses, and the
-message is redelivered. The reader handled it once and will see it again.
+Обычный ack отправляется без ожидания ответа. Если он потерялся при разрыве соединения, сервер не сдвинет границу и повторит сообщение после Ack Wait. Уже обработанное придёт снова.
 
-A **double ack** closes that window. The client sends the ack and waits for
-the server to confirm it before treating the message as done. Reach for it
-when reprocessing a message would be harmful and you can't make the handler
-idempotent — a payment capture, say. It costs a round-trip per message, so
-it's a deliberate choice, not the default.
+**Двойное подтверждение** ждёт серверного подтверждения ack. Оно полезно, когда повторная обработка вредна и обработчик нельзя сделать идемпотентным, например при списании платежа. Цена — дополнительный сетевой обмен на сообщение, поэтому это явный выбор.
 
 <div class="nats-flow" data-scenario="doubleAckAnimated" data-width="560" data-height="240"></div>
 
-There's no CLI flag for it — a double ack is a client-library call. Pull a
-message and double-ack it:
+Флага CLI нет: это вызов библиотеки. Запросите сообщение и выполните двойное подтверждение:
 
 <div class="nats-example"
      data-type="learn-jetstream-your-first-consumer-doubleAck"
      data-languages="js,go,python,java,rust,csharp,c"></div>
 
-The call is named differently across clients — `DoubleAck` in Go, `ackAck` in
-JavaScript, `ack_sync` in Python, `ackSync` in Java, `AckAsync` (with the
-double-ack option) in .NET, `double_ack` in Rust — but each waits for the
-server to confirm the ack before returning.
+Имена различаются: `DoubleAck` в Go, `ackAck` в JavaScript, `ack_sync` в Python, `ackSync` в Java, `AckAsync` с соответствующей опцией в .NET, `double_ack` в Rust. Все ждут ответа сервера.
 
-## Redelivery: when a message isn't acked
+## Повторная доставка без ack {#redelivery-when-a-message-isnt-acked}
 
-To see redelivery, pull a message but skip the ack:
+Получите сообщение, не подтверждая:
 
 <div class="nats-example"
      data-type="learn-jetstream-your-first-consumer-next"
      data-languages="cli,js,go,python,java,rust,csharp,c"></div>
 
-This delivers the next order, sequence 2, and leaves it in flight. The state
-now shows the gap:
+Заказ с номером 2 остаётся в обработке. Состояние показывает разрыв:
 
 ```
 State:
@@ -144,74 +101,42 @@ State:
     Redelivered Messages: 0
 ```
 
-Last Delivered moved to 2, but the Acknowledgment Floor stayed at 1. That one
-message is in flight: `Outstanding Acks: 1`. Wait out the Ack Wait deadline —
-30 seconds by default — pull again, and the server hands you sequence 2 a
-second time, now with `tries: 2`. It came back because you never acked it.
+Last Delivered равен 2, Acknowledgment Floor — 1; `Outstanding Acks: 1`. Через стандартные 30 секунд Ack Wait запросите снова: номер 2 придёт с `tries: 2`.
 
-A redelivery doesn't slot back into stream order. A consumer usually has
-several messages in flight at once — the `out of maximum 1,000` in the state
-above is **MaxAckPending**, the cap on how many it delivers before they're
-acked. While one message waits to be redelivered, the consumer keeps handing
-out later ones, so the repeat can arrive *after* messages with higher sequence
-numbers.
+Повтор не восстанавливает общий порядок. Обычно сообщений в обработке несколько; `out of maximum 1,000` — **MaxAckPending**, предел неподтверждённых доставок. Пока одно ждёт повтора, выдаются следующие, поэтому повтор может прийти после больших номеров.
 
 <div class="nats-flow" data-scenario="redeliveryOrderAnimated" data-width="660" data-height="220"></div>
 
-If a consumer must process strictly in order, set MaxAckPending to 1. It then
-delivers one message at a time and won't move past it until it's acked, so a
-redelivery always comes back before anything new:
+Для строгого порядка задайте MaxAckPending равным 1: следующее не выдаётся до подтверждения текущего.
 
 ```bash
 nats consumer edit ORDERS shipping --max-pending 1
 ```
 
-That ordering guarantee costs throughput — one message in flight means no
-overlap between handlers — so use it only when order actually matters.
+Это уменьшает пропускную способность, исключая параллельную обработку. Используйте лишь при необходимости порядка.
 
-A reader doesn't have to wait out the deadline, and a stuck message doesn't
-have to retry forever. A reader can answer a message in other ways — ask for
-an immediate retry, give up on a message that can never be handled, or signal
-that it's still working — and the server has controls that decide how long it
-waits between retries and when it stops. Those responses and controls are the
-[next page](/learn/jetstream/acknowledgment).
+Можно запросить немедленный повтор, отказаться от необрабатываемого сообщения или сообщить о продолжающейся работе. Сервер задаёт интервалы и предел попыток. Это тема [следующей страницы](/learn/jetstream/acknowledgment).
 
-## Pitfalls
+## Типичные ошибки {#pitfalls}
 
-**Forgetting to ack.** A handler that processes a message but never acks looks
-identical to a crashed reader: the message stays in flight, Ack Wait elapses,
-and it's redelivered — and with the default unlimited delivery limit, that
-repeats forever. Always ack on the success path. The
-[next page](/learn/jetstream/acknowledgment) covers how to retire a message
-that genuinely can't be processed, so it stops coming back.
+**Забытый ack.** Успешная обработка без подтверждения для сервера равна сбою. После Ack Wait сообщение вернётся, а при стандартном неограниченном числе попыток — бесконечно. Подтверждайте успех. [Далее](/learn/jetstream/acknowledgment) показано прекращение доставок неисправимого сообщения.
 
-**Acking the same message twice.** Once you ack a message, the floor moves
-past it. A second ack does nothing useful. Some clients (Go, Python) reject it
-locally with *"message was already acknowledged"*; others ignore or resend it,
-and the server ignores the duplicate either way. Ack each delivery exactly
-once, in one place in your handler.
+**Два ack одной доставки.** Второй не продвигает границу. Go и Python могут локально вернуть *message was already acknowledged*, другие библиотеки игнорируют или пересылают повтор; сервер его игнорирует. Подтверждайте каждую доставку один раз в одном месте.
 
-## Where you are
+## Что уже готово {#where-you-are}
 
-`shipping` is a durable pull consumer with explicit ack, and you've seen the
-core of the loop:
+У долговременного pull-потребителя shipping с явным ack вы увидели цикл:
 
-- a message is **delivered** and held **in flight** until it's confirmed
-- an **ack** (or a **double ack**, when a lost ack would hurt) advances the
-  acknowledgment floor past it
-- an unacked message is **redelivered** after the Ack Wait deadline
+- Сообщение **доставлено** и **ожидает подтверждения**.
+- **Ack**, при необходимости **двойной ack**, продвигает границу подтверждений.
+- Без подтверждения сообщение **возвращается** после Ack Wait.
 
-The delivery count (`tries`) rides along on each message, so a reader always
-knows how many times it's seen one.
+Число доставок `tries` приходит с каждым сообщением.
 
-## What's next
+## Что дальше {#whats-next}
 
-You've seen the happy path and that an unacked message comes back. The next
-page goes deep on the four ways a client answers a message — ack, nak, term,
-and in-progress — and the server controls (Ack Wait, MaxDeliver, backoff) that
-decide when a message comes back and when it stops.
+Далее — ack, nak, term, in-progress и настройки Ack Wait, MaxDeliver, backoff, определяющие сроки повторов и их прекращение.
 
-## See also
+## См. также {#see-also}
 
-- [Reference → Create Consumer](/reference/jetstream/api/consumer/create)
-  — every consumer option, the four ack policies, and push consumers.
+- [Справочник → Создание потребителя](/reference/jetstream/api/consumer/create) — настройки, политики подтверждения и push-потребители.

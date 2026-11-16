@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import { useEffect, useRef, useState } from 'react';
 import { BaseEdge, EdgeLabelRenderer, type EdgeProps, getBezierPath, getStraightPath } from '@xyflow/react';
 import type { AnimatedEdgeData } from '../types';
@@ -151,7 +152,7 @@ export function AnimatedEdge(props: EdgeProps) {
         markerStart={markerStart}
         style={{ stroke: color, strokeWidth: 2 }}
       />
-      {edgeData?.label && (
+      {localizeDiagramContent(edgeData?.label && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -167,12 +168,12 @@ export function AnimatedEdge(props: EdgeProps) {
             }}
             className="nodrag nopan"
           >
-            {edgeData.label}
+            {localizeDiagramContent(edgeData.label)}
           </div>
         </EdgeLabelRenderer>
-      )}
+      ))}
       <g>
-        {circles.map((circle) => {
+        {localizeDiagramContent(circles.map((circle) => {
           const position = getPositionAlongPath(edgePath, circle.progress);
           return (
             <circle
@@ -184,7 +185,7 @@ export function AnimatedEdge(props: EdgeProps) {
               opacity={0.8}
             />
           );
-        })}
+        }))}
       </g>
     </>
   );

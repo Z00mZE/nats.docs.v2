@@ -1,3 +1,4 @@
+import { localizeDiagramContent } from "../../../i18n/diagrams";
 import React, { useEffect, useState } from "react";
 
 // batchGetAnimated
@@ -105,7 +106,7 @@ function BatchGetInner() {
     return (
         <div style={{ fontFamily: "system-ui, sans-serif" }}>
             <div style={{ marginBottom: 10, fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
-                A <strong>batch get</strong> returns many messages over one request — and any copy can serve it, so batches spread.
+                A <strong>пакетное чтение</strong> возвращает много сообщений на один запрос; обслужить его может любая копия, поэтому пакеты распределяются.
             </div>
 
             <div style={{ position: "relative", width: 640, height: 240, margin: "0 auto" }}>
@@ -126,14 +127,14 @@ function BatchGetInner() {
                         justifyContent: "center",
                     }}
                 >
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Reader</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Читатель</span>
                     <span style={{ fontSize: 10, fontFamily: "monospace", color: BLUE, minHeight: 13 }}>
-                        {done ? "3 batches done" : "batch · seq 1, ×3"}
+                        {localizeDiagramContent(done ? "3 batches done" : "batch · seq 1, ×3")}
                     </span>
                 </div>
 
                 {/* three stream copies, with per-server batches-served tally */}
-                {COPY_Y.map((cy, i) => {
+                {localizeDiagramContent(COPY_Y.map((cy, i) => {
                     const isLeader = i === 0;
                     const lit = srv === i;
                     const col = SRV_COLOR[i];
@@ -171,16 +172,16 @@ function BatchGetInner() {
                                             padding: "0 4px",
                                         }}
                                     >
-                                        {SRV_LABEL[i]}
+                                        {localizeDiagramContent(SRV_LABEL[i])}
                                     </span>
                                 </div>
                                 <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>
-                                    full copy · served{" "}
-                                    <strong style={{ color: served[i] > 0 ? col : "#9ca3af" }}>{served[i]}</strong>
+                                    полная копия · обслужено{localizeDiagramContent(" ")}
+                                    <strong style={{ color: served[i] > 0 ? col : "#9ca3af" }}>{localizeDiagramContent(served[i])}</strong>
                                 </div>
                             </div>
                             {/* pending pill on the serving server */}
-                            {lit && lastPending !== null && (
+                            {localizeDiagramContent(lit && lastPending !== null && (
                                 <span
                                     style={{
                                         position: "absolute",
@@ -196,15 +197,15 @@ function BatchGetInner() {
                                         background: `${pendingColor}12`,
                                     }}
                                 >
-                                    Nats-Num-Pending {lastPending}
+                                    Nats-Num-Pending {localizeDiagramContent(lastPending)}
                                 </span>
-                            )}
+                            ))}
                         </div>
                     );
-                })}
+                }))}
 
                 {/* single request token going out */}
-                {reqX !== null && (
+                {localizeDiagramContent(reqX !== null && (
                     <div
                         style={{
                             position: "absolute",
@@ -217,10 +218,10 @@ function BatchGetInner() {
                             opacity: 0.9,
                         }}
                     />
-                )}
+                ))}
 
                 {/* the message currently streaming back from the serving server */}
-                {phase === "stream" && srv >= 0 && (
+                {localizeDiagramContent(phase === "stream" && srv >= 0 && (
                     <>
                         <div
                             style={{
@@ -242,7 +243,7 @@ function BatchGetInner() {
                                 fontFamily: "monospace",
                             }}
                         >
-                            {seq}
+                            {localizeDiagramContent(seq)}
                         </div>
                         <span
                             style={{
@@ -256,13 +257,13 @@ function BatchGetInner() {
                                 whiteSpace: "nowrap",
                             }}
                         >
-                            pending {pending}
+                            ожидает {localizeDiagramContent(pending)}
                         </span>
                     </>
-                )}
+                ))}
 
                 {/* collected blocks for the current batch settle under the reader */}
-                {Array.from({ length: collectedInBatch }).map((_, i) => (
+                {localizeDiagramContent(Array.from({ length: collectedInBatch }).map((_, i) => (
                     <div
                         key={i}
                         style={{
@@ -283,14 +284,14 @@ function BatchGetInner() {
                             fontFamily: "monospace",
                         }}
                     >
-                        {i + 1}
+                        {localizeDiagramContent(i + 1)}
                     </div>
-                ))}
-                {!done && (
+                )))}
+                {localizeDiagramContent(!done && (
                     <span style={{ position: "absolute", left: SLOT_X0, top: SLOT_Y + 34, fontSize: 11, color: "#6b7280" }}>
-                        collected {collectedInBatch}/{BATCH}
+                        собрано {localizeDiagramContent(collectedInBatch)}/{localizeDiagramContent(BATCH)}
                     </span>
-                )}
+                ))}
             </div>
 
             <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 14 }}>
@@ -298,9 +299,9 @@ function BatchGetInner() {
                     onClick={() => setElapsed(0)}
                     style={{ flex: "none", padding: "5px 12px", borderRadius: 6, border: `1px solid ${BLUE}`, background: "white", color: BLUE, fontSize: 12, fontWeight: 600, fontFamily: "system-ui, sans-serif", cursor: "pointer" }}
                 >
-                    ↺ Restart
+                    ↺ Заново
                 </button>
-                <span style={{ fontSize: 13, color: "#374151" }}>{status}</span>
+                <span style={{ fontSize: 13, color: "#374151" }}>{localizeDiagramContent(status)}</span>
             </div>
         </div>
     );

@@ -1,16 +1,16 @@
-# Publish Acknowledgement
+# Подтверждение публикации {#publish-acknowledgement}
 
-Publishes a message directly to a stream and receives an acknowledgement.
+Прямая публикация сообщения в поток с получением подтверждения.
 
 import JSONSchema from '@site/src/components/JSONSchema';
 import pubAckResponse from '@site/src/schemas/vendor/v2.14/jsm/jetstream/api/v1/pub_ack_response.json';
 
-## Subject
+## Тема {#subject}
 
 
-Messages are published directly to the stream's subjects (as configured in the stream).
-The acknowledgement is returned as a response to the publish operation.
+Сообщения публикуются непосредственно в темы, заданные в конфигурации потока.
+Подтверждение возвращается в ответ на операцию публикации.
 
-## Schema
+## Схема {#schema}
 
 <JSONSchema schema={pubAckResponse} />
