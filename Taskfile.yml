@@ -1,6 +1,5 @@
 version: '3'
 vars:
-  # Замените на ваш логин в GitHub (строго в нижнем регистре) и имя образа
   GH_USER: z00mze
   IMAGE_NAME: nats-docs.ru
   TAG: latest
